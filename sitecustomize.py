@@ -72,9 +72,12 @@ def _stage_extra_questions() -> None:
 
 
 def _run_browser_worker() -> None:
+    # Install and execute Chromium from the same Playwright default cache. Do not
+    # switch PLAYWRIGHT_BROWSERS_PATH after installation: doing so points the child
+    # at a different, empty browser directory.
+    os.environ.pop('PLAYWRIGHT_BROWSERS_PATH', None)
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', 'Flask==3.1.3', 'playwright==1.62.0'])
     subprocess.check_call([sys.executable, '-m', 'playwright', 'install', 'chromium'])
-    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', '0')
     from qa_orch_browser_worker import app
     app.run(host='0.0.0.0', port=int(os.environ['PORT']), debug=False, threaded=True, use_reloader=False)
     raise SystemExit(0)
