@@ -72,25 +72,25 @@ def _stage_extra_questions() -> None:
 
 
 def _prepare_browser_worker_build() -> None:
-    # The Render service has an intentionally immutable build command. This guarded
-    # hook executes only for that service's one `python -c` build process, so browser
-    # dependencies and Chromium become part of the built artifact rather than being
-    # downloaded during every cold start.
+    # Render uploads the virtualenv with the build artifact. Install Chromium into
+    # Playwright's in-package .local-browsers directory by setting
+    # PLAYWRIGHT_BROWSERS_PATH=0 *before* installation, then use the same binding at
+    # runtime. This avoids both cold-start downloads and ephemeral build-cache paths.
     env = os.environ.copy()
     env['QA_ORCH_BROWSER_BUILD_ACTIVE'] = '1'
-    env.pop('PLAYWRIGHT_BROWSERS_PATH', None)
+    env['PLAYWRIGHT_BROWSERS_PATH'] = '0'
     subprocess.check_call([
         sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check',
         'Flask==3.1.3', 'playwright==1.62.0', 'waitress==3.0.2'
     ], env=env)
     subprocess.check_call([sys.executable, '-m', 'playwright', 'install', 'chromium'], env=env)
-    print('QA_ORCH_BROWSER_BUILD_READY')
+    print('QA_ORCH_BROWSER_BUILD_READY_IN_VENV')
 
 
 def _run_browser_worker() -> None:
-    # Runtime is now dependency/download free: Render should only start the already
-    # built browser worker and its production WSGI server.
-    os.environ.pop('PLAYWRIGHT_BROWSERS_PATH', None)
+    # Runtime is dependency/download free and points at the exact browser directory
+    # embedded in the deployed virtualenv.
+    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = '0'
     from qa_orch_browser_worker import app
     from waitress import serve
     serve(app, host='0.0.0.0', port=int(os.environ['PORT']), threads=4, channel_timeout=300)
