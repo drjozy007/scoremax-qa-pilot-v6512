@@ -5,6 +5,7 @@ import base64
 import builtins
 import json
 import os
+import re
 import subprocess
 import sys
 import zlib
@@ -15,12 +16,16 @@ def _argv0() -> str:
     return Path(str(sys.argv[0] or '')).name
 
 
-def _redact_provisioning_output() -> None:
+def _install_log_redaction() -> None:
     original = builtins.print
+    sensitive = re.compile(
+        r'(one-time bootstrap admin created|"password"\s*:|\'password\'\s*:|reset[-_ ]?token|password-reset|/reset-password/|temporary_password)',
+        re.I,
+    )
     def safe_print(*args, **kwargs):
         text = ' '.join(str(x) for x in args)
-        if '"identities"' in text or '"password"' in text or "'password'" in text:
-            return original('SCOREMAX_QA_PROVISIONING_COMPLETED_REDACTED', **kwargs)
+        if sensitive.search(text):
+            return original('SCOREMAX_QA_CREDENTIAL_OUTPUT_REDACTED', **kwargs)
         return original(*args, **kwargs)
     builtins.print = safe_print
 
@@ -79,7 +84,6 @@ if os.getenv('QA_ORCH_BROWSER_WORKER_MODE', '').strip() == '1' and _argv0() == '
     _run_browser_worker()
 
 if os.getenv('QA_ORCH_SCOREMAX_OVERLAY', '').strip() == '1':
-    if _argv0() == 'provision_qa_synthetic_learners_v6_5_11.py':
-        _redact_provisioning_output()
-    elif _argv0() == 'stage_qa_synthetic_pilot_fixture_v6_5_11.py':
+    _install_log_redaction()
+    if _argv0() == 'stage_qa_synthetic_pilot_fixture_v6_5_11.py':
         atexit.register(_stage_extra_questions)
