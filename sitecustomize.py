@@ -71,19 +71,36 @@ def _stage_extra_questions() -> None:
         c.close()
 
 
+def _prepare_browser_worker_build() -> None:
+    # The Render service has an intentionally immutable build command. This guarded
+    # hook executes only for that service's one `python -c` build process, so browser
+    # dependencies and Chromium become part of the built artifact rather than being
+    # downloaded during every cold start.
+    env = os.environ.copy()
+    env['QA_ORCH_BROWSER_BUILD_ACTIVE'] = '1'
+    env.pop('PLAYWRIGHT_BROWSERS_PATH', None)
+    subprocess.check_call([
+        sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check',
+        'Flask==3.1.3', 'playwright==1.62.0', 'waitress==3.0.2'
+    ], env=env)
+    subprocess.check_call([sys.executable, '-m', 'playwright', 'install', 'chromium'], env=env)
+    print('QA_ORCH_BROWSER_BUILD_READY')
+
+
 def _run_browser_worker() -> None:
-    # Install and execute Chromium from the same Playwright default cache. Do not
-    # switch PLAYWRIGHT_BROWSERS_PATH after installation: doing so points the child
-    # at a different, empty browser directory.
+    # Runtime is now dependency/download free: Render should only start the already
+    # built browser worker and its production WSGI server.
     os.environ.pop('PLAYWRIGHT_BROWSERS_PATH', None)
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', 'Flask==3.1.3', 'playwright==1.62.0'])
-    subprocess.check_call([sys.executable, '-m', 'playwright', 'install', 'chromium'])
     from qa_orch_browser_worker import app
-    app.run(host='0.0.0.0', port=int(os.environ['PORT']), debug=False, threaded=True, use_reloader=False)
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=int(os.environ['PORT']), threads=4, channel_timeout=300)
     raise SystemExit(0)
 
 
-if os.getenv('QA_ORCH_BROWSER_WORKER_MODE', '').strip() == '1' and _argv0() == 'qual_server.py':
+_browser_mode = os.getenv('QA_ORCH_BROWSER_WORKER_MODE', '').strip() == '1'
+if _browser_mode and _argv0() == '-c' and os.getenv('QA_ORCH_BROWSER_BUILD_ACTIVE') != '1':
+    _prepare_browser_worker_build()
+elif _browser_mode and _argv0() == 'qual_server.py':
     _run_browser_worker()
 
 if os.getenv('QA_ORCH_SCOREMAX_OVERLAY', '').strip() == '1':
