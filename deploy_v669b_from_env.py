@@ -40,7 +40,9 @@ def decode_candidate(encoded):
 def governed_payload():
     keys=sorted(k for k in os.environ if k.startswith('V669B_PAYLOAD_PART_'))
     if keys:
-        encoded=''.join(os.environ[k].strip() for k in keys)
+        vals=[os.environ[k].strip() for k in keys]
+        encoded=''.join(vals)
+        print('V669B_ENV_PAYLOAD_OBSERVED', 'parts='+str(len(keys)), 'lengths='+','.join(str(len(v)) for v in vals), 'total='+str(len(encoded)))
         raw=decode_candidate(encoded)
         if raw is not None:
             return raw,'environment'
