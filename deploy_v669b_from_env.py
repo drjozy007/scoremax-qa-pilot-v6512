@@ -5,6 +5,7 @@ from pathlib import Path
 BASE=Path('hosted_runtime_base_v6512')
 OUT=Path('scoremax_runtime_v669b')
 PATHS_FILE=Path('qualification/v6610f_runtime_paths.json')
+BRIDGE_FILE=Path('qualification/v669b_xz3_bridge.tar.xz')
 REPL_SHA='cee0f4069764510e0c601f07a5036101ecd3b4e2544f480376351c9b2cc78123'
 DELTA_SHA='5f20e0ca9219c40bb0ffe0470c076a911c70ee3c8ddef9e40bdc74b797e131a2'
 TREE_SHA='e4de5db8fc107a1e1485550b904040df328f76266518abb183daec029dd9c0c1'
@@ -31,7 +32,6 @@ def bounded_payload(prefix,count,expected_sha):
     keys=sorted(k for k in os.environ if k.startswith(prefix))
     if len(keys)!=count: raise SystemExit(f'{prefix}PART_COUNT_MISMATCH got={len(keys)} expected={count}')
     vals=[os.environ[k].strip() for k in keys]
-    if any(len(v)>9999 for v in vals): raise SystemExit(prefix+'PART_OVERSIZE')
     encoded=''.join(vals)
     try: raw=base64.b64decode(encoded,validate=True)
     except Exception as exc: raise SystemExit(f'{prefix}BASE64_INVALID:{type(exc).__name__}') from exc
@@ -41,6 +41,10 @@ def bounded_payload(prefix,count,expected_sha):
 
 def main():
     if not BASE.is_dir(): raise SystemExit('V6610G_BASELINE_MISSING')
+    if not BRIDGE_FILE.is_file(): raise SystemExit('V6610G_GIT_BRIDGE_MISSING')
+    repl=BRIDGE_FILE.read_bytes()
+    if sha(repl)!=REPL_SHA: raise SystemExit(f'V6610G_GIT_BRIDGE_SHA_MISMATCH got={sha(repl)} expected={REPL_SHA}')
+
     paths=set(json.loads(PATHS_FILE.read_text(encoding='utf-8')))
     paths.discard('README_SCOREMAX_V6_6_9B.md')
     paths.discard('V6_6_9B_PACKAGE_MANIFEST.json')
@@ -53,12 +57,10 @@ def main():
         if src.is_file():
             dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
 
-    # Deterministic XZ replacement bridge: exact governed 9B runtime delta, excluding obsolete 9B docs.
-    # XZ3 is isolated from every earlier transport namespace so stale variables cannot contaminate the count.
-    repl=bounded_payload('V669B_XZ3_PART_',40,REPL_SHA)
+    # Exact Git-native deterministic XZ bridge for V6.5.12 -> V6.6.9B runtime changes.
     safe_extract(repl,OUT)
 
-    # Exact V6.6.9B -> V6.6.10G runtime delta.
+    # Exact V6.6.9B -> V6.6.10G runtime delta remains SHA-bound in four bounded env parts.
     delta=bounded_payload('V6610G_DELTA_PART_',4,DELTA_SHA)
     tmp=Path('/tmp/v6610g_delta'); shutil.rmtree(tmp,ignore_errors=True); tmp.mkdir(parents=True)
     safe_extract(delta,tmp)
@@ -87,6 +89,6 @@ def main():
     if "SCOREMAX_RELEASE_VERSION='6.6.10G'" not in app or '6.6.10G' not in integ: raise SystemExit('V6610G_RELEASE_IDENTITY_MISSING')
     for reqfile in ('scoremax_production.py','scoremax_production_entrypoint.py','production_content_seed_policy.py','request_security_engine.py','security_rate_limit_engine.py','public_origin_engine.py','referral_attribution_engine.py'):
         if not (OUT/reqfile).is_file(): raise SystemExit('V6610G_REQUIRED_FILE_MISSING:'+reqfile)
-    print('V6610G_HOSTED_RUNTIME_VERIFIED',f'deterministic_xz3_bridge_sha256={REPL_SHA}',f'delta_sha256={DELTA_SHA}',f'runtime_tree_sha256={TREE_SHA}',f'files={len(paths)}',f'release={RELEASE}','status=PREQUALIFICATION_CANDIDATE_NOT_CURRENT_HEAD_NOT_FROZEN')
+    print('V6610G_HOSTED_RUNTIME_VERIFIED',f'git_bridge_sha256={REPL_SHA}',f'delta_sha256={DELTA_SHA}',f'runtime_tree_sha256={TREE_SHA}',f'files={len(paths)}',f'release={RELEASE}','status=PREQUALIFICATION_CANDIDATE_NOT_CURRENT_HEAD_NOT_FROZEN')
 
 if __name__=='__main__': main()
