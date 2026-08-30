@@ -1,0 +1,32 @@
+ScoreMax V6.5.1 — V6.5.0 database migration evidence
+Date: 2026-08-21
+
+Parent package:
+ScoreMax_V6_5_0_Three_System_Integration_Platform_Candidate.zip
+SHA-256: 8a32da65da5d389e69b5771f495b81047dee347cbc7705ee5951536aa111f0e2
+Verified against Integration Control supplied parent sidecar: MATCH.
+
+Procedure:
+1. Extracted the exact V6.5.0 parent package to a disposable directory.
+2. Initialized a fresh V6.5.0 database using the exact parent code.
+3. Confirmed parent release identity 6.5.0 and PRAGMA integrity_check = ok.
+4. Pointed the V6.5.1 child at that exact disposable V6.5.0 database.
+5. Ran V6.5.1 app.init() additive migrations.
+6. Confirmed V6.5.1 release identity and PRAGMA integrity_check = ok.
+7. Confirmed new corrected integration structures exist:
+   - integration_ph_question_version_store
+   - integration_ph_release_question_membership
+   - integration_source_change_queue
+   - integration_projection_watermarks
+8. Confirmed additive V6.5.1 release columns exist on the inherited release table:
+   - schema_version
+   - release_operation
+   - withdrawn_at
+   - withdrawal_reason
+
+Finding during migration acceptance:
+The first migration replay exposed a genuine additive-upgrade defect: CREATE TABLE IF NOT EXISTS does not add V6.5.1 columns to an existing V6.5.0 integration_ph_content_releases table. V6.5.1 initially attempted to read release_operation before that column existed. This was rectified systemically by explicitly ensuring all V6.5.1 release columns before any migration/activation logic reads them. The exact V6.5.0 -> V6.5.1 replay then passed.
+
+Final migration result: PASS
+Database integrity after upgrade: ok
+Parent bytes were not modified.

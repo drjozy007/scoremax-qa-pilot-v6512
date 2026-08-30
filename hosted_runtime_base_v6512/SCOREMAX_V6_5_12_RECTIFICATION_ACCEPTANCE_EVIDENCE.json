@@ -1,0 +1,55 @@
+{
+  "academic_boundary": {
+    "external_version": "R2-HOLD-v1.3.5",
+    "learner_release_conferred": false,
+    "r2_clearance_conferred": false,
+    "real_fixture_question": "BIO12-CH18-B04-Q220"
+  },
+  "candidate": "ScoreMax V6.5.12 Synthetic Learner Isolation Rectification Candidate",
+  "date": "2026-08-25",
+  "defects_rectified": [
+    {
+      "code": "QA_GLOBAL_HOUSEKEEPING_SIDE_EFFECT",
+      "finding": "Allowed qa_student requests could fall through to global integration housekeeping and potentially activate due integration releases.",
+      "rectification": "_integration_housekeeping_tick returns before time/database/outbox/activation/commit work whenever session role is qa_student.",
+      "severity": "P1_ISOLATION_GOVERNANCE",
+      "status": "RECTIFIED_STATIC_AND_DEPENDENCY_LIGHT_VERIFIED"
+    },
+    {
+      "code": "DESCENDANT_RELEASE_ASSERTION_ALLOWLIST_ARCHITECTURE",
+      "finding": "A new compatible release repeated the historical failure class where inherited smoke tests enumerated allowed descendant versions.",
+      "rectification": "Central dependency-free semantic descendant compatibility helper replaces active manual future-version allowlists; historical snapshots remain untouched.",
+      "severity": "P1_ACCEPTANCE_ARCHITECTURE",
+      "status": "RECTIFIED_STATIC_AND_DEPENDENCY_LIGHT_VERIFIED"
+    }
+  ],
+  "environment_limit": {
+    "claim_policy": "NO_FULL_RUNTIME_PASS_CLAIMED",
+    "flask": "MISSING_IN_CHATGPT_SANDBOX",
+    "outbound_package_install": "UNAVAILABLE",
+    "werkzeug": "MISSING_IN_CHATGPT_SANDBOX"
+  },
+  "gates": {
+    "active_brittle_descendant_allowlists": "PASSED_ZERO_FOUND",
+    "active_compatibility_helper_users": "PASSED_12_SMOKE_SUITES",
+    "full_flask_login_session_runtime": "PENDING_ENVIRONMENT_DEPENDENCIES",
+    "inherited_v6_5_11_synthetic_contract": "PASSED_5_OF_5",
+    "jinja_parse": "PASSED_110_TEMPLATES",
+    "normal_authenticated_qa_student_playwright_journey": "PENDING_ENVIRONMENT_DEPENDENCIES",
+    "power_house_change013h_runtime_schema": "PASSED_5_OF_5_UNCHANGED",
+    "power_house_connected_300_1500_rectification": "PASSED_28_OF_28_UNCHANGED",
+    "power_house_pilot_overlay": "PASSED_6_OF_6_UNCHANGED",
+    "python_in_memory_compile": "PASSED_120_FILES",
+    "render_live_acceptance": "PENDING_NO_SCOREMAX_RENDER_SERVICE",
+    "scale_300_1500_multi_learner": "PENDING_OUT_OF_SCOPE_PILOT",
+    "v6_5_12_rectification_tests": "PASSED_5_OF_5",
+    "windows_clean_extraction_acceptance": "PENDING"
+  },
+  "growth_engine_modified": false,
+  "pilot_scope": {
+    "deterministic_qa_students": 1,
+    "multi_learner_parallelism": "OUT_OF_SCOPE",
+    "visual_semantic_qa_students": 1
+  },
+  "status": "LOCALLY_RECTIFIED_CANDIDATE_PENDING_FULL_FLASK_BROWSER_RUNTIME_ACCEPTANCE"
+}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}{% block content %}
+<div class='card'><p class='eyebrow'>QUESTION BANK</p><h2>Content operations</h2><p>Draft → Review → Approved → Live → Monitor → Re-review / Retire.</p>
+<div class='actions'><a class='btn' href='{{ url_for("admin_import") }}'>Import questions</a><a class='btn alt' href='{{ url_for("admin_question_families") }}'>Question families</a><a class='btn alt' href='{{ url_for("admin_question_health") }}'>Question health</a></div></div>
+<div class='card'>
+<form method='get' class='filter-row'>
+<input name='q' value='{{ filters.q }}' placeholder='Search ID, question, topic or LO'>
+<select name='subject'><option value=''>All subjects</option>{% for s in subjects %}<option value='{{ s.subject }}' {% if filters.subject==s.subject %}selected{% endif %}>{{ s.subject }}</option>{% endfor %}</select>
+<select name='status'><option value=''>All statuses</option>{% for x in ['Draft','Ready for Review','Under Review','Changes Required','Approved','Rejected','Retired'] %}<option value='{{ x }}' {% if filters.status==x %}selected{% endif %}>{{ x }}</option>{% endfor %}</select>
+<button class='btn'>Filter</button></form>
+<div class='status-strip'>{% for name,n in counts.items() %}<span class='pill'>{{ name }}: {{ n }}</span>{% endfor %}</div></div>
+<div class='card table-wrap'><table><thead><tr><th>ID</th><th>Question</th><th>Mapping</th><th>Type / Tier</th><th>Status</th><th>Version</th><th></th></tr></thead><tbody>
+{% for q in questions %}<tr>
+<td><strong>{{ q.question_id }}</strong>{% if q.secure_bank %}<br><span class='badge-warn'>Secure</span>{% endif %}</td>
+<td>{{ q.question[:120] }}{% if q.question|length>120 %}…{% endif %}</td>
+<td>{{ q.subject }}<br><small>{{ q.chapter }}{% if q.topic %} › {{ q.topic }}{% endif %}</small></td>
+<td>{{ q.qtype }}<br><small>{{ q.level }}</small></td>
+<td><span class='pill'>{{ q.review_status or q.status }}</span>{% if not q.active %}<br><small>Inactive</small>{% endif %}</td>
+<td>v{{ q.question_version or 1 }}</td>
+<td><a class='btn small' href='{{ url_for("admin_question_detail",qid=q.id) }}'>Review</a></td>
+</tr>{% else %}<tr><td colspan='7'>No questions match the filters.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

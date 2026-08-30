@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% block title %}Mastery Rules · Admin{% endblock %}{% block content %}
+<section class="card page-intro">
+  <p class="eyebrow">ADMIN · ACADEMIC ASSURANCE</p>
+  <h1>Mastery Rules</h1>
+  <p class="muted">Change verification policy without hard-coding the learner interface. Treat these as governed academic rules, not marketing settings.</p>
+</section>
+<div class="mastery-rule-grid">
+{% for p in policies %}
+<form method="post" class="card mastery-rule-card simple-form">
+  {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+  <input type="hidden" name="mastery_level" value="{{p.mastery_level}}">
+  <div class="split"><h2>{{p.mastery_level}}</h2><span class="status-pill">Rank {{p.level_rank}}</span></div>
+  <div class="form-grid two-col">
+    <label>Passing forms<input type="number" name="min_forms" value="{{p.min_forms}}" min="1" required></label>
+    <label>Questions per form<input type="number" name="min_questions" value="{{p.min_questions}}" min="5" required></label>
+    <label>Minimum accuracy %<input type="number" name="min_accuracy" value="{{p.min_accuracy}}" min="0" max="100" step="0.1" required></label>
+    <label>Verification period (days)<input type="number" name="verification_days" value="{{p.verification_days}}" min="1" required></label>
+    <label>External percentile target<input type="number" name="external_percentile_target" value="{{p.external_percentile_target or ''}}" min="0" max="100" step="0.1" placeholder="Not required"></label>
+    <label>Target-level question band<input type="number" name="target_band_pct" value="{{p.target_band_pct}}" min="0" max="1" step="0.05" required></label>
+    <label>Minimum unseen-family ratio<input type="number" name="unseen_family_pct" value="{{p.unseen_family_pct}}" min="0" max="1" step="0.05" required></label>
+  </div>
+  <button class="btn">Save {{p.mastery_level}} rule</button>
+</form>
+{% endfor %}
+</div>
+{% endblock %}

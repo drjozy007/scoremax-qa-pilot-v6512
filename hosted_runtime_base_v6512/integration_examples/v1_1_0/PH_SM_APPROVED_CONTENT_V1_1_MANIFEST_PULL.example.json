@@ -1,0 +1,40 @@
+{
+  "message_id": "msg::PH::APPROVED_CONTENT::MANIFEST-DEMO",
+  "contract_name": "PH_SM_APPROVED_CONTENT_V1",
+  "contract_version": "1",
+  "schema_version": "1.1.0",
+  "source_system": "POWER_HOUSE",
+  "destination_system": "SCOREMAX",
+  "occurred_at": "2026-08-21T12:00:00Z",
+  "sent_at": "2026-08-21T12:00:00Z",
+  "correlation_id": "corr::PH::MANIFEST-DEMO",
+  "idempotency_key": "release::REL::PK::FSC1::CHEM::CH03::MANIFEST-DEMO::1.1.0-demo::764cf1dcd0a83f39cce4aceeb04508a9df775593a29bb66140333a10293897ff",
+  "producer_version": "0.11.0+CHANGE012F",
+  "retry_of_message_id": null,
+  "payload_checksum_sha256": "e51e95fbf598b0d289de95572f8f751c56a81498eadff3fb4515de04e60a2df5",
+  "data_classification": "INTERNAL",
+  "payload": {
+    "delivery_mode": "MANIFEST_PULL",
+    "package_download_url": "https://power-house.example.invalid/releases/PH_SM_APPROVED_CONTENT_MANIFEST_DEMO_v1_1_0.zip",
+    "release_operation": "PUBLISH_SNAPSHOT",
+    "release": {
+      "release_id": "REL::PK::FSC1::CHEM::CH03::MANIFEST-DEMO",
+      "release_version": "1.1.0-demo",
+      "release_status": "ACADEMICALLY_READY",
+      "generated_at": "2026-08-21T16:00:00Z",
+      "effective_at": "2026-08-22T00:00:00Z",
+      "market_id": "PK",
+      "programme_id": "FSC_PART_I",
+      "subject_id": "CHEMISTRY",
+      "chapter_id": "CHAPTER::CHEMISTRY::11::03",
+      "readiness_policy_version": "SCOREMAX_READY_POLICY::1",
+      "question_count": 1,
+      "stimulus_count": 0,
+      "package_checksum_sha256": "764cf1dcd0a83f39cce4aceeb04508a9df775593a29bb66140333a10293897ff",
+      "manifest_checksum_sha256": "d5289f256a725e4cd923b63510090399edb5817e0b970b488150dbf51ac7bbcf",
+      "supersedes_release_version": null
+    },
+    "stimuli": [],
+    "questions": []
+  }
+}

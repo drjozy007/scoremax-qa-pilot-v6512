@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Synthetic Learner Result · ScoreMax{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="eyebrow">QA SANDBOX RESULT</p>
+  <h1>{{ attempt.result }}</h1>
+  <p><strong>{{summary.external_question_id}}</strong> · {{summary.family_type|replace('_',' ')|title}}</p>
+  <p>Expected correctness: {{ 'observe only' if attempt.expected_correctness is none else ('correct' if attempt.expected_correctness else 'incorrect') }}</p>
+  <div class="grid grid-2">
+    <div class="card"><h3>Live marking adapter</h3><p>Correct: {{'YES' if attempt.live_adapter_correct else 'NO'}}</p><p>Marks: {{attempt.live_adapter_marks}}</p></div>
+    <div class="card"><h3>Mastery Laboratory scorer</h3><p>Correct: {{'YES' if attempt.lab_scorer_correct else 'NO'}}</p><p>Marks: {{attempt.lab_scorer_marks}}</p></div>
+  </div>
+  <p class="muted">This result exists only in mastery_lab_e2e_* evidence. It creates no real learner attempt or mastery.</p>
+  <a class="btn" href="{{url_for('qa_synthetic_home')}}">Back to QA questions</a>
+</section>
+{% endblock %}

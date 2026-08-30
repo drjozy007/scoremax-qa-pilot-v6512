@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block content %}
+<section class="public-page"><p class="eyebrow">HOW SCOREMAX WORKS</p><h1>From “Where am I weak?” to “I fixed it.”</h1>
+<div class="journey-grid large">
+<div class="journey-card"><b>1</b><h3>Take a Test</h3><p>Start with a topic, chapter, full mock or past paper.</p></div>
+<div class="journey-card"><b>2</b><h3>Find Weak Areas</h3><p>ScoreMax shows which concepts are costing you marks.</p></div>
+<div class="journey-card"><b>3</b><h3>Get Quick Help</h3><p>Short learning capsules explain the exact concept you need.</p></div>
+<div class="journey-card"><b>4</b><h3>Practise It</h3><p>Targeted questions focus on your weaker areas.</p></div>
+<div class="journey-card"><b>5</b><h3>Test Again</h3><p>Check whether the weakness has really improved.</p></div>
+<div class="journey-card"><b>6</b><h3>Climb Your Levels</h3><p>Foundation → Exam Ready → Advanced → Distinction → Expert → Elite.</p></div>
+</div>
+<div class="final-cta"><h2>Start with one short test.</h2><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a></div>
+</section>{% endblock %}

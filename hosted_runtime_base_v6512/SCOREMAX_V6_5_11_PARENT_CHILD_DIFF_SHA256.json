@@ -1,0 +1,84 @@
+{
+  "added": [
+    {
+      "path": "PROVISION_QA_SYNTHETIC_LEARNERS_V6_5_11.bat",
+      "sha256": "23e06aa450b8f8f45f796caba5b91df227f1aa068793d97a650d4fbd85f5ea8f"
+    },
+    {
+      "path": "README_SCOREMAX_V6_5_11.md",
+      "sha256": "90fba63a316d81499c7f1ec33864b4ee7c99bbc511ea3220f0ec0cb124b8e65e"
+    },
+    {
+      "path": "RUN_SCOREMAX_V6_5_11_SYNTHETIC_LEARNER_CONTRACT_TEST.bat",
+      "sha256": "c76a4921e8554133fd7457379e357ad613c95acb2c1122a3bfefa0ae29923c34"
+    },
+    {
+      "path": "SCOREMAX_V6_5_11_PARENT_LINEAGE.json",
+      "sha256": "7a45c99f06093ee4b60709993a1a03a8bb6c5528ac3dcdc86132151c4241e8aa"
+    },
+    {
+      "path": "SCOREMAX_V6_5_11_SYNTHETIC_LEARNER_ACCEPTANCE_EVIDENCE.json",
+      "sha256": "7c5e921c33ea057dc9c11e1e290ebc905a8120e5cb96543a4ebf75cf1a113bcc"
+    },
+    {
+      "path": "SCOREMAX_V6_5_11_SYNTHETIC_LEARNER_TEST_EVIDENCE.txt",
+      "sha256": "0078de1126933a123d59ef9cc9ad7354be536594ef7ab2f0451bb2a8b24dfbee"
+    },
+    {
+      "path": "STAGE_QA_SYNTHETIC_PILOT_FIXTURE_V6_5_11.bat",
+      "sha256": "3ebcb5e5da159c052edbf687b8be43d0d0d4110986e3faf5abf4c0e662eb04bb"
+    },
+    {
+      "path": "provision_qa_synthetic_learners_v6_5_11.py",
+      "sha256": "60bd096589455b662492f758c9af03f0efe77c1d9ee03025ea1651813f3bc036"
+    },
+    {
+      "path": "qa_synthetic_learner.py",
+      "sha256": "acc80a39ba843917e907c8f21e36c401080fcb47c6275f71de4f087922b38642"
+    },
+    {
+      "path": "qualification_evidence/REAL_R2_MCq_RENDER_LEVEL_VISUAL_EVIDENCE.png",
+      "sha256": "b03f3c0c72f5511de879fb9b3c4be10069d5481204502f1245587f55ba228636"
+    },
+    {
+      "path": "qualification_fixtures/BIO_G12_CH18_R2_HOLD_QA_FIXTURE_001.json",
+      "sha256": "467b199f0db942617d87e4425564f0cb379781a2143b2527f6e3784dd785590b"
+    },
+    {
+      "path": "stage_qa_synthetic_pilot_fixture_v6_5_11.py",
+      "sha256": "b856660f3e329166b3b7cb36c9c3737da818fe5c29ced03b7bb917fbf324588f"
+    },
+    {
+      "path": "templates/qa_synthetic_home.html",
+      "sha256": "701d5e6b9377f60c4061b8fa5441a9a364579f2b4ec439c129c3f98fc7c3be53"
+    },
+    {
+      "path": "templates/qa_synthetic_result.html",
+      "sha256": "c37f336fdfdd114d07350fc67ffd96cb1a314fd3d675b853a93e1359cc11f57d"
+    },
+    {
+      "path": "tests/test_v6_5_11_synthetic_learner_contract.py",
+      "sha256": "6351b2556ee7b55ae9533ef581329249584c1f74417fee9076a43f1699af0652"
+    }
+  ],
+  "artifact": "ScoreMax V6.5.11",
+  "changed": [
+    {
+      "child_sha256": "3d4322fb2de10aa249338e1eb17d02e251b2425f2fa6772b54c2a9002eb11a44",
+      "parent_sha256": "4a43d0e4cc3811bcd997ddde43277309c815c4564d710d2e1cac1f2127b6354c",
+      "path": "app.py"
+    },
+    {
+      "child_sha256": "d9b58bcca81b5d581f7be99d93a972420a3f2f13f94b012da5708398cd6a654e",
+      "parent_sha256": "4c9251b500cdf675e6ec695cabf5be8a4336887aacb56e9a144ed32a008c1169",
+      "path": "templates/base.html"
+    },
+    {
+      "child_sha256": "bc061fbfbbb5f73917e2861118dbe4b51d7ba42ad179d2d31f5dea0d03a9101f",
+      "parent_sha256": "b50b5e0b73798e3621e6f0e5f33f1543b35db14d052e93de9b9c18f56b80f820",
+      "path": "templates/take_test_v4.html"
+    }
+  ],
+  "comparison": "parent_to_child_final_preseal_excluding_self_manifest_files",
+  "removed": []
+}

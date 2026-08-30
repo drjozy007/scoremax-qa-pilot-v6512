@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<div class="card"><p class="eyebrow">ADMIN • LEARNING CAPSULES</p><h1>Micro-Learning Library</h1><p class="muted">One approved capsule can support many questions mapped to the same concept.</p></div>
+<div class="card"><div class="table-wrap"><table><tr><th>Capsule</th><th>Subject</th><th>Concept</th><th>Chapter</th><th>Status</th><th>Version</th></tr>
+{% for c in capsules %}<tr><td>{{c.capsule_id}}</td><td>{{c.subject}}</td><td>{{c.concept}}</td><td>{{c.chapter}}</td><td>{{c.review_status}}</td><td>{{c.version}}</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

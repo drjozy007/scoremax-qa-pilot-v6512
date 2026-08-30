@@ -1,0 +1,330 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.scoremax.internal/v1/SM_PH_DELIVERY_EVIDENCE_V1.schema.json",
+  "title": "ScoreMax to Power House Delivery Evidence v1",
+  "description": "Governed cross-platform message envelope. External identifiers are opaque strings.",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "contract_name": {
+      "const": "SM_PH_DELIVERY_EVIDENCE_V1"
+    },
+    "contract_version": {
+      "const": "1"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "source_system": {
+      "const": "SCOREMAX"
+    },
+    "destination_system": {
+      "const": "POWER_HOUSE"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "producer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "retry_of_message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "payload_checksum_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "data_classification": {
+      "enum": [
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "PSEUDONYMOUS"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "evidence_batch_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "environment": {
+          "const": "LIVE"
+        },
+        "aggregation_level": {
+          "const": "QUESTION_VERSION"
+        },
+        "period_start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "minimum_sample_policy": {
+          "type": "object",
+          "properties": {
+            "minimum_n": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "suppression_applied": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "minimum_n",
+            "suppression_applied"
+          ]
+        },
+        "market_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "programme_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "subject_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "chapter_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "blueprint_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 255
+        },
+        "blueprint_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 255
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "question_version_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "question_checksum_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "delivered_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "submitted_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "correct_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "incorrect_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "skipped_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "timing_seconds": {
+                "type": "object",
+                "properties": {
+                  "median": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "p90": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "median",
+                  "p90"
+                ]
+              },
+              "assistance_counts": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "distractor_counts": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "confidence_counts": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "flag_counts": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "recovery_attempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "recovery_successes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reconfirmation_attempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reconfirmation_successes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "item_difficulty": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 1
+              },
+              "discrimination": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": -1,
+                "maximum": 1
+              },
+              "sample_suppressed": {
+                "type": "boolean"
+              },
+              "ambiguity_signal_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "question_id",
+              "question_version_id",
+              "question_checksum_sha256",
+              "delivered_count",
+              "submitted_count",
+              "correct_count",
+              "incorrect_count",
+              "skipped_count",
+              "timing_seconds",
+              "assistance_counts",
+              "distractor_counts",
+              "flag_counts",
+              "sample_suppressed"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "evidence_batch_id",
+        "environment",
+        "aggregation_level",
+        "period_start",
+        "period_end",
+        "minimum_sample_policy",
+        "market_id",
+        "programme_id",
+        "subject_id",
+        "chapter_id",
+        "items"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "contract_name",
+    "contract_version",
+    "schema_version",
+    "source_system",
+    "destination_system",
+    "occurred_at",
+    "sent_at",
+    "correlation_id",
+    "idempotency_key",
+    "producer_version",
+    "payload_checksum_sha256",
+    "data_classification",
+    "payload"
+  ]
+}

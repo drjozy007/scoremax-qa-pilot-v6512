@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block content %}
+<div class="card learning-hero">
+  <a href="{{request.referrer or url_for('weak_areas_page')}}">← Back</a>
+  <p class="eyebrow">QUICK HELP • {{cap.subject}}</p><h1>{{cap.concept}}</h1>
+  <p class="muted">A short explanation to help you understand this before you practise again.</p>
+</div>
+<div class="learning-flow">
+  <section class="card learn-step"><span>1</span><div><p class="eyebrow">EXPLAIN IT SIMPLY</p><p class="learn-big">{{cap.simple_explanation}}</p></div></section>
+  {% if cap.remember_this %}<section class="card learn-step remember"><span>2</span><div><p class="eyebrow">REMEMBER THIS</p><h2>{{cap.remember_this}}</h2>{% if cap.formula_rule %}<div class="formula-box">{{cap.formula_rule}}</div>{% endif %}</div></section>{% endif %}
+  {% if cap.worked_example %}<section class="card learn-step"><span>3</span><div><p class="eyebrow">SHOW ME AN EXAMPLE</p><p>{{cap.worked_example}}</p></div></section>{% endif %}
+  {% if cap.common_mistake %}<section class="card learn-step warning"><span>!</span><div><p class="eyebrow">COMMON MISTAKE</p><p>{{cap.common_mistake}}</p></div></section>{% endif %}
+  {% if cap.memory_tip %}<section class="card learn-step"><span>✓</span><div><p class="eyebrow">QUICK TIP</p><p>{{cap.memory_tip}}</p></div></section>{% endif %}
+</div>
+<div class="card final-cta"><h2>Ready to try again?</h2><p>Go back to your weak areas and test whether this concept is improving.</p><a class="btn" href="{{url_for('weak_areas_page')}}">Practise My Weak Areas</a></div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% block content %}
+<div class='card'><p class='eyebrow'>{{ q.question_id }} · VERSION {{ q.question_version or 1 }}</p><h2>{{ q.question }}</h2>
+<div class='status-strip'><span class='pill'>{{ q.review_status or q.status }}</span><span class='pill'>{{ q.qtype }}</span><span class='pill'>{{ q.level }}</span>{% if q.secure_bank %}<span class='badge-warn'>Secure bank</span>{% endif %}</div>
+{% if family %}<p class="muted"><strong>Family:</strong> {{family.family_id}} • {{family.review_status}}{% if not family.active %} • not live{% endif %} • {{family.construct_signature or family.concept or 'construct not described'}}</p>{% else %}<p class="warning"><strong>Family governance missing:</strong> this question cannot go live until it is linked to an approved family.</p>{% endif %}
+<p><strong>{{ q.subject }}</strong> · {{ q.chapter }}{% if q.topic %} › {{ q.topic }}{% endif %}{% if q.subtopic %} › {{ q.subtopic }}{% endif %}</p>
+{% if q.learning_outcome %}<p><strong>LO:</strong> {{ q.learning_outcome }}{% if q.concept %} · <strong>Concept:</strong> {{ q.concept }}{% endif %}</p>{% endif %}
+{% if q.option_a %}<div class='answer-list'><div>A. {{ q.option_a }}</div>{% if q.option_b %}<div>B. {{ q.option_b }}</div>{% endif %}{% if q.option_c %}<div>C. {{ q.option_c }}</div>{% endif %}{% if q.option_d %}<div>D. {{ q.option_d }}</div>{% endif %}</div>{% endif %}
+<p><strong>Correct answer:</strong> {{ q.answer }}</p><p><strong>Explanation:</strong> {{ q.explanation or 'Not provided' }}</p>
+<div class='actions'><a class='btn alt' href='{{ url_for("admin_question_edit",qid=q.id) }}'>Edit question</a><a class='btn alt' href='{{ url_for("admin_questions") }}'>Back to bank</a></div></div>
+<div class='grid2'>
+<div class='card'><h3>Review action</h3><form method='post' action='{{ url_for("admin_question_review",qid=q.id) }}'>{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<label>Reason</label><select name='reason_code'><option value=''>Select if relevant</option>{% for r in ['Incorrect answer','Weak distractors','Unclear wording','Duplicate','Incorrect difficulty','Incorrect LO','Outside syllabus','Poor explanation','Factual/scientific issue','Formatting issue','Other'] %}<option>{{ r }}</option>{% endfor %}</select>
+<label>Review note</label><textarea name='note' rows='3' placeholder='Optional reviewer note'></textarea>
+<div class='actions'><button class='btn alt' name='action' value='ready'>Ready for review</button><button class='btn alt' name='action' value='start'>Start review</button><button class='btn' name='action' value='approve'>Approve</button><button class='btn alt' name='action' value='changes'>Changes required</button><button class='btn danger' name='action' value='reject'>Reject</button><button class='btn danger' name='action' value='retire'>Retire</button></div>
+</form></div>
+<div class='card'><h3>Question health</h3><p class='big-status'>{{ health.status }}</p><p>Attempts: <strong>{{ health.row.attempts }}</strong><br>Correct: <strong>{{ health.row.correct_pct if health.row.correct_pct is not none else '—' }}{% if health.row.correct_pct is not none %}%{% endif %}</strong><br>Average response time: <strong>{{ health.row.avg_seconds or '—' }}{% if health.row.avg_seconds %} sec{% endif %}</strong><br>Reports: <strong>{{ health.reports }}</strong></p>{% if health.flags %}<ul>{% for f in health.flags %}<li>{{ f }}</li>{% endfor %}</ul>{% endif %}</div>
+</div>
+<div class='grid2'><div class='card'><h3>Review history</h3>{% for e in events %}<p><strong>{{ e.action }}</strong> · {{ e.created_at }}{% if e.reviewer_name %}<br><small>{{ e.reviewer_name }}</small>{% endif %}{% if e.reason_code %}<br>{{ e.reason_code }}{% endif %}{% if e.note %}<br>{{ e.note }}{% endif %}</p>{% else %}<p>No review events yet.</p>{% endfor %}</div>
+<div class='card'><h3>Version history</h3>{% for v in versions %}<p><strong>Version {{ v.version }}</strong> · {{ v.created_at }}<br><small>{{ v.change_note }}</small></p>{% else %}<p>No historical snapshots yet.</p>{% endfor %}</div></div>
+{% endblock %}

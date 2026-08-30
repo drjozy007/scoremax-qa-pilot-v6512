@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% block title %}{{selected.subject}} · ScoreMax{% endblock %}{% block content %}
+<section class="compact-page">
+  <section class="subject-v2-hero status-border-{{selected.status|lower|replace(' ','-')}}">
+    <div>
+      <a class="back-link" href="{{url_for('subject_browser')}}">← All subjects</a>
+      <p class="eyebrow">{{selected.subject|upper}}</p>
+      <h1>{{selected.subject}}</h1>
+      {% if selected.availability=='LIVE' %}
+      <p class="muted">Choose a chapter. Each card shows where your verified mastery stands and how far the current ScoreMax bank can take you.</p>
+      {% else %}
+      <p class="muted">This subject is in your academic catalogue. Practice will open when approved content is ready.</p>
+      {% endif %}
+    </div>
+    <div class="subject-v2-summary">
+      <span class="status-pill status-{{selected.status|lower|replace(' ','-')}}">{{selected.status}}</span>
+      {% if selected.answered %}<strong>{{selected.accuracy|round(0)|int}}%</strong><small>{{selected.answered}} answers so far</small>{% endif %}
+      {% if selected.availability=='LIVE' %}<a class="btn alt small" href="{{url_for('test_setup',subject=selected.subject)}}">Practise {{selected.subject}}</a>{% endif %}
+    </div>
+  </section>
+
+  {% if selected.availability=='LIVE' %}
+  <section class="chapter-v2-section">
+    <div class="section-heading-row"><div><p class="eyebrow">CHAPTERS</p><h2>See your position and your opportunity.</h2></div><a class="btn" href="{{url_for('test_setup',subject=selected.subject)}}">Quick practice</a></div>
+    <div class="chapter-mastery-grid">
+      {% for ch in selected.chapters %}
+      {% set m=ch.mastery %}
+      <article class="chapter-mastery-card status-border-{{ch.status|lower|replace(' ','-')}}">
+        <a class="chapter-card-main" href="{{url_for('chapter_page',subject=selected.subject,chapter=ch.chapter)}}">
+          <div class="chapter-card-title-row"><div><span class="status-dot status-{{ch.status|lower|replace(' ','-')}}"></span><div class="chapter-identity">{% if ch.chapter_number %}<small>Chapter {{ch.chapter_number}}</small>{% endif %}<strong>{{ch.chapter_name or ch.display_label}}</strong></div></div><b>›</b></div>
+          <div class="mastery-compare-labels">
+            <div><span>Existing mastery</span><strong>{{m.existing_level}}</strong>{% if m.has_formal_mastery and m.existing_status!='Verified' %}<small>{{m.existing_status}}</small>{% endif %}</div>
+            <div class="potential"><span>Potential mastery</span><strong>{{m.potential_level}}</strong>{% if m.opportunity_pct %}<small>+{{m.opportunity_pct}}% opportunity</small>{% endif %}</div>
+          </div>
+          <div class="mastery-opportunity-track" style="--existing:{{m.existing_pct}}%;--potential:{{m.potential_pct}}%" aria-label="Existing mastery {{m.existing_level}}; potential mastery {{m.potential_level}}">
+            <span class="potential-fill"></span><span class="existing-fill"></span>
+          </div>
+          <div class="mastery-ladder-labels" aria-hidden="true"><span>Foundation</span><span>Exam Ready</span><span>Advanced</span><span>Distinction</span></div>
+          <div class="chapter-card-footer"><span>{% if ch.answered %}{{ch.accuracy|round(0)|int}}% practice accuracy · {{ch.answered}} answers{% else %}Start this chapter{% endif %}</span>{% if m.access_limited %}<small>Your current Access unlocks up to {{m.access_ceiling}}</small>{% endif %}</div>
+        </a>
+        <div class="chapter-card-actions"><a href="{{url_for('test_setup',scope='chapter',subject=selected.subject,chapter=ch.chapter,mode='practice')}}">Practise</a><a href="{{url_for('mastery_page')}}">Check mastery</a></div>
+      </article>
+      {% else %}
+      <div class="empty-state"><h3>No approved chapters yet.</h3><p>This subject is live in the catalogue, but no ScoreMax-ready chapter bank is available.</p></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="card coming-soon-panel"><p class="eyebrow">COMING SOON</p><h2>Explore now. Practise when the approved bank is ready.</h2><p>ScoreMax will not create a fake test from another subject or use unapproved questions.</p><div class="dual-actions"><a class="btn" href="{{url_for('student_pathways')}}">Explore pathways</a><a class="btn alt" href="{{url_for('knowledge_home')}}">Knowledge Hub</a></div></section>
+  {% endif %}
+</section>
+{% endblock %}

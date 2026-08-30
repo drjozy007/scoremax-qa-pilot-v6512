@@ -1,0 +1,19 @@
+{
+  "created_at": "2026-08-21T17:47:13",
+  "database": "scoremax_v6_5_1_internal_live.db",
+  "backup": "scoremax_v6_5_1_20260821_174713.db",
+  "sha256": "bfeff08e3c91d3956bc31d10d1e8c137bee133edd822212e2963e08cfd710f3b",
+  "integrity_check": "ok"
+}
+backup=/mnt/data/scoremax_v651_work/internal_live_data/backups_v651/scoremax_v6_5_1_20260821_174713.db
+{
+  "created_at": "2026-08-21T17:47:14",
+  "database": "scoremax_v6_5_1_internal_live.db",
+  "backup": "scoremax_v6_5_1_20260821_174714.db",
+  "sha256": "288f012f96033d6c77449c0ecca9cfd2cfa56e00763825fa075a202cc184379b",
+  "integrity_check": "ok"
+}
+Restored: /mnt/data/scoremax_v651_work/internal_live_data/scoremax_v6_5_1_internal_live.db
+SHA256: bfeff08e3c91d3956bc31d10d1e8c137bee133edd822212e2963e08cfd710f3b
+restored_value BEFORE
+integrity ok

@@ -1,0 +1,30 @@
+{
+  "target_child": "ScoreMax V6.5.4 — Three-System Integration Admission Rectification Candidate",
+  "exact_parent_sha256": "344b9e8f7246858250192bf1b9c4d8f17a0675b41f412fe3bee20f3bf8e8eceb",
+  "hard_terminal_gate": {
+    "confirmed_total": 0,
+    "P0": 0,
+    "P1": 0,
+    "integrity": "ok",
+    "foreign_key_violations": 0
+  },
+  "new_mandatory_attacks": [
+    "INT-SM653-P1-001 retry-cycle recovery after exhausted dead-letter",
+    "INT-SM653-P1-002 recursive non-finite JSON rejection before persistence/hash/send",
+    "INT-SM653-P1-003 complete frozen Integration Health minimum fields and truthful durable reconciliation"
+  ],
+  "preserve_and_rerun": [
+    "V6.5.3 behavioural integration admission suite",
+    "V6.5 focused integration suite",
+    "V6.5.1 rectification suite",
+    "V6.5.1 deep suite",
+    "V6.4 inherited 605-check acceptance",
+    "300 and 1500 Power House-style release scale",
+    "Emergency Direct Intake 3000",
+    "exact-parent migration backup restore rollback",
+    "supported-Windows clean-extraction qualification",
+    "package manifest/hygiene/sealed-byte verification"
+  ],
+  "required_return_status": "PLATFORM_SIDE_INTEGRATION_RECTIFIED_CANDIDATE_PENDING_CROSS_SYSTEM_QUALIFICATION",
+  "prohibited_claim": "THREE-SYSTEM INTEGRATED FOUNDATION ACCEPTED"
+}

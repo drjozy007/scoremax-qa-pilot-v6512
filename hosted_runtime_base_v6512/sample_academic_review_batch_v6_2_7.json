@@ -1,0 +1,34 @@
+{
+  "questions": [
+    {
+      "question_id": "BIO-CH1-REV-001",
+      "chapter": "Chapter 1",
+      "topic": "Biodiversity",
+      "question": "Which statement best describes biodiversity?",
+      "options": [
+        {"id": "A", "text": "The variety of living organisms and their relationships"},
+        {"id": "B", "text": "Only the number of animal species"},
+        {"id": "C", "text": "Only genetic differences within humans"},
+        {"id": "D", "text": "The study of non-living matter"}
+      ],
+      "answer": "A",
+      "explanation": "Biodiversity includes variation within species, between species and across ecosystems.",
+      "mastery_level": "Foundation"
+    },
+    {
+      "question_id": "BIO-CH1-REV-002",
+      "chapter": "Chapter 1",
+      "topic": "Classification",
+      "question": "Why is classification useful in biology?",
+      "options": [
+        {"id": "A", "text": "It organises organisms and supports comparison"},
+        {"id": "B", "text": "It prevents organisms from evolving"},
+        {"id": "C", "text": "It removes the need for scientific names"},
+        {"id": "D", "text": "It proves all organisms are identical"}
+      ],
+      "answer": "A",
+      "explanation": "Classification provides a consistent way to organise, identify and compare organisms.",
+      "mastery_level": "Exam Ready"
+    }
+  ]
+}

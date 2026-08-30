@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}
+<div class="card"><a href="{{url_for('institution_dashboard')}}">← Institution dashboard</a><p class="eyebrow">CLASS OVERSIGHT</p><h1>{{cl.name}}</h1><p>{{cl.subject}} • {{cl.level}} • Teacher: {{cl.teacher_name or 'Unassigned'}}</p></div>
+<div class="grid3"><div class="metric card"><span>Students</span><strong>{{students|length}}</strong></div><div class="metric card"><span>Below 60%</span><strong>{{struggling|length}}</strong></div><div class="metric card"><span>No attempts</span><strong>{{inactive|length}}</strong></div></div>
+<div class="card"><h2>Student performance</h2><div class="table-wrap"><table><tr><th>Student</th><th>Roll no.</th><th>Tests</th><th>Average</th><th>Last attempt</th></tr>{% for s in students %}<tr><td>{{s.full_name}}</td><td>{{s.roll_no or '—'}}</td><td>{{s.tests_completed}}</td><td>{{(s.avg_score ~ '%') if s.avg_score is not none else '—'}}</td><td>{{s.last_attempt or '—'}}</td></tr>{% endfor %}</table></div></div>
+<div class="card"><h2>Class learning gaps</h2><div class="table-wrap"><table><tr><th>Area</th><th>Responses</th><th>Accuracy</th></tr>{% for w in weak_areas %}<tr><td>{{w.area}}</td><td>{{w.answered}}</td><td>{{w.accuracy}}%</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

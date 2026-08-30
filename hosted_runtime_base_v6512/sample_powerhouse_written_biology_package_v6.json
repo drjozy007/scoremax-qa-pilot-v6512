@@ -1,0 +1,324 @@
+{
+  "schema_version": "1.0",
+  "assessment_package_id": "PH-WR-FSC-BIO1-ENZYMES-001",
+  "assessment_package_version": "1",
+  "framework_id": "PH-FWK-FSC",
+  "framework_version_id": "PH-FWV-FSC-PB-2026",
+  "blueprint_snapshot_id": "PH-BP-FSC-BIO1-2026-1",
+  "subject_id": "Biology",
+  "chapter_id": "Enzymes",
+  "academic_approval_status": "APPROVED_EXPORTABLE",
+  "approved_by": "Power House Academic Reviewer",
+  "approved_at": "2026-07-29T20:00:00+01:00",
+  "policy_versions": {
+    "rubric": "1",
+    "mastery": "V5.5",
+    "rigor": "1"
+  },
+  "questions": [
+    {
+      "question_id": "PH-WR-BIO-ENZ-001-A",
+      "question_family_id": "PH-WRFAM-BIO-ENZ-001",
+      "variant_id": "A",
+      "question_type": "Extended Response",
+      "question_text": "Explain why enzyme activity increases as temperature rises to an optimum and then decreases rapidly above the optimum.",
+      "command_verb": "explain",
+      "maximum_marks": 6,
+      "estimated_time": 8,
+      "difficulty": "Moderate",
+      "cognitive_demand": "Explain causal relationships",
+      "mastery_level": "Advanced",
+      "purpose": "practice|mock|mastery",
+      "rubric_version": "1",
+      "mastery_policy_version": "V5.5",
+      "rigor_policy_version": "1",
+      "learning_outcome_ids": [
+        "BIO-ENZ-LO-03"
+      ],
+      "concept_ids": [
+        "BIO-ENZ-TEMP"
+      ],
+      "proposition_ids": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "P6"
+      ],
+      "required_mark_points": [
+        {
+          "id": "P1",
+          "description": "Rising temperature increases kinetic energy of enzyme and substrate molecules.",
+          "marks": 1,
+          "required_terms": [
+            "temperature",
+            "kinetic energy",
+            "enzyme",
+            "substrate"
+          ],
+          "accepted_phrases": [
+            "kinetic energy increases"
+          ],
+          "improvement_instruction": "State that rising temperature increases molecular kinetic energy."
+        },
+        {
+          "id": "P2",
+          "description": "Molecules move faster and collide more frequently.",
+          "marks": 1,
+          "required_terms": [
+            "move faster",
+            "collisions",
+            "more frequent"
+          ],
+          "accepted_phrases": [
+            "collide more frequently",
+            "more frequent collisions"
+          ],
+          "causal_link_required": true,
+          "improvement_instruction": "Link increased kinetic energy to more frequent collisions."
+        },
+        {
+          "id": "P3",
+          "description": "More enzyme-substrate complexes form, increasing reaction rate up to the optimum.",
+          "marks": 1,
+          "required_terms": [
+            "enzyme-substrate complexes",
+            "reaction rate",
+            "optimum"
+          ],
+          "accepted_phrases": [
+            "more enzyme substrate complexes form",
+            "reaction rate increases up to the optimum"
+          ],
+          "causal_link_required": true,
+          "improvement_instruction": "Explain how collisions increase complex formation and rate."
+        },
+        {
+          "id": "P4",
+          "description": "Above the optimum, bonds maintaining the enzyme's tertiary structure are disrupted.",
+          "marks": 1,
+          "required_terms": [
+            "bonds",
+            "tertiary structure",
+            "disrupted"
+          ],
+          "accepted_phrases": [
+            "bonds in the tertiary structure break",
+            "tertiary structure is disrupted"
+          ],
+          "causal_link_required": true,
+          "improvement_instruction": "Identify disruption of bonds maintaining tertiary structure."
+        },
+        {
+          "id": "P5",
+          "description": "The active site changes shape and is no longer complementary to the substrate.",
+          "marks": 1,
+          "required_terms": [
+            "active site",
+            "changes shape",
+            "complementary",
+            "substrate"
+          ],
+          "accepted_phrases": [
+            "active site changes shape",
+            "no longer complementary to the substrate"
+          ],
+          "causal_link_required": true,
+          "improvement_instruction": "State how denaturation changes the active site."
+        },
+        {
+          "id": "P6",
+          "description": "Fewer enzyme-substrate complexes form, so activity decreases rapidly.",
+          "marks": 1,
+          "required_terms": [
+            "fewer enzyme-substrate complexes",
+            "activity decreases"
+          ],
+          "accepted_phrases": [
+            "fewer enzyme substrate complexes form",
+            "activity decreases rapidly"
+          ],
+          "causal_link_required": true,
+          "improvement_instruction": "Finish the causal chain by linking active-site change to reduced complex formation."
+        }
+      ],
+      "contradictions": [
+        {
+          "phrase": "low temperature denatures",
+          "message": "Low temperature normally slows activity but does not usually denature the enzyme.",
+          "penalty": 1
+        },
+        {
+          "phrase": "active site becomes more complementary above the optimum",
+          "message": "Above the optimum, denaturation reduces complementarity.",
+          "penalty": 1
+        }
+      ],
+      "misconceptions": [
+        {
+          "trigger": "enzyme is killed",
+          "message": "Use the scientific term denatured rather than saying the enzyme is killed."
+        }
+      ],
+      "model_answer": "As temperature rises, enzyme and substrate molecules gain kinetic energy, move faster and collide more frequently. More enzyme-substrate complexes form, so the reaction rate increases up to the optimum. Above the optimum, bonds maintaining the enzyme's tertiary structure are disrupted. The active site changes shape and is no longer complementary to the substrate, so fewer complexes form and activity decreases rapidly.",
+      "scaffold_activities": [
+        {
+          "id": "SC-ENZ-01",
+          "type": "terminology_completion",
+          "title": "Recall the key terms",
+          "prompt": "Complete: Higher temperature gives molecules more ______ energy.",
+          "options": [
+            "kinetic",
+            "potential",
+            "chemical"
+          ]
+        },
+        {
+          "id": "SC-ENZ-02",
+          "type": "causal_link_completion",
+          "title": "Connect cause and effect",
+          "prompt": "Reaction rate rises because molecules move faster and therefore..."
+        },
+        {
+          "id": "SC-ENZ-03",
+          "type": "ordering",
+          "title": "Order the denaturation sequence",
+          "prompt": "Arrange: fewer complexes; bonds disrupted; active site changes shape; rate falls."
+        }
+      ],
+      "recovery_activity_map": {
+        "P1": "SC-ENZ-01",
+        "P2": "SC-ENZ-02",
+        "P4": "SC-ENZ-03",
+        "P5": "SC-ENZ-03",
+        "P6": "SC-ENZ-03"
+      },
+      "unseen_reconfirmation_ids": [
+        "PH-WR-BIO-ENZ-001-B"
+      ]
+    },
+    {
+      "question_id": "PH-WR-BIO-ENZ-001-B",
+      "question_family_id": "PH-WRFAM-BIO-ENZ-001",
+      "variant_id": "B",
+      "question_type": "Extended Response",
+      "question_text": "Explain the effect of increasing temperature on the rate of an enzyme-controlled reaction, including what happens after the optimum temperature.",
+      "command_verb": "explain",
+      "maximum_marks": 6,
+      "estimated_time": 8,
+      "difficulty": "Moderate",
+      "cognitive_demand": "Explain causal relationships",
+      "mastery_level": "Advanced",
+      "purpose": "unseen_reconfirmation",
+      "rubric_version": "1",
+      "mastery_policy_version": "V5.5",
+      "rigor_policy_version": "1",
+      "learning_outcome_ids": [
+        "BIO-ENZ-LO-03"
+      ],
+      "concept_ids": [
+        "BIO-ENZ-TEMP"
+      ],
+      "proposition_ids": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "P6"
+      ],
+      "required_mark_points": [
+        {
+          "id": "P1",
+          "description": "Rising temperature increases kinetic energy of enzyme and substrate molecules.",
+          "marks": 1,
+          "required_terms": [
+            "temperature",
+            "kinetic energy",
+            "enzyme",
+            "substrate"
+          ],
+          "accepted_phrases": [
+            "kinetic energy increases"
+          ]
+        },
+        {
+          "id": "P2",
+          "description": "Molecules move faster and collide more frequently.",
+          "marks": 1,
+          "required_terms": [
+            "move faster",
+            "collisions",
+            "more frequent"
+          ],
+          "accepted_phrases": [
+            "collide more frequently"
+          ],
+          "causal_link_required": true
+        },
+        {
+          "id": "P3",
+          "description": "More enzyme-substrate complexes form, increasing reaction rate up to the optimum.",
+          "marks": 1,
+          "required_terms": [
+            "enzyme-substrate complexes",
+            "reaction rate",
+            "optimum"
+          ],
+          "accepted_phrases": [
+            "reaction rate increases up to the optimum"
+          ],
+          "causal_link_required": true
+        },
+        {
+          "id": "P4",
+          "description": "Above the optimum, bonds maintaining the enzyme's tertiary structure are disrupted.",
+          "marks": 1,
+          "required_terms": [
+            "bonds",
+            "tertiary structure",
+            "disrupted"
+          ],
+          "accepted_phrases": [
+            "tertiary structure is disrupted"
+          ],
+          "causal_link_required": true
+        },
+        {
+          "id": "P5",
+          "description": "The active site changes shape and is no longer complementary to the substrate.",
+          "marks": 1,
+          "required_terms": [
+            "active site",
+            "changes shape",
+            "complementary",
+            "substrate"
+          ],
+          "accepted_phrases": [
+            "active site changes shape"
+          ],
+          "causal_link_required": true
+        },
+        {
+          "id": "P6",
+          "description": "Fewer enzyme-substrate complexes form, so activity decreases rapidly.",
+          "marks": 1,
+          "required_terms": [
+            "fewer enzyme-substrate complexes",
+            "activity decreases"
+          ],
+          "accepted_phrases": [
+            "activity decreases rapidly"
+          ],
+          "causal_link_required": true
+        }
+      ],
+      "contradictions": [],
+      "misconceptions": [],
+      "scaffold_activities": [],
+      "unseen_reconfirmation_ids": []
+    }
+  ],
+  "export_checksum": "f033b5b2b617466cd4bbf95597a967f267802671e22fcb674cb01c1ebf0df044"
+}

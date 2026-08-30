@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block content %}
+<div class='card'><p class='eyebrow'>EDIT {{ q.question_id }}</p><h2>Create the next controlled version</h2><p>Saving an edit creates a new version and returns the question to <strong>Changes Required</strong> for re-approval.</p></div>
+<form method='post' class='card form-stack'>{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<label>Question</label><textarea name='question' rows='4' required>{{ q.question }}</textarea>
+<div class='grid2'><div><label>A</label><input name='option_a' value='{{ q.option_a or "" }}'><label>B</label><input name='option_b' value='{{ q.option_b or "" }}'></div><div><label>C</label><input name='option_c' value='{{ q.option_c or "" }}'><label>D</label><input name='option_d' value='{{ q.option_d or "" }}'></div></div>
+<label>Correct answer</label><input name='answer' value='{{ q.answer or "" }}'>
+<label>Explanation</label><textarea name='explanation' rows='4'>{{ q.explanation or '' }}</textarea>
+<div class='grid3'><div><label>Chapter</label><input name='chapter' value='{{ q.chapter or "" }}'></div><div><label>Topic</label><input name='topic' value='{{ q.topic or "" }}'></div><div><label>Subtopic</label><input name='subtopic' value='{{ q.subtopic or "" }}'></div></div>
+<div class='grid2'><div><label>Learning outcome</label><input name='learning_outcome' value='{{ q.learning_outcome or "" }}'></div><div><label>Concept</label><input name='concept' value='{{ q.concept or "" }}'></div></div>
+<div class='grid3'><div><label>Difficulty</label><input name='difficulty' value='{{ q.difficulty or "" }}'></div><div><label>Cognitive skill</label><input name='cognitive_skill' value='{{ q.cognitive_skill or "" }}'></div><div><label>Command word</label><input name='command_word' value='{{ q.command_word or "" }}'></div></div>
+<label>Misconception tags (use | between tags)</label><input name='misconception_tags' value='{{ (q.misconception_tags or "[]")|replace("[","")|replace("]","")|replace("\"","")|replace(",","|") }}'>
+<label>Prerequisite tags (use | between tags)</label><input name='prerequisite_tags' value='{{ (q.prerequisite_tags or "[]")|replace("[","")|replace("]","")|replace("\"","")|replace(",","|") }}'>
+<label>Source type</label><input name='source_type' value='{{ q.source_type or "ScoreMax Original" }}'>
+<label>Change note</label><input name='change_note' placeholder='What changed and why?'>
+<button class='btn'>Save new version</button></form>
+{% endblock %}

@@ -1,0 +1,42 @@
+{
+  "message_id": "msg::PH::APPROVED_CONTENT::WITHDRAW-DEMO",
+  "contract_name": "PH_SM_APPROVED_CONTENT_V1",
+  "contract_version": "1",
+  "schema_version": "1.1.0",
+  "source_system": "POWER_HOUSE",
+  "destination_system": "SCOREMAX",
+  "occurred_at": "2026-08-21T12:00:00Z",
+  "sent_at": "2026-08-21T12:00:00Z",
+  "correlation_id": "corr::PH::WITHDRAW-DEMO",
+  "idempotency_key": "release::REL::PK::FSC1::CHEM::CH03::MANIFEST-DEMO::1.1.1-withdraw::WITHDRAWN",
+  "producer_version": "0.11.0+CHANGE012F",
+  "retry_of_message_id": null,
+  "payload_checksum_sha256": "f25eff6ab79a6d30a4c19232fad7077b228b4b3614f9500f4b383b12bc2477aa",
+  "data_classification": "INTERNAL",
+  "payload": {
+    "delivery_mode": "INLINE",
+    "package_download_url": null,
+    "release_operation": "WITHDRAW_RELEASE",
+    "release": {
+      "release_id": "REL::PK::FSC1::CHEM::CH03::MANIFEST-DEMO",
+      "release_version": "1.1.1-withdraw",
+      "release_status": "WITHDRAWN",
+      "generated_at": "2026-08-23T00:00:00Z",
+      "effective_at": null,
+      "market_id": "PK",
+      "programme_id": "FSC_PART_I",
+      "subject_id": "CHEMISTRY",
+      "chapter_id": "CHAPTER::CHEMISTRY::11::03",
+      "readiness_policy_version": "SCOREMAX_READY_POLICY::1",
+      "question_count": 0,
+      "stimulus_count": 0,
+      "package_checksum_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "manifest_checksum_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "supersedes_release_version": "1.1.0-demo",
+      "withdrawn_at": "2026-08-23T00:00:00Z",
+      "withdrawal_reason": "Governed withdrawal example"
+    },
+    "stimuli": [],
+    "questions": []
+  }
+}

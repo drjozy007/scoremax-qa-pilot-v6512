@@ -1,0 +1,34 @@
+{
+  "fixture_status": "R2_HOLD_PENDING_QA_ONLY",
+  "academic_clearance_conferred": false,
+  "learner_release_conferred": false,
+  "source_workbook_reference": "BIO_G12_CH18_R2_HOLD_ONLY_521Q_v1_3_5.xlsx",
+  "question": {
+    "programme": "FSc Part 2",
+    "subject": "Biology",
+    "chapter": "Chapter 18",
+    "source_lineage": {
+      "source": "PECTAA Biology Grade 12, Chapter 18, printed p.84-85",
+      "r2_status": "PENDING",
+      "approved_for_students": false
+    },
+    "question_id": "BIO12-CH18-B04-Q220",
+    "external_version": "R2-HOLD-v1.3.5",
+    "family_type": "standard_mcq",
+    "relation_type": "independent_seed",
+    "mastery_level": "Exam Ready",
+    "cognitive_demand": "Application",
+    "stimulus": {
+      "text": "Two heterozygous Rr pea plants are crossed for seed shape, where round is dominant to wrinkled."
+    },
+    "question": "State the expected F2 phenotypic ratio from a standard monohybrid cross of two heterozygotes with complete dominance.",
+    "options": [
+      {"id": "A", "text": "1 round: 1 wrinkled"},
+      {"id": "B", "text": "3 round: 1 wrinkled"},
+      {"id": "C", "text": "1 round: 2 intermediate: 1 wrinkled"},
+      {"id": "D", "text": "9 round-yellow: 3 round-green: 3 wrinkled-yellow: 1 wrinkled-green"}
+    ],
+    "marking_config": {"marks": 1, "correct_option_ids": ["B"]},
+    "answer_config": {}
+  }
+}

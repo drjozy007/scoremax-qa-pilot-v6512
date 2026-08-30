@@ -1,0 +1,23 @@
+{
+  "accepted_ancestor": {
+    "version": "ScoreMax V6.5.10",
+    "zip_members": 551,
+    "zip_sha256": "b028f7b7250a06310f92c25e3b562eb05d2c7998c8668d81fb08e1bbfadc5142"
+  },
+  "child_version": "ScoreMax V6.5.12",
+  "classification": "LOCALLY_RECTIFIED_CANDIDATE_PENDING_FULL_FLASK_BROWSER_RUNTIME_ACCEPTANCE",
+  "growth_engine_changed": false,
+  "integration_protocol_release": "6.5.10",
+  "parent": {
+    "status": "PRESERVED_ROLLBACK_NOT_PROMOTED_AFTER_ISOLATION_AND_ACCEPTANCE_ARCHITECTURE_FINDINGS",
+    "version": "ScoreMax V6.5.11 Power House Synthetic Learner Qualification Pilot Candidate",
+    "zip_members": 568,
+    "zip_sha256": "730cf135cb4cc227e37afcf363a8c001adba462cfb5943fda3e28dad969f38b4"
+  },
+  "power_house_peer": {
+    "changed_for_v6_5_12": false,
+    "version": "CHANGE013H_QA_PILOT01 overlay on frozen CHANGE013H core",
+    "zip_sha256": "6358cdd2f55b0255b96c751642e7822f94e31d07d933c0eef367374cf3e28477"
+  },
+  "rollback": "Use the exact sealed ScoreMax V6.5.11 parent ZIP above, or the accepted V6.5.10 ancestor. Neither parent artifact is overwritten."
+}

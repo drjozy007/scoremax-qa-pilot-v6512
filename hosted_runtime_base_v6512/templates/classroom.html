@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% block content %}
+<div class='dashboard-hero card'><div><p class='eyebrow'>CLASSROOM INTERVENTION</p><h2>{{ cl.name }}</h2><p>{{ cl.level }} • {{ cl.subject }} • Join code: <strong>{{ cl.join_code }}</strong></p></div>{% if priority %}<span class='health amber'>Priority {{ priority.accuracy }}%</span>{% endif %}</div>
+<div class='grid3'><div class='metric'><span>Students</span><strong>{{ students|length }}</strong></div><div class='metric'><span>Need attention</span><strong>{{ struggling|length }}</strong></div><div class='metric'><span>No tests yet</span><strong>{{ inactive|length }}</strong></div></div>
+{% if blueprint_summary %}<section class="card"><div class="split"><div><p class="eyebrow">{{blueprint_summary.blueprint.framework_name|upper}} BLUEPRINT · {{blueprint_summary.blueprint.framework_version_name}}</p><h2>Class exam contribution outlook</h2><p class="muted">Official subject weight is shown separately from formal mastery. Blueprint {{blueprint_summary.blueprint.powerhouse_blueprint_id}} v{{blueprint_summary.blueprint.blueprint_version}}.</p></div><span class="status-pill {{'good' if blueprint_summary.bank.ready else 'low'}}">{{'Bank ready' if blueprint_summary.bank.ready else 'Bank shortage'}}</span></div><div class="table-wrap"><table><tr><th>Student</th><th>Projected total</th><th>Confidence</th><th>Largest weighted opportunity</th></tr>{% for p in blueprint_summary.student_projections %}{% set first=p.projection.subjects|sort(attribute='projected_correct_mid')|first %}<tr><td>{{p.full_name}}</td><td>{{p.projection.projected_total_low}}–{{p.projection.projected_total_high}} / {{p.projection.total_questions}}</td><td>{{p.projection.confidence}}</td><td>{{first.subject if first else 'More evidence needed'}}</td></tr>{% endfor %}</table></div></section>{% endif %}
+
+{% if priority %}
+<div class='card next-action-card'>
+<p class='eyebrow'>RECOMMENDED INTERVENTION</p><h2>{{ priority.area }}</h2>
+<p>{{ priority.answered }} responses • {{ priority.accuracy }}% accuracy • {{ affected|length }} student{{ '' if affected|length==1 else 's' }} below 60%</p>
+<form method='post' action='{{ url_for("teacher_assign",cid=cl.id) }}'>{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<input type='hidden' name='subject' value='{{ priority.subject }}'><input type='hidden' name='focus_name' value='{{ priority.area }}'><input type='hidden' name='focus_type' value='diagnostic'><input type='hidden' name='baseline_accuracy' value='{{ priority.accuracy }}'>
+<label>Assignment title<input name='title' value='{{ priority.area }} Recovery'></label>
+<div class='form-grid'><label>Mode<select name='assessment_mode'><option value='practice'>Practice</option><option value='exam' selected>Test</option></select></label><label>Questions<input type='number' min='3' max='30' name='question_count' value='8'></label><label>Duration (minutes)<input type='number' min='1' name='duration_minutes' value='10'></label><label>Due date/time<input type='datetime-local' name='due_at'></label></div>
+{% if affected %}<p><strong>Suggested intervention group</strong></p><div class='checkbox-list'>{% for s in affected %}<label><input type='checkbox' name='student_ids' value='{{ s.id }}' checked> {{ s.full_name }} — {{ s.accuracy }}%</label>{% endfor %}</div>{% endif %}
+<button class='btn'>Assign targeted recovery</button>
+</form></div>
+{% endif %}
+
+<div class='grid'>
+<div class='card'><h3>Learning outcomes / concepts</h3>{% if lo_rows %}<div class='table-wrap'><table><tr><th>Area</th><th>Evidence</th><th>Students</th><th>Accuracy</th></tr>{% for r in lo_rows %}<tr><td>{{ r.area }}</td><td>{{ r.answered }} responses</td><td>{{ r.students }}</td><td><span class='status-pill {{ 'good' if r.accuracy>=80 else ('mid' if r.accuracy>=60 else 'low') }}'>{{ r.accuracy }}%</span></td></tr>{% endfor %}</table></div>{% else %}<p class='muted'>Assessment evidence will appear here.</p>{% endif %}</div>
+<div class='card'><h3>Misconception signals</h3>{% if misconceptions %}{% for m in misconceptions %}<div class='focus-row'><div><strong>{{ m.misconception }}</strong><span class='muted'>{{ m.students }} students</span></div><div class='focus-score'>{{ m.signals }}</div></div>{% endfor %}{% else %}<p class='muted'>No repeated misconception signals yet.</p>{% endif %}</div>
+</div>
+
+
+<div class='card'>
+<p class='eyebrow'>OPTIONAL STUDY PLANS</p><h3>Assign a ScoreMax pathway</h3>
+<p class='muted'>Your school does not have to use Study Plans. Where useful, you can recommend or assign Core, Stretch or Peak to selected students. The pathway can change as performance changes.</p>
+<form method='post' action='{{url_for("teacher_assign_study_plan",cid=cl.id)}}' class='form-grid'>{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<label>Pathway<select name='pathway'><option>Core</option><option>Stretch</option><option>Peak</option></select></label>
+<label>Target exam<input name='target_exam' placeholder='e.g. Matric Part II / FSc Part I'></label>
+<label>Target date<input type='date' name='target_date'></label>
+<label>Target score<input type='number' min='0' max='100' name='target_percentage' placeholder='e.g. 85'></label>
+<div class='full'><p><strong>Students</strong></p><div class='checkbox-list'>{% for st in students %}<label><input type='checkbox' name='student_ids' value='{{st.id}}'> {{st.full_name}}</label>{% endfor %}</div></div>
+<div class='full'><button class='btn'>Assign Study Plan</button></div>
+</form></div>
+
+<div class='card'><h3>Students</h3>{% if students %}<div class='table-wrap'><table><tr><th>ID</th><th>Roll</th><th>Student</th><th>Tests</th><th>Average</th><th>Status</th></tr>{% for s in students %}<tr><td>{{ s.system_user_id }}</td><td>{{ s.roll_no }}</td><td>{{ s.full_name }}</td><td>{{ s.tests_completed }}</td><td>{{ s.avg_score if s.avg_score is not none else '—' }}</td><td>{% if s.avg_score is none %}No data{% elif s.avg_score>=80 %}Strong{% elif s.avg_score>=60 %}Developing{% else %}<strong>Needs Attention</strong>{% endif %}</td></tr>{% endfor %}</table></div>{% else %}<p class='muted'>No students joined.</p>{% endif %}</div>
+
+<div class='card'><p class='eyebrow'>ASSIGNMENTS</p><h3>Completion tracking</h3>{% if assignments %}<div class='table-wrap'><table><tr><th>Assignment</th><th>Focus</th><th>Due</th><th>Completion</th><th>Before</th><th>Recovery</th><th>Impact</th></tr>{% for a in assignments %}<tr><td>{{ a.title }}</td><td>{{ a.focus_name or 'General assessment' }}</td><td>{{ a.due_at or 'No deadline' }}</td><td>{{ a.completed_count or 0 }}/{{ a.assigned_count or 0 }}</td><td>{{ (a.baseline_accuracy ~ '%') if a.baseline_accuracy is not none else '—' }}</td><td>{{ (a.recovery_avg ~ '%') if a.recovery_avg is not none else '—' }}</td><td>{% if a.baseline_accuracy is not none and a.recovery_avg is not none %}{% set delta=a.recovery_avg-a.baseline_accuracy %}<strong>{{ '+' if delta>0 else '' }}{{ delta|round(1) }} pp</strong>{% else %}—{% endif %}</td></tr>{% endfor %}</table></div>{% else %}<p class='muted'>No assignments created yet.</p>{% endif %}</div>
+
+<div class='grid'><div class='card'><h3>Students needing attention</h3>{% if struggling %}{% for s in struggling %}<p>{{ s.full_name }} — {{ s.avg_score }}%</p>{% endfor %}{% else %}<p class='muted'>None currently identified.</p>{% endif %}</div><div class='card'><h3>No assessment activity</h3>{% if inactive %}{% for s in inactive %}<p>{{ s.full_name }}</p>{% endfor %}{% else %}<p class='muted'>Everyone has attempted at least one test.</p>{% endif %}</div></div>
+{% endblock %}

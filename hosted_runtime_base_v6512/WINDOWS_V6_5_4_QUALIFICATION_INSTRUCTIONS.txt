@@ -1,0 +1,10 @@
+SCOREMAX V6.5.4 — SUPPORTED WINDOWS CLEAN-EXTRACTION QUALIFICATION
+
+1. Extract the sealed V6.5.4 candidate ZIP to a NEW empty Windows folder.
+2. Do not copy an existing database, cache, internal_live_data folder, or .env into that folder.
+3. Double-click RUN_WINDOWS_SCOREMAX_V6_5_4_QUALIFICATION.bat (or run it from cmd.exe).
+4. The runner executes the full deterministic acceptance matrix and records OS/Python evidence.
+5. A PASS creates: V6_5_4_WINDOWS_QUALIFICATION_EVIDENCE.txt
+6. Return only that evidence TXT to the ScoreMax chat. Do not modify or rebuild the candidate ZIP.
+
+This gate is empirical and must not be claimed from Linux qualification.

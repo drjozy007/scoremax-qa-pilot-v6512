@@ -1,0 +1,98 @@
+{
+  "version": "1.0",
+  "as_of": "2026-08-21",
+  "overall_status": "ARCHITECTURE_FROZEN_IMPLEMENTATION_PENDING",
+  "declaration": "THREE-SYSTEM INTEGRATED FOUNDATION ACCEPTED is NOT authorised.",
+  "gates": [
+    {
+      "gate": "Exact physical baseline and checksums",
+      "status": "PASSED",
+      "evidence": "All three ZIPs independently hashed and integrity checked; duplicate PH ZIP excluded."
+    },
+    {
+      "gate": "System-of-record/authority matrix",
+      "status": "PASSED_FROZEN",
+      "evidence": "One authoritative owner per domain; payment/referral facts resolved to ScoreMax."
+    },
+    {
+      "gate": "Existing capability/code-level audit",
+      "status": "PASSED",
+      "evidence": "Source trees inspected; reuse points and systemic gaps recorded."
+    },
+    {
+      "gate": "Minimum contract register",
+      "status": "PASSED_FROZEN",
+      "evidence": "Seven contracts plus common receipt/envelope frozen."
+    },
+    {
+      "gate": "Field-level schemas/examples",
+      "status": "PASSED",
+      "evidence": "Eight JSON Schema 2020-12 schemas/examples validate."
+    },
+    {
+      "gate": "Platform implementation briefs",
+      "status": "PASSED",
+      "evidence": "Power House, ScoreMax and Growth Engine briefs issued in control pack."
+    },
+    {
+      "gate": "Platform implementation builds",
+      "status": "PENDING",
+      "evidence": "No integration code has been authorised as accepted yet."
+    },
+    {
+      "gate": "Real PH -> ScoreMax content chain",
+      "status": "PENDING",
+      "evidence": "Requires one governed chapter with exact version/lineage and no manual repair."
+    },
+    {
+      "gate": "ScoreMax -> PH evidence/content requirement",
+      "status": "PENDING",
+      "evidence": "Requires live aggregate evidence and safe receipt."
+    },
+    {
+      "gate": "ScoreMax -> Growth events/referrals",
+      "status": "PENDING",
+      "evidence": "Requires idempotent delivery, payment/refund/reward lineage."
+    },
+    {
+      "gate": "Growth -> PH demand signal",
+      "status": "PENDING",
+      "evidence": "Requires advisory-only receipt and action routing."
+    },
+    {
+      "gate": "Security/privacy/service authentication",
+      "status": "PENDING",
+      "evidence": "Requires implemented credentials, HMAC, replay protection, minimisation tests."
+    },
+    {
+      "gate": "Failure isolation/retry/replay",
+      "status": "PENDING",
+      "evidence": "Requires outages, delayed ordering, duplicates and dead-letter recovery."
+    },
+    {
+      "gate": "300/1,500 scale and performance",
+      "status": "PENDING",
+      "evidence": "Requires real heterogeneous release and event-flow timings."
+    },
+    {
+      "gate": "Hosted/managed PostgreSQL/browser",
+      "status": "PENDING",
+      "evidence": "Production reality testing remains."
+    },
+    {
+      "gate": "Rollback",
+      "status": "PENDING",
+      "evidence": "Requires sealed pre-build artifacts, migration rollback and replay proof."
+    },
+    {
+      "gate": "Separate integrated adversarial audit",
+      "status": "PENDING",
+      "evidence": "Must attack frozen candidate without editing it during audit."
+    },
+    {
+      "gate": "Integrated Foundation Freeze Record",
+      "status": "PENDING",
+      "evidence": "Only after every required gate passes."
+    }
+  ]
+}

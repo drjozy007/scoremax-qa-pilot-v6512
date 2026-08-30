@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block content %}
+{% if active_structures %}<section class="card"><div class="split"><div><p class="eyebrow">ASSESSMENT BLUEPRINTS</p><h2>Official structures used for planning and reporting</h2></div><a href="{{url_for('exam_structure_page')}}">View details →</a></div>{% for item in active_structures %}<p><strong>{{item.blueprint.framework_name}} {{item.blueprint.framework_version_name}}</strong> · {{item.blueprint.total_questions}} questions · Blueprint v{{item.blueprint.blueprint_version}}</p>{% endfor %}</section>{% endif %}
+<div class="card institution-hero"><div><p class="eyebrow">INSTITUTION DASHBOARD • {{institution_role|upper}}</p><h1>{{institution.name}}</h1><p class="muted">{{institution.institution_type}}{% if institution.district %} • {{institution.district}}{% endif %}{% if institution.board %} • {{institution.board}}{% endif %}</p></div></div>
+<div class="grid4">
+<div class="metric card"><span>Students</span><strong>{{student_count}}</strong><small>{{active_students}} active in last 30 days</small></div>
+<div class="metric card"><span>Teachers</span><strong>{{teacher_count}}</strong><small>{{class_count}} classes</small></div>
+<div class="metric card"><span>Average score</span><strong>{{avg_score if avg_score is not none else '—'}}{% if avg_score is not none %}%{% endif %}</strong><small>{{attempt_count}} attempts</small></div>
+<div class="metric card"><span>Assignment completion</span><strong>{{assignment_completion}}%</strong><small>Across institution classes</small></div>
+</div>
+<div class="grid">
+<div class="card"><p class="eyebrow">LICENCE</p><h3>Institution access</h3>{% if licence %}<p><strong>{{licence.plan_name}}</strong></p><p>{{licence.allocated}} / {{licence.seat_count}} seats allocated</p><p class="muted">{{licence.starts_at}} → {{licence.ends_at or 'Open-ended'}} • {{licence.payment_status}}</p>{% else %}<p class="muted">No active institution licence is recorded.</p>{% endif %}</div>
+<div class="card"><p class="eyebrow">PRIORITY</p><h3>Institution intervention signal</h3>{% if weak_areas %}{% set w=weak_areas[0] %}<p><strong>{{w.subject}} • {{w.area}}</strong></p><p>{{w.accuracy}}% accuracy across {{w.students}} students</p><p class="muted">Use the class table below to identify where intervention should be led.</p>{% else %}<p class="muted">More assessment evidence is needed before ScoreMax identifies a priority.</p>{% endif %}</div>
+</div>
+<div class="card"><p class="eyebrow">CLASS PERFORMANCE</p><h2>Classes</h2><div class="table-wrap"><table><tr><th>Class</th><th>Subject</th><th>Teacher</th><th>Students</th><th>Attempts</th><th>Average</th><th></th></tr>
+{% for cl in classes %}<tr><td>{{cl.name}}</td><td>{{cl.subject}}</td><td>{{cl.teacher_name or 'Unassigned'}}</td><td>{{cl.students}}</td><td>{{cl.attempts}}</td><td>{{(cl.avg_score ~ '%') if cl.avg_score is not none else '—'}}</td><td><a href="{{url_for('institution_class_view',cid=cl.id)}}">View</a></td></tr>{% endfor %}</table></div></div>
+<div class="card"><p class="eyebrow">LEARNING GAPS</p><h2>Priority areas across the institution</h2><div class="table-wrap"><table><tr><th>Subject</th><th>LO / concept</th><th>Accuracy</th><th>Evidence</th><th>Students</th></tr>
+{% for w in weak_areas %}<tr><td>{{w.subject}}</td><td>{{w.area}}</td><td>{{w.accuracy}}%</td><td>{{w.answered}} responses</td><td>{{w.students}}</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

@@ -1,0 +1,592 @@
+{
+  "P0": 0,
+  "P1": 2,
+  "checks": {
+    "delivery_evidence_counter_semantics": {
+      "pass": false,
+      "reconfirmation_mismatch_confirmed": true,
+      "recovery_mismatch_confirmed": true
+    },
+    "delivery_evidence_generation": {
+      "distinct_release_pins": 1,
+      "evidence_batch_id": "EVB::75274f18f94ce5570ce8",
+      "immutable_pin_rows": 90,
+      "items": 36,
+      "message_id": "msg::SM_PH_DELIVERY_EVIDENCE_V1::a3de5637146537df866c9c2a988b",
+      "minimum_policy": {
+        "minimum_n": 10,
+        "suppression_applied": true
+      },
+      "reconfirmation_compare": [
+        {
+          "actual": {
+            "correct": 10,
+            "n": 10
+          },
+          "delivered_count": 10,
+          "emitted_reconfirmation_attempts": 0,
+          "emitted_reconfirmation_successes": 0,
+          "question_id": "BIO12-CH13-B03-104",
+          "qvid": "QV::BIO12-CH13-B03-104::v1",
+          "sample_suppressed": false
+        },
+        {
+          "actual": {
+            "correct": 10,
+            "n": 10
+          },
+          "delivered_count": 10,
+          "emitted_reconfirmation_attempts": 0,
+          "emitted_reconfirmation_successes": 0,
+          "question_id": "BIO12-CH13-B04-036",
+          "qvid": "QV::BIO12-CH13-B04-036::v1",
+          "sample_suppressed": false
+        },
+        {
+          "actual": {
+            "correct": 10,
+            "n": 10
+          },
+          "delivered_count": 10,
+          "emitted_reconfirmation_attempts": 0,
+          "emitted_reconfirmation_successes": 0,
+          "question_id": "BIO12-CH13-B05-048",
+          "qvid": "QV::BIO12-CH13-B05-048::v1",
+          "sample_suppressed": false
+        }
+      ],
+      "recovery_compare": [
+        {
+          "actual": {
+            "correct": 10,
+            "n": 10
+          },
+          "delivered_count": 10,
+          "emitted_recovery_attempts": 0,
+          "emitted_recovery_successes": 0,
+          "question_id": "BIO12-CH13-B01-147",
+          "qvid": "QV::BIO12-CH13-B01-147::v1",
+          "sample_suppressed": false
+        },
+        {
+          "actual": {
+            "correct": 10,
+            "n": 10
+          },
+          "delivered_count": 10,
+          "emitted_recovery_attempts": 0,
+          "emitted_recovery_successes": 0,
+          "question_id": "BIO12-CH13-B02-104",
+          "qvid": "QV::BIO12-CH13-B02-104::v1",
+          "sample_suppressed": false
+        },
+        {
+          "actual": {
+            "correct": 10,
+            "n": 10
+          },
+          "delivered_count": 10,
+          "emitted_recovery_attempts": 0,
+          "emitted_recovery_successes": 0,
+          "question_id": "BIO12-CH13-B03-065",
+          "qvid": "QV::BIO12-CH13-B03-065::v1",
+          "sample_suppressed": false
+        }
+      ]
+    },
+    "formal_mastery": {
+      "first_attempt_id": 4,
+      "first_history": [
+        {
+          "assessment_session_id": 4,
+          "attempt_id": 4,
+          "created_at": "2026-08-23 12:31:34",
+          "event_type": "earned",
+          "id": 1,
+          "mastery_record_id": 1,
+          "metadata_json": "{\"forms\": 1, \"best_accuracy\": 100.0}",
+          "new_level": "Foundation",
+          "new_status": "Verified",
+          "note": "Initial mastery earned from formal evidence.",
+          "previous_level": "",
+          "previous_status": "",
+          "scope_key": "FSc|Biology|Thermoregulation and Osmoregulation",
+          "scope_type": "chapter",
+          "student_id": 2
+        }
+      ],
+      "first_record": {
+        "best_accuracy": 100.0,
+        "chapter": "Thermoregulation and Osmoregulation",
+        "failed_reconfirmations": 0,
+        "forms_passed": 1,
+        "id": 1,
+        "mastery_level": "Foundation",
+        "programme": "FSc",
+        "questions_total": 10,
+        "scope_key": "FSc|Biology|Thermoregulation and Osmoregulation",
+        "scope_type": "chapter",
+        "source": "ScoreMax Mastery",
+        "status": "Verified",
+        "student_id": 2,
+        "subject": "Biology",
+        "updated_at": "2026-08-23 12:31:34",
+        "verification_due_at": "2026-12-21",
+        "verified_at": "2026-08-23T12:31:34"
+      },
+      "history_events": [
+        "earned",
+        "verification_due",
+        "reconfirmed"
+      ],
+      "pass": true,
+      "second_attempt_id": 5,
+      "second_record": {
+        "best_accuracy": 100.0,
+        "chapter": "Thermoregulation and Osmoregulation",
+        "failed_reconfirmations": 0,
+        "forms_passed": 2,
+        "id": 1,
+        "mastery_level": "Foundation",
+        "programme": "FSc",
+        "questions_total": 10,
+        "scope_key": "FSc|Biology|Thermoregulation and Osmoregulation",
+        "scope_type": "chapter",
+        "source": "ScoreMax Mastery",
+        "status": "Verified",
+        "student_id": 2,
+        "subject": "Biology",
+        "updated_at": "2026-08-23 12:31:34",
+        "verification_due_at": "2026-12-21",
+        "verified_at": "2026-08-23T12:31:34"
+      }
+    },
+    "immutable_attempt_pin": {
+      "expected_checksum": "09289cf0f844f5b6c5fc1120ba51c0f5c7c455f1a967e4d03e7a48e9f3f50c9a",
+      "expected_qvid": "QV::BIO12-CH13-B01-012::v1",
+      "marked_correct_during_current_mutation": true,
+      "pass": true,
+      "render_pinned": true,
+      "snapshot_question_matches_pin": true,
+      "stored_checksum": "09289cf0f844f5b6c5fc1120ba51c0f5c7c455f1a967e4d03e7a48e9f3f50c9a",
+      "stored_qvid": "QV::BIO12-CH13-B01-012::v1"
+    },
+    "power_house_advisory_only": {
+      "academic_hash_after": "25cbce6dbc4d47261a076b3d885399a31f1140d8ad0e2dd6ea5384933efb756e",
+      "academic_hash_before": "25cbce6dbc4d47261a076b3d885399a31f1140d8ad0e2dd6ea5384933efb756e",
+      "academic_state_unchanged": true,
+      "advisory_count": 1,
+      "db_integrity": "ok",
+      "foreign_key_violations": 0,
+      "inbox_count": 1,
+      "pass": true
+    },
+    "recall_reconfirmation": {
+      "attempt_id": 3,
+      "pass": false,
+      "recall": {
+        "area_name": "Negative feedback reduces system activity",
+        "chapter": "Thermoregulation and Osmoregulation",
+        "concept_key": "Negative feedback reduces system activity",
+        "id": 1,
+        "interval_days": 21,
+        "last_attempt_at": "2026-08-23T12:31:34",
+        "last_score": 100.0,
+        "next_due_date": "2026-09-13",
+        "status": "scheduled",
+        "student_id": 2,
+        "subject": "Biology",
+        "successful_recalls": 2,
+        "topic": "",
+        "updated_at": "2026-08-23 12:31:34"
+      },
+      "state": {
+        "accuracy": 62.5,
+        "area_key": "Negative feedback reduces system activity",
+        "area_name": "Negative feedback reduces system activity",
+        "chapter": "Thermoregulation and Osmoregulation",
+        "correct_count": 10,
+        "evidence_count": 16,
+        "id": 1,
+        "last_attempt_id": 3,
+        "last_evidence_at": "2026-08-23T12:31:34",
+        "recovered_at": "",
+        "status": "Weak Area",
+        "student_id": 2,
+        "subject": "Biology",
+        "topic": ""
+      }
+    },
+    "recovery": {
+      "attempt_id": 2,
+      "pass": true,
+      "recall": {
+        "area_name": "Negative feedback reduces system activity",
+        "chapter": "Thermoregulation and Osmoregulation",
+        "concept_key": "Negative feedback reduces system activity",
+        "id": 1,
+        "interval_days": 7,
+        "last_attempt_at": "2026-08-23T12:31:34",
+        "last_score": 100.0,
+        "next_due_date": "2026-08-30",
+        "status": "scheduled",
+        "student_id": 2,
+        "subject": "Biology",
+        "successful_recalls": 1,
+        "topic": "",
+        "updated_at": "2026-08-23 12:31:34"
+      },
+      "state": {
+        "accuracy": 53.8,
+        "area_key": "Negative feedback reduces system activity",
+        "area_name": "Negative feedback reduces system activity",
+        "chapter": "Thermoregulation and Osmoregulation",
+        "correct_count": 7,
+        "evidence_count": 13,
+        "id": 1,
+        "last_attempt_id": 2,
+        "last_evidence_at": "2026-08-23T12:31:34",
+        "recovered_at": "2026-08-23T12:31:34",
+        "status": "Recovered",
+        "student_id": 2,
+        "subject": "Biology",
+        "topic": ""
+      }
+    },
+    "recovery_selector": {
+      "focus": {
+        "accuracy": 40.0,
+        "answered": 10,
+        "name": "Negative feedback reduces system activity",
+        "type": "learning_outcome"
+      },
+      "pass": true,
+      "selected_count": 8
+    },
+    "scoremax_db_integrity": {
+      "foreign_key_violations": 0,
+      "integrity": "ok",
+      "pass": true
+    },
+    "scoremax_to_power_house_dispatch": {
+      "dispatch1": {
+        "attempted": 1,
+        "dead_letter": 0,
+        "delivered": 1,
+        "not_configured": 1,
+        "quarantined": 0,
+        "retrying": 0
+      },
+      "dispatch2": {
+        "attempted": 1,
+        "dead_letter": 0,
+        "delivered": 1,
+        "not_configured": 1,
+        "quarantined": 0,
+        "retrying": 0
+      },
+      "outbox_final_status": "DELIVERED",
+      "pass": true,
+      "receipt1": {
+        "accepted_schema_version": "1.0.0",
+        "contract_name": "SM_PH_DELIVERY_EVIDENCE_V1",
+        "duplicate_of_receipt_id": null,
+        "errors": [],
+        "message_id": "msg::SM_PH_DELIVERY_EVIDENCE_V1::a3de5637146537df866c9c2a988b",
+        "payload_checksum_sha256": "d9aaf22a412e217b022d1f5b108d91d7aeae730f9134b22e46ca62b81f348723",
+        "receipt_id": "PH-INTREC-E1C7FB390CE14DA8B4F6",
+        "received_at": "2026-08-23T12:31:35Z",
+        "receiver_system": "POWER_HOUSE",
+        "status": "ACCEPTED"
+      },
+      "receipt2": {
+        "accepted_schema_version": "1.0.0",
+        "contract_name": "SM_PH_DELIVERY_EVIDENCE_V1",
+        "duplicate_of_receipt_id": null,
+        "errors": [],
+        "message_id": "msg::SM_PH_DELIVERY_EVIDENCE_V1::a3de5637146537df866c9c2a988b",
+        "payload_checksum_sha256": "d9aaf22a412e217b022d1f5b108d91d7aeae730f9134b22e46ca62b81f348723",
+        "receipt_id": "PH-INTREC-E1C7FB390CE14DA8B4F6",
+        "received_at": "2026-08-23T12:31:35Z",
+        "receiver_system": "POWER_HOUSE",
+        "status": "ACCEPTED"
+      },
+      "same_durable_receipt_on_replay": true
+    },
+    "weak_area_created": {
+      "attempt_id": 1,
+      "pass": true,
+      "recall": {
+        "area_name": "Negative feedback reduces system activity",
+        "chapter": "Thermoregulation and Osmoregulation",
+        "concept_key": "Negative feedback reduces system activity",
+        "id": 1,
+        "interval_days": 3,
+        "last_attempt_at": "2026-08-23T12:31:34",
+        "last_score": 40.0,
+        "next_due_date": "2026-08-26",
+        "status": "repair_first",
+        "student_id": 2,
+        "subject": "Biology",
+        "successful_recalls": 0,
+        "topic": "",
+        "updated_at": "2026-08-23 12:31:34"
+      },
+      "score": 40.0,
+      "state": {
+        "accuracy": 40.0,
+        "area_key": "Negative feedback reduces system activity",
+        "area_name": "Negative feedback reduces system activity",
+        "chapter": "Thermoregulation and Osmoregulation",
+        "correct_count": 4,
+        "evidence_count": 10,
+        "id": 1,
+        "last_attempt_id": 1,
+        "last_evidence_at": "2026-08-23T12:31:34",
+        "recovered_at": "",
+        "status": "Weak Area",
+        "student_id": 2,
+        "subject": "Biology",
+        "topic": ""
+      }
+    }
+  },
+  "confirmed_total": 2,
+  "findings": [
+    {
+      "evidence": {
+        "reconfirmation": [
+          {
+            "actual": {
+              "correct": 10,
+              "n": 10
+            },
+            "delivered_count": 10,
+            "emitted_reconfirmation_attempts": 0,
+            "emitted_reconfirmation_successes": 0,
+            "question_id": "BIO12-CH13-B03-104",
+            "qvid": "QV::BIO12-CH13-B03-104::v1",
+            "sample_suppressed": false
+          },
+          {
+            "actual": {
+              "correct": 10,
+              "n": 10
+            },
+            "delivered_count": 10,
+            "emitted_reconfirmation_attempts": 0,
+            "emitted_reconfirmation_successes": 0,
+            "question_id": "BIO12-CH13-B04-036",
+            "qvid": "QV::BIO12-CH13-B04-036::v1",
+            "sample_suppressed": false
+          },
+          {
+            "actual": {
+              "correct": 10,
+              "n": 10
+            },
+            "delivered_count": 10,
+            "emitted_reconfirmation_attempts": 0,
+            "emitted_reconfirmation_successes": 0,
+            "question_id": "BIO12-CH13-B05-048",
+            "qvid": "QV::BIO12-CH13-B05-048::v1",
+            "sample_suppressed": false
+          }
+        ],
+        "recovery": [
+          {
+            "actual": {
+              "correct": 10,
+              "n": 10
+            },
+            "delivered_count": 10,
+            "emitted_recovery_attempts": 0,
+            "emitted_recovery_successes": 0,
+            "question_id": "BIO12-CH13-B01-147",
+            "qvid": "QV::BIO12-CH13-B01-147::v1",
+            "sample_suppressed": false
+          },
+          {
+            "actual": {
+              "correct": 10,
+              "n": 10
+            },
+            "delivered_count": 10,
+            "emitted_recovery_attempts": 0,
+            "emitted_recovery_successes": 0,
+            "question_id": "BIO12-CH13-B02-104",
+            "qvid": "QV::BIO12-CH13-B02-104::v1",
+            "sample_suppressed": false
+          },
+          {
+            "actual": {
+              "correct": 10,
+              "n": 10
+            },
+            "delivered_count": 10,
+            "emitted_recovery_attempts": 0,
+            "emitted_recovery_successes": 0,
+            "question_id": "BIO12-CH13-B03-065",
+            "qvid": "QV::BIO12-CH13-B03-065::v1",
+            "sample_suppressed": false
+          }
+        ]
+      },
+      "id": "INT-PHSM-B01-LRN-P1-001",
+      "impact": "Power House receives materially false advisory recovery/reconfirmation telemetry even though learner-state transitions are correct.",
+      "owner": "SCOREMAX",
+      "severity": "P1",
+      "title": "SM_PH_DELIVERY_EVIDENCE_V1 hard-codes recovery/reconfirmation counters to zero despite unsuppressed immutable attempt evidence"
+    },
+    {
+      "evidence": {
+        "after_recovery": {
+          "accuracy": 53.8,
+          "area_key": "Negative feedback reduces system activity",
+          "area_name": "Negative feedback reduces system activity",
+          "chapter": "Thermoregulation and Osmoregulation",
+          "correct_count": 7,
+          "evidence_count": 13,
+          "id": 1,
+          "last_attempt_id": 2,
+          "last_evidence_at": "2026-08-23T12:31:34",
+          "recovered_at": "2026-08-23T12:31:34",
+          "status": "Recovered",
+          "student_id": 2,
+          "subject": "Biology",
+          "topic": ""
+        },
+        "after_successful_recall": {
+          "accuracy": 62.5,
+          "area_key": "Negative feedback reduces system activity",
+          "area_name": "Negative feedback reduces system activity",
+          "chapter": "Thermoregulation and Osmoregulation",
+          "correct_count": 10,
+          "evidence_count": 16,
+          "id": 1,
+          "last_attempt_id": 3,
+          "last_evidence_at": "2026-08-23T12:31:34",
+          "recovered_at": "",
+          "status": "Weak Area",
+          "student_id": 2,
+          "subject": "Biology",
+          "topic": ""
+        },
+        "before_recovery": {
+          "accuracy": 40.0,
+          "area_key": "Negative feedback reduces system activity",
+          "area_name": "Negative feedback reduces system activity",
+          "chapter": "Thermoregulation and Osmoregulation",
+          "correct_count": 4,
+          "evidence_count": 10,
+          "id": 1,
+          "last_attempt_id": 1,
+          "last_evidence_at": "2026-08-23T12:31:34",
+          "recovered_at": "",
+          "status": "Weak Area",
+          "student_id": 2,
+          "subject": "Biology",
+          "topic": ""
+        },
+        "recall_schedule_after_successful_recall": {
+          "area_name": "Negative feedback reduces system activity",
+          "chapter": "Thermoregulation and Osmoregulation",
+          "concept_key": "Negative feedback reduces system activity",
+          "id": 1,
+          "interval_days": 21,
+          "last_attempt_at": "2026-08-23T12:31:34",
+          "last_score": 100.0,
+          "next_due_date": "2026-09-13",
+          "status": "scheduled",
+          "student_id": 2,
+          "subject": "Biology",
+          "successful_recalls": 2,
+          "topic": "",
+          "updated_at": "2026-08-23 12:31:34"
+        }
+      },
+      "id": "INT-PHSM-B01-LRN-P1-002",
+      "impact": "A learner who successfully recovers and then successfully reconfirms the same area is incorrectly shown as a Weak Area again, contradicting the recovery/reconfirmation journey.",
+      "owner": "SCOREMAX",
+      "severity": "P1",
+      "title": "Successful recall/reconfirmation reopens an already Recovered weak area"
+    }
+  ],
+  "learner_chain_core_pass": false,
+  "overall": "RECTIFICATION_REQUIRED",
+  "ph_source_db_sha256": "bd780ed0cb1cd9786081bf27ed9b1d2b26693728425815a7a43ee9c73e54024a",
+  "primary_student_id": 2,
+  "question_sets": {
+    "reconfirmation": [
+      251,
+      256,
+      260
+    ],
+    "reconfirmation_ph": [
+      "BIO12-CH13-B03-104",
+      "BIO12-CH13-B04-036",
+      "BIO12-CH13-B05-048"
+    ],
+    "recovery": [
+      247,
+      248,
+      250
+    ],
+    "recovery_ph": [
+      "BIO12-CH13-B01-147",
+      "BIO12-CH13-B02-104",
+      "BIO12-CH13-B03-065"
+    ],
+    "weak_base": [
+      245,
+      246,
+      249,
+      252,
+      253,
+      254,
+      255,
+      257,
+      258,
+      259
+    ],
+    "weak_base_ph": [
+      "BIO12-CH13-B01-012",
+      "BIO12-CH13-B01-099",
+      "BIO12-CH13-B03-004",
+      "BIO12-CH13-B03-126",
+      "BIO12-CH13-B03-193",
+      "BIO12-CH13-B04-034",
+      "BIO12-CH13-B04-035",
+      "BIO12-CH13-B05-045",
+      "BIO12-CH13-B05-046",
+      "BIO12-CH13-B05-047"
+    ]
+  },
+  "scope": {
+    "chapter": "Thermoregulation and Osmoregulation",
+    "ph_chapter_id": "PH-SRCCH-CEBFB75F0E80D42F0DD7",
+    "ph_market_id": "Pakistan",
+    "ph_programme_id": "FSc",
+    "ph_subject_id": "Biology",
+    "programme": "FSc",
+    "subject": "Biology"
+  },
+  "scoremax_build": "6.5.7",
+  "scoremax_code_release": "6.5.7",
+  "source_db_sha256": "be9f449bee9263dfa81610a4fb53c9d1e1328fda28b587828d3974a20587d23b",
+  "support_students": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "work_db_sha256": {
+    "power_house": "ddb02cd9cbce9e1806950d35b81e215695fca7897ca621f1f1ad0a7e288fc834",
+    "scoremax": "14512ae1c52d43c885a44af6182ac65ee94a0e6beb7b453304f5e8f3d3a2d43f"
+  }
+}

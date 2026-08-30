@@ -1,0 +1,104 @@
+{% extends "base.html" %}{% block title %}Home · ScoreMax{% endblock %}{% block content %}
+<section class="student-home-v2">
+  <header class="home-identity-hero">
+    <div class="home-greeting-block">
+      <p class="eyebrow">{{active_programme_label_global or 'MY SCOREMAX'}} · MY SCOREMAX</p>
+      <h1>Hi {{session.full_name.split(' ')[0] if session.full_name else 'there'}}.</h1>
+      {% if mastery_hero.established %}
+        <p class="home-encouragement">Keep building. Consistency turns progress into performance.</p>
+      {% else %}
+        <p class="home-encouragement">Every strong score starts with knowing where you are.</p>
+      {% endif %}
+      <div class="home-greeting-actions"><a href="{{url_for('student_profile')}}">My targets</a><span>•</span><a href="{{url_for('student_analytics_page')}}">My progress</a></div>
+    </div>
+
+    <article class="mastery-hero-card {{'established' if mastery_hero.established else 'starting'}}">
+      <div class="mastery-hero-top"><div><p class="eyebrow">YOUR MASTERY</p><h2>{{mastery_hero.current_level if mastery_hero.established else 'Starting point'}}</h2></div><span class="mastery-status-pill">{{mastery_hero.status}}</span></div>
+      {% set levels=['Foundation','Exam Ready','Advanced','Distinction'] %}
+      <div class="mastery-ladder" aria-label="Chapter mastery journey">
+        {% for level in levels %}
+          {% set reached=mastery_hero.established and (levels.index(level) <= levels.index(mastery_hero.current_level) if mastery_hero.current_level in levels else false) %}
+          <div class="mastery-step {{'reached' if reached else ''}} {{'current' if mastery_hero.current_level==level else ''}}"><i></i><span>{{level}}</span></div>
+        {% endfor %}
+      </div>
+      {% if mastery_hero.established %}
+        <p>{{mastery_hero.message}}</p><div class="mastery-next"><span>Next target</span><strong>{{mastery_hero.next_level}}</strong></div><a class="text-link" href="{{url_for('student_analytics_page')}}">View my mastery →</a>
+      {% else %}
+        <p>{{mastery_hero.message}}</p><a class="btn mastery-start" href="{{url_for('test_setup')}}">Find my starting point</a>
+      {% endif %}
+    </article>
+  </header>
+
+  <section class="home-priority-grid">
+    <article class="today-focus-card">
+      <p class="eyebrow">TODAY'S FOCUS</p>
+      {% if active_assessment %}
+        <h2>Finish your saved test</h2><p>Your answers are waiting. Pick up exactly where you left off.</p><a class="btn big-focus" href="{{url_for('take_test_v4',assessment_id=active_assessment.id)}}">Continue test</a>
+      {% elif study_plan and study_plan.next_item %}
+        <h2>{{study_plan.next_item.title}}</h2><p>{{study_plan.next_item.source_reason or 'This is the next useful step in your plan.'}}</p><a class="btn big-focus" href="{{url_for('study_plan_page')}}">Continue my plan</a>
+      {% elif weakest %}
+        <h2>Improve {{weakest.area}}</h2><p>{{weakest.subject}} is your clearest current opportunity.</p><a class="btn big-focus" href="{{url_for('weak_areas_page')}}">Improve this area</a>
+      {% else %}
+        <h2>Find your starting point</h2><p>Complete a short diagnostic so ScoreMax can understand what you know and what will help you most.</p><a class="btn big-focus" href="{{url_for('test_setup')}}">Start my diagnostic</a>
+      {% endif %}
+      {% if daily_focus and daily_focus.days is not none %}<div class="focus-countdown"><strong>{{daily_focus.days}}</strong><span>days to {{daily_focus.target or 'your exam'}}</span></div>{% endif %}
+    </article>
+
+    <article class="home-progress-card">
+      <div class="section-heading-row"><div><p class="eyebrow">YOUR MOMENTUM</p><h2>{% if n %}Keep moving forward{% else %}Your journey starts here{% endif %}</h2></div><a href="{{url_for('student_analytics_page')}}">View progress →</a></div>
+      {% if n %}
+        <div class="home-progress-stats">
+          <div><strong>{{average|round(0)|int}}%</strong><span>average score</span></div>
+          <div><strong>{{n}}</strong><span>tests completed</span></div>
+          <div><strong>{{formal_mastery_count}}</strong><span>mastery areas</span></div>
+        </div>
+        {% if overall_journey %}<div class="simple-progress-track"><span style="width:{{overall_journey.progress}}%"></span></div><p class="muted small">Keep building towards {{overall_journey.next_level}}.</p>{% endif %}
+      {% else %}
+        <div class="starting-journey" aria-label="Your ScoreMax journey"><span class="active">Starting Point</span><i>→</i><span>Build Mastery</span><i>→</i><span>Exam Ready</span></div>
+        <p class="muted">Complete your first diagnostic and this space will start showing your real progress.</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="home-section">
+    <div class="section-heading-row"><div><p class="eyebrow">MY SUBJECTS</p><h2>Pick up where you want to work.</h2></div><a href="{{url_for('subject_browser')}}">All subjects →</a></div>
+    <div class="home-subject-grid">
+      {% for s in subject_map[:8] %}
+      <a class="home-subject-card {{'locked' if s.access_state=='LOCKED' else ''}}" href="{{url_for('access_account',locked_subject=s.subject) if s.access_state=='LOCKED' else url_for('subject_detail',subject=s.subject)}}">
+        <div><span class="status-dot status-{{s.status|lower|replace(' ','-')}}"></span><strong>{{s.subject}}</strong></div>
+        <b>{% if s.access_state=='LOCKED' %}Upgrade{% elif s.answered %}{{s.accuracy|round(0)|int}}%{% elif s.availability=='COMING_SOON' %}Soon{% else %}Start{% endif %}</b>
+        <small>{% if s.answered %}{{s.answered}} answers{% else %}{{s.available_questions}} questions available{% endif %}</small>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-two-column">
+    <article class="card home-coming-up">
+      <div class="section-heading-row"><div><p class="eyebrow">COMING UP</p><h2>Stay ahead.</h2></div><a href="{{url_for('study_plan_page')}}">My Plan →</a></div>
+      {% if recall_due %}{% for r in recall_due[:2] %}<div class="learner-action-row"><div><strong>Recall check</strong><small>{{r.area_name or r.concept_key}}</small></div><span>{{r.next_due_date}}</span></div>{% endfor %}{% endif %}
+      {% if misconceptions %}<div class="learner-action-row"><div><strong>Fix a repeated mistake</strong><small>{{misconceptions[0].area_name or misconceptions[0].misconception_key}}</small></div><a href="{{url_for('weak_areas_page')}}">Improve →</a></div>{% endif %}
+      {% if assignments %}{% for a in assignments[:2] %}<div class="learner-action-row"><div><strong>{{a.title}}</strong><small>{{a.teacher_name}}{% if a.due_at %} · due {{a.due_at}}{% endif %}</small></div><form method="post" action="{{url_for('start_assignment',assignment_id=a.id)}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><button class="text-button">{{'Continue' if a.student_status=='in_progress' else 'Start'}} →</button></form></div>{% endfor %}{% endif %}
+      {% if exam_countdowns %}{% for x in exam_countdowns[:2] %}<div class="learner-action-row"><div><strong>{{x.exam_name or x.subject}}</strong><small>{{x.exam_date}}</small></div><span>{{x.days}} days</span></div>{% endfor %}{% endif %}
+      {% if not recall_due and not misconceptions and not assignments and not exam_countdowns %}<p class="muted">Nothing urgent right now. Start a practice and ScoreMax will build your priorities.</p>{% endif %}
+    </article>
+
+    <article class="card home-quick-actions">
+      <p class="eyebrow">QUICK START</p><h2>What do you want to do?</h2>
+      <div class="home-action-list"><a href="{{url_for('test_setup')}}"><strong>Quick practice</strong><span>ScoreMax chooses a useful set.</span></a><a href="{{url_for('weak_areas_page')}}"><strong>Improve weak areas</strong><span>Work on what is costing you marks.</span></a><a href="{{url_for('exam_centre')}}"><strong>Exam practice</strong><span>Mocks, papers and exam preparation.</span></a><a href="{{url_for('student_analytics_page')}}"><strong>See my progress</strong><span>Subjects, mastery and next actions.</span></a></div>
+    </article>
+  </section>
+
+  {% if daily_spark and daily_spark.available %}
+  <section class="daily-spark card home-daily-spark" id="daily-spark" data-tab-set>
+    <div class="section-heading-row"><div><p class="eyebrow">DAILY SPARK</p><h2>Two minutes for something useful.</h2><p class="muted">A quick recall or vocabulary boost. It is never used as proof of formal mastery.</p></div><span class="spark-date">{{daily_spark.date}}</span></div>
+    <div class="spark-tabs app-tab-list" role="tablist">{% if daily_spark.academic %}<button data-tab-button="academic">Academic</button>{% endif %}{% if daily_spark.word %}<button data-tab-button="word">Word of the day</button>{% endif %}</div>
+    {% if daily_spark.academic %}{% set spark=daily_spark.academic %}{% set q=spark.payload %}<div data-tab-panel="academic" class="spark-panel"><div class="spark-context"><span>{{q.subject}}</span>{% if q.chapter %}<span>{{q.chapter}}</span>{% endif %}</div><h3>{{q.prompt}}</h3>{% if spark.answer_event %}<div class="spark-result {{'correct' if spark.answer_event.event_type=='ANSWER_CORRECT' else 'incorrect'}}"><strong>{{'Correct' if spark.answer_event.event_type=='ANSWER_CORRECT' else 'Not quite'}}</strong><p>{{q.explanation or 'Open the subject if you want to explore this idea.'}}</p></div>{% else %}<form method="post" action="{{url_for('student_daily_spark_action')}}" class="spark-answer-form"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="assignment_id" value="{{spark.id}}"><input type="hidden" name="action" value="ANSWER">{% if q.options %}<div class="spark-options">{% for option in q.options %}<label><input type="radio" name="selected_answer" value="{{option.value}}" required><span><b>{{option.value}}</b> {{option.label}}</span></label>{% endfor %}</div>{% else %}<label>Your answer<input name="selected_answer" required></label>{% endif %}<button class="btn small">Answer</button></form>{% endif %}</div>{% endif %}
+    {% if daily_spark.word %}{% set spark=daily_spark.word %}{% set w=spark.payload %}<div data-tab-panel="word" class="spark-panel" hidden><div class="word-spark-word"><span>WORD OF THE DAY</span><h3>{{w.word}}</h3>{% if w.pronunciation %}<p>{{w.pronunciation}}</p>{% endif %}</div>{% if spark.revealed %}<div class="word-reveal"><p class="word-definition">{{w.definition}}</p><blockquote>{{w.example_sentence}}</blockquote>{% if w.exam_application %}<p><strong>Use it:</strong> {{w.exam_application}}</p>{% endif %}</div>{% else %}<p>Build your vocabulary one useful word at a time.</p><form method="post" action="{{url_for('student_daily_spark_action')}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="assignment_id" value="{{spark.id}}"><button class="btn small" name="action" value="REVEAL">Reveal meaning</button></form>{% endif %}</div>{% endif %}
+  </section>
+  {% endif %}
+
+  {% if attempts %}<details class="card home-history"><summary><strong>Recent activity</strong><span>See your latest test results</span></summary>{% for a in attempts[:5] %}<div class="learner-action-row"><span>{{a.subject or a.scope}}</span><strong>{{a.score}}%</strong></div>{% endfor %}</details>{% endif %}
+  {% if demo_question_count %}<details class="pilot-disclosure"><summary>Internal test information</summary><p>{{demo_question_count}} demo questions are available for software testing. Demo evidence cannot award production mastery.</p><form method="post" action="{{url_for('load_demo_progress')}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><button class="btn alt small">Load demo progress</button></form></details>{% endif %}
+</section>
+{% endblock %}

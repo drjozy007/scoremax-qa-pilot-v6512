@@ -1,0 +1,2 @@
+web: gunicorn scoremax_production:application --workers 1 --threads 8 --timeout 120 --access-logfile - --error-logfile -
+worker: python scoremax_integration_dispatch_v1.py --worker --evidence --strict-preflight --limit 100

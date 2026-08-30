@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "status": "FROZEN_FOR_IMPLEMENTATION",
+  "decision": "Extend existing Power House Dashboard/Activity Status, ScoreMax operations/admin health, and Growth /system/health. Do not create a fourth dashboard.",
+  "per_direction_fields": [
+    "direction",
+    "contract",
+    "connection_state",
+    "last_success_at",
+    "last_received_at",
+    "last_dispatched_at",
+    "queued_count",
+    "retrying_count",
+    "dead_letter_count",
+    "quarantined_count",
+    "oldest_queued_at",
+    "last_error_code",
+    "last_error_at",
+    "local_schema_version",
+    "peer_schema_version",
+    "peer_version",
+    "credential_expiry_warning",
+    "clock_skew_warning"
+  ],
+  "states": {
+    "HEALTHY": "Last success within contract-specific threshold; no dead letters/quarantine; schema compatible.",
+    "DELAYED": "Queue age or retry count exceeds warning threshold but originating platform remains safe.",
+    "FAILED": "Dead-letter, persistent auth/schema failure, checksum conflict or unavailable peer beyond critical threshold.",
+    "NOT_CONFIGURED": "Credentials/endpoint intentionally absent in a non-integrated environment."
+  },
+  "operator_actions": [
+    "View receipt/attempt history",
+    "Retry selected dead-letter using original identity",
+    "Quarantine/unquarantine after governed resolution",
+    "Download redacted diagnostic bundle",
+    "Disable one contract direction without disabling originating product transactions"
+  ],
+  "access": "Admin/operator only; no student/reviewer exposure."
+}

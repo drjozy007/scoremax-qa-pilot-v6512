@@ -1,0 +1,91 @@
+{% extends 'base.html' %}{% block content %}
+<div class="card result-hero">
+  <p class="eyebrow">TEST COMPLETE</p>
+  <div class="score">{{a.score}}%</div>
+  <h2>{{a.correct_count}} / {{a.total_count}} correct</h2>
+  <p class="muted">Your result is a starting point. Use it to decide what to improve next.</p>
+<div class="result-help-actions"><a href="{{url_for('pilot_report_issue',attempt_id=a.id,source='assessment_result',page=request.path)}}">Report a problem with this result</a></div>
+</div>
+
+{% if blueprint_result or a.blueprint_source_id %}
+<details class="card result-details assessment-technical-details">
+  <summary><strong>Assessment details</strong><span>Exam structure and version information</span></summary>
+  {% if blueprint_result %}<div><h3>{{blueprint_result.relation.label}}</h3><p>{{blueprint_result.relation.description}}</p>{% if blueprint_result.breakdown %}<div class="table-wrap"><table><tr><th>Subject</th><th>Your result</th><th>Accuracy</th><th>Exam structure</th></tr>{% for row in blueprint_result.breakdown %}<tr><td>{{row.subject}}</td><td>{{row.correct}} / {{row.attempted_questions}}</td><td>{{row.accuracy|round(1)}}%</td><td>{% if row.official_questions is not none %}{{row.official_questions}} questions · {{row.weight_percent|round(1)}}%{% else %}Local scope{% endif %}</td></tr>{% endfor %}</table></div>{% endif %}</div>{% endif %}
+  {% if a.blueprint_source_id %}<p class="muted">This result is retained against the exam rules used when you took it. Reference: {{a.blueprint_source_id}} v{{a.blueprint_version}} · framework {{a.framework_version}} · assembly {{a.assembly_policy_version or 'baseline'}}.</p>{% endif %}
+</details>
+{% endif %}
+
+{% if weak_capsules %}
+<div class="card improve-now-card">
+  <p class="eyebrow">NEED HELP BEFORE YOU TRY AGAIN?</p>
+  <h2>Learn the weak areas in a few minutes.</h2>
+  <p class="muted">These short ScoreMax guides explain concepts you missed in this test. No long lecture — just the help you need.</p>
+  <div class="capsule-grid">
+  {% for cap in weak_capsules %}
+    <a class="capsule-card" href="{{url_for('learning_capsule',capsule_id=cap.capsule_id)}}">
+      <span>{{cap.subject}}</span><strong>{{cap.concept}}</strong><small>Explain it simply →</small>
+    </a>
+  {% endfor %}
+  </div>
+  <a class="btn" href="{{url_for('weak_areas_page')}}">Practise My Weak Areas</a>
+</div>
+{% endif %}
+
+{% if advanced_allowed %}
+<div class="card recommendation-card">
+  <p class="eyebrow">WHAT SHOULD I DO NEXT?</p>
+  <h2>{{diagnostic.next_action.title}}</h2>
+  <p>{{diagnostic.next_action.reason}}</p>
+  {% if diagnostic.next_action.kind=='recovery' %}
+  <form method="post" action="{{url_for('start_recovery',aid=a.id)}}" style="display:inline">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<button class="btn" type="submit">Practise This Weak Area</button></form>
+  {% endif %}
+  <a class="btn alt" href="{{url_for('test_setup')}}">Start Another Test</a>
+</div>
+
+{% if diagnostic.recovery_comparison %}
+<div class="card">
+  <p class="eyebrow">DID YOU IMPROVE?</p><h2>{{diagnostic.recovery_comparison.focus}}</h2>
+  <div class="grid3">
+    <div class="metric"><span>Before</span><strong>{{diagnostic.recovery_comparison.before}}%</strong></div>
+    <div class="metric"><span>Now</span><strong>{{diagnostic.recovery_comparison.after}}%</strong></div>
+    <div class="metric"><span>Change</span><strong>{% if diagnostic.recovery_comparison.change>0 %}+{% endif %}{{diagnostic.recovery_comparison.change}} pts</strong></div>
+  </div>
+  {% if diagnostic.recovery_comparison.recovered %}<p><strong>Great — this area has improved enough to clear the current target.</strong></p>{% else %}<p>This area still needs more practice. Try again when you're ready.</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="grid3">
+  <div class="metric"><span>Your strongest area</span><strong>{{diagnostic.strong.name if diagnostic.strong else 'More tests needed'}}</strong></div>
+  <div class="metric"><span>Needs the most work</span><strong>{{diagnostic.weak.name if diagnostic.weak else 'No clear weak area'}}</strong></div>
+  <div class="metric"><span>Confident mistakes <span class="info-dot" data-tip="Questions you answered with confidence but got wrong. These can point to a misunderstanding.">i</span></span><strong>{{diagnostic.confidence.confident_wrong}}</strong></div>
+</div>
+
+<details class="card result-details">
+  <summary><strong>See detailed results</strong><span>Topics, learning areas and question difficulty</span></summary>
+  <h3>By topic</h3>
+  {% if diagnostic.by_topic %}<div class="table-wrap"><table><tr><th>Area</th><th>Questions</th><th>Score</th><th>Status</th></tr>{% for r in diagnostic.by_topic %}<tr><td>{{r.name}}</td><td>{{r.answered}}</td><td>{{r.accuracy}}%</td><td>{{r.status}}</td></tr>{% endfor %}</table></div>{% endif %}
+  <h3>By learning area</h3>
+  {% if diagnostic.by_lo %}<div class="table-wrap"><table><tr><th>Learning area</th><th>Questions</th><th>Score</th></tr>{% for r in diagnostic.by_lo %}<tr><td>{{r.name}}</td><td>{{r.answered}}</td><td>{{r.accuracy}}%</td></tr>{% endfor %}</table></div>{% endif %}
+  <h3>By challenge level</h3>
+  {% if diagnostic.by_difficulty %}<div class="table-wrap"><table><tr><th>Level</th><th>Questions</th><th>Score</th></tr>{% for r in diagnostic.by_difficulty %}<tr><td>{{r.name}}</td><td>{{r.answered}}</td><td>{{r.accuracy}}%</td></tr>{% endfor %}</table></div>{% endif %}
+</details>
+{% else %}
+<div class="card premium-lock-card">
+  <p class="eyebrow">GO FURTHER WITH HIGHER ACCESS</p><h2>See exactly what is holding you back.</h2>
+  <p class="muted">Higher Access unlocks more content and assessment opportunities. Advanced, Distinction, Expert and Elite still have to be earned through evidence.</p>
+  <a class="btn" href="{{url_for('access_account')}}">Compare Access</a><a class="btn alt" href="{{url_for('test_setup')}}">Start Another Test</a>
+</div>
+{% endif %}
+
+<div class="card"><h3>Check your answers</h3>
+{% for d in details %}
+<div class="answer-review {{'correct-answer' if d.is_correct else 'wrong-answer'}}">
+  <strong>{{loop.index}}. {{d.question}}</strong>
+  <p>{{'Correct ✓' if d.is_correct else 'Not quite'}} • Your answer: {{d.selected_answer or 'No answer'}}{% if not d.is_correct %} • Correct answer: {{d.answer}}{% endif %}</p>
+  {% if d.explanation %}<p class="muted">{{d.explanation}}</p>{% endif %}
+<a class="question-report-link" href="{{url_for('pilot_report_issue',question_id=d.question_db_id,attempt_id=a.id,source='result_answer_review',page=request.path)}}">⚑ Report this question</a>
+</div>
+{% endfor %}
+</div>
+<div class="sticky-action-bar"><a class="btn alt" href="{{url_for('student_dashboard')}}">Home</a><a class="btn" href="{{url_for('weak_areas_page')}}">Improve Weak Areas</a></div>
+{% endblock %}

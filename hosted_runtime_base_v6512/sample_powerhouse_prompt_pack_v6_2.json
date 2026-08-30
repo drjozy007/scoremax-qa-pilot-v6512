@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "prompt_pack_id": "PH-PP-FSC-BIO-CH01-001",
+  "prompt_pack_version": "1",
+  "status": "APPROVED_FOR_MANUAL_GENERATION",
+  "source_system": "Power House",
+  "framework": "FSc",
+  "framework_version": "2026",
+  "subject": "Biology",
+  "chapter": "Chapter 1 — Cell Structure and Function",
+  "learning_outcome_ids": [
+    "PH-LO-BIO-CH01-001",
+    "PH-LO-BIO-CH01-002"
+  ],
+  "source_evidence_ids": [
+    "PH-SRC-SYL-FSC-BIO-2026",
+    "PH-SRC-TEXT-BIO-CH01"
+  ],
+  "prompt_text": "You are producing candidate assessment content for the governed ScoreMax Power House workflow. Generate a structured JSON question batch for FSc Biology Part I, Chapter 1 — Cell Structure and Function. Preserve the supplied learning-outcome IDs and source-evidence IDs. Every item must include a unique candidate question_id, family_id, variant, question type, mastery level, separate difficulty, cognitive demand, command word, question text, options where applicable, correct answer, concise explanation, misconception tags, prerequisite tags, assessment purpose, family construct and invariants. Do not claim academic approval. Do not invent sources. Return JSON only using the expected output contract. Candidate output will be imported back into Power House for deterministic validation, independent review and academic approval before any ScoreMax delivery.",
+  "expected_output_schema": {
+    "prompt_pack_id": "string",
+    "prompt_pack_version": "string",
+    "questions": [
+      {
+        "question_id": "string",
+        "family_id": "string",
+        "variant": "string",
+        "question_type": "string",
+        "mastery_level": "string",
+        "difficulty": "string",
+        "cognitive_demand": "string",
+        "command_word": "string",
+        "question": "string",
+        "options": "array",
+        "answer": "string",
+        "explanation": "string",
+        "learning_outcome_ids": "array",
+        "source_evidence_ids": "array",
+        "misconception_tags": "array",
+        "prerequisite_tags": "array",
+        "assessment_purpose": "array",
+        "family_construct": "string",
+        "family_invariants": "array"
+      }
+    ]
+  },
+  "created_at": "2026-07-30T09:00:00+01:00",
+  "approved_by": "Power House academic governance sample",
+  "checksum": "2bfc785da7f2fdaca2d1a05fec51e203bba640ad9cac03599c2184db236d76c3"
+}

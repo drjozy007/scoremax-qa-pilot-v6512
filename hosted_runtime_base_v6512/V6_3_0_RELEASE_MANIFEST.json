@@ -1,0 +1,47 @@
+{
+  "release": "ScoreMax V6.3.0",
+  "release_name": "Internal Live Functionality Candidate",
+  "release_date": "2026-08-17",
+  "status": "FUNCTIONALITY_CANDIDATE_FOR_INTERNAL_TESTING_NOT_PUBLIC_LIVE",
+  "parent": {
+    "package": "ScoreMax_V6_2_8_1_Power_House_V3_Import_Compatibility.zip",
+    "sha256": "c7ac74df423f2edb536c8a34b71e672c4d726f7b34ab742e37a081432afe47a2",
+    "immutability_rule": "Parent package remains untouched; V6.3.0 is a separate descendant with a fresh database."
+  },
+  "architecture": {
+    "universal_mastery_architecture": "0.8",
+    "governance_reference": "1.2",
+    "canonical_requirements": 69,
+    "p0_requirements": 39,
+    "runtime_mode": "feature-flagged shadow/pilot; legacy mastery remains authoritative until governed migration"
+  },
+  "forward_system_boundaries": {
+    "academic_review": "Power House",
+    "scoremax": "learner delivery, assessment, evidence, mastery, recovery, Study Plan, progress and exams",
+    "growth_engine": "asynchronous event/outbox consumer; cannot control academic truth or learner mastery"
+  },
+  "acceptance": {
+    "inherited_regression": {"passed": 441, "failed": 0},
+    "v6_3_deterministic": {"passed": 65, "failed": 0},
+    "large_synthetic_simulation": {
+      "learners": 10000,
+      "randomized_invariant_checks": 200000,
+      "detailed_failures": 0,
+      "fuzz_failures": 0,
+      "qa_to_live_leaks": 0,
+      "qa_response_events": 29337,
+      "decision_log_rows": 90228
+    },
+    "compileall": "PASS",
+    "backup_restore": "PASS"
+  },
+  "important_release_guardrails": [
+    "Academic Reviewer Workspace is retained only as historical compatibility code and is hidden from the forward V6.3 workflow.",
+    "Synthetic QA evidence is invalid for real learner mastery.",
+    "Assisted correctness cannot close mastery.",
+    "Dependent variants cannot inflate independent mastery.",
+    "Mandatory Claim Family gates can block or reopen mastery.",
+    "Full-exam execution losses remain separate from content mastery.",
+    "Public cloud deployment, final browser UX acceptance and real learner calibration remain later gates."
+  ]
+}

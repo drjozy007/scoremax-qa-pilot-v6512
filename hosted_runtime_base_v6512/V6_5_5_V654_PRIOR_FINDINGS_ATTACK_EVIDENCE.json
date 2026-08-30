@@ -1,0 +1,68 @@
+{
+  "P0": 0,
+  "P1": 0,
+  "candidate_release": "6.5.5",
+  "confirmed_total": 0,
+  "findings": [
+    {
+      "confirmed": false,
+      "evidence": {
+        "after_one_new_transient_failure": {
+          "attempt_count": 1,
+          "last_error_code": "TRANSPORT_ERROR",
+          "next_attempt_at": "2026-08-22T20:30:06Z",
+          "status": "RETRY"
+        },
+        "after_requeue": {
+          "attempt_count": 0,
+          "status": "PENDING"
+        },
+        "attempt_rows_after": 7,
+        "dispatch_result": {
+          "attempted": 1,
+          "dead_letter": 0,
+          "delivered": 0,
+          "not_configured": 0,
+          "quarantined": 0,
+          "retrying": 1
+        },
+        "prior_attempt_rows": 6,
+        "retry_profile": [
+          0,
+          60,
+          300,
+          1800,
+          7200,
+          43200
+        ]
+      },
+      "id": "INT-SM653-P1-001",
+      "severity": "P1",
+      "title": "Dead-letter requeue preserves exhausted cycle"
+    },
+    {
+      "confirmed": false,
+      "evidence": {
+        "exception": "ValueError('Integration JSON must contain only standards-compliant finite JSON values')",
+        "invalid_json_persisted": false,
+        "message_id": "",
+        "outbox_count_after": 1,
+        "outbox_count_before": 1
+      },
+      "id": "INT-SM653-P1-002",
+      "severity": "P1",
+      "title": "Non-finite value persisted as non-standard JSON"
+    },
+    {
+      "confirmed": false,
+      "evidence": {
+        "missing_by_contract": {}
+      },
+      "id": "INT-SM653-P1-003",
+      "severity": "P1",
+      "title": "Integration Health omits frozen minimum fields"
+    }
+  ],
+  "foreign_key_violations": 0,
+  "integrity": "ok"
+}

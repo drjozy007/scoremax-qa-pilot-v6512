@@ -1,0 +1,53 @@
+{
+  "candidate": "ScoreMax V6.5.11 Power House Synthetic Learner Qualification Pilot",
+  "date": "2026-08-25",
+  "deterministic_scope": {
+    "eligible": [
+      "single_choice",
+      "true_false",
+      "multiple_select",
+      "single_blank_fill_blank",
+      "numerical_without_relative_tolerance",
+      "supported_existing_wrapper_response_modes"
+    ],
+    "fails_closed": [
+      "matching",
+      "ordering",
+      "constructed_response",
+      "multi_blank_cloze",
+      "relative_tolerance_numerical",
+      "negative_marking",
+      "unknown_or_inactive_renderer"
+    ]
+  },
+  "external_ai_paid_call_made": false,
+  "gates": {
+    "automated_external_semantic_vision": "PENDING_EXPLICIT_OPT_IN_NO_PAID_CALL_MADE",
+    "deterministic_live_marker_parity": "PASSED_20_CORRECT_INCORRECT_CASES",
+    "exact_parent_baseline_identity": "PASSED",
+    "full_flask_login_session_runtime": "PENDING_ENVIRONMENT_DEPENDENCIES",
+    "guarded_real_r2_fixture_stager_reuses_existing_mastery_lab_importer": "PASSED_STATIC_CONTRACT",
+    "live_attempt_mastery_growth_sentinel_isolation": "PASSED",
+    "multi_learner_parallelism": "PENDING_OUT_OF_SCOPE_PILOT",
+    "opaque_id_and_external_version_pin": "PASSED",
+    "production_learner_template_render_level_check": "PASSED",
+    "qa_partition_preservation": "PASSED",
+    "render_live_acceptance": "PENDING_NO_SCOREMAX_RENDER_SERVICE_AVAILABLE",
+    "scale_300_1500": "PENDING_OUT_OF_SCOPE_PILOT",
+    "scoremax_dependency_light_contract": "PASSED_5_OF_5",
+    "visual_evidence_identity_binding": "PASSED",
+    "windows_acceptance": "PENDING"
+  },
+  "growth_engine_modified": false,
+  "real_fixture": {
+    "academic_clearance_conferred": false,
+    "academic_state": "R2_HOLD_PENDING",
+    "external_question_id": "BIO12-CH18-B04-Q220",
+    "external_version": "R2-HOLD-v1.3.5",
+    "learner_release_conferred": false,
+    "qualification_partition": "QA_SANDBOX_ONLY",
+    "render_evidence": "qualification_evidence/REAL_R2_MCq_RENDER_LEVEL_VISUAL_EVIDENCE.png",
+    "render_evidence_sha256": "b03f3c0c72f5511de879fb9b3c4be10069d5481204502f1245587f55ba228636"
+  },
+  "status": "LOCALLY_CONTRACT_TESTED_CANDIDATE_PENDING_RUNTIME_3IN1_ACCEPTANCE"
+}

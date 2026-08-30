@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "status": "FROZEN",
+  "endpoints": [
+    {
+      "platform": "POWER_HOUSE",
+      "method": "GET",
+      "path": "/api/integration/v1/content-releases/{release_id}/{release_version}",
+      "purpose": "Authenticated immutable package download",
+      "contract": "PH_SM_APPROVED_CONTENT_V1"
+    },
+    {
+      "platform": "POWER_HOUSE",
+      "method": "POST",
+      "path": "/api/integration/v1/scoremax/delivery-evidence",
+      "purpose": "Receive aggregate delivery evidence",
+      "contract": "SM_PH_DELIVERY_EVIDENCE_V1"
+    },
+    {
+      "platform": "POWER_HOUSE",
+      "method": "POST",
+      "path": "/api/integration/v1/scoremax/content-requirements",
+      "purpose": "Receive inventory/mastery-gap requests",
+      "contract": "SM_PH_CONTENT_REQUIREMENT_V1"
+    },
+    {
+      "platform": "POWER_HOUSE",
+      "method": "POST",
+      "path": "/api/integration/v1/growth/demand-signals",
+      "purpose": "Receive advisory demand signals",
+      "contract": "GE_PH_DEMAND_SIGNAL_V1"
+    },
+    {
+      "platform": "SCOREMAX",
+      "method": "POST",
+      "path": "/api/integration/v1/power-house/content-releases",
+      "purpose": "Receive release manifest or small inline package",
+      "contract": "PH_SM_APPROVED_CONTENT_V1"
+    },
+    {
+      "platform": "SCOREMAX",
+      "method": "POST",
+      "path": "/api/integration/v1/power-house/assessment-blueprints",
+      "purpose": "Receive blueprint version",
+      "contract": "PH_SM_ASSESSMENT_BLUEPRINT_V1"
+    },
+    {
+      "platform": "GROWTH_ENGINE",
+      "method": "POST",
+      "path": "/api/integration/v1/scoremax/product-events",
+      "purpose": "Receive idempotent product/payment/referral event",
+      "contract": "SM_GE_PRODUCT_EVENT_V1"
+    },
+    {
+      "platform": "GROWTH_ENGINE",
+      "method": "POST",
+      "path": "/api/integration/v1/power-house/academic-catalog",
+      "purpose": "Receive academic catalogue snapshot",
+      "contract": "PH_GE_ACADEMIC_CATALOG_V1"
+    },
+    {
+      "platform": "ALL",
+      "method": "GET",
+      "path": "/api/integration/v1/health",
+      "purpose": "Scoped integration health and queue status",
+      "contract": "OPERATIONAL"
+    }
+  ]
+}

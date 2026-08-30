@@ -1,0 +1,88 @@
+{% extends "base.html" %}{% block content %}
+<section class="card page-intro">
+  <p class="eyebrow">PARENT DASHBOARD</p>
+  <h1>See the journey without watching every click.</h1>
+  <p class="muted">ScoreMax gives parents a simple view of whether the student is following the plan, improving and staying on track for their goal.</p>
+</section>
+
+{% if not students %}
+<section class="card narrow">
+  <h2>Link a student</h2>
+  <p class="muted">Enter the student's ScoreMax email. The parent dashboard is designed for support, not surveillance.</p>
+  <form method="post" action="{{url_for('parent_link_student')}}" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+    <label>Student email<input type="email" name="student_email" required></label>
+    <label>Parent access code<input name="link_code" required placeholder="Ask the student for their private code"></label>
+    <label>Relationship<select name="relationship"><option>Parent</option><option>Guardian</option></select></label>
+    <button class="btn">Link Student</button>
+  </form>
+</section>
+{% endif %}
+
+{% for st in students %}
+<section class="card parent-student-hero">
+  <div class="split">
+    <div><p class="eyebrow">{{st.link.relationship|upper}} VIEW</p><h2>{{st.link.full_name}}</h2><p>{{st.link.academic_level or 'Student'}}{% if st.link.goal_name or st.link.goal_type %} • Goal: <strong>{{st.link.goal_name or st.link.goal_type}}</strong>{% endif %}</p></div>
+    <span class="status-pill {{'good' if st.weekly.status=='On Track' else ('mid' if st.weekly.status=='Slightly Behind' else 'low')}}">{{st.weekly.status}}</span>
+  </div>
+
+  <div class="parent-metric-grid">
+    <div class="visual-metric"><span>Study Plan this week</span><strong>{{st.weekly.completion}}%</strong><div class="visual-bar"><i style="width:{{st.weekly.completion}}%"></i></div></div>
+    <div class="visual-metric"><span>Recent test average</span><strong>{{st.weekly.avg ~ '%' if st.weekly.avg is not none else '—'}}</strong><div class="visual-bar"><i style="width:{{st.weekly.avg or 0}}%"></i></div></div>
+    <div class="visual-metric"><span>Tests this week</span><strong>{{st.weekly.tests}}</strong><small>{{st.weekly.done}} / {{st.weekly.planned}} plan activities done</small></div>
+    <div class="visual-metric"><span>Exam countdown</span><strong>{{st.countdown.days if st.countdown else '—'}}</strong><small>{{st.countdown.name if st.countdown else 'No exam date set'}}</small></div>
+  </div>
+
+  {% if st.blueprint_snapshot %}
+  <div class="parent-plan-summary"><div class="split"><div><p class="eyebrow">{{st.blueprint_snapshot.blueprint.framework_name|upper}} EXAM CONTRIBUTION</p><h3>{{st.blueprint_snapshot.projection.projected_total_low}}–{{st.blueprint_snapshot.projection.projected_total_high}} projected correct answers</h3></div><span class="status-pill">{{st.blueprint_snapshot.projection.confidence}} confidence</span></div><p class="muted">Based on verified ScoreMax evidence under blueprint {{st.blueprint_snapshot.blueprint.powerhouse_blueprint_id}} v{{st.blueprint_snapshot.blueprint.blueprint_version}}.</p>{% for row in st.blueprint_snapshot.projection.subjects %}<div class="subject-visual-row"><span>{{row.subject}} · {{row.weight_percent|round(0)|int}}%</span><div class="subject-track"><i style="width:{{(100*row.projected_correct_mid/row.question_count) if row.question_count else 0}}%"></i></div><strong>{{row.projected_correct_low}}–{{row.projected_correct_high}}/{{row.question_count}}</strong><small>{{row.mastery_status}}</small></div>{% endfor %}</div>
+  {% endif %}
+
+  {% if st.plan %}
+  <div class="parent-plan-summary">
+    <div class="split"><div><p class="eyebrow">{{st.plan.plan.pathway|upper}} PLAN</p><h3>{{st.plan.completion_pct}}% of full plan complete</h3></div><strong>{{st.plan.plan.pace_status or 'Focused'}}</strong></div>
+    <div class="visual-bar large"><i style="width:{{st.plan.completion_pct}}%"></i></div>
+    {% if st.plan.next_item %}<p><strong>Next priority:</strong> {{st.plan.next_item.title}}</p>{% endif %}
+  </div>
+  {% endif %}
+
+
+  {% if st.charts and st.charts.trend %}
+  <div class="parent-chart-grid">
+    <div class="chart-panel">
+      <h3>Recent score trend</h3>
+      <p class="muted">A simple view of whether performance is moving in the right direction.</p>
+      <div class="mini-line-chart" data-chart='{{st.charts.trend|tojson}}' aria-label="{{st.link.full_name}} recent score trend"></div>
+    </div>
+    <div class="chart-panel">
+      <h3>Plan progress</h3>
+      {% if st.charts.plan_weeks %}
+      <div class="weekly-bars">
+        {% for w in st.charts.plan_weeks %}
+        <div class="weekly-bar"><div class="weekly-bar-fill" style="height:{{w.completion}}%"></div><span>{{w.week}}</span><small>{{w.completion}}%</small></div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="muted">Weekly Study Plan progress will appear once a plan is active.</p>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if st.subjects %}
+  <div class="subject-visuals">
+    {% for x in st.subjects %}
+    <div class="subject-visual-row">
+      <span>{{x.subject}}</span>
+      <div class="subject-track"><i style="width:{{x.accuracy}}%"></i></div>
+      <strong>{{x.accuracy|round(0)|int}}%</strong>
+      <small>{{x.mastery}}</small>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="parent-summary-note">
+    <strong>This week's summary</strong>
+    <p>{{st.weekly.summary}}</p>
+    <p><strong>Priority:</strong> {{st.weekly.priorities}}</p>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

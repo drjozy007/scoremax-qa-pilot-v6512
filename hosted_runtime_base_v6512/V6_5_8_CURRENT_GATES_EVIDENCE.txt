@@ -1,0 +1,321 @@
+=== smoke_tests_v6_5_1_rectification.py ===
+PASS: V6.5.3 schema exists: integration_ph_question_version_store
+PASS: V6.5.3 schema exists: integration_ph_release_question_membership
+PASS: V6.5.3 schema exists: integration_source_change_queue
+PASS: release identity is V6.5.3
+PASS: v1 INLINE accepts NOT_REQUIRED and optional generated clearance
+PASS: null effective_at remains staged pending ScoreMax product activation
+PASS: missing stem rejected before release side effect
+PASS: ineligible rights rejected
+PASS: schema 1.1 INLINE accepted
+PASS: sealed MANIFEST_PULL fixture is packaged
+PASS: schema 1.1 MANIFEST_PULL validates archive/manifest/content and stages
+PASS: manifest archive checksum mismatch cannot stage release
+PASS: unchanged question version can be member of later full release
+PASS: opaque PH ID collision never overwrites legacy row
+PASS: v1.1 WITHDRAW removes target from future inventory
+PASS: invalid blueprint rejected by strict schema
+PASS: generated product event strictly validates
+PASS: generated event timestamp normalized to UTC Z
+PASS: matched ACCEPTED receipt alone marks delivery
+PASS: malformed HTTP 202 receipt remains durable retry
+PASS: strict preflight rejects HTTP peers and weak secrets
+PASS: learner request housekeeping has no Growth/requirement history projection
+PASS: database integrity remains OK
+
+SCOREMAX V6.5.3 RECTIFICATION CHECKS PASSED: 23
+Disposable database: /tmp/scoremax_v653_rect_x0hw4w6q/scoremax.db
+=== smoke_tests_v6_5_1_deep.py ===
+PASS: peer QUARANTINED receipt persists quarantined state
+PASS: peer non-retryable REJECTED receipt dead-letters
+PASS: wrong-message ACCEPTED receipt cannot mark delivery
+PASS: 0% pattern base release admitted
+PASS: 0% unchanged successor release admitted
+PASS: 0% unchanged stores only genuinely new immutable versions
+PASS: 0% unchanged preserves both full release memberships
+PASS: 0% unchanged projects exactly the successor snapshot
+PASS: 50% pattern base release admitted
+PASS: 50% unchanged successor release admitted
+PASS: 50% unchanged stores only genuinely new immutable versions
+PASS: 50% unchanged preserves both full release memberships
+PASS: 50% unchanged projects exactly the successor snapshot
+PASS: 90% pattern base release admitted
+PASS: 90% unchanged successor release admitted
+PASS: 90% unchanged stores only genuinely new immutable versions
+PASS: 90% unchanged preserves both full release memberships
+PASS: 90% unchanged projects exactly the successor snapshot
+PASS: 100% pattern base release admitted
+PASS: 100% unchanged successor release admitted
+PASS: 100% unchanged stores only genuinely new immutable versions
+PASS: 100% unchanged preserves both full release memberships
+PASS: 100% unchanged projects exactly the successor snapshot
+PASS: deep-suite database integrity remains OK
+
+SCOREMAX V6.5.3 DEEP RECTIFICATION CHECKS PASSED: 24
+Disposable database: /tmp/scoremax_v653_deep_kjxwbl06/scoremax.db
+=== smoke_tests_v6_5_integration.py ===
+PASS: integration schema table exists: integration_ph_content_releases
+PASS: release identity exposes additive V6.5 child while preserving compatibility marker
+PASS: Power House approved INLINE release accepted
+PASS: opaque Power House question/version IDs survive exactly
+PASS: Power House governed chapter display metadata reaches learner projection
+PASS: Power House release activates only into normal live question gate
+PASS: exact approved-content replay returns the original durable receipt
+PASS: 24 concurrent Power House deliveries collapse to one admitted release
+PASS: same release identity/version with different package checksum is quarantined
+PASS: held question is excluded from learner admission
+PASS: R2-required question is excluded from learner admission
+PASS: source-check-required question is excluded from learner admission
+PASS: dependent/recovery records cannot manufacture independent mastery weight
+PASS: valid dependent record remains zero independent mastery weight
+PASS: shared-stimulus identity/content survives admission
+PASS: content admission is cross-market and not Pakistan-hardcoded
+PASS: rubric-only content is rejected before learner projection while runtime lacks governed human marking
+PASS: rubric-only rejection names the unsupported delivery capability
+PASS: assessment session pins exact Power House question/release version/checksum
+PASS: changed question affects future projection but not active-session delivered snapshot
+PASS: active-session answer remains pinned to original marking
+PASS: withdrawal removes question from future inventory while active session snapshot remains usable
+PASS: Power House blueprint is immutably admitted
+PASS: exact blueprint replay returns the original durable receipt
+PASS: Power House blueprint projects into the existing ScoreMax runtime without inventing academic identity
+PASS: content requirement queues to Power House with business idempotency
+PASS: direct teacher paid referral reward is created
+PASS: only one upstream teacher override is preserved
+PASS: payment/referral facts queue to Growth Engine without Growth authority
+PASS: repeated Growth synchronization is idempotent
+PASS: refund/reversal is a distinct Growth event rather than mutation of cleared event
+PASS: reward hold state is preserved for payout governance
+PASS: renewal can be represented as a distinct idempotent product event
+PASS: 24 concurrent Growth event queues collapse to one business event
+PASS: current Power House service credential/HMAC is accepted
+PASS: previous Power House credential supports controlled secret rotation
+PASS: Growth Engine uses an independent service credential pair
+PASS: bad HMAC is rejected
+PASS: stale replay outside permitted clock skew is rejected
+PASS: peer outage/not-configured never deletes committed outbox work
+PASS: integration queues survive database restart
+PASS: delivery evidence respects minimum-N question-version aggregation
+PASS: Power House delivery evidence contains no learner identity or raw answer payload
+PASS: frozen outbound envelope shape retained: SM_PH_DELIVERY_EVIDENCE_V1
+PASS: outbound integration payloads exclude passwords, card data and raw learner answers
+PASS: frozen MANIFEST_PULL/schema contradiction is surfaced for Integration Control
+PASS: production preflight is nonblocking before peers are enabled
+PASS: strict integrated-pilot preflight detects missing peer configuration
+
+SCOREMAX V6.5.0 FOCUSED INTEGRATION CHECKS PASSED: 48
+Disposable database: /tmp/scoremax_v650_integration_tvsixdwc/scoremax.db
+=== smoke_tests_v6_5_3_integration_admission.py ===
+PASS: V6.5.3 integration release identity is active
+PASS: BAD_KEY is rejected before any content side effect
+PASS: bad option key is rejected with explicit semantic code
+PASS: DUP_OPT is rejected before any content side effect
+PASS: duplicate option IDs are rejected explicitly
+PASS: BAD_STIM is rejected before any content side effect
+PASS: unresolved stimulus references are rejected explicitly
+PASS: MULTI_VERSION is rejected before any content side effect
+PASS: multiple versions of one question in a snapshot are rejected
+PASS: BAD_NUMERIC is rejected before any content side effect
+PASS: invalid numerical tolerance is rejected explicitly
+PASS: RUBRIC_ONLY is rejected before any content side effect
+PASS: unsupported rubric-only delivery is explicitly capability-rejected
+PASS: valid governed stimulus content is admitted
+PASS: learner stimulus projection excludes provenance and internal review metadata
+PASS: complete governed stimulus remains immutable internally
+PASS: auto-markable governed key types are admitted
+PASS: numeric value and tolerance are preserved and executed
+PASS: multiple-select exact key and governed negative mark are executed
+PASS: multiple-select partial credit obeys immutable blueprint marking rule
+PASS: text accepted-answer marking is preserved
+PASS: boolean marking is preserved
+PASS: exact content replay returns original durable receipt
+PASS: same release identity/version with semantic change is quarantined despite unchanged caller package checksum
+PASS: historical delivery evidence remains in immutable delivered scope after current projection moves
+PASS: governed runtime inventory release is admitted
+PASS: RELEASED Power House blueprint is activated into existing ScoreMax runtime
+PASS: exact blueprint replay returns original durable receipt
+PASS: same blueprint ID/version semantic change is quarantined despite unchanged caller blueprint checksum
+PASS: governed blueprint assembles exactly its permitted 10-question inventory
+PASS: governed blueprint mastery and cognitive distributions are executed exactly
+PASS: governed blueprint session immutably pins blueprint identity and all question scope
+PASS: governed blueprint timing is enforced on future session
+PASS: blueprint marking rules execute governed negative mark
+PASS: HTTP peer is quarantined before credential read or any network call
+PASS: valid ACCEPTED receipt over HTTP 200 closes delivery
+PASS: valid ACCEPTED receipt over HTTP 202 closes delivery
+PASS: valid QUARANTINED receipt over HTTP 409 is preserved as quarantine
+PASS: valid non-retryable REJECTED receipt over HTTP 422 dead-letters with receipt
+PASS: valid retryable REJECTED receipt over HTTP 429 schedules retry with receipt
+PASS: valid retryable REJECTED receipt over HTTP 503 schedules retry with receipt
+PASS: receipt receiver is bound to the exact dispatched destination
+PASS: atomic claim lease prevents concurrent workers claiming the same row
+PASS: bounded dispatcher fairly interleaves outbound contracts
+PASS: audited requeue restores a terminal integration exception
+PASS: integration health exposes worker heartbeat and backlog age/source counts without secrets
+PASS: missing peer configuration preserves committed work as pending
+PASS: V6.5.3 behavioral acceptance database integrity remains clean
+
+SCOREMAX V6.5.3 INTEGRATION ADMISSION ACCEPTANCE PASSED: 48
+Disposable database: /tmp/scoremax_v653_acceptance_f2pqc2oj/scoremax.db
+=== smoke_tests_v6_5_4_central_rectification.py ===
+PASS: V6.5.4 rectification remains active in V6.5.6
+PASS: retry-cycle lineage columns exist
+PASS: transport diagnostic store exists
+PASS: NaN rejected recursively
+PASS: NaN creates zero durable integration side effects
+PASS: NaN rejected by strict peer JSON parser
+PASS: +Infinity rejected recursively
+PASS: +Infinity creates zero durable integration side effects
+PASS: +Infinity rejected by strict peer JSON parser
+PASS: -Infinity rejected recursively
+PASS: -Infinity creates zero durable integration side effects
+PASS: -Infinity rejected by strict peer JSON parser
+PASS: governed requeue accepted
+PASS: requeue resets active counter only
+PASS: requeue audit preserves exhausted prior count and new cycle
+PASS: message identity and envelope retained on requeue
+PASS: first failure in new cycle is RETRY not terminal
+PASS: prior dispatch attempt rows remain unchanged
+PASS: new attempt is appended with new cycle lineage
+PASS: invalid peer JSON becomes retryable transport evidence
+PASS: invalid peer JSON body is never persisted as non-standard JSON
+PASS: legacy permissive-JSON row is quarantined before dispatch
+PASS: legacy invalid envelope bytes remain unchanged for audit
+PASS: migration quarantine evidence itself is strict JSON
+PASS: every frozen health direction has complete minimum field contract
+PASS: health last_received_at reconciles to durable inbox
+PASS: health peer schema reconciles to durable receipt
+PASS: health clock skew warning reconciles to durable diagnostic
+PASS: health credential expiry warning is truthful when configured
+PASS: health compatibility alias preserves oldest backlog field
+PASS: V6.5.4 rectification DB integrity remains clean
+
+SCOREMAX V6.5.4 CENTRAL RECTIFICATION CHECKS PASSED: 31
+Disposable database: /tmp/scoremax_v654_rect_bnhvd84t/scoremax.db
+=== smoke_tests_v6_5_5_manifest_origin_security.py ===
+PASS: V6.5.5 origin-security suite remains active in descendant
+PASS: direct cross-origin blocked
+PASS: direct cross-origin fails before credential access and network
+PASS: suffix host confusion blocked
+PASS: suffix host confusion fails before credential access and network
+PASS: userinfo confusion blocked
+PASS: userinfo confusion fails before credential access and network
+PASS: unexpected port blocked
+PASS: unexpected port fails before credential access and network
+PASS: non-HTTPS blocked
+PASS: non-HTTPS fails before credential access and network
+PASS: misconfigured non-HTTPS trusted origin fails closed before secret/network
+PASS: cross-origin redirect credential leakage blocked
+PASS: same-origin redirect remains permitted
+PASS: same-origin redirect retains bearer authentication
+PASS: legitimate same-origin manifest pull accepted
+PASS: legitimate same-origin pull authenticates to Power House
+PASS: same-origin package checksum and manifest checksum verified before staging
+PASS: same-origin governed question staged
+PASS: wrong-origin admission rejected before bearer access
+PASS: no bearer token in receipts/quarantine/diagnostics or database evidence
+PASS: V6.5.5 security rectification DB integrity remains clean
+PASS: V6.5.5 security rectification FK violations remain zero
+
+SCOREMAX V6.5.5 MANIFEST ORIGIN SECURITY CHECKS PASSED: 23
+confirmed_total=0 · P0=0 · P1=0 · integrity=ok · foreign_key_violations=0
+=== smoke_tests_v6_5_6_explicit_port_normalisation.py ===
+PASS: release identity is V6.5.6
+PASS: direct :0 port blocked
+PASS: direct :0 fails before credential/network
+PASS: direct :0 rejection does not disclose bearer token
+PASS: direct :00 port blocked
+PASS: direct :00 fails before credential/network
+PASS: direct :00 rejection does not disclose bearer token
+PASS: direct :000 port blocked
+PASS: direct :000 fails before credential/network
+PASS: direct :000 rejection does not disclose bearer token
+PASS: direct non-numeric port blocked
+PASS: direct non-numeric fails before credential/network
+PASS: direct non-numeric rejection does not disclose bearer token
+PASS: direct negative port blocked
+PASS: direct negative fails before credential/network
+PASS: direct negative rejection does not disclose bearer token
+PASS: direct out-of-range port blocked
+PASS: direct out-of-range fails before credential/network
+PASS: direct out-of-range rejection does not disclose bearer token
+PASS: direct very-out-of-range port blocked
+PASS: direct very-out-of-range fails before credential/network
+PASS: direct very-out-of-range rejection does not disclose bearer token
+PASS: explicit :443 matches configured default HTTPS origin
+PASS: redirect :0 port blocked before redirected request
+PASS: redirect :0 rejection does not disclose bearer token
+PASS: redirect :00 port blocked before redirected request
+PASS: redirect :00 rejection does not disclose bearer token
+PASS: redirect :000 port blocked before redirected request
+PASS: redirect :000 rejection does not disclose bearer token
+PASS: redirect non-numeric port blocked before redirected request
+PASS: redirect non-numeric rejection does not disclose bearer token
+PASS: redirect negative port blocked before redirected request
+PASS: redirect negative rejection does not disclose bearer token
+PASS: redirect out-of-range port blocked before redirected request
+PASS: redirect out-of-range rejection does not disclose bearer token
+PASS: redirect very-out-of-range port blocked before redirected request
+PASS: redirect very-out-of-range rejection does not disclose bearer token
+PASS: same-origin redirect to explicit :443 remains permitted
+PASS: same-origin :443 redirect retains bearer authentication
+PASS: configured non-default trusted port remains supported
+PASS: configured non-default trusted port cannot be bypassed by omitted port
+PASS: no bearer token in durable database evidence
+PASS: V6.5.6 explicit-port DB integrity remains clean
+PASS: V6.5.6 explicit-port FK violations remain zero
+
+SCOREMAX V6.5.6 EXPLICIT-PORT NORMALISATION CHECKS PASSED: 44
+confirmed_total=0 · P0=0 · P1=0 · integrity=ok · foreign_key_violations=0
+=== smoke_tests_v6_5_7_product_activation_gate.py ===
+PASS: valid PH 300 event accepted
+PASS: 300 release remains STAGED
+PASS: 300 exact staged memberships retained
+PASS: 300 admission creates zero active learner projections
+PASS: identical event replay is durable/idempotent
+PASS: replay creates no duplicate membership/projection
+PASS: effective_at NULL cannot independently activate
+PASS: effective_at PAST cannot independently activate
+PASS: effective_at FUTURE cannot independently activate
+PASS: wrong checksum cannot activate
+PASS: wrong release version cannot activate
+PASS: wrong release id cannot activate
+PASS: activation actor/reason evidence is mandatory
+PASS: explicit exact ScoreMax activation succeeds
+PASS: explicit activation projects exact 300 once
+PASS: activation evidence is durable actor/time/reason/checksum
+PASS: repeated activation is idempotent
+PASS: replay does not overwrite first authorization evidence
+PASS: internal _activate_release cannot bypass product authorization
+PASS: explicit ScoreMax authorization, not PH schedule, controls learner activation
+PASS: existing Integration Health admin control activates the exact staged release
+PASS: admin activation records governed actor and reason evidence
+PASS: withdrawn staged release cannot activate
+PASS: SQLite integrity ok
+PASS: foreign key violations zero
+PASS: V6.5.7 product activation gate 25/25
+=== smoke_tests_v6_5_8_learner_evidence.py ===
+{
+  "status": "PASS",
+  "checks": 12,
+  "confirmed_total": 0,
+  "P0": 0,
+  "P1": 0,
+  "integrity": "ok",
+  "foreign_key_violations": 0,
+  "check_names": [
+    "40 percent creates Weak Area",
+    "targeted recovery creates Recovered",
+    "successful recall preserves Recovered",
+    "successful recall advances scheduler",
+    "failed later recall does not get protected Recovered override",
+    "recovery counters use immutable attempts",
+    "reconfirmation counters use recall immutable attempts",
+    "unsuppressed flags false",
+    "sub-threshold counters privacy safe",
+    "immutable evidence scope survives mutable question change",
+    "db integrity ok",
+    "foreign keys clean"
+  ]
+}
+=== scale_test_v6_5_integration_releases.py ===

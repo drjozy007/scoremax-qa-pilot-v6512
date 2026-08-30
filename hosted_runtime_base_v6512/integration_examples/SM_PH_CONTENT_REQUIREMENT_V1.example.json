@@ -1,0 +1,54 @@
+{
+  "message_id": "msg::SM_PH_CONTENT_REQUIREMENT_V1::example-001",
+  "contract_name": "SM_PH_CONTENT_REQUIREMENT_V1",
+  "contract_version": "1",
+  "schema_version": "1.0.0",
+  "source_system": "SCOREMAX",
+  "destination_system": "POWER_HOUSE",
+  "occurred_at": "2026-08-21T12:00:00Z",
+  "sent_at": "2026-08-21T12:00:00Z",
+  "correlation_id": "corr::e2e-physics-ch3-001",
+  "idempotency_key": "requirements::REQB::CHEM11::CH03::2026-08-21",
+  "producer_version": "6.4.0",
+  "retry_of_message_id": null,
+  "payload_checksum_sha256": "b597e7e745c92c4221cf8e3eff71e3da145227f5143c6ca08e77afee3c1cb8ce",
+  "data_classification": "INTERNAL",
+  "payload": {
+    "request_batch_id": "REQB::CHEM11::CH03::2026-08-21",
+    "requirements": [
+      {
+        "requirement_id": "REQ::CHEM11::CH03::INDEP::001",
+        "created_at": "2026-08-21T12:00:00Z",
+        "requirement_type": "INSUFFICIENT_INDEPENDENT_EVIDENCE",
+        "priority": "P1",
+        "market_id": "PK",
+        "board_exam_id": "BOARD::PUNJAB",
+        "programme_id": "FSC_PART_I",
+        "subject_id": "CHEMISTRY",
+        "chapter_id": "CHAPTER::CHEMISTRY::11::03",
+        "topic_id": "TOPIC::VSEPR",
+        "blueprint_id": "BP::PK::FSC1::CHEM::CH03::DIAG",
+        "blueprint_version": "1.0.0",
+        "requested_inventory": {
+          "minimum_count": 6,
+          "mastery_levels": [
+            "EXAM_READY",
+            "ADVANCED"
+          ],
+          "evidence_roles": [
+            "INDEPENDENT"
+          ],
+          "question_types": [
+            "SINGLE_BEST_ANSWER"
+          ]
+        },
+        "reason": "Current release cannot satisfy the independent-evidence floor for this topic.",
+        "supporting_metrics": {
+          "eligible_independent_count": 2,
+          "required_count": 8
+        },
+        "status": "REQUESTED"
+      }
+    ]
+  }
+}

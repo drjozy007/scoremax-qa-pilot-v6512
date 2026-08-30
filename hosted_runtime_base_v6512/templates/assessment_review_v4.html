@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:760px;margin:auto">
+<p class="eyebrow">FINAL REVIEW</p><h2>Ready to submit?</h2>
+<div class="grid3">
+<div class="metric"><span>Total</span><strong>{{ total }}</strong></div>
+<div class="metric"><span>Answered</span><strong>{{ answered }}</strong></div>
+<div class="metric"><span>Unanswered</span><strong>{{ unanswered|length }}</strong></div>
+</div>
+{% if unanswered %}<div class="warning-box"><strong>{{ unanswered|length }} question(s) remain unanswered.</strong><p>You can return before submitting.</p></div>{% endif %}
+{% if flagged %}<p><strong>Flagged for review:</strong> {{ flagged|length }}</p>{% endif %}
+<div class="actions">
+<a class="btn alt" href="{{ url_for('take_test_v4',assessment_id=assessment_id) }}">Return to assessment</a>
+<form method="post" action="{{ url_for('submit_assessment_v4',assessment_id=assessment_id) }}" class="inline-form" onsubmit="return confirm('Submit this assessment now?');">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<button class="btn" type="submit">Submit assessment</button></form>
+</div>
+</div>
+{% endblock %}

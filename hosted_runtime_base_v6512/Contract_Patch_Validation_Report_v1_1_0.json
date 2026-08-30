@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.1.0",
+  "status": "PASS",
+  "results": [
+    {
+      "example": "PH_SM_APPROVED_CONTENT_V1_1_INLINE.example.json",
+      "schema": "PH_SM_APPROVED_CONTENT_V1.schema.json",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "example": "PH_SM_APPROVED_CONTENT_V1_1_MANIFEST_PULL.example.json",
+      "schema": "PH_SM_APPROVED_CONTENT_V1.schema.json",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "example": "PH_SM_APPROVED_CONTENT_V1_1_WITHDRAW.example.json",
+      "schema": "PH_SM_APPROVED_CONTENT_V1.schema.json",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "example": "PH_SM_APPROVED_CONTENT_PACKAGE_V1.example.json",
+      "schema": "PH_SM_APPROVED_CONTENT_PACKAGE_V1.schema.json",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "example": "PH_SM_APPROVED_CONTENT_MANIFEST_V1.example.json",
+      "schema": "PH_SM_APPROVED_CONTENT_MANIFEST_V1.schema.json",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "example": "PH_SM_APPROVED_CONTENT_MANIFEST_DEMO_v1_1_0.zip",
+      "status": "PASS",
+      "archive_sha256": "c4e728cf9d5df2c155b93a0da5e23b95fa03279843a18aa08438fe7ed65c07aa",
+      "manifest_sha256": "d5289f256a725e4cd923b63510090399edb5817e0b970b488150dbf51ac7bbcf",
+      "content_file_sha256": "69069ac7c8eb61c453879afc12e3005aad20d870450a6978b0c95cff4c860814",
+      "zip_integrity": "PASS"
+    }
+  ]
+}

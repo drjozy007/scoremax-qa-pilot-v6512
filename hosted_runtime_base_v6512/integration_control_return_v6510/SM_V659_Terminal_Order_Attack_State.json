@@ -1,0 +1,12 @@
+{
+  "payment_tx": 1,
+  "scoremax_status": "reversed",
+  "refund_amount_minor": 100000,
+  "refund_status": "reversed",
+  "event_types": [
+    "PAYMENT_CLEARED",
+    "REFERRAL_REWARD_ELIGIBILITY_CHANGED",
+    "PAYMENT_REFUNDED",
+    "REFERRAL_REWARD_ELIGIBILITY_CHANGED"
+  ]
+}

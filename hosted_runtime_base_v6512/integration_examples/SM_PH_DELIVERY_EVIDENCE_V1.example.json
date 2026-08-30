@@ -1,0 +1,72 @@
+{
+  "message_id": "msg::SM_PH_DELIVERY_EVIDENCE_V1::example-001",
+  "contract_name": "SM_PH_DELIVERY_EVIDENCE_V1",
+  "contract_version": "1",
+  "schema_version": "1.0.0",
+  "source_system": "SCOREMAX",
+  "destination_system": "POWER_HOUSE",
+  "occurred_at": "2026-08-21T12:00:00Z",
+  "sent_at": "2026-08-21T12:00:00Z",
+  "correlation_id": "corr::e2e-physics-ch3-001",
+  "idempotency_key": "evidence::EVB::CHEM11::CH03::2026W34",
+  "producer_version": "6.4.0",
+  "retry_of_message_id": null,
+  "payload_checksum_sha256": "ff29bb8f31535c6ac9e8b4b99469847824a09197ba213d25e96826f3139399da",
+  "data_classification": "PSEUDONYMOUS",
+  "payload": {
+    "evidence_batch_id": "EVB::CHEM11::CH03::2026W34",
+    "environment": "LIVE",
+    "aggregation_level": "QUESTION_VERSION",
+    "period_start": "2026-08-17T00:00:00Z",
+    "period_end": "2026-08-23T23:59:59Z",
+    "minimum_sample_policy": {
+      "minimum_n": 10,
+      "suppression_applied": true
+    },
+    "market_id": "PK",
+    "programme_id": "FSC_PART_I",
+    "subject_id": "CHEMISTRY",
+    "chapter_id": "CHAPTER::CHEMISTRY::11::03",
+    "blueprint_id": "BP::PK::FSC1::CHEM::CH03::DIAG",
+    "blueprint_version": "1.0.0",
+    "items": [
+      {
+        "question_id": "Q::CHEM11::CH03::000125",
+        "question_version_id": "QV::CHEM11::CH03::000125::v2",
+        "question_checksum_sha256": "4ae6a21e77589ac09b2c93cbd2cd2ef470f24c92b88ba333c05cf16a6979aec3",
+        "delivered_count": 120,
+        "submitted_count": 116,
+        "correct_count": 78,
+        "incorrect_count": 38,
+        "skipped_count": 4,
+        "timing_seconds": {
+          "median": 37.5,
+          "p90": 63.2
+        },
+        "assistance_counts": {
+          "NONE": 116
+        },
+        "distractor_counts": {
+          "A": 38
+        },
+        "confidence_counts": {
+          "HIGH": 50,
+          "MEDIUM": 48,
+          "LOW": 18
+        },
+        "flag_counts": {
+          "AMBIGUOUS": 0,
+          "TECHNICAL": 0
+        },
+        "recovery_attempts": 15,
+        "recovery_successes": 11,
+        "reconfirmation_attempts": 8,
+        "reconfirmation_successes": 7,
+        "item_difficulty": 0.672,
+        "discrimination": 0.31,
+        "sample_suppressed": false,
+        "ambiguity_signal_count": 0
+      }
+    ]
+  }
+}

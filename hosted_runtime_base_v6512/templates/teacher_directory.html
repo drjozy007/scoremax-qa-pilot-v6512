@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Find a Teacher · ScoreMax{% endblock %}
+{% block content %}
+<section class="page-shell community-page">
+  <div class="page-heading"><div><span class="eyebrow">Teacher Discovery Pilot</span><h1>Find academic support without sharing your phone number</h1><p>Search moderated teacher profiles, compare verified information and start with a structured ScoreMax enquiry.</p></div></div>
+  <div class="notice-card"><strong>Important:</strong> Identity or qualification verification is not the same as academic endorsement by ScoreMax. Teaching and payment may occur outside ScoreMax during the pilot.</div>
+  <form method="get" class="filter-panel community-filter">
+    <label>Search<input name="q" value="{{filters.q}}" placeholder="Teacher, subject or support"></label>
+    <label>Subject<select name="subject"><option value="">All subjects</option>{% for item in subjects %}<option value="{{item}}" {% if filters.subject==item %}selected{% endif %}>{{item}}</option>{% endfor %}</select></label>
+    <label>Assessment<select name="framework"><option value="">All assessments</option>{% for item in frameworks %}<option value="{{item}}" {% if filters.framework==item %}selected{% endif %}>{{item}}</option>{% endfor %}</select></label>
+    <label>Service<select name="service_type"><option value="">1-to-1 or group</option><option value="ONE_TO_ONE" {% if filters.service_type=='ONE_TO_ONE' %}selected{% endif %}>1-to-1</option><option value="GROUP" {% if filters.service_type=='GROUP' %}selected{% endif %}>Group</option></select></label>
+    <label>Delivery<select name="delivery_mode"><option value="">Any mode</option><option value="ONLINE" {% if filters.delivery_mode=='ONLINE' %}selected{% endif %}>Online</option><option value="LOCAL" {% if filters.delivery_mode=='LOCAL' %}selected{% endif %}>Local</option><option value="HYBRID" {% if filters.delivery_mode=='HYBRID' %}selected{% endif %}>Hybrid</option></select></label>
+    <button class="btn" type="submit">Search teachers</button>
+  </form>
+  {% if cards %}
+  <div class="teacher-card-grid">
+    {% for card in cards %}
+    <article class="teacher-card">
+      <div class="teacher-card-head"><div class="avatar-circle">{{card.profile.full_name[:1]}}</div><div><h2>{{card.profile.full_name}}</h2><p>{{card.profile.headline}}</p></div></div>
+      <div class="badge-row">
+        {% if card.profile.identity_verification_status=='VERIFIED' %}<span class="status-badge good">Identity verified</span>{% endif %}
+        {% if card.profile.qualification_verification_status=='VERIFIED' %}<span class="status-badge good">Qualifications verified</span>{% endif %}
+        <span class="status-badge">★ {{card.profile.average_rating}} ({{card.profile.review_count}})</span>
+      </div>
+      <p>{{card.profile.bio[:240]}}{% if card.profile.bio|length>240 %}…{% endif %}</p>
+      <div class="listing-mini-list">
+        {% for listing in card.listings[:3] %}<div><strong>{{listing.title}}</strong><span>{{listing.subject}} · {{'1-to-1' if listing.service_type=='ONE_TO_ONE' else 'Group'}} · {{listing.delivery_mode|title}}</span><span>{% if listing.price_minor %}From PKR {{(listing.price_minor/100)|round(0)|int}}{% else %}Price discussed with teacher{% endif %}</span></div>{% endfor %}
+      </div>
+      <a class="btn" href="{{url_for('teacher_public_profile',teacher_id=card.profile.teacher_id)}}">View profile and enquire</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty-state"><h2>No matching teachers yet</h2><p>Try broader filters. Only moderated and published profiles appear here.</p></div>{% endif %}
+</section>
+{% endblock %}

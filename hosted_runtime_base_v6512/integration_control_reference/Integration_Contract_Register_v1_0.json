@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "status": "FROZEN_FOR_IMPLEMENTATION",
+  "common_schema_version": "1.0.0",
+  "json_schema_draft": "2020-12",
+  "contracts": [
+    {
+      "contract": "PH_SM_APPROVED_CONTENT_V1",
+      "direction": "POWER_HOUSE -> SCOREMAX",
+      "authority": "Power House academic release",
+      "transport": "Manifest event + authenticated package pull; inline permitted for small tests",
+      "idempotency_key": "release_id + release_version + package_checksum_sha256",
+      "privacy": "Academic content and provenance; no learner data",
+      "hard_invariants": "Only APPROVED/CLEARED/READY/right-cleared items; changed versions never overwrite historical evidence; non-independent weight remains zero",
+      "receiver_action": "Stage inactive, validate, persist immutable external version snapshots, activate only through governed ScoreMax admission transaction"
+    },
+    {
+      "contract": "PH_SM_ASSESSMENT_BLUEPRINT_V1",
+      "direction": "POWER_HOUSE -> SCOREMAX",
+      "authority": "Power House academic/exam blueprint",
+      "transport": "Authenticated event/API",
+      "idempotency_key": "blueprint_id + blueprint_version + blueprint_checksum_sha256",
+      "privacy": "No personal data",
+      "hard_invariants": "Released version only; effective dates and permitted inventory preserved",
+      "receiver_action": "Store versioned blueprint and execute without changing academic rules"
+    },
+    {
+      "contract": "SM_PH_DELIVERY_EVIDENCE_V1",
+      "direction": "SCOREMAX -> POWER_HOUSE",
+      "authority": "ScoreMax delivery telemetry; advisory to academic governance",
+      "transport": "Periodic aggregate event/API",
+      "idempotency_key": "evidence_batch_id",
+      "privacy": "Question-version aggregates only; minimum-N suppression; no learner IDs",
+      "hard_invariants": "Exact question version/checksum; LIVE-only; never auto-approve or rewrite questions",
+      "receiver_action": "Store immutable evidence batch, surface exceptions/actions, retain academic human decision boundary"
+    },
+    {
+      "contract": "SM_PH_CONTENT_REQUIREMENT_V1",
+      "direction": "SCOREMAX -> POWER_HOUSE",
+      "authority": "ScoreMax inventory/mastery gap detection; Power House decides resolution",
+      "transport": "Authenticated event/API",
+      "idempotency_key": "request_batch_id or requirement_id",
+      "privacy": "Aggregated inventory gap evidence; no learner-level data",
+      "hard_invariants": "Request cannot create content identity, change readiness or set academic priority automatically",
+      "receiver_action": "Link to existing Action Centre/coverage intelligence; acknowledge status"
+    },
+    {
+      "contract": "SM_GE_PRODUCT_EVENT_V1",
+      "direction": "SCOREMAX -> GROWTH_ENGINE",
+      "authority": "ScoreMax product/payment/referral facts",
+      "transport": "Transactional outbox -> authenticated event API",
+      "idempotency_key": "event_id tied to immutable business transaction/state transition",
+      "privacy": "Pseudonymous product/CRM IDs and commercially necessary facts only; no answer-level data or card data",
+      "hard_invariants": "Duplicate delivery has zero duplicate side effects; refunds/reversals and one-level upstream teacher lineage preserved",
+      "receiver_action": "Idempotent receipt, then update CRM/lifecycle/referral reporting projections once"
+    },
+    {
+      "contract": "GE_PH_DEMAND_SIGNAL_V1",
+      "direction": "GROWTH_ENGINE -> POWER_HOUSE",
+      "authority": "Growth commercial evidence; advisory only",
+      "transport": "Approved outbox -> authenticated event API",
+      "idempotency_key": "signal_id + signal_version",
+      "privacy": "Aggregated demand/CRM evidence references; no unrestricted personal data",
+      "hard_invariants": "Cannot change answer, seed, mastery, approval, source or blueprint state",
+      "receiver_action": "Store as advisory evidence and route to existing prioritisation/action workflow"
+    },
+    {
+      "contract": "PH_GE_ACADEMIC_CATALOG_V1",
+      "direction": "POWER_HOUSE -> GROWTH_ENGINE",
+      "authority": "Power House academic availability only",
+      "transport": "Snapshot event/API",
+      "idempotency_key": "catalogue_snapshot_id + catalogue_snapshot_version",
+      "privacy": "No personal data",
+      "hard_invariants": "ACADEMICALLY_READY is not marketable live status; Growth must intersect with ScoreMax LIVE_TO_LEARNERS event",
+      "receiver_action": "Update academic catalogue projection; market only when matching ScoreMax release/version/checksum is live"
+    }
+  ],
+  "receipt_contract": "INTEGRATION_RECEIPT_V1"
+}

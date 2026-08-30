@@ -1,0 +1,44 @@
+{
+  "added_files_before_release_manifest": [
+    "INSTALL_AND_START_SCOREMAX_V6_5_6.bat",
+    "README_SCOREMAX_V6_5_6.md",
+    "V6_5_6_PLATFORM_INTEGRATION_HANDOFF.md",
+    "V6_5_6_SECURITY_TEST_EVIDENCE.txt",
+    "V6_5_6_TEST_EVIDENCE.json",
+    "run_v6_5_6_acceptance.py",
+    "scoremax_internal_live_v656.py",
+    "smoke_tests_v6_5_6_explicit_port_normalisation.py",
+    "V6_5_6_SOURCE_DELTA.json",
+    "V6_5_6_PRODUCTION_PATCH.diff"
+  ],
+  "changed_existing_files": [
+    "app.py",
+    "scoremax_integration_v1.py",
+    "scoremax_v6_3_simulator.py",
+    "smoke_tests_v6_3_1_ux.py",
+    "smoke_tests_v6_3_2_chapter_identity.py",
+    "smoke_tests_v6_3_app.py",
+    "smoke_tests_v6_4.py",
+    "smoke_tests_v6_5_1_rectification.py",
+    "smoke_tests_v6_5_3_integration_admission.py",
+    "smoke_tests_v6_5_4_central_rectification.py",
+    "smoke_tests_v6_5_5_manifest_origin_security.py",
+    "smoke_tests_v6_5_integration.py"
+  ],
+  "deleted_parent_files": [],
+  "notes": [
+    "app.py changes are release/build identity only.",
+    "scoremax_integration_v1.py contains the sole production behavior change: explicit port 0 no longer falls through to HTTPS default 443; explicit ports must be 1..65535.",
+    "inherited tests are changed only to recognize V6.5.6 as a descendant release marker; prior behavioral assertions are retained.",
+    "scoremax_v6_3_simulator.py changes only its evidence version label to 6.5.6.",
+    "No parent file is deleted."
+  ],
+  "parent_release": "ScoreMax V6.5.5",
+  "parent_zip_sha256": "d9cf823392ad405e82e10ca25354d0058e6ae740ef7ea52c811f11bd741a35ab",
+  "production_code_files_changed": [
+    "app.py",
+    "scoremax_integration_v1.py"
+  ],
+  "release": "ScoreMax V6.5.6",
+  "scope": "explicit-port normalization defect only"
+}

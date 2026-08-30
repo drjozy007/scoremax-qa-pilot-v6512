@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+<title>{% block title %}ScoreMax{% endblock %}</title>
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to main content</a>
+<header class="site-header">
+  <a class="brand" href="{{url_for('index')}}">ScoreMax</a>
+  <button class="mobile-menu-toggle" id="mobileMenuBtn" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
+  <nav class="desktop-nav" aria-label="Main navigation">
+    {% if session.get('user_id') %}
+      {% if learner_ui_global %}
+        <a class="{{'active' if student_nav_section_global=='dashboard' else ''}}" href="{{url_for('student_dashboard')}}">Home</a>
+        <a class="{{'active' if student_nav_section_global=='learn' else ''}}" href="{{url_for('subject_browser')}}">Learn</a>
+        <a class="{{'active' if student_nav_section_global=='plan' else ''}}" href="{{url_for('study_plan_page')}}">My Plan</a>
+        <a class="{{'active' if student_nav_section_global=='tests' else ''}}" href="{{url_for('test_setup')}}">Practice</a>
+        <a class="{{'active' if student_nav_section_global=='exams' else ''}}" href="{{url_for('exam_centre')}}">Exams</a>
+        <a class="{{'active' if student_nav_section_global=='progress' else ''}}" href="{{url_for('student_analytics_page')}}">Progress</a>
+        <details class="student-account-menu">
+          <summary aria-label="Account, support and more">{{(session.get('full_name') or 'Me')[:1]|upper}}</summary>
+          <div class="student-account-dropdown">
+            <strong>{{session.get('full_name') or 'My ScoreMax'}}</strong>
+            <a href="{{url_for('student_profile')}}">My targets & results</a>
+            <a href="{{url_for('student_pathways')}}">Pathways</a>
+            <a href="{{url_for('knowledge_home')}}">Knowledge Hub</a>
+            <a href="{{url_for('teacher_directory')}}">Find a Teacher</a>
+            <a href="{{url_for('academic_messages_inbox')}}">Messages</a>
+            <a href="{{url_for('access_account')}}">Access</a>
+            <a href="{{url_for('account_settings')}}">Settings</a>
+            <a href="{{url_for('faq_page')}}">Help</a>
+            <a href="{{url_for('logout')}}">Logout</a>
+          </div>
+        </details>
+      {% elif session.get('role')=='teacher' %}
+        <a href="{{url_for('teacher_dashboard')}}">Dashboard</a><a href="{{url_for('teacher_marketplace_dashboard')}}">Teacher Marketplace</a><a href="{{url_for('referral_account')}}">Referrals</a><a href="{{url_for('academic_messages_inbox')}}">Messages</a><a href="{{url_for('institution_dashboard')}}">Institution</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('account_settings')}}">Settings</a><a href="{{url_for('logout')}}">Logout</a>
+      {% elif session.get('role')=='parent' %}
+        <a href="{{url_for('parent_dashboard')}}">My Child's Progress</a><a href="{{url_for('parent_academic_messaging_controls')}}">Messaging Consent</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('account_settings')}}">Settings</a><a href="{{url_for('logout')}}">Logout</a>
+      {% elif session.get('role')=='admin' %}
+        <a href="{{url_for('admin_pilot_readiness')}}">Pilot Readiness</a><a href="{{url_for('admin_mastery_lab')}}">Mastery Laboratory</a>{% if reviewer_workspace_forward_enabled %}<a href="{{url_for('admin_reviewer_workspace')}}">Reviewer Workspace</a>{% endif %}<a href="{{url_for('admin_powerhouse_prompt_bridge')}}">Power House Bridge</a><a href="{{url_for('admin_import',mode='emergency')}}">Direct Intake</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_pilot_feedback')}}">Pilot Issues</a><a href="{{url_for('admin_pilot_analytics')}}">Analytics</a><a href="{{url_for('admin_knowledge')}}">Knowledge</a><a href="{{url_for('admin_daily_spark')}}">Daily Spark</a><a href="{{url_for('admin_sustainability')}}">Sustainability</a><a href="{{url_for('admin_social_links')}}">Social Links</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_assessment_blueprints')}}">Blueprints</a><a href="{{url_for('admin_written_response')}}">Written Response</a><a href="{{url_for('admin_community')}}">Community</a><a href="{{url_for('admin_question_families')}}">Question Families</a><a href="{{url_for('admin_governance_audit')}}">Audit</a><a href="{{url_for('logout')}}">Logout</a>
+      {% else %}
+        <a href="{{url_for('dashboard')}}">Dashboard</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('account_settings')}}">Settings</a><a href="{{url_for('logout')}}">Logout</a>
+      {% endif %}
+    {% else %}
+      <a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('sustainability_page')}}">Sustainability</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('faq_page')}}">FAQs</a><a href="{{url_for('connect_page')}}">Connect</a><a href="{{url_for('contact_page')}}">Contact</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>
+    {% endif %}
+  </nav>
+</header>
+<div class="mobile-site-menu" id="mobileSiteMenu" aria-hidden="true">
+  <div class="mobile-menu-head"><strong>ScoreMax</strong><button type="button" id="mobileMenuClose" aria-label="Close menu">×</button></div>
+  {% if session.get('user_id') and learner_ui_global %}
+    <a href="{{url_for('student_dashboard')}}">Home</a>
+    <p class="mobile-menu-label">Programme</p>
+    <div class="mobile-programme-grid">{% for p in programme_nav_global %}<form method="post" action="{{url_for('student_programme_switch')}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="programme_code" value="{{p.code}}"><input type="hidden" name="return_to" value="{{request.path}}"><button class="{{'active' if p.active else ''}}" type="submit">{{p.label}}</button></form>{% endfor %}</div>
+    <p class="mobile-menu-label">Study</p><a href="{{url_for('subject_browser')}}">Learn</a><a href="{{url_for('study_plan_page')}}">My Plan</a><a href="{{url_for('test_setup')}}">Practice</a><a href="{{url_for('exam_centre')}}">Exams</a><a href="{{url_for('student_analytics_page')}}">Progress</a>
+    <p class="mobile-menu-label">More</p><a href="{{url_for('student_profile')}}">My targets & results</a><a href="{{url_for('student_pathways')}}">Pathways</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('teacher_directory')}}">Find a Teacher</a><a href="{{url_for('academic_messages_inbox')}}">Messages</a>
+    <p class="mobile-menu-label">Account & help</p><a href="{{url_for('access_account')}}">Access</a><a href="{{url_for('account_settings')}}">Settings</a><a href="{{url_for('pilot_report_issue')}}">Report an Issue</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('logout')}}">Logout</a>
+  {% elif session.get('user_id') and session.get('role')=='teacher' %}
+    <a href="{{url_for('teacher_dashboard')}}">Teacher Dashboard</a><a href="{{url_for('teacher_marketplace_dashboard')}}">Teacher Marketplace</a><a href="{{url_for('academic_messages_inbox')}}">Messages</a><a href="{{url_for('institution_dashboard')}}">Institution</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('account_settings')}}">Settings</a><a href="{{url_for('logout')}}">Logout</a>
+  {% elif session.get('user_id') and session.get('role')=='parent' %}
+    <a href="{{url_for('parent_dashboard')}}">My Child's Progress</a><a href="{{url_for('parent_academic_messaging_controls')}}">Messaging Consent</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('account_settings')}}">Settings</a><a href="{{url_for('logout')}}">Logout</a>
+  {% elif session.get('user_id') %}
+    <a href="{{url_for('dashboard')}}">Dashboard</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('account_settings')}}">Settings</a><a href="{{url_for('logout')}}">Logout</a>
+  {% else %}
+    <a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('sustainability_page')}}">Sustainability</a><a href="{{url_for('faq_page')}}">FAQs</a><a href="{{url_for('connect_page')}}">Connect</a><a href="{{url_for('contact_page')}}">Contact</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>
+  {% endif %}
+</div><div class="mobile-menu-shade" id="mobileMenuShade"></div>
+{% if learner_ui_global and request.endpoint not in ['take_test_v4','assessment_review_v4','qa_synthetic_session'] %}
+<div class="student-context-stack" aria-label="Study context">
+  <nav class="programme-context-strip" aria-label="Programme selector">
+    <span class="context-label">Programme</span>
+    {% for p in programme_nav_global %}
+      <form method="post" action="{{url_for('student_programme_switch')}}" class="programme-switch-form">
+        <input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="programme_code" value="{{p.code}}"><input type="hidden" name="return_to" value="{{request.path}}">
+        <button type="submit" class="programme-tab {{'active' if p.active else ''}}" aria-current="{{'page' if p.active else 'false'}}">{{p.label}}{% if p.question_count==0 %}<span class="context-soon">Soon</span>{% endif %}</button>
+      </form>
+    {% endfor %}
+  </nav>
+  {% if show_subject_nav_global %}
+  <nav class="subject-quick-strip" aria-label="Subject selector">
+    <a class="subject-all {{'active' if not active_subject_global else ''}}" href="{{url_for('subject_browser')}}">All subjects</a>
+    {% for s in subject_nav_global %}
+      <a class="{{'active' if (active_subject_global|lower)==(s.subject|lower) else ''}} state-{{s.access_state|lower}}" href="{{url_for('access_account',locked_subject=s.subject) if s.access_state=='LOCKED' else url_for('subject_detail',subject=s.subject)}}">
+        {{s.subject}}{% if s.access_state=='LOCKED' %}<small>Upgrade</small>{% elif s.availability=='COMING_SOON' %}<small>Soon</small>{% elif s.answered %}<small>{{s.accuracy|round(0)|int}}%</small>{% endif %}
+      </a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+</div>
+{% endif %}
+<main id="mainContent" tabindex="-1">{% for c,m in get_flashed_messages(with_categories=true) %}<div class="flash {{c}}">{{m}}</div>{% endfor %}{% block content %}{% endblock %}</main>
+
+{% if learner_ui_global and show_scoremax_coach_global and scoremax_coach_global %}
+<aside class="coach-dock" id="coachDock" aria-label="ScoreMax Coach suggestion"><button class="coach-toggle" type="button" aria-expanded="false">✦ <span>Coach</span></button><div class="coach-dock-panel"><p class="eyebrow">SCOREMAX COACH</p><h3>{{scoremax_coach_global.title}}</h3><p>{{scoremax_coach_global.message}}</p><details><summary>Why this?</summary><small>{{scoremax_coach_global.reason}}</small></details><div class="coach-actions"><form method="post" action="{{url_for('student_coach_action')}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="nudge_key" value="{{scoremax_coach_global.key}}"><button class="btn small" name="action" value="OPEN">{{scoremax_coach_global.action_label}}</button><button class="btn alt small" name="action" value="SNOOZE">Later</button><button class="text-button" name="action" value="DISMISS">Dismiss</button></form></div></div></aside>
+{% endif %}
+
+<footer class="site-footer"><div><strong>ScoreMax</strong><span>Evidence-led learning, assessment and progress.</span></div><nav><a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('sustainability_page')}}">Sustainability</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('connect_page')}}">Official channels</a>{% for link in social_links_global %}<a href="{{link.url}}" target="_blank" rel="noopener noreferrer">{{link.display_name}}</a>{% endfor %}</nav></footer>
+
+{% if learner_ui_global %}<nav class="mobile-bottom-nav" aria-label="Student navigation"><a href="{{url_for('student_dashboard')}}">⌂<span>Home</span></a><a href="{{url_for('subject_browser')}}">▦<span>Learn</span></a><a href="{{url_for('study_plan_page')}}">☷<span>Plan</span></a><a href="{{url_for('test_setup')}}">✎<span>Practice</span></a><button type="button" id="mobileMoreBtn">•••<span>More</span></button></nav>{% endif %}
+<button id="backTop" class="back-top" aria-label="Back to top" title="Back to top">↑</button>
+<script>
+const mobileSiteMenu=document.getElementById('mobileSiteMenu'), mobileMenuShade=document.getElementById('mobileMenuShade');
+let mobileMenuOpener=null;
+function setMobileMenu(open,opener=null){
+  if(!mobileSiteMenu)return;
+  if(open){mobileMenuOpener=opener||document.activeElement;}
+  mobileSiteMenu.classList.toggle('open',open);mobileMenuShade.classList.toggle('open',open);
+  mobileSiteMenu.setAttribute('aria-hidden',open?'false':'true');document.getElementById('mobileMenuBtn')?.setAttribute('aria-expanded',open?'true':'false');
+  document.body.classList.toggle('menu-open',open);
+  if(open){requestAnimationFrame(()=>document.getElementById('mobileMenuClose')?.focus());}
+  else if(mobileMenuOpener?.focus){mobileMenuOpener.focus();}
+}
+document.getElementById('mobileMenuBtn')?.addEventListener('click',e=>setMobileMenu(true,e.currentTarget));document.getElementById('mobileMoreBtn')?.addEventListener('click',e=>setMobileMenu(true,e.currentTarget));document.getElementById('mobileMenuClose')?.addEventListener('click',()=>setMobileMenu(false));mobileMenuShade?.addEventListener('click',()=>setMobileMenu(false));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&mobileSiteMenu?.classList.contains('open')){e.preventDefault();setMobileMenu(false);return;}
+  if(e.key==='Tab'&&mobileSiteMenu?.classList.contains('open')){
+    const focusable=[...mobileSiteMenu.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null);
+    if(!focusable.length)return;const first=focusable[0],last=focusable[focusable.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  }
+});
+const bt=document.getElementById('backTop');if(bt){window.addEventListener('scroll',()=>{bt.style.display=window.scrollY>500?'block':'none';});bt.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));}
+
+document.querySelectorAll('[data-tab-set]').forEach((set,setIndex)=>{
+  const buttons=[...set.querySelectorAll('[data-tab-button]')],panels=[...set.querySelectorAll('[data-tab-panel]')];
+  const tabList=set.querySelector('.app-tab-list,.workspace-tabs')||buttons[0]?.parentElement;
+  tabList?.setAttribute('role','tablist');
+  buttons.forEach((button,index)=>{const name=button.dataset.tabButton,id=`scoremax-tab-${setIndex}-${index}`,panel=panels.find(p=>p.dataset.tabPanel===name);button.id=id;button.setAttribute('role','tab');button.setAttribute('aria-controls',panel?`${id}-panel`:'');button.tabIndex=index===0?0:-1;if(panel){panel.id=`${id}-panel`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',id);panel.tabIndex=0;}});
+  function open(name,focus=false){buttons.forEach(b=>{const on=b.dataset.tabButton===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1;if(on&&focus)b.focus();});panels.forEach(p=>{p.hidden=p.dataset.tabPanel!==name;});}
+  buttons.forEach((button,index)=>{button.addEventListener('click',()=>open(button.dataset.tabButton));button.addEventListener('keydown',e=>{let next=null;if(e.key==='ArrowRight')next=(index+1)%buttons.length;else if(e.key==='ArrowLeft')next=(index-1+buttons.length)%buttons.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=buttons.length-1;if(next!==null){e.preventDefault();open(buttons[next].dataset.tabButton,true);}});});
+  const hash=location.hash.replace('#','');open(buttons.some(b=>b.dataset.tabButton===hash)?hash:(buttons[0]?.dataset.tabButton||''));
+});
+
+
+document.querySelectorAll('.nav-menu').forEach(menu=>{
+  const toggle=menu.querySelector('.nav-toggle'),drop=menu.querySelector('.nav-dropdown');if(!toggle||!drop)return;
+  const close=()=>{menu.classList.remove('menu-open');toggle.setAttribute('aria-expanded','false');};
+  const open=()=>{document.querySelectorAll('.nav-menu.menu-open').forEach(other=>{if(other!==menu){other.classList.remove('menu-open');other.querySelector('.nav-toggle')?.setAttribute('aria-expanded','false');}});menu.classList.add('menu-open');toggle.setAttribute('aria-expanded','true');};
+  toggle.addEventListener('click',e=>{e.stopPropagation();menu.classList.contains('menu-open')?close():open();});
+  toggle.addEventListener('keydown',e=>{if(['ArrowDown','Enter',' '].includes(e.key)){e.preventDefault();open();drop.querySelector('a')?.focus();}});
+  drop.addEventListener('keydown',e=>{const links=[...drop.querySelectorAll('a')];const i=links.indexOf(document.activeElement);if(e.key==='Escape'){e.preventDefault();close();toggle.focus();}else if(e.key==='ArrowDown'){e.preventDefault();links[(i+1)%links.length]?.focus();}else if(e.key==='ArrowUp'){e.preventDefault();links[(i-1+links.length)%links.length]?.focus();}});
+  menu.addEventListener('mouseleave',()=>{if(!menu.contains(document.activeElement))close();});
+});
+document.addEventListener('click',()=>document.querySelectorAll('.nav-menu.menu-open').forEach(m=>{m.classList.remove('menu-open');m.querySelector('.nav-toggle')?.setAttribute('aria-expanded','false');}));
+const coach=document.getElementById('coachDock');coach?.querySelector('.coach-toggle')?.addEventListener('click',e=>{const open=coach.classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',open?'true':'false');});
+
+function renderMiniLineChart(el){let data=[];try{data=JSON.parse(el.dataset.chart||'[]')}catch(e){return}if(!data.length)return;const w=Math.max(320,el.clientWidth||520),h=190,px=34,py=22,s=data.map(d=>Number(d.score||0)),minY=Math.max(0,Math.min(...s)-10),maxY=Math.min(100,Math.max(...s)+10),range=Math.max(10,maxY-minY),x=i=>data.length===1?w/2:px+i*((w-px*2)/(data.length-1)),y=v=>h-py-((v-minY)/range)*(h-py*2),pts=data.map((d,i)=>`${x(i)},${y(Number(d.score||0))}`).join(' '),grid=[0,.25,.5,.75,1].map(f=>{const yy=py+f*(h-py*2),val=Math.round(maxY-f*range);return `<line x1="${px}" x2="${w-px}" y1="${yy}" y2="${yy}" class="chart-gridline"/><text x="4" y="${yy+4}" class="chart-axis-label">${val}%</text>`}).join(''),labels=data.map((d,i)=>i===0||i===data.length-1||data.length<=6?`<text x="${x(i)}" y="${h-3}" text-anchor="middle" class="chart-axis-label">${d.label}</text>`:'').join(''),dots=data.map((d,i)=>`<circle cx="${x(i)}" cy="${y(Number(d.score||0))}" r="4" class="chart-dot"><title>${d.label}: ${d.score}%</title></circle>`).join('');el.innerHTML=`<svg viewBox="0 0 ${w} ${h}">${grid}<polyline points="${pts}" class="chart-line"/>${dots}${labels}</svg>`;}
+document.querySelectorAll('.mini-line-chart').forEach(renderMiniLineChart);
+</script>
+</body></html>

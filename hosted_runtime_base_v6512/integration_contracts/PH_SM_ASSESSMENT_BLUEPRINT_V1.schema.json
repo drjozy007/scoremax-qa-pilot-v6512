@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.scoremax.internal/v1/PH_SM_ASSESSMENT_BLUEPRINT_V1.schema.json",
+  "title": "Power House to ScoreMax Assessment Blueprint v1",
+  "description": "Governed cross-platform message envelope. External identifiers are opaque strings.",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "contract_name": {
+      "const": "PH_SM_ASSESSMENT_BLUEPRINT_V1"
+    },
+    "contract_version": {
+      "const": "1"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "source_system": {
+      "const": "POWER_HOUSE"
+    },
+    "destination_system": {
+      "const": "SCOREMAX"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "producer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "retry_of_message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "payload_checksum_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "data_classification": {
+      "enum": [
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "PSEUDONYMOUS"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "blueprint_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "blueprint_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "blueprint_checksum_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "release_state": {
+          "const": "RELEASED"
+        },
+        "market_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "board_exam_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "programme_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "subject_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "effective_from": {
+          "type": "string",
+          "format": "date"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "total_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total_marks": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "section_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "question_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "marks": {
+                "type": "number",
+                "minimum": 0
+              },
+              "duration_seconds": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1
+              },
+              "coverage_rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "scope_type": {
+                      "enum": [
+                        "SUBJECT",
+                        "CHAPTER",
+                        "TOPIC",
+                        "OUTCOME"
+                      ]
+                    },
+                    "scope_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "weight": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "minimum_questions": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "maximum_questions": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "scope_type",
+                    "scope_id",
+                    "weight",
+                    "minimum_questions"
+                  ]
+                },
+                "minItems": 1
+              },
+              "question_type_rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "question_type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "minimum": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "maximum": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "question_type",
+                    "minimum",
+                    "maximum"
+                  ]
+                },
+                "minItems": 1
+              },
+              "mastery_distribution": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "cognitive_demand_distribution": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "section_id",
+              "display_name",
+              "order",
+              "question_count",
+              "marks",
+              "coverage_rules",
+              "question_type_rules"
+            ]
+          },
+          "minItems": 1
+        },
+        "marking_rules": {
+          "type": "object",
+          "properties": {
+            "correct_marks": {
+              "type": "number"
+            },
+            "incorrect_marks": {
+              "type": "number"
+            },
+            "unanswered_marks": {
+              "type": "number"
+            },
+            "partial_credit_allowed": {
+              "type": "boolean"
+            },
+            "rounding_rule": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "correct_marks",
+            "incorrect_marks",
+            "unanswered_marks",
+            "partial_credit_allowed"
+          ]
+        },
+        "permitted_release_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "uniqueItems": true
+        },
+        "source_authority_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "blueprint_id",
+        "blueprint_version",
+        "blueprint_checksum_sha256",
+        "release_state",
+        "market_id",
+        "board_exam_id",
+        "programme_id",
+        "subject_id",
+        "effective_from",
+        "total_duration_seconds",
+        "total_marks",
+        "sections",
+        "marking_rules",
+        "source_authority_refs"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "contract_name",
+    "contract_version",
+    "schema_version",
+    "source_system",
+    "destination_system",
+    "occurred_at",
+    "sent_at",
+    "correlation_id",
+    "idempotency_key",
+    "producer_version",
+    "payload_checksum_sha256",
+    "data_classification",
+    "payload"
+  ]
+}

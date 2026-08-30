@@ -1,0 +1,92 @@
+{
+  "explicitly_untouched": [
+    "mastery architecture",
+    "learner UX",
+    "reviewer architecture",
+    "payments",
+    "referrals",
+    "Emergency Direct Intake behavior",
+    "blueprint semantics",
+    "question admission semantics",
+    "V6.5.4 retry-cycle behavior",
+    "V6.5.4 strict JSON behavior",
+    "V6.5.4 Integration Health behavior"
+  ],
+  "final_gate": "confirmed_total=0 \u00b7 P0=0 \u00b7 P1=0 \u00b7 integrity=ok \u00b7 foreign_key_violations=0",
+  "gates": {
+    "canonical_integration_scale": {
+      "question_counts": [
+        300,
+        1500
+      ],
+      "status": "PASSED"
+    },
+    "db_integrity": {
+      "foreign_key_violations": 0,
+      "integrity": "ok",
+      "status": "PASSED"
+    },
+    "inherited_v64_baseline": {
+      "deterministic_checks": 605,
+      "emergency_direct_intake_3000": "PASSED",
+      "status": "PASSED",
+      "synthetic_mastery_simulation": "PASSED"
+    },
+    "jinja_parse": {
+      "status": "PASSED",
+      "templates": 108
+    },
+    "manifest_origin_security": {
+      "assertions": "23/23",
+      "cross_origin_redirect": "BLOCKED_BEFORE_REDIRECT_REQUEST",
+      "direct_cross_origin": "BLOCKED_BEFORE_CREDENTIAL_AND_NETWORK",
+      "non_https": "BLOCKED_BEFORE_CREDENTIAL_AND_NETWORK",
+      "same_origin_auth_checksum_staging": "PASSED",
+      "status": "PASSED",
+      "suffix_host_confusion": "BLOCKED_BEFORE_CREDENTIAL_AND_NETWORK",
+      "token_in_receipts_quarantine_diagnostics": "NOT_FOUND",
+      "unexpected_port": "BLOCKED_BEFORE_CREDENTIAL_AND_NETWORK",
+      "userinfo_confusion": "BLOCKED_BEFORE_CREDENTIAL_AND_NETWORK"
+    },
+    "previous_v654_central_attack": {
+      "P0": 0,
+      "P1": 0,
+      "confirmed_total": 0,
+      "foreign_key_violations": 0,
+      "integrity": "ok",
+      "status": "PASSED"
+    },
+    "previous_v654_rectification_suite": {
+      "assertions": "31/31",
+      "status": "PASSED"
+    },
+    "python_compile": {
+      "files": 101,
+      "status": "PASSED"
+    },
+    "v651_deep": {
+      "assertions": "24/24",
+      "status": "PASSED"
+    },
+    "v651_rectification": {
+      "assertions": "23/23",
+      "status": "PASSED"
+    },
+    "v653_behavioral": {
+      "assertions": "48/48",
+      "status": "PASSED"
+    },
+    "v65_focused_integration": {
+      "assertions": "48/48",
+      "status": "PASSED"
+    }
+  },
+  "parent_zip_sha256": "5c86d0fc9c703c5fd4c50b01442311a5f9e0897d0fbc45983b0a2794dbbcb7ee",
+  "rectified_finding": "INT-SM654-P0-001",
+  "release": "ScoreMax V6.5.5",
+  "scope": "Power House MANIFEST_PULL trusted-origin and redirect credential-boundary only",
+  "windows_qualification": {
+    "blocks_v655_rectification_return": false,
+    "status": "SEPARATE_INFRASTRUCTURE_CI_GATE"
+  }
+}

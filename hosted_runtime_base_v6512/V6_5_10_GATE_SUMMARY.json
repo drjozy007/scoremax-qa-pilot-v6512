@@ -1,0 +1,40 @@
+{
+  "build_name": "ScoreMax-Growth Terminal Payment State Machine Rectification Candidate",
+  "contract_schema_sha256": "b42ae2a0fd1965ec83e561c43e60d68e84395687de1f257948af7b87319019bb",
+  "cross_system_growth_v0_14_3": "PENDING_INDEPENDENT_CENTRAL_CONNECTED_QUALIFICATION",
+  "growth_engine_receiver_expected_sha256": "3c378ea33e06b5421eee6f00047c92c3f7a0add9ba0c8e7e27abf5013416c284",
+  "parent_release": "6.5.9",
+  "parent_zip_sha256": "fae57ad5adb0be5373ff9943c263f0bce350c9b25dc936303ada956a5fd167d0",
+  "platform_side": {
+    "canonical_300_1500": "PASS",
+    "focused_terminal_state_checks": "34/34 PASS",
+    "foreign_key_violations": 0,
+    "inherited_v6_4": "605 + simulation + 3000 intake PASS",
+    "integrity": "ok",
+    "jinja_templates": "108/108 PASS",
+    "previous_central_attack": {
+      "P0": 0,
+      "P1": 0,
+      "confirmed_total": 0,
+      "foreign_key_violations": 0,
+      "integrity": "ok"
+    },
+    "python_compile": "113/113 PASS",
+    "qa_sandbox_1500": "PASS",
+    "runtime_artifact_hygiene": "PASS",
+    "v6_5_1_deep": "24/24 PASS",
+    "v6_5_1_rectification": "23/23 PASS",
+    "v6_5_3_admission": "48/48 PASS",
+    "v6_5_4_rectification": "31/31 PASS",
+    "v6_5_5_origin_security": "23/23 PASS",
+    "v6_5_6_port_security": "44/44 PASS",
+    "v6_5_7_activation": "25/25 PASS",
+    "v6_5_8_learner_evidence": "12/12 PASS",
+    "v6_5_9_commercial": "30/30 PASS",
+    "v6_5_focused": "48/48 PASS"
+  },
+  "rectified_findings": [
+    "SM-GE-CONN-P1-003"
+  ],
+  "release": "6.5.10"
+}

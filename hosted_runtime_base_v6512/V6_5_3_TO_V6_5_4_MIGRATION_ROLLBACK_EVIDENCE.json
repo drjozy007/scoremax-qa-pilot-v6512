@@ -1,0 +1,52 @@
+{
+  "child_release": "6.5.4",
+  "exact_parent_release": "6.5.3",
+  "migrated_db_sha256": "8124c3f3bb63a9dc14c4ec35ad3080944d76b07602e9126fedf475121e52506d",
+  "migration": {
+    "fk": 0,
+    "has_retry_cycle": true,
+    "integrity": "ok",
+    "migration_quarantine_count": 1,
+    "release": "6.5.4",
+    "rows": [
+      {
+        "attempt_count": 0,
+        "envelope_json": "{\"contract_name\":\"SM_GE_PRODUCT_EVENT_V1\",\"contract_version\":\"1\",\"correlation_id\":\"corr::af72f881980892faa24a\",\"data_classification\":\"PSEUDONYMOUS\",\"destination_system\":\"GROWTH_ENGINE\",\"idempotency_key\":\"product-event::MIGRATION-VALID-V653\",\"message_id\":\"msg::SM_GE_PRODUCT_EVENT_V1::98c99643cec213a3c3af8cdda6f3\",\"occurred_at\":\"2026-08-22T15:18:04Z\",\"payload\":{\"actor\":{\"actor_id\":\"SCOREMAX\",\"actor_type\":\"SYSTEM\"},\"context\":{},\"event_data\":{\"metadata\":{\"x\":1}},\"event_id\":\"MIGRATION-VALID-V653\",\"event_type\":\"LEARNER_REGISTERED\",\"event_version\":\"1\",\"occurred_at\":\"2026-08-22T15:18:04Z\"},\"payload_checksum_sha256\":\"1586c22603f3cf3c5455c7a13e8a52c556964c99b31719c6c92183967f7f845f\",\"producer_version\":\"6.5.3\",\"retry_of_message_id\":null,\"schema_version\":\"1.0.0\",\"sent_at\":\"2026-08-22T15:18:04Z\",\"source_system\":\"SCOREMAX\"}",
+        "last_error_code": "",
+        "message_id": "msg::SM_GE_PRODUCT_EVENT_V1::98c99643cec213a3c3af8cdda6f3",
+        "retry_cycle": 0,
+        "status": "PENDING"
+      },
+      {
+        "attempt_count": 0,
+        "envelope_json": "{\"contract_name\":\"SM_GE_PRODUCT_EVENT_V1\",\"contract_version\":\"1\",\"correlation_id\":\"corr::a05c7db33b01ddc7489f\",\"data_classification\":\"PSEUDONYMOUS\",\"destination_system\":\"GROWTH_ENGINE\",\"idempotency_key\":\"product-event::MIGRATION-NAN-V653\",\"message_id\":\"msg::SM_GE_PRODUCT_EVENT_V1::eb48947faae14fea888817b04a71\",\"occurred_at\":\"2026-08-22T15:18:04Z\",\"payload\":{\"actor\":{\"actor_id\":\"SCOREMAX\",\"actor_type\":\"SYSTEM\"},\"context\":{},\"event_data\":{\"metadata\":{\"poison\":NaN}},\"event_id\":\"MIGRATION-NAN-V653\",\"event_type\":\"LEARNER_REGISTERED\",\"event_version\":\"1\",\"occurred_at\":\"2026-08-22T15:18:04Z\"},\"payload_checksum_sha256\":\"324781013246301090e194d786d05e1641c6769b1f43827e1a1d12c8e6652c58\",\"producer_version\":\"6.5.3\",\"retry_of_message_id\":null,\"schema_version\":\"1.0.0\",\"sent_at\":\"2026-08-22T15:18:04Z\",\"source_system\":\"SCOREMAX\"}",
+        "last_error_code": "MIGRATION_NON_STANDARD_JSON",
+        "message_id": "msg::SM_GE_PRODUCT_EVENT_V1::eb48947faae14fea888817b04a71",
+        "retry_cycle": 0,
+        "status": "QUARANTINED"
+      }
+    ]
+  },
+  "parent_db_before_sha256": "881eb312433f7602df7141bda20975bc34e2affe21a6920816c5d66286c6d046",
+  "parent_zip_sha256": "344b9e8f7246858250192bf1b9c4d8f17a0675b41f412fe3bee20f3bf8e8eceb",
+  "rollback_restore": {
+    "fk": 0,
+    "integrity": "ok",
+    "release": "6.5.3",
+    "rows": [
+      {
+        "attempt_count": 0,
+        "envelope_json": "{\"contract_name\":\"SM_GE_PRODUCT_EVENT_V1\",\"contract_version\":\"1\",\"correlation_id\":\"corr::af72f881980892faa24a\",\"data_classification\":\"PSEUDONYMOUS\",\"destination_system\":\"GROWTH_ENGINE\",\"idempotency_key\":\"product-event::MIGRATION-VALID-V653\",\"message_id\":\"msg::SM_GE_PRODUCT_EVENT_V1::98c99643cec213a3c3af8cdda6f3\",\"occurred_at\":\"2026-08-22T15:18:04Z\",\"payload\":{\"actor\":{\"actor_id\":\"SCOREMAX\",\"actor_type\":\"SYSTEM\"},\"context\":{},\"event_data\":{\"metadata\":{\"x\":1}},\"event_id\":\"MIGRATION-VALID-V653\",\"event_type\":\"LEARNER_REGISTERED\",\"event_version\":\"1\",\"occurred_at\":\"2026-08-22T15:18:04Z\"},\"payload_checksum_sha256\":\"1586c22603f3cf3c5455c7a13e8a52c556964c99b31719c6c92183967f7f845f\",\"producer_version\":\"6.5.3\",\"retry_of_message_id\":null,\"schema_version\":\"1.0.0\",\"sent_at\":\"2026-08-22T15:18:04Z\",\"source_system\":\"SCOREMAX\"}",
+        "message_id": "msg::SM_GE_PRODUCT_EVENT_V1::98c99643cec213a3c3af8cdda6f3",
+        "status": "PENDING"
+      },
+      {
+        "attempt_count": 0,
+        "envelope_json": "{\"contract_name\":\"SM_GE_PRODUCT_EVENT_V1\",\"contract_version\":\"1\",\"correlation_id\":\"corr::a05c7db33b01ddc7489f\",\"data_classification\":\"PSEUDONYMOUS\",\"destination_system\":\"GROWTH_ENGINE\",\"idempotency_key\":\"product-event::MIGRATION-NAN-V653\",\"message_id\":\"msg::SM_GE_PRODUCT_EVENT_V1::eb48947faae14fea888817b04a71\",\"occurred_at\":\"2026-08-22T15:18:04Z\",\"payload\":{\"actor\":{\"actor_id\":\"SCOREMAX\",\"actor_type\":\"SYSTEM\"},\"context\":{},\"event_data\":{\"metadata\":{\"poison\":NaN}},\"event_id\":\"MIGRATION-NAN-V653\",\"event_type\":\"LEARNER_REGISTERED\",\"event_version\":\"1\",\"occurred_at\":\"2026-08-22T15:18:04Z\"},\"payload_checksum_sha256\":\"324781013246301090e194d786d05e1641c6769b1f43827e1a1d12c8e6652c58\",\"producer_version\":\"6.5.3\",\"retry_of_message_id\":null,\"schema_version\":\"1.0.0\",\"sent_at\":\"2026-08-22T15:18:04Z\",\"source_system\":\"SCOREMAX\"}",
+        "message_id": "msg::SM_GE_PRODUCT_EVENT_V1::eb48947faae14fea888817b04a71",
+        "status": "PENDING"
+      }
+    ]
+  },
+  "status": "PASS"
+}

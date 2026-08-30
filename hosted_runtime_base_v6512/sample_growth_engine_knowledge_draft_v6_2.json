@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "draft_id": "GE-KNOW-FSC-BIO-001",
+  "source_system": "ScoreMax Growth Engine",
+  "title": "How the FSc Biology syllabus is organised",
+  "slug": "fsc-biology-syllabus-structure",
+  "summary": "A sourced student guide to the structure of FSc Biology Part I.",
+  "body_text": "Draft content prepared by the Growth Engine. Human review, source verification and publication approval are still required.",
+  "framework": "FSc",
+  "framework_version": "2026",
+  "subject": "Biology",
+  "chapter": "",
+  "sources": [
+    {
+      "title": "Official FSc Biology syllabus",
+      "organisation": "Relevant awarding authority",
+      "rights_status": "LINK_ONLY"
+    }
+  ],
+  "status": "DRAFT_FOR_HUMAN_REVIEW"
+}

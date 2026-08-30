@@ -1,0 +1,492 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.scoremax.internal/v1/SM_GE_PRODUCT_EVENT_V1.schema.json",
+  "title": "ScoreMax to Growth Engine Product Event v1",
+  "description": "Governed cross-platform message envelope. External identifiers are opaque strings.",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "contract_name": {
+      "const": "SM_GE_PRODUCT_EVENT_V1"
+    },
+    "contract_version": {
+      "const": "1"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "source_system": {
+      "const": "SCOREMAX"
+    },
+    "destination_system": {
+      "const": "GROWTH_ENGINE"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "producer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "retry_of_message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "payload_checksum_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "data_classification": {
+      "enum": [
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "PSEUDONYMOUS"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "event_type": {
+          "enum": [
+            "LEARNER_REGISTERED",
+            "ATTRIBUTION_RECORDED",
+            "PROGRAMME_SELECTED",
+            "DIAGNOSTIC_STARTED",
+            "DIAGNOSTIC_COMPLETED",
+            "FIRST_MEANINGFUL_ACTIVITY",
+            "ASSESSMENT_STARTED",
+            "ASSESSMENT_COMPLETED",
+            "STUDY_PLAN_ACTIVITY",
+            "RETENTION_MILESTONE",
+            "ACCESS_TIER_CHANGED",
+            "PACKAGE_PURCHASED",
+            "PAYMENT_CLEARED",
+            "PAYMENT_FAILED",
+            "PAYMENT_REFUNDED",
+            "PAYMENT_REVERSED",
+            "SUBSCRIPTION_RENEWED",
+            "TEACHER_REGISTERED",
+            "TEACHER_REFERRAL_RECORDED",
+            "STUDENT_REFERRAL_RECORDED",
+            "REFERRAL_REWARD_ELIGIBILITY_CHANGED",
+            "INSTITUTION_ACTIVITY",
+            "CLASS_CREATED",
+            "LEARNER_INVITED",
+            "CONTENT_AVAILABILITY_CHANGED"
+          ]
+        },
+        "event_version": {
+          "const": "1"
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actor": {
+          "type": "object",
+          "properties": {
+            "actor_type": {
+              "enum": [
+                "LEARNER",
+                "TEACHER",
+                "INSTITUTION",
+                "ACADEMY",
+                "SYSTEM"
+              ]
+            },
+            "actor_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "actor_type",
+            "actor_id"
+          ]
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "market_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "programme_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "subject_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "chapter_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "institution_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "academy_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "class_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "campaign_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "acquisition_source_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "referral_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "package_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            }
+          },
+          "additionalProperties": false
+        },
+        "event_data": {
+          "type": "object",
+          "properties": {
+            "attempt_id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "assessment_type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "completion_status": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "weak_area_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "study_plan_action": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "retention_milestone": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "access_tier_from": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "access_tier_to": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "payment_transaction_id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "payment_status": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "currency": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 3,
+              "maxLength": 3
+            },
+            "gross_amount_minor": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "eligible_amount_minor": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "refund_amount_minor": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "direct_referrer_teacher_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "upstream_referrer_teacher_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "direct_reward_id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "upstream_reward_id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "direct_reward_amount_minor": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "upstream_reward_amount_minor": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "reward_status": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "power_house_release_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "power_house_release_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            },
+            "power_house_release_checksum_sha256": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "live_status": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "LIVE_TO_LEARNERS",
+                "NOT_LIVE",
+                "WITHDRAWN",
+                null
+              ]
+            },
+            "metadata": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_type",
+        "event_version",
+        "occurred_at",
+        "actor",
+        "context",
+        "event_data"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "enum": [
+                  "PAYMENT_CLEARED",
+                  "PAYMENT_FAILED",
+                  "PAYMENT_REFUNDED",
+                  "PAYMENT_REVERSED"
+                ]
+              }
+            },
+            "required": [
+              "event_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "event_data": {
+                "required": [
+                  "payment_transaction_id",
+                  "payment_status",
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "CONTENT_AVAILABILITY_CHANGED"
+              }
+            },
+            "required": [
+              "event_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "event_data": {
+                "required": [
+                  "power_house_release_id",
+                  "power_house_release_version",
+                  "power_house_release_checksum_sha256",
+                  "live_status"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "contract_name",
+    "contract_version",
+    "schema_version",
+    "source_system",
+    "destination_system",
+    "occurred_at",
+    "sent_at",
+    "correlation_id",
+    "idempotency_key",
+    "producer_version",
+    "payload_checksum_sha256",
+    "data_classification",
+    "payload"
+  ]
+}

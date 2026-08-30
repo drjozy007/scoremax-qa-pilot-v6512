@@ -1,0 +1,133 @@
+{
+  "package_schema_version": "1.1.0",
+  "release_id": "REL::PK::FSC1::CHEM::CH03::MANIFEST-DEMO",
+  "release_version": "1.1.0-demo",
+  "stimuli": [],
+  "questions": [
+    {
+      "question_id": "Q::CHEM11::CH03::000125::MANIFEST-DEMO",
+      "question_version_id": "QV::CHEM11::CH03::000125::v2::MANIFEST-DEMO",
+      "question_version_number": 2,
+      "question_checksum_sha256": "64e7df63ee1dad5bedae2be34ac0d4f9a6d135fb21c126958481086df84e84fb",
+      "supersedes_question_version_id": "QV::CHEM11::CH03::000125::v1",
+      "effective_from": "2026-08-21T12:00:00Z",
+      "curriculum": {
+        "market_id": "PK",
+        "board_exam_id": "BOARD::PUNJAB",
+        "qualification_id": "FSC",
+        "programme_id": "FSC_PART_I",
+        "grade_year_id": "YEAR_11",
+        "subject_id": "CHEMISTRY",
+        "chapter_id": "CHAPTER::CHEMISTRY::11::03",
+        "section_id": "SECTION::03.2",
+        "topic_id": "TOPIC::BOND_ENERGY",
+        "subtopic_id": null,
+        "learning_outcome_ids": [
+          "LO::CHEM11::03::07"
+        ],
+        "teaching_learning_outcome_ids": [],
+        "display": {
+          "programme": "FSc Part I",
+          "grade_year": "Year 11",
+          "subject": "Chemistry",
+          "chapter_number": "3",
+          "chapter": "Chemical Bonding",
+          "section": "Bond Energy",
+          "topic": "Bond strength",
+          "subtopic": null,
+          "outcome_text": "Compare bond strength using governed evidence."
+        }
+      },
+      "content": {
+        "language": "en",
+        "question_family_type": "MCQ",
+        "pedagogical_type": "COMPARISON",
+        "exam_question_type": "SINGLE_BEST_ANSWER",
+        "stem": "Which bond is expected to require more energy to break?",
+        "stimulus_ref": null,
+        "inline_stimulus": null,
+        "options": [
+          {
+            "option_id": "A",
+            "text": "Bond X",
+            "is_display_only": false
+          },
+          {
+            "option_id": "B",
+            "text": "Bond Y",
+            "is_display_only": false
+          }
+        ],
+        "statements": [],
+        "marking": {
+          "key_type": "SINGLE_OPTION",
+          "key": "B",
+          "accepted_answers": [],
+          "numeric_tolerance": null,
+          "marks": 1,
+          "negative_marks": 0,
+          "rubric": null,
+          "explanation": "Bond Y has the higher governed bond-energy value."
+        },
+        "estimated_time_seconds": 45,
+        "command_word": "Which",
+        "learner_hygiene_version": "1"
+      },
+      "architecture": {
+        "knowledge_node_ids": [
+          "NODE::CHEM11::BOND_ENERGY"
+        ],
+        "claim_family_id": "FAMILY::CHEM11::BOND_STRENGTH",
+        "reasoning_seed_id": "SEED::CHEM11::COMPARE_BOND_ENERGY",
+        "parent_question_id": null,
+        "dependency_group_id": null,
+        "dependency_type": null,
+        "evidence_role": "INDEPENDENT",
+        "independent_mastery_eligible": true,
+        "independent_mastery_weight": 1,
+        "transfer_level": "NEAR_TRANSFER",
+        "common_cr": null,
+        "mastery_level": "EXAM_READY",
+        "mastery_ceiling": "ADVANCED",
+        "cognitive_demand": "APPLY",
+        "misconception_ids": [
+          "MIS::BOND_ENERGY_LENGTH_REVERSAL"
+        ]
+      },
+      "governance": {
+        "academic_review_state": "APPROVED",
+        "r2_status": "NOT_REQUIRED",
+        "hold_status": "CLEAR",
+        "source_check_status": "CLEAR",
+        "release_readiness": "READY",
+        "rights_status": "LICENSED_COMMERCIAL",
+        "generated_clearance_status": "CLEARED",
+        "readiness_policy_version": "SCOREMAX_READY_POLICY::1",
+        "review_evidence_refs": [
+          "REVIEW::CHEM11::CH03::R1::125"
+        ]
+      },
+      "provenance": {
+        "primary_source": {
+          "source_id": "src::chemistry-y11-part2",
+          "source_type": "TEXTBOOK",
+          "source_version": "2025",
+          "source_title": "Chemistry Year 11 Part 2",
+          "locator": "Chapter 3, section 3.2",
+          "source_file_sha256": "e415789bacdcc7ee4a4ca9c9d5df4cb4e4c3300ae5aeff98a03393940704731d",
+          "worksheet": null,
+          "row": null,
+          "rights_status": "LICENSED_COMMERCIAL",
+          "metadata": {
+            "publisher": "governed-source"
+          }
+        },
+        "additional_sources": [],
+        "lineage": {
+          "original_question_id": "Q::CHEM11::CH03::000125",
+          "amendment_reason": "reviewer_clarity_change"
+        }
+      }
+    }
+  ]
+}

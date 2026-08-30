@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% block content %}
+<section class="public-page">
+<p class="eyebrow">ABOUT US</p><h1>We want exams to become a pathway to improvement, not just a final score.</h1>
+<p class="lead">ScoreMax is being built to help students understand where they are losing marks, what they should improve next, and whether their work is actually making a difference.</p>
+<div class="grid">
+<div class="card"><p class="eyebrow">OUR VISION</p><h2>Help every student see a clear path towards their academic goal.</h2></div>
+<div class="card"><p class="eyebrow">OUR MISSION</p><h2>Turn testing into useful feedback, targeted improvement and measurable progress.</h2></div>
+</div>
+<div class="card"><h2>What makes ScoreMax different?</h2><p>We are not trying to become another lecture-heavy online academy. ScoreMax starts with your test results: test yourself, find the exact problem, get short help where needed, practise it, and test again.</p></div>
+<div class="card"><p class="eyebrow">PUBLIC TRUST</p><h2>See how we separate current practice from future commitments.</h2><p>Our Sustainability section covers access, inclusion, responsible AI, data use and measurable progress.</p><a class="btn alt" href="{{url_for('sustainability_page')}}">Read Sustainability</a></div>
+</section>{% endblock %}

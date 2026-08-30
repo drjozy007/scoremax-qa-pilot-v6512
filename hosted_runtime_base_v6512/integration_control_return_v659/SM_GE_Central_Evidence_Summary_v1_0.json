@@ -1,0 +1,40 @@
+{
+  "scoremax_candidate_sha256": "2a7c1b0f57ae230279c67784ad6403d0acb37a281cd3c435a759f592b3547b25",
+  "growth_engine_candidate_sha256": "3c378ea33e06b5421eee6f00047c92c3f7a0add9ba0c8e7e27abf5013416c284",
+  "contract_schema_sha256": "b42ae2a0fd1965ec83e561c43e60d68e84395687de1f257948af7b87319019bb",
+  "scoremax_event_types": [
+    "TEACHER_REGISTERED",
+    "TEACHER_REGISTERED",
+    "TEACHER_REFERRAL_RECORDED",
+    "LEARNER_REGISTERED",
+    "STUDENT_REFERRAL_RECORDED",
+    "PROGRAMME_SELECTED",
+    "PAYMENT_CLEARED",
+    "REFERRAL_REWARD_ELIGIBILITY_CHANGED",
+    "PAYMENT_REFUNDED"
+  ],
+  "scoremax_schema_error_count": 0,
+  "scoremax_integrity": "ok",
+  "scoremax_foreign_key_violations": 0,
+  "confirmed_findings": [
+    {
+      "id": "SM-GE-CONN-P1-001",
+      "severity": "P1",
+      "owner": "SCOREMAX",
+      "code": "METADATA_FIELD_NOT_ALLOWLISTED",
+      "path": "/payload/event_data/metadata/provider"
+    },
+    {
+      "id": "SM-GE-CONN-P1-002",
+      "severity": "P1",
+      "owner": "SCOREMAX",
+      "code": "REWARD_PAYMENT_STATE_INVALID",
+      "condition": "PAYMENT_REFUNDED carries non-negative/pending reward facts"
+    }
+  ],
+  "diagnostic_only": {
+    "provider_to_payment_provider": "all pre-refund events accepted including payment/rewards",
+    "governed_reward_reversal_before_refund_projection": "refund and direct/upstream reversal accepted by Growth",
+    "identical_replay": "no duplicate integration/product/payment/reward state"
+  }
+}

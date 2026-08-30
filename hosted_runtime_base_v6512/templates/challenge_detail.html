@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block content %}
+<div class="card challenge-detail"><a href="{{url_for('challenges_page')}}">← Monthly Challenges</a><p class="eyebrow">{{challenge.challenge_month}} • {{challenge.subject}}</p><h1>{{challenge.title}}</h1>
+<p>{{challenge.description}}</p><div class="grid3"><div class="metric"><span>Questions</span><strong>{{challenge.mapped_questions}}</strong></div><div class="metric"><span>Time</span><strong>{{challenge.duration_minutes}} min</strong></div><div class="metric"><span>Attempts</span><strong>1</strong></div></div>
+{% if entry and entry.status=='completed' %}
+<div class="challenge-result"><p class="eyebrow">YOUR RESULT</p><h2>{{entry.score}}%</h2>
+{% if entry.ranking_consent %}<p><strong>{{entry.ranking_band}}</strong>{% if entry.exact_rank %} • Exact rank #{{entry.exact_rank}}{% endif %}</p><p class="muted">Ranking only includes students who voluntarily opted in.</p>{% else %}<p>Your result remains private and is not ranked.</p>{% endif %}</div>
+{% else %}
+<div class="source-notice"><strong>Challenge rules</strong><p>One timed attempt. No pause. Ranking is optional — you can compete without showing your position.</p></div>
+<form method="post" action="{{url_for('start_challenge',challenge_id=challenge.id)}}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+{% if user.ranking_opt_in and challenge.ranking_enabled %}<label class="ranking-consent"><input type="checkbox" name="ranking_consent" value="1"> Include this challenge result in the voluntary ranking</label>{% endif %}
+<button class="btn" {% if challenge.mapped_questions<1 %}disabled{% endif %}>Start challenge</button></form>
+{% endif %}</div>
+
+{% if leaderboard %}
+<div class="card"><p class="eyebrow">QUALIFYING LEADERBOARD</p><h2>Top qualifying positions</h2><p class="muted">Exact positions are shown only for qualifying high performers. ScoreMax does not publish a full bottom-to-top ranking.</p>
+<div class="table-wrap"><table><tr><th>Rank</th><th>Participant</th><th>Score</th><th>Band</th></tr>{% for r in leaderboard %}<tr><td>#{{r.exact_rank}}</td><td>{{r.display_name}}</td><td>{{r.score}}%</td><td>{{r.ranking_band}}</td></tr>{% endfor %}</table></div></div>
+{% endif %}
+{% endblock %}

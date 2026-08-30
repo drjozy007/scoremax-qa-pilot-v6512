@@ -1,0 +1,42 @@
+{% extends "base.html" %}{% block title %}{{chapter.display_label}} · ScoreMax{% endblock %}{% block content %}
+<section class="compact-page">
+  {% set m=chapter.mastery %}
+  <section class="chapter-v2-hero">
+    <div class="chapter-v2-heading">
+      <a class="back-link" href="{{url_for('subject_detail',subject=chapter.subject)}}">← {{chapter.subject}}</a>
+      <p class="eyebrow">{{chapter.subject|upper}} · {% if chapter.chapter_number %}CHAPTER {{chapter.chapter_number}}{% else %}CHAPTER{% endif %}</p>
+      <h1>{{chapter.chapter_name or chapter.display_label}}</h1>
+      <p class="muted">Build the chapter, prove it, and keep it strong.</p>
+      <div class="chapter-actions"><a class="btn" href="{{url_for('test_setup',scope='chapter',subject=chapter.subject,chapter=chapter.chapter,mode='practice')}}">Practise chapter</a><a class="btn alt" href="{{url_for('mastery_page')}}">Check mastery</a></div>
+    </div>
+    <div class="chapter-mastery-panel">
+      <div class="mastery-compare-labels large">
+        <div><span>Existing mastery</span><strong>{{m.existing_level}}</strong><small>{{m.existing_status if m.has_formal_mastery else 'No verified chapter mastery yet'}}</small></div>
+        <div class="potential"><span>Potential mastery</span><strong>{{m.potential_level}}</strong><small>{% if m.opportunity_pct %}+{{m.opportunity_pct}}% available to build{% else %}Current verified ceiling reached{% endif %}</small></div>
+      </div>
+      <div class="mastery-opportunity-track large" style="--existing:{{m.existing_pct}}%;--potential:{{m.potential_pct}}%"><span class="potential-fill"></span><span class="existing-fill"></span></div>
+      <div class="mastery-ladder-labels"><span>Foundation</span><span>Exam Ready</span><span>Advanced</span><span>Distinction</span></div>
+      {% if m.access_limited %}<p class="access-note">This chapter can support {{m.potential_level}}. Your current Access unlocks mastery assessment up to {{m.access_ceiling}}.</p>{% endif %}
+      <div class="chapter-practice-stat">{% if chapter.answered %}<strong>{{chapter.accuracy|round(0)|int}}%</strong><span>practice accuracy across {{chapter.answered}} answers</span>{% else %}<strong>New</strong><span>Start practising to build your evidence</span>{% endif %}</div>
+    </div>
+  </section>
+
+  <section class="card chapter-next-card">
+    <div class="section-heading-row"><div><p class="eyebrow">WHAT TO DO NEXT</p><h2>{% if plan_items %}Your next chapter actions{% elif weak %}Close the biggest gap first{% else %}Start building this chapter{% endif %}</h2></div></div>
+    {% if plan_items %}{% for x in plan_items[:3] %}<div class="learner-action-row"><div><strong>{{x.title}}</strong><small>{{x.activity_date}} · {{x.phase}}</small></div><a href="{{url_for('study_plan_page')}}">Open plan →</a></div>{% endfor %}
+    {% elif weak %}<div class="learner-action-row"><div><strong>{{weak[0].area}}</strong><small>{{weak[0].accuracy}}% across {{weak[0].answered}} answers</small></div><a href="{{url_for('weak_areas_page')}}">Improve →</a></div>
+    {% else %}<p>Take a short chapter practice so ScoreMax can identify what needs attention.</p><a class="btn" href="{{url_for('test_setup',scope='chapter',subject=chapter.subject,chapter=chapter.chapter,mode='practice')}}">Start practice</a>{% endif %}
+  </section>
+
+  <section class="card"><div class="section-heading-row"><div><p class="eyebrow">TOPICS</p><h2>Choose where to work.</h2></div></div><div class="chapter-tap-grid">{% for x in topics %}<a class="chapter-tap-card" href="{{url_for('test_setup',scope='topic',subject=chapter.subject,topic=x.topic)}}"><span class="status-dot status-{{x.status|lower|replace(' ','-')}}"></span><div><strong>{{x.topic}}</strong><small>{% if x.answered %}{{x.accuracy|round(0)|int}}% across {{x.answered}} answers{% else %}Not started{% endif %}</small></div><b>›</b></a>{% else %}<p class="muted">Topic structure will appear as the approved question bank grows.</p>{% endfor %}</div></section>
+
+  <div class="grid chapter-intelligence-grid">
+    <section class="card"><p class="eyebrow">KEEP IT STRONG</p><h3>Recall checks</h3>{% for x in recall %}<div class="learner-action-row"><div><strong>{{x.area_name}}</strong><small>Due {{x.next_due_date}}</small></div><span>{{x.interval_days}}d</span></div>{% else %}<p class="muted">Recall checks appear after ScoreMax has enough evidence.</p>{% endfor %}</section>
+    <section class="card"><p class="eyebrow">NEEDS ATTENTION</p><h3>Weak areas</h3>{% for w in weak[:4] %}<div class="learner-action-row"><div><strong>{{w.area}}</strong><small>{{w.accuracy}}% across {{w.answered}} answers</small></div><a href="{{url_for('weak_areas_page')}}">Improve →</a></div>{% else %}<p class="muted">No clear weak area yet.</p>{% endfor %}</section>
+  </div>
+
+  {% if misconceptions %}<section class="card warning-card"><p class="eyebrow">WATCH THIS</p><h2>A repeated misunderstanding may be costing you marks.</h2>{% for x in misconceptions %}<div class="learner-action-row"><div><strong>{{x.area_name or x.misconception_key}}</strong><small>{{x.evidence_count}} repeated signal(s){% if x.confident_wrong_count %} · {{x.confident_wrong_count}} high-confidence mistake(s){% endif %}</small></div><a href="{{url_for('weak_areas_page')}}">Fix it →</a></div>{% endfor %}</section>{% endif %}
+
+  {% if capsules %}<section class="card"><p class="eyebrow">QUICK HELP</p><h2>Learn before you try again.</h2><div class="capsule-grid">{% for c in capsules %}<a class="capsule-link-card" href="{{url_for('learning_capsule',capsule_id=c.capsule_id)}}"><strong>{{c.concept}}</strong><span>{{c.remember_this}}</span><b>Learn →</b></a>{% endfor %}</div></section>{% endif %}
+</section>
+{% endblock %}

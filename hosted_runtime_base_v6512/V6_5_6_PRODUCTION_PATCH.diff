@@ -1,0 +1,85 @@
+--- V6.5.5/app.py
++++ V6.5.6/app.py
+@@ -33,7 +33,7 @@
+     if SCOREMAX_ENV=='production':
+         raise RuntimeError('SCOREMAX_SECRET must be set in production.')
+     _secret=secrets.token_hex(32)
+-    print('[ScoreMax V6.5.5] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.')
++    print('[ScoreMax V6.5.6] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.')
+ app.secret_key=_secret
+ app.config['MAX_CONTENT_LENGTH']=int(os.environ.get('SCOREMAX_MAX_UPLOAD_MB','40'))*1024*1024
+ _cookie_secure=os.environ.get('SCOREMAX_COOKIE_SECURE','0')=='1' or SCOREMAX_ENV=='production'
+@@ -48,8 +48,8 @@
+ INTERNAL_FULL_ACCESS_ENABLED=os.environ.get('SCOREMAX_INTERNAL_FULL_ACCESS','0').strip()=='1'
+ _RATE_BUCKETS={}
+ LIVE_MARKABLE_TYPES={'single_choice','true_false','fill_blank','multiple_select','numerical'}
+-SCOREMAX_RELEASE_VERSION='6.5.5'
+-SCOREMAX_BUILD_NAME='Power House Manifest Origin Security Rectification Candidate'
++SCOREMAX_RELEASE_VERSION='6.5.6'
++SCOREMAX_BUILD_NAME='Power House Manifest Explicit-Port Normalisation Rectification Candidate'
+ STUDENT_PROGRAMME_CHOICES=[
+     {'code':'fsc1','label':'FSc 1','value':'FSc Part 1'},
+     {'code':'fsc2','label':'FSc 2','value':'FSc Part 2'},
+@@ -201,18 +201,18 @@
+         if not duplicate:
+             c.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS {index_name} ON users(lower({column})) WHERE {column} IS NOT NULL AND {column}<>''")
+         else:
+-            print(f'[ScoreMax V6.5.5] Existing duplicate {column} values detected; resolve them before enforcing its case-insensitive unique index.')
++            print(f'[ScoreMax V6.5.6] Existing duplicate {column} values detected; resolve them before enforcing its case-insensitive unique index.')
+ 
+     if not c.execute("SELECT 1 FROM users WHERE username='admin'").fetchone():
+         bootstrap=os.environ.get('SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD','').strip() or secrets.token_urlsafe(10)
+         c.execute("INSERT INTO users(system_user_id,role,full_name,username,password_hash) VALUES('ADM-000001','admin','Platform Admin','admin',?)",(generate_password_hash(bootstrap),))
+-        print(f'[ScoreMax V6.5.5] One-time bootstrap admin created: admin / {bootstrap}')
++        print(f'[ScoreMax V6.5.6] One-time bootstrap admin created: admin / {bootstrap}')
+     else:
+         existing_admin=c.execute("SELECT id,password_hash FROM users WHERE username='admin' AND role='admin'").fetchone()
+         if existing_admin and existing_admin['password_hash'] and check_password_hash(existing_admin['password_hash'],'admin123'):
+             bootstrap=os.environ.get('SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD','').strip() or secrets.token_urlsafe(10)
+             c.execute("UPDATE users SET password_hash=? WHERE id=?",(generate_password_hash(bootstrap),existing_admin['id']))
+-            print(f'[ScoreMax V6.5.5] Legacy demo admin password rotated. New one-time local password: admin / {bootstrap}')
++            print(f'[ScoreMax V6.5.6] Legacy demo admin password rotated. New one-time local password: admin / {bootstrap}')
+     if c.execute('SELECT COUNT(*) n FROM questions').fetchone()['n']==0:
+         seed=[
+         ('BIO001','OSM001','A','FSc Part 1','Biology','Cell Biology','Cell Transport','Osmosis','MCQ','Foundation','Osmosis is the movement of:','Water through a selectively permeable membrane','Solute using ATP','Proteins through ribosomes','Gases against a gradient','A','Osmosis is passive movement of water.'),
+@@ -6488,7 +6488,7 @@
+                 sent=send_transactional_email(u['email'],'Reset your ScoreMax password',
+                     f"A password reset was requested for your ScoreMax account.\n\nUse this single-use link within 30 minutes:\n{reset_url}\n\nIf you did not request this, you can ignore this email.")
+                 if not sent and SCOREMAX_ENV!='production':
+-                    print('[ScoreMax V6.5.5] Local password reset URL:',reset_url)
++                    print('[ScoreMax V6.5.6] Local password reset URL:',reset_url)
+             c.close()
+         flash("If an account exists for this email, we've sent password-reset instructions.",'success')
+         return redirect(url_for('forgot_password'))
+--- V6.5.5/scoremax_integration_v1.py
++++ V6.5.6/scoremax_integration_v1.py
+@@ -1,4 +1,4 @@
+-"""ScoreMax V6.5.5 — governed three-system integration adapter (frozen contract v1).
++"""ScoreMax V6.5.6 — governed three-system integration adapter (frozen contract v1).
+ 
+ This module implements ScoreMax's side only:
+ - Power House -> ScoreMax approved content and blueprint admission
+@@ -21,7 +21,7 @@
+ CONTRACT_VERSION='1'
+ SCHEMA_VERSION='1.0.0'
+ RECTIFIED_SCHEMA_VERSION='1.1.0'
+-SCOREMAX_INTEGRATION_RELEASE='6.5.5'
++SCOREMAX_INTEGRATION_RELEASE='6.5.6'
+ RECEIVER='SCOREMAX'
+ RETRY_DELAYS=[0,60,300,1800,7200,43200]
+ MIN_EVIDENCE_N=int(os.environ.get('SCOREMAX_INTEGRATION_MIN_EVIDENCE_N','10') or 10)
+@@ -788,7 +788,13 @@
+         host=host.rstrip('.').encode('idna').decode('ascii').lower()
+     except Exception as exc:
+         raise ValueError(f'{label} hostname is invalid') from exc
+-    return ('https',host,int(port or 443))
++    # An absent port means the HTTPS default. An explicit port is never treated as
++    # absent: in particular, :0 / :00 / :000 must fail closed rather than normalize
++    # to 443. urlparse().port already rejects non-numeric and >65535 values.
++    canonical_port=443 if port is None else int(port)
++    if canonical_port<1 or canonical_port>65535:
++        raise ValueError(f'{label} port is outside the valid range 1..65535')
++    return ('https',host,canonical_port)
+ 
+ 
+ def _trusted_power_house_origin():

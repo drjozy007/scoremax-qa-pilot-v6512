@@ -1,0 +1,165 @@
+{
+  "message_id": "msg::PH_SM_APPROVED_CONTENT_V1::example-001",
+  "contract_name": "PH_SM_APPROVED_CONTENT_V1",
+  "contract_version": "1",
+  "schema_version": "1.0.0",
+  "source_system": "POWER_HOUSE",
+  "destination_system": "SCOREMAX",
+  "occurred_at": "2026-08-21T12:00:00Z",
+  "sent_at": "2026-08-21T12:00:00Z",
+  "correlation_id": "corr::e2e-physics-ch3-001",
+  "idempotency_key": "release::REL::PK::FSC1::CHEM::CH03::2026.08.21.1::07a63989b64990a05b533d10f110e93bc2a0e0c3a94f7d44254b5d5b4877d230",
+  "producer_version": "0.11.0+CHANGE012F",
+  "retry_of_message_id": null,
+  "payload_checksum_sha256": "a938f279cdaaadf5c9fb4a6079ba41abb7d9e72c48ff7dfe146944285dbec6a0",
+  "data_classification": "INTERNAL",
+  "payload": {
+    "delivery_mode": "INLINE",
+    "package_download_url": null,
+    "release": {
+      "release_id": "REL::PK::FSC1::CHEM::CH03",
+      "release_version": "2026.08.21.1",
+      "release_status": "ACADEMICALLY_READY",
+      "generated_at": "2026-08-21T12:00:00Z",
+      "effective_at": "2026-08-22T00:00:00Z",
+      "market_id": "PK",
+      "programme_id": "FSC_PART_I",
+      "subject_id": "CHEMISTRY",
+      "chapter_id": "CHAPTER::CHEMISTRY::11::03",
+      "readiness_policy_version": "SCOREMAX_READY_POLICY::1",
+      "question_count": 1,
+      "stimulus_count": 0,
+      "package_checksum_sha256": "07a63989b64990a05b533d10f110e93bc2a0e0c3a94f7d44254b5d5b4877d230",
+      "manifest_checksum_sha256": "e95905d726afc46bd7f6a9428166a6a414b45660ed6560ebff3d390e2ffeff96",
+      "supersedes_release_version": null
+    },
+    "stimuli": [],
+    "questions": [
+      {
+        "question_id": "Q::CHEM11::CH03::000125",
+        "question_version_id": "QV::CHEM11::CH03::000125::v2",
+        "question_version_number": 2,
+        "question_checksum_sha256": "4ae6a21e77589ac09b2c93cbd2cd2ef470f24c92b88ba333c05cf16a6979aec3",
+        "supersedes_question_version_id": "QV::CHEM11::CH03::000125::v1",
+        "effective_from": "2026-08-21T12:00:00Z",
+        "curriculum": {
+          "market_id": "PK",
+          "board_exam_id": "BOARD::PUNJAB",
+          "qualification_id": "FSC",
+          "programme_id": "FSC_PART_I",
+          "grade_year_id": "YEAR_11",
+          "subject_id": "CHEMISTRY",
+          "chapter_id": "CHAPTER::CHEMISTRY::11::03",
+          "section_id": "SECTION::03.2",
+          "topic_id": "TOPIC::BOND_ENERGY",
+          "subtopic_id": null,
+          "learning_outcome_ids": [
+            "LO::CHEM11::03::07"
+          ],
+          "teaching_learning_outcome_ids": [],
+          "display": {
+            "programme": "FSc Part I",
+            "grade_year": "Year 11",
+            "subject": "Chemistry",
+            "chapter_number": "3",
+            "chapter": "Chemical Bonding",
+            "section": "Bond Energy",
+            "topic": "Bond strength",
+            "subtopic": null,
+            "outcome_text": "Compare bond strength using governed evidence."
+          }
+        },
+        "content": {
+          "language": "en",
+          "question_family_type": "MCQ",
+          "pedagogical_type": "COMPARISON",
+          "exam_question_type": "SINGLE_BEST_ANSWER",
+          "stem": "Which bond is expected to require more energy to break?",
+          "stimulus_ref": null,
+          "inline_stimulus": null,
+          "options": [
+            {
+              "option_id": "A",
+              "text": "Bond X",
+              "is_display_only": false
+            },
+            {
+              "option_id": "B",
+              "text": "Bond Y",
+              "is_display_only": false
+            }
+          ],
+          "statements": [],
+          "marking": {
+            "key_type": "SINGLE_OPTION",
+            "key": "B",
+            "accepted_answers": [],
+            "numeric_tolerance": null,
+            "marks": 1,
+            "negative_marks": 0,
+            "rubric": null,
+            "explanation": "Bond Y has the higher governed bond-energy value."
+          },
+          "estimated_time_seconds": 45,
+          "command_word": "Which",
+          "learner_hygiene_version": "1"
+        },
+        "architecture": {
+          "knowledge_node_ids": [
+            "NODE::CHEM11::BOND_ENERGY"
+          ],
+          "claim_family_id": "FAMILY::CHEM11::BOND_STRENGTH",
+          "reasoning_seed_id": "SEED::CHEM11::COMPARE_BOND_ENERGY",
+          "parent_question_id": null,
+          "dependency_group_id": null,
+          "dependency_type": null,
+          "evidence_role": "INDEPENDENT",
+          "independent_mastery_eligible": true,
+          "independent_mastery_weight": 1,
+          "transfer_level": "NEAR_TRANSFER",
+          "common_cr": null,
+          "mastery_level": "EXAM_READY",
+          "mastery_ceiling": "ADVANCED",
+          "cognitive_demand": "APPLY",
+          "misconception_ids": [
+            "MIS::BOND_ENERGY_LENGTH_REVERSAL"
+          ]
+        },
+        "governance": {
+          "academic_review_state": "APPROVED",
+          "r2_status": "NOT_REQUIRED",
+          "hold_status": "CLEAR",
+          "source_check_status": "CLEAR",
+          "release_readiness": "READY",
+          "rights_status": "LICENSED_COMMERCIAL",
+          "generated_clearance_status": "CLEARED",
+          "readiness_policy_version": "SCOREMAX_READY_POLICY::1",
+          "review_evidence_refs": [
+            "REVIEW::CHEM11::CH03::R1::125"
+          ]
+        },
+        "provenance": {
+          "primary_source": {
+            "source_id": "src::chemistry-y11-part2",
+            "source_type": "TEXTBOOK",
+            "source_version": "2025",
+            "source_title": "Chemistry Year 11 Part 2",
+            "locator": "Chapter 3, section 3.2",
+            "source_file_sha256": "e415789bacdcc7ee4a4ca9c9d5df4cb4e4c3300ae5aeff98a03393940704731d",
+            "worksheet": null,
+            "row": null,
+            "rights_status": "LICENSED_COMMERCIAL",
+            "metadata": {
+              "publisher": "governed-source"
+            }
+          },
+          "additional_sources": [],
+          "lineage": {
+            "original_question_id": "Q::CHEM11::CH03::000125",
+            "amendment_reason": "reviewer_clarity_change"
+          }
+        }
+      }
+    ]
+  }
+}

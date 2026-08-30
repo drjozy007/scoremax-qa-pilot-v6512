@@ -1,0 +1,118 @@
+{
+  "growth_candidate": "0.14.3",
+  "growth_db": "/tmp/central_ge143_m9x6i_o6.db",
+  "accepted_first_pass": 14,
+  "replay_receipts": 14,
+  "counts_before_replay": {
+    "inbox": 14,
+    "product_events": 14,
+    "legacy_events": 10,
+    "payments": 2,
+    "rewards": 4
+  },
+  "counts_after_replay": {
+    "inbox": 14,
+    "product_events": 14,
+    "legacy_events": 10,
+    "payments": 2,
+    "rewards": 4
+  },
+  "payment_rows": [
+    {
+      "payment_transaction_id": "1",
+      "current_state": "REFUNDED",
+      "source_payment_status": "REFUNDED",
+      "currency": "PKR",
+      "gross_amount_minor": 100000,
+      "eligible_amount_minor": 100000,
+      "refund_amount_minor": 100000,
+      "referral_attribution_id": "REF::ATTR::3",
+      "last_event_id": "PAYMENT::1::REFUNDED::100000",
+      "last_event_type": "PAYMENT_REFUNDED",
+      "last_event_at": "2026-08-23T18:53:00Z",
+      "authority": "SCOREMAX_PROJECTION_ONLY",
+      "projection_note": "RECONCILED_REFUNDED",
+      "updated_at": "2026-08-23T18:54:12.430252Z"
+    },
+    {
+      "payment_transaction_id": "2",
+      "current_state": "REVERSED",
+      "source_payment_status": "REVERSED",
+      "currency": "PKR",
+      "gross_amount_minor": 50000,
+      "eligible_amount_minor": 50000,
+      "refund_amount_minor": 0,
+      "referral_attribution_id": "REF::ATTR::3",
+      "last_event_id": "PAYMENT::2::REVERSED",
+      "last_event_type": "PAYMENT_REVERSED",
+      "last_event_at": "2026-08-23T18:53:00Z",
+      "authority": "SCOREMAX_PROJECTION_ONLY",
+      "projection_note": "RECONCILED_REVERSED",
+      "updated_at": "2026-08-23T18:54:12.456497Z"
+    }
+  ],
+  "reward_rows": [
+    {
+      "reward_id": "1",
+      "payment_transaction_id": "1",
+      "referral_attribution_id": "REF::ATTR::3",
+      "reward_level": "DIRECT",
+      "teacher_id": "TCH-000003",
+      "amount_minor": 10000,
+      "source_reward_status": "REVERSED",
+      "last_event_id": "REWARD::1::reversed::reversed",
+      "last_event_at": "2026-08-23T18:53:00Z",
+      "authority": "SCOREMAX_PROJECTION_ONLY",
+      "projection_note": "SOURCE_EVENT_RECONCILED",
+      "updated_at": "2026-08-23T18:54:12.436801Z"
+    },
+    {
+      "reward_id": "UPSTREAM::1",
+      "payment_transaction_id": "1",
+      "referral_attribution_id": "REF::ATTR::3",
+      "reward_level": "UPSTREAM",
+      "teacher_id": "TCH-000002",
+      "amount_minor": 2000,
+      "source_reward_status": "REVERSED",
+      "last_event_id": "REWARD::1::reversed::reversed",
+      "last_event_at": "2026-08-23T18:53:00Z",
+      "authority": "SCOREMAX_PROJECTION_ONLY",
+      "projection_note": "SOURCE_EVENT_RECONCILED",
+      "updated_at": "2026-08-23T18:54:12.436826Z"
+    },
+    {
+      "reward_id": "2",
+      "payment_transaction_id": "2",
+      "referral_attribution_id": "REF::ATTR::3",
+      "reward_level": "DIRECT",
+      "teacher_id": "TCH-000003",
+      "amount_minor": 5000,
+      "source_reward_status": "REVERSED",
+      "last_event_id": "REWARD::2::reversed::reversed",
+      "last_event_at": "2026-08-23T18:53:00Z",
+      "authority": "SCOREMAX_PROJECTION_ONLY",
+      "projection_note": "SOURCE_EVENT_RECONCILED",
+      "updated_at": "2026-08-23T18:54:12.463454Z"
+    },
+    {
+      "reward_id": "UPSTREAM::2",
+      "payment_transaction_id": "2",
+      "referral_attribution_id": "REF::ATTR::3",
+      "reward_level": "UPSTREAM",
+      "teacher_id": "TCH-000002",
+      "amount_minor": 1000,
+      "source_reward_status": "REVERSED",
+      "last_event_id": "REWARD::2::reversed::reversed",
+      "last_event_at": "2026-08-23T18:53:00Z",
+      "authority": "SCOREMAX_PROJECTION_ONLY",
+      "projection_note": "SOURCE_EVENT_RECONCILED",
+      "updated_at": "2026-08-23T18:54:12.463483Z"
+    }
+  ],
+  "crm_linked_product_events": 10,
+  "open_quarantines": 0,
+  "scoremax_credential_audit_rows": 14,
+  "privacy_forbidden_values_persisted": 0,
+  "integrity": "ok",
+  "foreign_key_violations": 0
+}

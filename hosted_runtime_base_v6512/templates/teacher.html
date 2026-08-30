@@ -1,0 +1,28 @@
+{% extends 'base.html' %}{% block content %}
+{% if active_structures %}<section class="card"><div class="split"><div><p class="eyebrow">ASSESSMENT BLUEPRINTS</p><h2>Official structures used for planning and reporting</h2></div><a href="{{url_for('exam_structure_page')}}">View details →</a></div>{% for item in active_structures %}<p><strong>{{item.blueprint.framework_name}} {{item.blueprint.framework_version_name}}</strong> · {{item.blueprint.total_questions}} questions · Blueprint v{{item.blueprint.blueprint_version}}</p>{% endfor %}</section>{% endif %}
+<div class='dashboard-hero card'><div><p class='eyebrow'>TEACHER DASHBOARD</p><h2>Welcome, {{ session.full_name }}</h2><p class='muted'>{{ user.system_user_id }} • {{ user.institution_name or 'Independent teacher' }}{% if user.district %} • {{ user.district }}{% endif %}</p></div><span class='health green'>{{ students }} students</span></div>
+
+<div class='grid3'>
+  <div class='metric'><span>Students</span><strong>{{ students }}</strong></div>
+  <div class='metric'><span>Active assignments</span><strong>{{ active_assignments }}</strong></div>
+  <div class='metric'><span>Assignment completion</span><strong>{{ completion }}%</strong></div>
+</div>
+
+<section class='card teacher-referral-callout'><div><p class='eyebrow'>TEACHER REFERRALS</p><h3>Your referral code: {{user.own_referral_code}}</h3><p class='muted'>Invite students with your code. You can also introduce another teacher; any configured teacher-network reward is tracked separately from your direct student referrals.</p></div><a class='btn alt' href='{{url_for("referral_account")}}'>Open my referral page →</a></section>
+
+{% if priority %}
+<div class='card next-action-card'>
+  <p class='eyebrow'>PRIORITY INTERVENTION</p>
+  <h2>{{ priority.area }}</h2>
+  <p>{{ priority.subject }} • {{ priority.students }} students represented • {{ priority.accuracy }}% class accuracy</p>
+  <p class='muted'>Open the relevant classroom to identify affected students and assign targeted recovery work.</p>
+</div>
+{% endif %}
+
+<div class='grid'>
+<div class='card'><h3>Create classroom</h3><form method='post' action='{{ url_for("create_class") }}' class='form-grid'>{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<label>Class name<input name='name' required placeholder='FSc Biology A'></label><label>Level<select name='level'><option>Matric Part 1</option><option>Matric Part 2</option><option>FSc Part 1</option><option>FSc Part 2</option><option>MDCAT</option><option>ECAT</option></select></label><label>Subject<select name='subject'><option>Biology</option><option>Chemistry</option><option>Physics</option><option>Mathematics</option></select></label><div class='full'><button class='btn'>Create classroom</button></div></form></div>
+<div class='card'><p class='eyebrow'>RECENT ASSIGNMENTS</p><h3>Intervention activity</h3>{% if recent_assignments %}{% for a in recent_assignments %}<div class='focus-row'><div><strong>{{ a.title }}</strong><span class='muted'>{{ a.class_name or 'Class' }}</span></div><div class='focus-score'>{{ a.completed_count or 0 }}/{{ a.assigned_count or 0 }}</div></div>{% endfor %}{% else %}<p class='muted'>No assignments yet.</p>{% endif %}</div>
+</div>
+
+<div class='card'><h3>My classrooms</h3>{% if classes %}<div class='table-wrap'><table><tr><th>Class</th><th>Level</th><th>Subject</th><th>Join code</th><th>Students</th><th></th></tr>{% for c in classes %}<tr><td>{{ c.name }}</td><td>{{ c.level }}</td><td>{{ c.subject }}</td><td><strong>{{ c.join_code }}</strong></td><td>{{ c.student_count }}</td><td><a href='{{ url_for("classroom",cid=c.id) }}'>Open intervention view →</a></td></tr>{% endfor %}</table></div>{% else %}<p class='muted'>No classrooms yet.</p>{% endif %}</div>
+{% endblock %}

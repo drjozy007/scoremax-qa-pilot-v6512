@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Synthetic Learner · ScoreMax{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="eyebrow">MASTERY LABORATORY · QA SANDBOX ONLY</p>
+  <h1>{{ identity.identity_code }}</h1>
+  <p><strong>{{ identity.learner_kind|replace('_',' ')|title }}</strong> · authenticated through normal ScoreMax login.</p>
+  <div class="notice"><strong>Isolation:</strong> NOT_STUDENT_RELEASED · NOT_BANK_APPROVED · NOT_VALID_FOR_REAL_MASTERY · no Growth events.</div>
+</section>
+<br>
+<section class="card">
+  <h2>Available QA questions</h2>
+  {% if questions %}
+  <div class="table-wrap"><table><thead><tr><th>Question</th><th>Scope</th><th>Type</th><th>Action</th></tr></thead><tbody>
+  {% for q in questions %}
+    <tr>
+      <td><strong>{{q.external_question_id}}</strong><br><small>Version {{q.external_version}}</small><br><small>{{q.question_text[:140]}}</small></td>
+      <td>{{q.programme}} · {{q.subject}} · {{q.chapter}}</td>
+      <td>{{q.family_type|replace('_',' ')|title}}</td>
+      <td>
+        <form method="post" action="{{url_for('qa_synthetic_start')}}">
+          <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+          <input type="hidden" name="question_id" value="{{q.id}}">
+          {% if identity.learner_kind=='DETERMINISTIC' %}
+            <button class="btn small" name="expected_mode" value="CORRECT">Correct-answer check</button>
+            <button class="btn alt small" name="expected_mode" value="INCORRECT">Wrong-answer check</button>
+          {% else %}
+            <button class="btn small" name="expected_mode" value="OBSERVE_ONLY">Open learner view</button>
+          {% endif %}
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% else %}<p>No Mastery Laboratory candidate questions are available yet.</p>{% endif %}
+</section>
+<br>
+<section class="card">
+  <h2>Recent QA sessions</h2>
+  {% if recent %}<div class="table-wrap"><table><thead><tr><th>Session</th><th>Question</th><th>Mode</th><th>Status</th></tr></thead><tbody>
+  {% for r in recent %}<tr><td><a href="{{url_for('qa_synthetic_session',session_id=r.id)}}">{{r.session_code}}</a></td><td>{{r.external_question_id}}</td><td>{{r.expected_mode}}</td><td>{{r.status}}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p>No QA sessions yet.</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block content %}
+<div class='card'><p class='eyebrow'>LIVE QUALITY</p><h2>Question health</h2><p>Operational signals only. ScoreMax flags unusual patterns for human review; it does not automatically remove questions.</p></div>
+<div class='card table-wrap'><table><thead><tr><th>Question</th><th>Attempts</th><th>Correct</th><th>Avg time</th><th>Reports</th><th>Health</th><th></th></tr></thead><tbody>
+{% for h in items %}<tr><td><strong>{{ h.row.question_id }}</strong><br>{{ h.row.question[:90] }}{% if h.row.question|length>90 %}…{% endif %}</td><td>{{ h.row.attempts }}</td><td>{{ h.row.correct_pct if h.row.correct_pct is not none else '—' }}{% if h.row.correct_pct is not none %}%{% endif %}</td><td>{{ h.row.avg_seconds or '—' }}</td><td>{{ h.reports }}</td><td><strong>{{ h.status }}</strong>{% for f in h.flags %}<br><small>{{ f }}</small>{% endfor %}</td><td><a class='btn small' href='{{ url_for("admin_question_detail",qid=h.row.id) }}'>Inspect</a></td></tr>{% else %}<tr><td colspan='7'>No live questions.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

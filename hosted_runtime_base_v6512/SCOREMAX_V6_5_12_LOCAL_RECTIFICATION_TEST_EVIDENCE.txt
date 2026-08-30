@@ -1,0 +1,34 @@
+ScoreMax V6.5.12 Local Rectification Test Evidence
+Date: 2026-08-25
+Classification: LOCAL_DEPENDENCY_LIGHT_AND_STATIC_ACCEPTANCE_ONLY
+
+=== V6.5.12 rectification tests ===
+PASS test_release_comparator_is_strict_and_future_patch_safe
+PASS test_qa_housekeeping_fails_closed_before_any_global_state_work
+PASS test_release_identity_and_build_name_are_new_child
+PASS test_brittle_descendant_allowlists_removed_from_active_smoke_tests
+PASS test_v6510_and_pilot_lineage_can_coexist_without_integration_version_forgery
+PASS ALL 5 ScoreMax V6.5.12 dependency-light rectification tests
+
+=== inherited V6.5.11 synthetic learner contract ===
+PASS test_real_r2_qa_partition_and_identity
+PASS test_actual_live_marker_parity_and_safe_rejections
+PASS test_deterministic_attempt_writes_qa_only_and_mismatch_fails_closed
+PASS test_visual_evidence_is_identity_bound
+PASS test_static_route_and_renderer_fences
+PASS ALL 5 ScoreMax V6.5.11 dependency-light acceptance tests
+
+=== in-memory Python compile ===
+PYTHON_IN_MEMORY_COMPILE_PASS 120 files
+
+=== Jinja parse ===
+JINJA_PARSE_PASS 110 templates
+
+=== active smoke descendant assertion architecture ===
+ACTIVE_BRITTLE_DESCENDANT_ALLOWLISTS 0
+ACTIVE_COMPATIBILITY_HELPER_USERS 12
+
+=== runtime dependency gate ===
+flask MISSING ModuleNotFoundError
+werkzeug MISSING ModuleNotFoundError
+FULL_FLASK_AUTHENTICATED_BROWSER_RUNTIME=PENDING_ENVIRONMENT_DEPENDENCIES

@@ -1,0 +1,41 @@
+{
+  "release": "6.5.9",
+  "parent_release": "6.5.8",
+  "parent_zip_sha256": "2a7c1b0f57ae230279c67784ad6403d0acb37a281cd3c435a759f592b3547b25",
+  "governing_central_findings": [
+    "SM-GE-CONN-P1-001",
+    "SM-GE-CONN-P1-002"
+  ],
+  "platform_side_status": "PASSED_PENDING_INDEPENDENT_CROSS_SYSTEM_REQUALIFICATION",
+  "gates": {
+    "v6_5_9_commercial_semantics": "30/30 PASS",
+    "v6_5_8_learner_evidence": "12/12 PASS",
+    "v6_5_7_product_activation": "25/25 PASS",
+    "v6_5_6_explicit_port_security": "44/44 PASS",
+    "v6_5_5_manifest_origin_security": "23/23 PASS",
+    "v6_5_4_previous_central_findings": "0 confirmed; P0=0; P1=0",
+    "v6_5_integration": "48/48 PASS",
+    "v6_5_3_integration_admission": "48/48 PASS",
+    "v6_5_1_rectification": "23/23 PASS",
+    "v6_5_1_deep": "24/24 PASS",
+    "inherited_baseline": "605 deterministic PASS + synthetic mastery simulation PASS",
+    "emergency_intake_3000": "PASS",
+    "canonical_300_1500": "PASS",
+    "qa_sandbox_only_1500": "PASS; live_questions=0; attempts=0; mastery_evidence=0; replay=idempotent",
+    "python_compile": "111 files PASS",
+    "jinja_templates": "108 PASS",
+    "sqlite_integrity": "ok",
+    "foreign_key_violations": 0
+  },
+  "contract": {
+    "name": "SM_GE_PRODUCT_EVENT_V1",
+    "schema_sha256": "b42ae2a0fd1965ec83e561c43e60d68e84395687de1f257948af7b87319019bb",
+    "schema_changed": false
+  },
+  "receiver_runtime_gate": {
+    "growth_engine_v0_14_3_expected_sha256": "3c378ea33e06b5421eee6f00047c92c3f7a0add9ba0c8e7e27abf5013416c284",
+    "status": "PENDING_INDEPENDENT_CENTRAL_REPLAY",
+    "reason": "Exact frozen Growth Engine v0.14.3 package bytes were not included in the ScoreMax return package supplied here; no receiver-runtime acceptance is invented."
+  },
+  "final_platform_gate": "confirmed_total=0 · P0=0 · P1=0 · payment=PASS · referral=PASS · refund/reversal=PASS · replay=PASS · privacy=PASS · integrity=ok · foreign_key_violations=0"
+}

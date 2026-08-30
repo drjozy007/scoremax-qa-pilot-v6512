@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "blueprint_id": "PH-BP-MDCAT-2026-001",
+  "framework": {
+    "id": "PH-FWK-MDCAT",
+    "name": "MDCAT"
+  },
+  "framework_version": {
+    "id": "PH-FWV-MDCAT-2026",
+    "name": "2026"
+  },
+  "blueprint_version": 1,
+  "status": "APPROVED_ACTIVE",
+  "authority": "PM&DC",
+  "country": "Pakistan",
+  "source_reference": "POWER-HOUSE-EVIDENCE-REQUIRED-BEFORE-PRODUCTION",
+  "governance_note": "V5.5 integration sample. Replace placeholder source/approval evidence through Power House governance before production activation.",
+  "total_questions": 180,
+  "duration_minutes": 180,
+  "activation_date": "2026-01-01",
+  "required_subjects": [
+    "Biology",
+    "Chemistry",
+    "Physics",
+    "English",
+    "Logical Reasoning"
+  ],
+  "sections": [
+    {
+      "section_order": 1,
+      "subject": "Biology",
+      "question_count": 81,
+      "weight_percent": 45
+    },
+    {
+      "section_order": 2,
+      "subject": "Chemistry",
+      "question_count": 45,
+      "weight_percent": 25
+    },
+    {
+      "section_order": 3,
+      "subject": "Physics",
+      "question_count": 36,
+      "weight_percent": 20
+    },
+    {
+      "section_order": 4,
+      "subject": "English",
+      "question_count": 9,
+      "weight_percent": 5
+    },
+    {
+      "section_order": 5,
+      "subject": "Logical Reasoning",
+      "question_count": 9,
+      "weight_percent": 5
+    }
+  ],
+  "approval": {
+    "approved_by": "Power House Final Academic Approver",
+    "approved_at": "2026-07-29T00:00:00",
+    "policy_version": "PH-BLUEPRINT-GOV-1"
+  },
+  "checksum": "2b63fdd1b2ac3c489b0df9139e2758f0f920cba2baaa3dfa18a82a15927c00b9"
+}

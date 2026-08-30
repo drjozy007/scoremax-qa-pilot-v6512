@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block content %}
+<div class="card"><a href="{{url_for('institutions')}}">← Institutions</a><p class="eyebrow">ADMIN • INSTITUTION</p><h1>{{institution.name}}</h1><p>{{student_count}} students • {{teacher_count}} teachers • {{class_count}} classes</p></div>
+<div class="grid">
+<div class="card"><h3>Dashboard access</h3><form method="post" action="{{url_for('admin_institution_staff',institution_id=institution.id)}}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<label>User<select name="user_id" required>{% for u in candidates %}<option value="{{u.id}}">{{u.full_name}} • {{u.role}}</option>{% endfor %}</select></label><label>Institution role<select name="institution_role"><option value="viewer">Viewer</option><option value="manager">Manager</option><option value="admin">Institution Admin</option></select></label><button class="btn">Grant / update access</button></form></div>
+<div class="card"><h3>Licence</h3>{% if licence %}<p><strong>{{licence.plan_name}}</strong></p><p>{{licence.allocated}} / {{licence.seat_count}} seats</p><p>{{licence.payment_status}}</p>{% else %}<p class="muted">No active licence.</p>{% endif %}</div>
+</div>
+<div class="card"><h3>Institution staff</h3><div class="table-wrap"><table><tr><th>Name</th><th>Email</th><th>Role</th></tr>{% for s in staff %}<tr><td>{{s.full_name}}</td><td>{{s.email or s.username}}</td><td>{{s.institution_role}}</td></tr>{% endfor %}</table></div></div>
+<div class="card"><h3>Class overview</h3><div class="table-wrap"><table><tr><th>Class</th><th>Subject</th><th>Teacher</th><th>Students</th><th>Average</th></tr>{% for cl in classes %}<tr><td>{{cl.name}}</td><td>{{cl.subject}}</td><td>{{cl.teacher_name or '—'}}</td><td>{{cl.students}}</td><td>{{(cl.avg_score ~ '%') if cl.avg_score is not none else '—'}}</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

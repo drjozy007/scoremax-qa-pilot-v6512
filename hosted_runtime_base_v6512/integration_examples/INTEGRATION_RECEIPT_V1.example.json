@@ -1,0 +1,12 @@
+{
+  "receipt_id": "RCPT::SCOREMAX::000001",
+  "message_id": "msg::PH_SM_APPROVED_CONTENT_V1::example-001",
+  "contract_name": "PH_SM_APPROVED_CONTENT_V1",
+  "receiver_system": "SCOREMAX",
+  "received_at": "2026-08-21T12:00:01Z",
+  "status": "ACCEPTED",
+  "duplicate_of_receipt_id": null,
+  "accepted_schema_version": "1.0.0",
+  "payload_checksum_sha256": "a938f279cdaaadf5c9fb4a6079ba41abb7d9e72c48ff7dfe146944285dbec6a0",
+  "errors": []
+}

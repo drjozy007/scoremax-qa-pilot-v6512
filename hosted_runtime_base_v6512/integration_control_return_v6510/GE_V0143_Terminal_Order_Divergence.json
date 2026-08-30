@@ -1,0 +1,30 @@
+{
+  "scoremax_status_after_refund_then_reversal": "reversed",
+  "growth_current_state_after_received_events": "REFUNDED",
+  "growth_last_event_type": "PAYMENT_REFUNDED",
+  "growth_refund_amount_minor": 100000,
+  "events_received": [
+    [
+      "PAYMENT_CLEARED",
+      202,
+      "ACCEPTED"
+    ],
+    [
+      "REFERRAL_REWARD_ELIGIBILITY_CHANGED",
+      202,
+      "ACCEPTED"
+    ],
+    [
+      "PAYMENT_REFUNDED",
+      202,
+      "ACCEPTED"
+    ],
+    [
+      "REFERRAL_REWARD_ELIGIBILITY_CHANGED",
+      202,
+      "ACCEPTED"
+    ]
+  ],
+  "integrity": "ok",
+  "fk": 0
+}

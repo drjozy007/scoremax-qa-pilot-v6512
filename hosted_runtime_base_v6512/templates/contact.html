@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block content %}
+<section class="public-page"><p class="eyebrow">CONTACT SCOREMAX</p><h1>How can we help?</h1><div class="grid">
+<div class="card"><h2>Send us a message</h2><form method="post" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<label>Name<input name="name" required></label><label>Email<input type="email" name="email"></label><label>Mobile (optional)<input name="mobile"></label>
+<label>What is this about?<select name="enquiry_type"><option value="student_parent">Student or Parent</option><option value="school">School or College</option><option value="teacher">Teacher</option><option value="partnership">Partnership</option><option value="technical">Technical Support</option><option value="general">Other</option></select></label>
+<label>Message<textarea name="message" rows="6" required></textarea></label><button class="btn">Send Message</button></form></div>
+<div class="card"><h2>Schools & Colleges</h2><p>ScoreMax is designed to support classroom testing, weak-area identification, teacher intervention and institution-level progress views.</p><h2>Students & Parents</h2><p>Use this form for account, exam-practice, result or general ScoreMax questions.</p></div>
+</div></section>{% endblock %}

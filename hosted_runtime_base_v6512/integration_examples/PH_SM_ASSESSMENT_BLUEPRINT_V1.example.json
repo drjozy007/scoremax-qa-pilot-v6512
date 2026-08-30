@@ -1,0 +1,79 @@
+{
+  "message_id": "msg::PH_SM_ASSESSMENT_BLUEPRINT_V1::example-001",
+  "contract_name": "PH_SM_ASSESSMENT_BLUEPRINT_V1",
+  "contract_version": "1",
+  "schema_version": "1.0.0",
+  "source_system": "POWER_HOUSE",
+  "destination_system": "SCOREMAX",
+  "occurred_at": "2026-08-21T12:00:00Z",
+  "sent_at": "2026-08-21T12:00:00Z",
+  "correlation_id": "corr::e2e-physics-ch3-001",
+  "idempotency_key": "blueprint::BP::PK::FSC1::CHEM::CH03::DIAG::1.0.0",
+  "producer_version": "0.11.0+CHANGE012F",
+  "retry_of_message_id": null,
+  "payload_checksum_sha256": "f52275fab63a059a27baddd42567a78cabef82ce9d3e5153e4cbcb5a70547178",
+  "data_classification": "INTERNAL",
+  "payload": {
+    "blueprint_id": "BP::PK::FSC1::CHEM::CH03::DIAG",
+    "blueprint_version": "1.0.0",
+    "blueprint_checksum_sha256": "b1ece0f3fb4f7be072543180ff03e21b7b094b69fb6a7f4d48cb170282cd967a",
+    "release_state": "RELEASED",
+    "market_id": "PK",
+    "board_exam_id": "BOARD::PUNJAB",
+    "programme_id": "FSC_PART_I",
+    "subject_id": "CHEMISTRY",
+    "effective_from": "2026-08-22",
+    "effective_to": null,
+    "total_duration_seconds": 600,
+    "total_marks": 10,
+    "sections": [
+      {
+        "section_id": "SEC::DIAG::1",
+        "display_name": "Core diagnostic",
+        "order": 1,
+        "question_count": 10,
+        "marks": 10,
+        "duration_seconds": 600,
+        "coverage_rules": [
+          {
+            "scope_type": "CHAPTER",
+            "scope_id": "CHAPTER::CHEMISTRY::11::03",
+            "weight": 1,
+            "minimum_questions": 10,
+            "maximum_questions": 10
+          }
+        ],
+        "question_type_rules": [
+          {
+            "question_type": "SINGLE_BEST_ANSWER",
+            "minimum": 10,
+            "maximum": 10
+          }
+        ],
+        "mastery_distribution": {
+          "FOUNDATION": 0.3,
+          "EXAM_READY": 0.5,
+          "ADVANCED": 0.2
+        },
+        "cognitive_demand_distribution": {
+          "RECALL": 0.3,
+          "APPLY": 0.5,
+          "ANALYSE": 0.2
+        }
+      }
+    ],
+    "marking_rules": {
+      "correct_marks": 1,
+      "incorrect_marks": 0,
+      "unanswered_marks": 0,
+      "partial_credit_allowed": false,
+      "rounding_rule": null
+    },
+    "permitted_release_ids": [
+      "REL::PK::FSC1::CHEM::CH03"
+    ],
+    "source_authority_refs": [
+      "EXAM_SPEC::PK::PUNJAB::FSC1::CHEM::2025"
+    ]
+  }
+}

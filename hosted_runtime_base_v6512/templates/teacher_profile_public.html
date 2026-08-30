@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{profile.full_name}} · ScoreMax Teachers{% endblock %}
+{% block content %}
+<section class="page-shell community-page">
+  <a class="text-link" href="{{url_for('teacher_directory')}}">← Back to teacher search</a>
+  <div class="teacher-profile-hero">
+    <div class="avatar-circle large">{{profile.full_name[:1]}}</div>
+    <div><span class="eyebrow">Independent teacher profile</span><h1>{{profile.full_name}}</h1><p class="lead">{{profile.headline}}</p>
+      <div class="badge-row">{% if profile.identity_verification_status=='VERIFIED' %}<span class="status-badge good">Identity verified</span>{% endif %}{% if profile.qualification_verification_status=='VERIFIED' %}<span class="status-badge good">Qualifications verified</span>{% endif %}{% if profile.experience_verification_status=='VERIFIED' %}<span class="status-badge good">Experience verified</span>{% endif %}<span class="status-badge">★ {{rating.average_rating}} from {{rating.review_count}} verified review(s)</span></div>
+    </div>
+  </div>
+  <div class="two-column-layout">
+    <div>
+      <article class="panel"><h2>About this teacher</h2><p>{{profile.bio}}</p><dl class="profile-facts"><dt>Subjects</dt><dd>{{parse_list(profile.subjects_json)|join(', ') or 'Not listed'}}</dd><dt>Assessments</dt><dd>{{parse_list(profile.frameworks_json)|join(', ') or 'Not listed'}}</dd><dt>Languages</dt><dd>{{parse_list(profile.languages_json)|join(', ') or 'Not listed'}}</dd><dt>Teaching platforms</dt><dd>{{parse_list(profile.platforms_json)|join(', ') or 'Not listed'}}</dd><dt>Qualifications</dt><dd>{{profile.qualifications_text or 'Not listed'}}</dd><dt>Experience</dt><dd>{{profile.experience_years}} year(s)</dd><dt>Location</dt><dd>{{profile.location_text or 'Online / not specified'}}</dd><dt>Availability</dt><dd>{{profile.availability_text or 'Ask through ScoreMax'}}</dd><dt>Response expectation</dt><dd>Usually within {{profile.response_expectation_hours}} hours</dd><dt>Office hours</dt><dd>{{profile.office_hours or 'Not specified'}}</dd></dl></article>
+      <article class="panel"><h2>Verified student reviews</h2>{% if reviews %}{% for review in reviews %}<div class="review-card"><strong>{{'★' * review.rating}}{{'☆' * (5-review.rating)}}</strong><p>{{review.review_text}}</p><small>Verified interaction · {{review.created_at}}</small></div>{% endfor %}{% else %}<p>No published verified reviews yet.</p>{% endif %}</article>
+    </div>
+    <aside>
+      <div class="panel sticky-panel"><h2>Available support</h2>
+      {% for listing in listings %}<div class="service-listing"><div class="badge-row"><span class="status-badge">{{'1-to-1' if listing.service_type=='ONE_TO_ONE' else 'Group'}}</span><span class="status-badge">{{listing.delivery_mode|title}}</span></div><h3>{{listing.title}}</h3><p>{{listing.description}}</p><p><strong>{{listing.subject}}</strong>{% if listing.framework %} · {{listing.framework}}{% endif %}</p><p>{% if listing.price_minor %}<strong>PKR {{(listing.price_minor/100)|round(0)|int}}</strong> {{listing.pricing_unit|lower|replace('_',' ')}}{% else %}Price discussed through enquiry{% endif %}</p>
+      {% if session.get('role')=='student' %}<details><summary class="btn">Send safe enquiry</summary><form method="post" action="{{url_for('teacher_enquiry_create',teacher_id=profile.teacher_id)}}" class="stack-form"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="listing_id" value="{{listing.id}}"><label>What support do you need?<textarea name="support_need" required placeholder="For example: I need help explaining enzyme action in FSc Biology."></textarea></label><label>Chapter or topic<input name="chapter"></label><label>Preferred mode<select name="preferred_mode"><option>Online</option><option>Local</option><option>Either</option></select></label><label>Optional opening message<textarea name="initial_message" placeholder="Do not include phone numbers, email addresses or payment details."></textarea></label><button class="btn" type="submit">Send enquiry</button></form></details>{% endif %}
+      </div>{% else %}<p>No published services currently available.</p>{% endfor %}
+      </div>
+      {% if groups %}<div class="panel"><h2>Teacher-led groups</h2>{% for group in groups %}<div class="service-listing"><h3>{{group.name}}</h3><p>{{group.description}}</p><p>{{group.subject}}{% if group.framework %} · {{group.framework}}{% endif %}</p>{% if session.get('role')=='student' %}<form method="post" action="{{url_for('teacher_group_join',group_id=group.id)}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><button class="btn secondary" type="submit">Request to join</button></form>{% endif %}</div>{% endfor %}</div>{% endif %}
+      <div class="notice-card"><strong>Professional boundary:</strong> ScoreMax does not publicly show personal phone numbers. Verification badges describe checks completed; they do not mean ScoreMax guarantees teaching outcomes.</div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

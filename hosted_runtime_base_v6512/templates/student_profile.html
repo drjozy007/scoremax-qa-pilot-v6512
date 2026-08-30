@@ -1,0 +1,85 @@
+{% extends "base.html" %}{% block content %}
+<div class="card page-intro"><p class="eyebrow">MY SCOREMAX JOURNEY</p><h1>My target. Where I stand. What I've achieved.</h1><p class="muted">Your profile should tell the story of where you are going and how far you have come.</p></div>
+{% if target_snapshot %}<section class="card target-live-card" id="admissionTarget"><p class="eyebrow">LIVE MERIT TRACKER · VERSIONED OFFICIAL FORMULA</p><h2>{{target_snapshot.target.institution_name or 'Medical / Dental target'}}</h2><div class="target-metric-grid"><div><span>Target aggregate</span><strong>{{target_snapshot.target.target_aggregate}}%</strong></div><div><span>Current projection</span><strong>{{target_snapshot.current_projection ~ '%' if target_snapshot.current_projection is not none else 'Building'}}</strong></div><div>{% if target_snapshot.required_entry_pct is not none %}<span>MDCAT needed</span><strong>{{target_snapshot.required_entry_pct}}%</strong>{% elif target_snapshot.remaining_average_required is not none %}<span>Average needed across remaining components</span><strong>{{target_snapshot.remaining_average_required}}%</strong>{% else %}<span>Next calculation</span><strong>Add result</strong>{% endif %}</div></div>{% if target_snapshot.scenario_message %}<p><strong>{{target_snapshot.scenario_message}}</strong></p>{% endif %}<p class="muted">{{target_snapshot.formula.version_label}} · {{target_snapshot.formula.source_label}} · verified {{target_snapshot.formula.verified_at}}. ScoreMax does not present this as an admission probability.</p></section>{% endif %}
+{% if notifications %}<section class="card"><p class="eyebrow">PRIVACY & ACCOUNT NOTICES</p>{% for n in notifications %}<div class="evidence-row"><div><strong>{{n.title}}</strong><small>{{n.message}}</small></div><span>{{n.created_at}}</span></div>{% endfor %}</section>{% endif %}
+{% if parent_links %}<section class="card"><p class="eyebrow">PARENT / GUARDIAN ACCESS</p>{% for link in parent_links %}<div class="evidence-row"><div><strong>{{link.parent_name}}</strong><small>Can view the progress sharing you have enabled.</small></div><form method="post" action="{{url_for('student_revoke_parent_link',link_id=link.id)}}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<button class="btn alt">Revoke</button></form></div>{% endfor %}</section>{% endif %}
+
+
+<div class="grid">
+<div class="card"><p class="eyebrow">MY TARGET 🎯</p><form method="post" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<input type="hidden" name="action" value="goal">
+<label>What are you aiming for?<select name="goal_type"><option value="">Choose a target</option>{% for x in ['Strong Matric Result','Strong FSc Result','MBBS','BDS','Engineering','University Admission','Other'] %}<option {% if user.goal_type==x %}selected{% endif %}>{{x}}</option>{% endfor %}</select></label>
+<label>Specific target<input name="goal_name" value="{{user.goal_name or ''}}" placeholder="e.g. 90% in Matric Part II / Public MBBS"></label>
+<label>Score I'm aiming for<input type="number" min="0" max="100" step="0.01" name="target_percentage" value="{{user.target_percentage or ''}}" placeholder="e.g. 90"></label><button class="btn">Set My Target</button></form></div>
+<div class="card"><p class="eyebrow">CURRENT PERFORMANCE ESTIMATE</p>{% if subjects %}{% for s in subjects[:3] %}<div class="profile-level-row"><div><strong>{{s.subject}}</strong><span>{{s.mastery}}</span></div><b>{{s.accuracy|round(0)|int}}%</b></div>{% endfor %}{% else %}<p class="muted">Complete a few tests and your performance estimates will appear here. Formal mastery is assessed separately.</p>{% endif %}</div>
+</div>
+
+<div class="card" id="examResults">
+<p class="eyebrow">MY RESULTS & ADMISSION TARGET</p>
+<h2>Add your exam results — and see what they mean for your goal.</h2>
+<p>Adding your Matric, FSc and entry-test results helps ScoreMax understand your academic journey, identify stronger and weaker subjects, and calculate how many marks you may need for your chosen admission route.</p>
+<div class="result-benefit-grid">
+  <div><strong>Know your current position</strong><small>See how your previous results contribute to your admission aggregate.</small></div>
+  <div><strong>Know what you may need next</strong><small>For supported pathways, ScoreMax can work backwards from your target aggregate.</small></div>
+  <div><strong>Plan around the gap</strong><small>Use the target score to shape your Study Plan and practice priorities.</small></div>
+</div>
+<form method="post" class="form-grid" id="resultForm">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<input type="hidden" name="action" value="result">
+<label>Exam<select name="exam_type" required>{% for x in ['Matric Part I','Matric Part II','Matric','FSc Part I','FSc Part II','MDCAT','ECAT','Other'] %}<option>{{x}}</option>{% endfor %}</select></label>
+<label>Board / authority<input name="board_authority" value="{{user.board or ''}}" placeholder="e.g. BISE Lahore"></label>
+<label>Year<input type="number" name="exam_year" value="2026" min="2000" max="2100"></label>
+<label>Marks obtained<input type="number" step="0.01" name="marks_obtained" required></label>
+<label>Total marks<input type="number" step="0.01" name="total_marks" required></label>
+<label>Grade (optional)<input name="grade" placeholder="e.g. A+"></label>
+<input type="hidden" name="subject" value="">
+<div class="full"><details><summary><strong>Add subject results (optional)</strong></summary><div id="subjectRows">
+<div class="subject-result-row"><input name="subject_name" placeholder="Subject e.g. Physics"><input name="subject_obtained" type="number" step="0.01" placeholder="Marks"><input name="subject_total" type="number" step="0.01" placeholder="Out of"><input name="subject_grade" placeholder="Grade"></div>
+</div><button class="btn alt" type="button" onclick="addSubjectRow()">+ Add Subject</button></details></div>
+<div class="full"><button class="btn">Save Achievement</button></div></form>
+</div>
+
+
+<section class="card admission-target-card" id="formulaTools">
+  <p class="eyebrow">OFFICIAL FORMULA & MY FORMULA</p>
+  <h2>Understand the target without pretending it is an admission guarantee.</h2>
+  {% if medical_formula %}
+  <div class="formula-strip"><strong>{{medical_formula.route_name}} · {{medical_formula.version_label}}</strong><span>{{medical_formula.source_label}} · verified {{medical_formula.verified_at}}</span></div>
+  <div class="formula-component-grid">{% for comp in medical_components %}<div><strong>{{(comp.weight*100)|round(0)|int}}%</strong><span>{{comp.label}}</span></div>{% endfor %}</div>
+  <p class="muted small">Official Formula is centrally versioned. ScoreMax should never silently apply an old rule to a new admission cycle.</p>
+  <details class="advanced-options"><summary>My Formula — unofficial what-if calculation</summary><p class="muted">Use this only for your own scenario. It is labelled custom and does not replace an official admissions rule.</p><div id="customFormulaRows">{% for comp in medical_components %}<div class="custom-formula-row"><label>{{comp.label}} score %<input class="custom-score" type="number" min="0" max="100" step="0.01" data-weight="{{comp.weight}}"></label><span>× {{(comp.weight*100)|round(0)|int}}%</span></div>{% endfor %}</div><button type="button" class="btn alt" onclick="calcCustomFormula()">Calculate My Scenario</button><div id="customFormulaResult" class="target-result"></div></details>
+  {% else %}<p class="muted">No active official formula is configured for this route yet.</p>{% endif %}
+</section>
+
+{% if results %}
+<div class="card"><div class="split"><div><p class="eyebrow">MY ACADEMIC JOURNEY</p><h2>Your saved achievements</h2></div><button class="btn alt" onclick="document.getElementById('resultForm').scrollIntoView({behavior:'smooth'})">+ Add Another Result</button></div>
+<div class="achievement-timeline">{% for r in results %}<div class="achievement-card"><span>{{r.exam_year}}</span><h3>{{r.exam_type}}</h3><strong>{{r.percentage}}%</strong>{% if r.grade %}<p>{{r.grade}}</p>{% endif %}
+{% for sr in subject_results if sr.external_result_id==r.id %}<div class="subject-result-display"><span>{{sr.subject}}</span><b>{{sr.percentage}}%</b></div>{% endfor %}
+<small>{{r.verification_status|replace('_',' ')|title}}</small></div>{% endfor %}</div></div>
+{% endif %}
+<script>
+function addSubjectRow(){const d=document.createElement('div');d.className='subject-result-row';d.innerHTML='<input name="subject_name" placeholder="Subject"><input name="subject_obtained" type="number" step="0.01" placeholder="Marks"><input name="subject_total" type="number" step="0.01" placeholder="Out of"><input name="subject_grade" placeholder="Grade">';document.getElementById('subjectRows').appendChild(d);}
+</script>
+
+<section class="card">
+  <p class="eyebrow">PARENT / GUARDIAN ACCESS</p>
+  <h2>Share progress only with someone you trust.</h2>
+  <p>A parent or guardian needs your ScoreMax email and this private access code before they can link your account.</p>
+  <div class="parent-code-box"><span>Your parent access code</span><strong>{{user.parent_link_code or 'Generated after next login'}}</strong></div>
+  <p class="muted">Linked parents see high-level Study Plan progress, subject trends and priorities — not every answer you submit.</p>
+</section>
+
+<section class="card">
+  <p class="eyebrow">MY SCOREMAX PREFERENCES</p>
+  <h2>Choose how much guidance you want.</h2>
+  <form method="post" action="{{url_for('student_preferences')}}" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+    <label><input type="checkbox" name="help_tips_enabled" value="1" {% if user.help_tips_enabled %}checked{% endif %}> Show Help Tips when I pause over unfamiliar controls</label>
+    <label><input type="checkbox" name="weekly_email_enabled" value="1" {% if user.weekly_email_enabled %}checked{% endif %}> Send me my weekly Study Plan progress summary</label>
+    <label><input type="checkbox" name="parent_weekly_email_enabled" value="1" {% if user.parent_weekly_email_enabled %}checked{% endif %}> Allow a linked parent/guardian to receive a weekly progress summary</label>
+    <button class="btn alt">Save Preferences</button>
+  </form>
+</section>
+
+
+
+<script>
+function calcCustomFormula(){let total=0,complete=true;document.querySelectorAll('.custom-score').forEach(el=>{const v=parseFloat(el.value);if(Number.isNaN(v)){complete=false;return;}total+=v*parseFloat(el.dataset.weight||0);});const box=document.getElementById('customFormulaResult');if(!box)return;box.innerHTML=complete?`<span>Custom / unofficial aggregate</span><strong>${total.toFixed(2)}%</strong>`:'<strong>Enter each component score first.</strong>';}
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block content %}
+<div class="card page-intro">
+  <p class="eyebrow">MY WEAK AREAS</p><h1>Let's improve what is costing you marks.</h1>
+  <p class="muted">Choose one or several areas. ScoreMax will mix the questions and give more attention to the weakest areas.</p>
+</div>
+{% if weak %}
+<form method="post" action="{{url_for('weak_areas_start')}}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<div class="weak-grid">
+{% for w in weak %}
+<label class="weak-select-card">
+  <input type="checkbox" name="areas" value="{{w.subject}}||{{w.concept_key}}">
+  <div><span class="subject-tag">{{w.subject}}</span><h3>{{w.area}}</h3><strong>{{w.accuracy}}%</strong><p class="muted">{{w.answered}} answers checked</p>
+  {% if w.capsule_id %}<a href="{{url_for('learning_capsule',capsule_id=w.capsule_id)}}" onclick="event.stopPropagation()">Need help first? →</a>{% endif %}</div>
+</label>
+{% endfor %}
+</div>
+<div class="sticky-action-bar">
+  <button type="button" class="btn alt" onclick="document.querySelectorAll('input[name=areas]').forEach(x=>x.checked=true)">Select All</button>
+  <select name="count" aria-label="Number of questions"><option value="10">10 questions</option><option value="15" selected>15 questions</option><option value="20">20 questions</option><option value="30">30 questions</option></select>
+  <button class="btn">Practise Selected Areas</button>
+</div>
+</form>
+{% else %}
+<div class="card empty-state"><h2>No clear weak areas yet.</h2><p>Complete a few tests and ScoreMax will show you where to focus.</p><a class="btn" href="{{url_for('test_setup')}}">Start Practice</a></div>
+{% endif %}
+{% endblock %}

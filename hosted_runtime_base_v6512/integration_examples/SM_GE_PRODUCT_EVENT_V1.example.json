@@ -1,0 +1,69 @@
+{
+  "message_id": "msg::SM_GE_PRODUCT_EVENT_V1::example-001",
+  "contract_name": "SM_GE_PRODUCT_EVENT_V1",
+  "contract_version": "1",
+  "schema_version": "1.0.0",
+  "source_system": "SCOREMAX",
+  "destination_system": "GROWTH_ENGINE",
+  "occurred_at": "2026-08-21T12:00:00Z",
+  "sent_at": "2026-08-21T12:00:00Z",
+  "correlation_id": "corr::e2e-physics-ch3-001",
+  "idempotency_key": "product-event::EVT::PAYMENT::pay_000781::CLEARED",
+  "producer_version": "6.4.0",
+  "retry_of_message_id": null,
+  "payload_checksum_sha256": "846245369ae60efda61d249b3e4cb1aa03157c22da692bf07fc9fb9e31d6fba6",
+  "data_classification": "PSEUDONYMOUS",
+  "payload": {
+    "event_id": "EVT::PAYMENT::pay_000781::CLEARED",
+    "event_type": "PAYMENT_CLEARED",
+    "event_version": "1",
+    "occurred_at": "2026-08-21T12:00:00Z",
+    "actor": {
+      "actor_type": "LEARNER",
+      "actor_id": "USR::PSEUDO::a3d8f2"
+    },
+    "context": {
+      "market_id": "PK",
+      "programme_id": "FSC_PART_I",
+      "subject_id": null,
+      "chapter_id": null,
+      "institution_id": null,
+      "academy_id": null,
+      "class_id": null,
+      "campaign_id": "CMP::TEACHER_REFERRAL::AUG26",
+      "acquisition_source_id": "SRC::TEACHER",
+      "referral_id": "REF::000314",
+      "package_id": "PKG::FULL_ACCESS"
+    },
+    "event_data": {
+      "attempt_id": null,
+      "assessment_type": null,
+      "completion_status": null,
+      "weak_area_count": null,
+      "study_plan_action": null,
+      "retention_milestone": null,
+      "access_tier_from": "FREE_ACCESS",
+      "access_tier_to": "FULL_ACCESS",
+      "payment_transaction_id": "pay_000781",
+      "payment_status": "CLEARED",
+      "currency": "PKR",
+      "gross_amount_minor": 250000,
+      "eligible_amount_minor": 250000,
+      "refund_amount_minor": 0,
+      "direct_referrer_teacher_id": "TCH::0091",
+      "upstream_referrer_teacher_id": "TCH::0014",
+      "direct_reward_id": "RWD::DIRECT::pay_000781::TCH0091",
+      "upstream_reward_id": "RWD::UPSTREAM::pay_000781::TCH0014",
+      "direct_reward_amount_minor": 25000,
+      "upstream_reward_amount_minor": 5000,
+      "reward_status": "ELIGIBLE_HELD",
+      "power_house_release_id": null,
+      "power_house_release_version": null,
+      "power_house_release_checksum_sha256": null,
+      "live_status": null,
+      "metadata": {
+        "payment_provider": "provider-ref-only"
+      }
+    }
+  }
+}

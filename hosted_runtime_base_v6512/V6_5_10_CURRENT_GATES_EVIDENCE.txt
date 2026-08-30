@@ -1,0 +1,315 @@
+=== smoke_tests_v6_5_10_terminal_payment_state.py ===
+RC=0
+PASS: V6.5.10 release identity active
+PASS: frozen SM_GE_PRODUCT_EVENT_V1 schema bytes unchanged
+PASS: successful payment -> full refund allowed
+PASS: refund produces coherent authoritative tuple
+PASS: refund reverses existing direct/upstream rewards without identity/amount mutation
+PASS: coherent full refund projects PAYMENT_REFUNDED
+PASS: refund -> reversal attempt rejected
+PASS: refund -> reversal leaves payment row unchanged
+PASS: refund -> reversal leaves reward ledger unchanged
+PASS: refund -> reversal leaves source-change state unchanged
+PASS: identical full refund repeat is idempotent
+PASS: idempotent refund repeat changes no authoritative/source state
+PASS: successful payment -> reversal allowed
+PASS: reversal produces coherent authoritative tuple
+PASS: reversal preserves reward identities/amounts while reversing eligibility
+PASS: coherent reversal projects PAYMENT_REVERSED
+PASS: reversal -> refund attempt rejected
+PASS: reversal -> refund leaves all authoritative/source state unchanged
+PASS: identical reversal repeat is idempotent
+PASS: idempotent reversal repeat changes no authoritative/source state
+PASS: failed payment -> refund rejected
+PASS: failed refund attempt leaves payment/source state unchanged
+PASS: failed payment -> reversal rejected
+PASS: failed reversal attempt leaves payment/source state unchanged
+PASS: partial refund remains rejected
+PASS: partial refund changes no payment/reward/source state
+PASS: raw contradictory terminal tuple emits no terminal Growth event
+PASS: raw contradictory terminal source change remains pending
+PASS: unsupported partial-refund raw tuple emits no outbound event and remains pending
+PASS: terminal transitions preserve referral attribution
+PASS: terminal transitions preserve direct/upstream reward IDs and amounts
+PASS: repeated producer synchronization is idempotent for coherent and blocked terminal rows
+PASS: database integrity ok
+PASS: foreign keys clean
+{
+  "status": "PASS",
+  "checks": 34,
+  "confirmed_total": 0,
+  "P0": 0,
+  "P1": 0,
+  "payment": "PASS",
+  "referral": "PASS",
+  "terminal_ordering": "PASS",
+  "producer_replay": "PASS",
+  "privacy": "PRESERVED_FROM_V6_5_9",
+  "growth_v0_14_3_receiver_replay": "PENDING_CENTRAL_CONNECTED_QUALIFICATION",
+  "integrity": "ok",
+  "foreign_key_violations": 0,
+  "check_names": [
+    "V6.5.10 release identity active",
+    "frozen SM_GE_PRODUCT_EVENT_V1 schema bytes unchanged",
+    "successful payment -> full refund allowed",
+    "refund produces coherent authoritative tuple",
+    "refund reverses existing direct/upstream rewards without identity/amount mutation",
+    "coherent full refund projects PAYMENT_REFUNDED",
+    "refund -> reversal attempt rejected",
+    "refund -> reversal leaves payment row unchanged",
+    "refund -> reversal leaves reward ledger unchanged",
+    "refund -> reversal leaves source-change state unchanged",
+    "identical full refund repeat is idempotent",
+    "idempotent refund repeat changes no authoritative/source state",
+    "successful payment -> reversal allowed",
+    "reversal produces coherent authoritative tuple",
+    "reversal preserves reward identities/amounts while reversing eligibility",
+    "coherent reversal projects PAYMENT_REVERSED",
+    "reversal -> refund attempt rejected",
+    "reversal -> refund leaves all authoritative/source state unchanged",
+    "identical reversal repeat is idempotent",
+    "idempotent reversal repeat changes no authoritative/source state",
+    "failed payment -> refund rejected",
+    "failed refund attempt leaves payment/source state unchanged",
+    "failed payment -> reversal rejected",
+    "failed reversal attempt leaves payment/source state unchanged",
+    "partial refund remains rejected",
+    "partial refund changes no payment/reward/source state",
+    "raw contradictory terminal tuple emits no terminal Growth event",
+    "raw contradictory terminal source change remains pending",
+    "unsupported partial-refund raw tuple emits no outbound event and remains pending",
+    "terminal transitions preserve referral attribution",
+    "terminal transitions preserve direct/upstream reward IDs and amounts",
+    "repeated producer synchronization is idempotent for coherent and blocked terminal rows",
+    "database integrity ok",
+    "foreign keys clean"
+  ]
+}
+
+=== smoke_tests_v6_5_9_sm_ge_commercial.py ===
+RC=0
+PASS: V6.5.9 commercial semantics active in descendant
+PASS: frozen SM_GE_PRODUCT_EVENT_V1 schema bytes unchanged
+PASS: real record_payment projects PAYMENT_CLEARED
+PASS: exact payment event passes frozen ScoreMax schema
+PASS: payment metadata uses governed payment_provider key
+PASS: ungoverned provider key absent everywhere in payment event
+PASS: provider credential/ref/contact fields are not emitted
+PASS: existing direct reward ledger remains authoritative
+PASS: existing one-upstream reward remains authoritative
+PASS: PAYMENT_CLEARED satisfies central Growth semantic allowlist
+PASS: raw contradictory refund creates no Growth event
+PASS: contradictory refund remains pending rather than falsely acknowledged
+PASS: partial refund fails closed without governed reward rule
+PASS: failed partial refund leaves payment/reward authority unchanged
+PASS: governed full refund transition committed
+PASS: authoritative payment is REFUNDED
+PASS: direct reward is authoritatively reversed
+PASS: one-upstream reward is authoritatively reversed
+PASS: governed refund projects exactly one terminal payment fact
+PASS: refund event carries reversed reward status
+PASS: refund event retains exact direct/upstream reward IDs
+PASS: refund event carries governed payment_provider metadata
+PASS: refund event satisfies central Growth payment/reward guard
+PASS: distinct reward eligibility reversal event is emitted
+PASS: identical governed refund transition is idempotent
+PASS: identical Growth synchronization adds no duplicate product events
+PASS: governed reversal projects PAYMENT_REVERSED
+PASS: reversal payment/reward state is coherent
+PASS: database integrity ok
+PASS: foreign keys clean
+{
+  "status": "PASS",
+  "checks": 30,
+  "confirmed_total": 0,
+  "P0": 0,
+  "P1": 0,
+  "payment": "PASS",
+  "referral": "PASS",
+  "refund_reversal": "PASS",
+  "replay": "PASS",
+  "privacy": "PASS",
+  "integrity": "ok",
+  "foreign_key_violations": 0,
+  "check_names": [
+    "V6.5.9 commercial semantics active in descendant",
+    "frozen SM_GE_PRODUCT_EVENT_V1 schema bytes unchanged",
+    "real record_payment projects PAYMENT_CLEARED",
+    "exact payment event passes frozen ScoreMax schema",
+    "payment metadata uses governed payment_provider key",
+    "ungoverned provider key absent everywhere in payment event",
+    "provider credential/ref/contact fields are not emitted",
+    "existing direct reward ledger remains authoritative",
+    "existing one-upstream reward remains authoritative",
+    "PAYMENT_CLEARED satisfies central Growth semantic allowlist",
+    "raw contradictory refund creates no Growth event",
+    "contradictory refund remains pending rather than falsely acknowledged",
+    "partial refund fails closed without governed reward rule",
+    "failed partial refund leaves payment/reward authority unchanged",
+    "governed full refund transition committed",
+    "authoritative payment is REFUNDED",
+    "direct reward is authoritatively reversed",
+    "one-upstream reward is authoritatively reversed",
+    "governed refund projects exactly one terminal payment fact",
+    "refund event carries reversed reward status",
+    "refund event retains exact direct/upstream reward IDs",
+    "refund event carries governed payment_provider metadata",
+    "refund event satisfies central Growth payment/reward guard",
+    "distinct reward eligibility reversal event is emitted",
+    "identical governed refund transition is idempotent",
+    "identical Growth synchronization adds no duplicate product events",
+    "governed reversal projects PAYMENT_REVERSED",
+    "reversal payment/reward state is coherent",
+    "database integrity ok",
+    "foreign keys clean"
+  ]
+}
+
+=== smoke_tests_v6_5_8_learner_evidence.py ===
+RC=0
+{
+  "status": "PASS",
+  "checks": 12,
+  "confirmed_total": 0,
+  "P0": 0,
+  "P1": 0,
+  "integrity": "ok",
+  "foreign_key_violations": 0,
+  "check_names": [
+    "40 percent creates Weak Area",
+    "targeted recovery creates Recovered",
+    "successful recall preserves Recovered",
+    "successful recall advances scheduler",
+    "failed later recall does not get protected Recovered override",
+    "recovery counters use immutable attempts",
+    "reconfirmation counters use recall immutable attempts",
+    "unsuppressed flags false",
+    "sub-threshold counters privacy safe",
+    "immutable evidence scope survives mutable question change",
+    "db integrity ok",
+    "foreign keys clean"
+  ]
+}
+
+=== smoke_tests_v6_5_7_product_activation_gate.py ===
+RC=0
+PASS: valid PH 300 event accepted
+PASS: 300 release remains STAGED
+PASS: 300 exact staged memberships retained
+PASS: 300 admission creates zero active learner projections
+PASS: identical event replay is durable/idempotent
+PASS: replay creates no duplicate membership/projection
+PASS: effective_at NULL cannot independently activate
+PASS: effective_at PAST cannot independently activate
+PASS: effective_at FUTURE cannot independently activate
+PASS: wrong checksum cannot activate
+PASS: wrong release version cannot activate
+PASS: wrong release id cannot activate
+PASS: activation actor/reason evidence is mandatory
+PASS: explicit exact ScoreMax activation succeeds
+PASS: explicit activation projects exact 300 once
+PASS: activation evidence is durable actor/time/reason/checksum
+PASS: repeated activation is idempotent
+PASS: replay does not overwrite first authorization evidence
+PASS: internal _activate_release cannot bypass product authorization
+PASS: explicit ScoreMax authorization, not PH schedule, controls learner activation
+PASS: existing Integration Health admin control activates the exact staged release
+PASS: admin activation records governed actor and reason evidence
+PASS: withdrawn staged release cannot activate
+PASS: SQLite integrity ok
+PASS: foreign key violations zero
+PASS: V6.5.7 product activation gate 25/25
+
+=== smoke_tests_v6_5_6_explicit_port_normalisation.py ===
+RC=0
+PASS: release identity is V6.5.6
+PASS: direct :0 port blocked
+PASS: direct :0 fails before credential/network
+PASS: direct :0 rejection does not disclose bearer token
+PASS: direct :00 port blocked
+PASS: direct :00 fails before credential/network
+PASS: direct :00 rejection does not disclose bearer token
+PASS: direct :000 port blocked
+PASS: direct :000 fails before credential/network
+PASS: direct :000 rejection does not disclose bearer token
+PASS: direct non-numeric port blocked
+PASS: direct non-numeric fails before credential/network
+PASS: direct non-numeric rejection does not disclose bearer token
+PASS: direct negative port blocked
+PASS: direct negative fails before credential/network
+PASS: direct negative rejection does not disclose bearer token
+PASS: direct out-of-range port blocked
+PASS: direct out-of-range fails before credential/network
+PASS: direct out-of-range rejection does not disclose bearer token
+PASS: direct very-out-of-range port blocked
+PASS: direct very-out-of-range fails before credential/network
+PASS: direct very-out-of-range rejection does not disclose bearer token
+PASS: explicit :443 matches configured default HTTPS origin
+PASS: redirect :0 port blocked before redirected request
+PASS: redirect :0 rejection does not disclose bearer token
+PASS: redirect :00 port blocked before redirected request
+PASS: redirect :00 rejection does not disclose bearer token
+PASS: redirect :000 port blocked before redirected request
+PASS: redirect :000 rejection does not disclose bearer token
+PASS: redirect non-numeric port blocked before redirected request
+PASS: redirect non-numeric rejection does not disclose bearer token
+PASS: redirect negative port blocked before redirected request
+PASS: redirect negative rejection does not disclose bearer token
+PASS: redirect out-of-range port blocked before redirected request
+PASS: redirect out-of-range rejection does not disclose bearer token
+PASS: redirect very-out-of-range port blocked before redirected request
+PASS: redirect very-out-of-range rejection does not disclose bearer token
+PASS: same-origin redirect to explicit :443 remains permitted
+PASS: same-origin :443 redirect retains bearer authentication
+PASS: configured non-default trusted port remains supported
+PASS: configured non-default trusted port cannot be bypassed by omitted port
+PASS: no bearer token in durable database evidence
+PASS: V6.5.6 explicit-port DB integrity remains clean
+PASS: V6.5.6 explicit-port FK violations remain zero
+
+SCOREMAX V6.5.6 EXPLICIT-PORT NORMALISATION CHECKS PASSED: 44
+confirmed_total=0 · P0=0 · P1=0 · integrity=ok · foreign_key_violations=0
+
+=== smoke_tests_v6_5_5_manifest_origin_security.py ===
+RC=0
+PASS: V6.5.5 origin-security suite remains active in descendant
+PASS: direct cross-origin blocked
+PASS: direct cross-origin fails before credential access and network
+PASS: suffix host confusion blocked
+PASS: suffix host confusion fails before credential access and network
+PASS: userinfo confusion blocked
+PASS: userinfo confusion fails before credential access and network
+PASS: unexpected port blocked
+PASS: unexpected port fails before credential access and network
+PASS: non-HTTPS blocked
+PASS: non-HTTPS fails before credential access and network
+PASS: misconfigured non-HTTPS trusted origin fails closed before secret/network
+PASS: cross-origin redirect credential leakage blocked
+PASS: same-origin redirect remains permitted
+PASS: same-origin redirect retains bearer authentication
+PASS: legitimate same-origin manifest pull accepted
+PASS: legitimate same-origin pull authenticates to Power House
+PASS: same-origin package checksum and manifest checksum verified before staging
+PASS: same-origin governed question staged
+PASS: wrong-origin admission rejected before bearer access
+PASS: no bearer token in receipts/quarantine/diagnostics or database evidence
+PASS: V6.5.5 security rectification DB integrity remains clean
+PASS: V6.5.5 security rectification FK violations remain zero
+
+SCOREMAX V6.5.5 MANIFEST ORIGIN SECURITY CHECKS PASSED: 23
+confirmed_total=0 · P0=0 · P1=0 · integrity=ok · foreign_key_violations=0
+
+=== scale_test_v6_5_integration_releases.py ===
+RC=0
+PASS: 300-question canonical PH release admission=0.279s duplicate=0.285s staged=300 live_after_authorization=300 stimuli=6
+PASS: 1500-question canonical PH release admission=1.320s duplicate=0.837s staged=1500 live_after_authorization=1500 stimuli=29
+PASS: SQLite integrity ok after 300/1500 integration release admissions
+NOTE: synthetic canonical-contract scale evidence only; a real governed Power House 300/1,500 release remains a cross-system qualification gate.
+
+=== scale_test_v6_5_9_qa_sandbox_1500.py ===
+RC=0
+PASS: QA_SANDBOX_ONLY 1500 imported=1500 elapsed=0.302s live_questions=0 attempts=0 mastery_evidence=0
+PASS: QA 1500 exact replay/idempotency preserved one batch without duplicate candidate rows
+PASS: QA 1500 isolation flags exact; product activation/learner delivery/real mastery are not available from sandbox storage
+PASS: SQLite integrity ok; foreign_key_violations=0
+

@@ -1,0 +1,756 @@
+PYTHON COMPILE PASS: 11 files
+JINJA PARSE PASS: 108 templates
+
+=== smoke_tests_v5_5.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: fresh schema and idempotent migration
+PASS: V5.4.2 demo bank preserved
+PASS: valid 180-question blueprint passes
+PASS: counts not summing to total fail
+PASS: percentages not summing to 100 fail
+PASS: duplicate subject fails
+PASS: tampered checksum fails
+PASS: signed payload verifies
+PASS: approved Power House snapshot imports as VALIDATED
+PASS: blueprint section count is five
+PASS: identical duplicate import is idempotent
+PASS: same ID/version with changed checksum does not overwrite
+PASS: checksum mismatch is logged
+PASS: explicit admin activation makes blueprint ACTIVE
+PASS: authentic full mock selects exactly 81/45/36/9/9
+PASS: authentic mock total is exactly 180
+PASS: missing English inventory blocks authentic release
+PASS: generated mock is marked authentic and blueprint pinned
+PASS: generated paper contains 180 pinned questions
+PASS: student-facing exam structure uses the active immutable blueprint
+PASS: authentic mock compliance report passes structure, content and pinned rigor
+PASS: Free Access cannot bypass higher-level authentic mock
+PASS: assessment session pins blueprint and assembly policy
+PASS: submitted result retains exact blueprint version
+PASS: result page explains performance against the pinned exam structure
+PASS: severe low-weight weakness can outrank stable high-weight subject
+PASS: projection uses all five blueprint sections
+PASS: projection subject counts aggregate to blueprint total
+PASS: sparse/uneven evidence produces explicit confidence
+PASS: bank sufficiency calculates required-per-mock depth
+PASS: low-weight thin subject triggers content need
+PASS: spreadsheet Approved cannot publish imported question
+PASS: imported family is also Draft and inactive
+PASS: difficulty remains independent metadata
+PASS: new blueprint supersedes old only for future use
+PASS: historical paper remains pinned to v1
+PASS: historical result remains pinned to v1
+PASS: blueprint-scoped policy stores canonical scope key
+PASS: policy draft includes transparent historical simulation without percentile claims
+PASS: material policy tightening triggers Verification Due, not downgrade
+PASS: policy creation/activation are audited
+PASS: mastery-standard slider tightens future evidence without relabelling items
+PASS: future mastery form pins active rigor-policy version
+PASS: rigor-aware mastery form remains broad and sufficiently deep
+PASS: blueprint-balanced practice allocates 60 questions without claiming authenticity
+PASS: 60-question practice follows blueprint proportions
+PASS: diagnostic practice is clearly labelled and may deviate for learner need
+PASS: ordinary practice pins blueprint and active rigor policy
+PASS: all Jinja templates parse
+PASS: route map has no duplicate paths
+PASS: all literal template route references resolve
+PASS: all explicit POST forms include CSRF
+
+ScoreMax V5.5 smoke suite: 52 checks passed.
+Temporary database: /tmp/scoremax_v55_smoke_3u9s7vcs/scoremax.db
+
+=== smoke_tests_v6.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: V6 schema is idempotent
+PASS: written response and handwriting are pilot-only by default
+PASS: exemplar library is hidden by default
+PASS: approved Power House written package validates
+PASS: signed Power House written package verifies for production transport
+PASS: tampered package checksum is rejected
+PASS: unapproved package is rejected
+PASS: approved model answer receives transparent perfect pilot score
+PASS: isolated keywords do not receive full explanation marks
+PASS: known contradiction reduces the result and is recorded
+PASS: package imports immutably but not active
+PASS: all written questions are imported under the package
+PASS: explicit admin activation makes package available
+PASS: pilot student can access while ordinary launch remains off
+PASS: ordinary student cannot access pilot feature
+PASS: typed answer is marked and package/rubric versions are pinned
+PASS: point-level marking evidence is stored
+PASS: written marker creates evidence for existing mastery engine rather than awarding mastery directly
+PASS: perfect independent answer becomes review candidate but is not published
+PASS: student exemplar consent is explicit and separately stored
+PASS: academic approval plus consent creates hidden pre-release exemplar
+PASS: exam-window release control can publish academically approved consented exemplars
+PASS: exemplar library can be withdrawn from ordinary launch without deleting evidence
+PASS: feedback-led improvement is a new version and never overwrites original
+PASS: feedback-led improvement does not create another mastery evidence row
+PASS: unseen reconfirmation is explicitly linked to original attempt
+PASS: clean unseen answer creates confirmed mastery evidence without direct mastery mutation
+PASS: academic approval alone never publishes without opt-in consent
+PASS: consent after academic approval materialises only a hidden pre-release exemplar
+PASS: handwritten original is privately stored with quality evidence
+PASS: OCR is an auditable retryable job and production capability is not falsely claimed
+PASS: local OCR simulation remains clearly provider-labelled
+PASS: student-confirmed OCR transcript is frozen with correction audit
+PASS: all V6 Jinja templates parse
+
+ScoreMax V6 smoke suite: 34 checks passed.
+Temporary database: /tmp/scoremax_v6_smoke_tupu5_wt/scoremax.db
+
+=== smoke_tests_v6_1.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: V6.1 schema and feature controls are idempotent
+PASS: Teacher Discovery and Academic Messages are pilot-only by default
+PASS: unrestricted student direct messaging is structurally hidden
+PASS: pilot access is separate for discovery and messaging
+PASS: missing date of birth blocks teacher messaging
+PASS: known minor requires explicit guardian consent
+PASS: adult student does not require guardian consent
+PASS: messaging and teacher conduct require explicit versioned agreements
+PASS: ordinary academic message is visible
+PASS: phone numbers and WhatsApp references are held
+PASS: student cannot send a meeting link as a teacher-controlled message
+PASS: teacher may send an approved meeting-domain link
+PASS: unapproved external links are held during the controlled pilot
+PASS: group listing validation requires realistic capacity
+PASS: teacher creates a moderated professional profile
+PASS: profile cannot publish before identity verification
+PASS: admin can publish a complete identity-verified profile
+PASS: verification events are independently audited
+PASS: teacher can advertise separate one-to-one and group services
+PASS: only admin-published listings become discoverable
+PASS: linked parent gives separately versioned under-18 messaging consent
+PASS: structured enquiry rejects personal contact sharing
+PASS: student creates a number-private structured enquiry
+PASS: accepted enquiry creates a governed one-to-one academic conversation
+PASS: teacher cannot initiate an unsolicited random conversation through the product flow
+PASS: teacher acceptance re-checks current guardian consent
+PASS: normal teacher-student academic message is visible
+PASS: personal-number and student-meeting messages are held with audit reports
+PASS: teacher-approved meeting link remains visible
+PASS: teacher rating unlocks only after both sides confirm the interaction
+PASS: verified review is held for moderation before public display
+PASS: published rating is based on a verified completed interaction
+PASS: guardian-approved minor may request a moderated teacher group
+PASS: teacher approval adds student to teacher-owned group conversation
+PASS: teacher-only group policy prevents student posting
+PASS: teacher can post a visible group announcement
+PASS: guardian revocation suspends existing group access without deleting evidence
+PASS: student block locks the direct conversation
+PASS: admin cannot accidentally enable unrestricted student direct messages
+PASS: no student-to-student direct-message route exists
+PASS: all V6.1 templates parse
+
+ScoreMax V6.1 smoke suite: 41 checks passed.
+Temporary database: /tmp/scoremax_v61_smoke_hqiz_jci/scoremax.db
+
+=== smoke_tests_v6_2.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: V6.2 schema is idempotent
+PASS: content intake is pilot-only and Knowledge Hub is hidden by default
+PASS: existing demo questions are explicitly separated from pilot content
+PASS: approved Power House prompt pack validates with checksum
+PASS: signed prompt transport verifies for production use
+PASS: tampered prompt pack checksum is rejected
+PASS: manual AI output is structurally linked to the prompt pack
+PASS: academic and technical feedback route to separate authorities
+PASS: prompt bridge imports immutable approved pack
+PASS: copy events are audited without changing prompt content
+PASS: candidate output is stored separately and still requires Power House review
+PASS: original import file is preserved with its verified checksum
+PASS: large-import architecture persists preview rows outside browser session
+PASS: valid preview has no blocking errors
+PASS: confirmation creates a verified pre-import backup
+PASS: whole batch imports as Draft inactive candidate content
+PASS: import creates usable answer and marking configuration without a full migration pass
+PASS: imported question retains its governed batch lineage
+PASS: unused entire batch can be rolled back after another backup
+PASS: batch rollback is blocked after assessment evidence uses an imported question
+PASS: failed processing job is re-queued idempotently
+PASS: existing duplicate question blocks the whole batch
+PASS: blocked batch does not partially import any rows
+PASS: student issue preserves context and routes academic correction to Power House
+PASS: manual Knowledge Hub entry is stored with source governance
+PASS: Growth Engine intake always becomes a human-review draft
+PASS: demo cleanup first creates a verified safety backup
+PASS: demo accounts and attempts are removed from pilot evidence without deleting governance configuration
+PASS: final SQLite integrity check passes
+PASS: pilot analytics dashboard executes against the governed schema
+
+V6.2 smoke suite complete: 30 checks passed.
+
+=== smoke_tests_v6_2_1.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: login stores valid zero session version
+PASS: login returns dashboard redirect
+PASS: zero-version session survives the next private request
+PASS: matching non-zero session version remains valid
+PASS: stale session version is invalidated
+PASS: missing session version is invalidated
+PASS: malformed session version is invalidated
+PASS: disabled account cannot retain a valid session
+PASS: session parser preserves numeric zero
+PASS: session parser applies missing fallback only to missing or invalid values
+
+V6.2.1 SESSION CHECKS PASSED: 10
+
+=== smoke_tests_v6_2_2.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: all-subject browser uses its own template
+PASS: all-subject browser does not pass a selected subject
+PASS: all-subject browser still lists available subjects
+PASS: Biology opens the dedicated one-subject template
+PASS: Biology route cannot fall back to Chemistry
+PASS: Biology detail contains Biology chapters only
+PASS: subject URLs are matched case-insensitively
+PASS: Chemistry remains independently selectable
+PASS: global subject strip is hidden on non-learning pages
+PASS: subject detail keeps the persistent subject switcher visible
+PASS: subject detail highlights the active subject
+PASS: subject strip remains available on chapter learning pages
+PASS: active subject is preserved for chapter navigation highlighting
+PASS: student secondary navigation exposes written practice
+PASS: student desktop navigation keeps six clear core learning journeys
+PASS: old competing Home link is removed from logged-in desktop navigation
+PASS: subject quick strip is explicitly page-gated
+PASS: one-subject template does not loop over all subjects
+PASS: one-subject template provides a clear return to all subjects
+PASS: release health marker is updated
+
+V6.2.2 NAVIGATION/SUBJECT CHECKS PASSED: 20
+
+=== smoke_tests_v6_2_3.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: V6.2.3 schema is idempotent
+PASS: student coach and pathway columns exist
+PASS: official social registry is seeded but governed
+PASS: Matric catalogue shows broad current studies before bank availability
+PASS: catalogue separates Coming Soon from live inventory
+PASS: Matric pathway catalogue includes core post-Matric routes
+PASS: ScoreMax Coach prioritises pathway guidance for a new Matric student
+PASS: Core workload is expressed as a weekly range
+PASS: weekly capacity fit is evaluated separately
+PASS: preparation pathway labels never leak into mastery
+PASS: formal level list excludes Stretch and Peak
+PASS: student can save a future pathway without changing current study level
+PASS: dashboard route supplies the adaptive pathway and coach context
+PASS: primary navigation prioritises six learning journeys before support
+PASS: teacher discovery and messages remain supporting account-menu links
+PASS: dashboard is a compact next-action home without workspace tabs
+PASS: dashboard keeps teacher discovery out of the core daily-action surface
+PASS: Study Plan removes prescribed time and uses evidence priorities
+PASS: Study Plan uses real tabs rather than a long anchor page
+PASS: custom test supports sixty questions
+PASS: custom test supports an explicit sixty-minute session
+PASS: practice setup uses learner-facing progressive disclosure tabs
+PASS: students are never asked for technical database IDs
+PASS: issue context is captured through hidden fields
+PASS: FAQs are searchable and cover current architecture
+PASS: subject browser exposes current studies and future pathways
+PASS: coming-soon subjects cannot start fake tests
+PASS: Exam Centre is tabbed to avoid repeated long scrolling
+PASS: Progress is tabbed by student question
+PASS: question and result pages provide contextual issue reporting
+PASS: Knowledge Hub and official social channels are reachable from the shell
+PASS: new pathway and official-channel templates exist
+PASS: release health marker is current
+
+V6.2.3 STUDENT EXPERIENCE CHECKS PASSED: 33
+
+=== smoke_tests_v6_2_4.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: matching programme still receives its own live chapters
+PASS: unknown programme receives no cross-programme chapters
+PASS: missing programme inventory remains unknown rather than false zero coverage
+PASS: unknown explicit target receives no fallback bank
+PASS: declared subject remains visible without borrowing inventory
+PASS: unknown programme cannot inherit FSc subjects
+PASS: Matric catalogue can explain subjects without marking FSc bank live
+PASS: stale four-level mastery ordering fragment is removed
+PASS: shell includes a keyboard skip link and focusable main landmark
+PASS: tabs receive ARIA ownership relationships
+PASS: tabs support arrow Home and End keys
+PASS: mobile menu supports Escape and keyboard focus containment
+PASS: visible focus and reduced-motion styles exist
+PASS: release health marker is 6.2.4
+
+V6.2.4 CURRICULUM/ACCESSIBILITY CHECKS PASSED: 14
+
+=== smoke_tests_v6_2_5.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: V6.2.5 schema is idempotent and complete
+PASS: controlled vocabulary library is seeded without daily AI dependence
+PASS: Academic Spark and Word of the Day launch behind governed controls
+PASS: public sustainability content separates current practice from future commitments
+PASS: commitments carry baselines targets dates owners and evidence
+PASS: Daily Spark creates one Academic and one Word assignment
+PASS: Academic Spark source is governed content from the learner programme
+PASS: Academic Spark uses a supported compact response type
+PASS: Word of the Day carries practical vocabulary fields
+PASS: same-day refresh returns immutable assignments
+PASS: refresh does not inflate impression counts
+PASS: Word of the Day avoids immediate repetition
+PASS: empty programmes receive no borrowed Academic Spark
+PASS: Academic Spark prioritises a governed question the student missed
+PASS: feature flag hides an already-assigned Word Spark
+PASS: another student cannot act on a Daily Spark assignment
+PASS: double submission records only one Academic Spark answer
+PASS: Daily Spark does not create attempts or formal mastery
+PASS: Word reveal is tracked without an AI call or assessment record
+PASS: Later hides a Daily Spark for its cooling-off period
+PASS: a snoozed Spark becomes available after the cooling-off period
+PASS: Spark analytics calculate stream-level engagement
+PASS: Spark engagement and completion rates are bounded
+PASS: Daily Spark reporting captures hidden assignment context
+PASS: student dashboard receives the compact Daily Spark snapshot
+PASS: Sustainability is a public ScoreMax page
+PASS: Growth Engine sustainability material remains review-only
+PASS: Word selection has no OpenAI or network dependency
+PASS: Dashboard uses one compact Daily Spark module with two streams
+PASS: Daily Spark explicitly protects the formal-mastery boundary
+PASS: Sustainability remains outside the student core learning navigation and governed in public/admin surfaces
+PASS: public page visibly labels current in-progress and future claims
+PASS: admin page preserves evidence and human-review governance
+PASS: release health marker is 6.2.5
+
+V6.2.5 SUSTAINABILITY/DAILY SPARK CHECKS PASSED: 34
+
+=== smoke_tests_v6_2_6.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: Mastery Laboratory schema is idempotent and complete
+PASS: Mastery Laboratory launches in QA_ONLY state
+PASS: all thirteen explicit mastery states are preserved
+PASS: all required question families have distinct canonical identities
+PASS: all evidence identity relationships are explicit
+PASS: technical corpus imports atomically into QA sandbox
+PASS: every candidate receives all four non-release flags
+PASS: candidate import never writes to live questions
+PASS: seed variant scaffold stimulus integrated recovery and reconfirmation identities survive import
+PASS: in-batch parent relationships resolve without false unresolved warnings
+PASS: exact retry is idempotently rejected rather than duplicated
+PASS: structural errors reject the whole batch before database insertion
+PASS: forced mid-import failure raises and rolls back
+PASS: clean retry after rollback imports exactly once
+PASS: Mastery Laboratory accepts the 322-candidate Chapter 1 scale milestone
+PASS: four_statement_selection recognises governed correct and incorrect responses
+PASS: cloze recognises governed correct and incorrect responses
+PASS: constructed_response recognises governed correct and incorrect responses
+PASS: diagram_data_stimulus recognises governed correct and incorrect responses
+PASS: standard_mcq recognises governed correct and incorrect responses
+PASS: numerical_interpretation recognises governed correct and incorrect responses
+PASS: ordering recognises governed correct and incorrect responses
+PASS: matching recognises governed correct and incorrect responses
+PASS: misconception_probe recognises governed correct and incorrect responses
+PASS: multiple_response recognises governed correct and incorrect responses
+PASS: adaptive_recovery recognises governed correct and incorrect responses
+PASS: true_false recognises governed correct and incorrect responses
+PASS: multiple response supports bounded partial credit
+PASS: cloze scores individual blanks without collapsing to MCQ
+PASS: matching scores governed pairs independently
+PASS: ordering preserves sequence-specific scoring
+PASS: numerical interpretation applies governed tolerance
+PASS: misconception probe preserves diagnostic identity
+PASS: constructed response uses its rubric rather than MCQ scoring
+PASS: seed variant and scaffold evidence is capped to one effective unit per cluster
+PASS: shared-stimulus pairs cannot manufacture independent breadth
+PASS: state machine creates provisional mastery before independent confirmation
+PASS: state machine verifies only after independent confirmation
+PASS: state machine separates Verification Due from downgrade
+PASS: recovery/scaffold evidence remains Recovery In Progress
+PASS: successful delayed evidence produces Reconfirmed
+PASS: failed delayed evidence produces Recovery Required
+PASS: all seven synthetic student histories replay successfully
+PASS: repeated variants do not inflate mastery
+PASS: scaffold success followed by independent failure requires recovery
+PASS: delayed forgetting removes apparent mastery and requires recovery
+PASS: genuine broad Distinction evidence is independently confirmed and reconfirmed
+PASS: broad performance with one missing concept produces an explicit next action
+PASS: every synthetic decision has a human-readable rationale and next action
+PASS: concept and LO evidence is written to an isolated ledger
+PASS: identity-capped evidence is explicitly documented
+PASS: synthetic runs never create live attempts or mastery records
+PASS: Content Admission gate passes the clean technical corpus
+PASS: Assessment Execution gate covers every imported family
+PASS: Mastery and Study Plan gate confirms no live-evidence leakage
+PASS: Security Privacy and Isolation gate confirms separate QA tables
+PASS: Release Acceptance gate passes only after prior gate evidence
+PASS: live question-ID collision becomes a Gate 4 blocker
+PASS: missing concept LO and outside-parent warnings remain unresolved and visible
+PASS: students cannot open the admin Mastery Laboratory
+PASS: admins receive the Mastery Laboratory control centre
+PASS: Mastery Laboratory is not exposed in student More or mobile navigation
+PASS: QA sandbox engine contains no write to live questions attempts or mastery records
+PASS: admin UI displays all four non-release boundaries
+PASS: batch UI exposes five assurance gates and blocker register
+PASS: release health marker is 6.2.6
+
+V6.2.6 PRE-PILOT ASSURANCE / MASTERY LAB CHECKS PASSED: 66
+
+=== smoke_tests_v6_2_7.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: confidential reviewer schema is idempotent and complete
+PASS: reviewer workspace launches QA-only with a 100-item ceiling
+PASS: decision set remains deliberately minimal
+PASS: a full 100-question review batch imports atomically
+PASS: review snapshots contain only minimal academic review fields
+PASS: review batches above 100 are blocked
+PASS: duplicate question IDs reject the whole batch
+PASS: exact batch retry is idempotently rejected
+PASS: named reviewer assignment contains exactly 100 items
+PASS: only a one-way invitation hash is stored
+PASS: one-time invitation acceptance activates the assignment and records confidentiality
+PASS: accepted invitations cannot be reused
+PASS: reviewer opens only an assigned minimal snapshot
+PASS: timer caps each client tick to prevent time inflation
+PASS: non-acceptance decisions require meaningful comments
+PASS: first review deviation automatically requires independent second review
+PASS: very fast reviews are flagged rather than blocked
+PASS: progress saves after each question and resume points to the next unfinished item
+PASS: active review time excludes unreported wall-clock idle time
+PASS: the same person cannot perform the independent second review
+PASS: matching second-review decisions are recorded as agreed
+PASS: reviewer disagreement automatically opens adjudication
+PASS: admin quality evidence includes fast items answer-reveal gaps and decision runs
+PASS: reviewer engine has no live question attempt mastery or Study Plan writes
+PASS: reviewer portal does not extend the normal ScoreMax shell
+PASS: reviewer screen exposes only agreed review information
+PASS: active timer pauses for hidden or inactive tabs in the client
+PASS: reviewer-specific watermark is visible in the confidential portal
+PASS: normal ScoreMax routes are fenced away from reviewer sessions
+PASS: Teacher of the Year is on the public landing page and not student primary navigation
+PASS: student navigation remains accessible after the simplified two-row uplift
+PASS: admin navigation includes the Reviewer Workspace
+PASS: release health marker is compatible with 6.2.7.1+
+
+V6.2.7 REVIEWER ASSURANCE / NAVIGATION CHECKS PASSED: 33
+
+=== smoke_tests_v6_2_7_1.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: hardening schema adds verification and round metadata
+PASS: database uniqueness backstops are installed
+PASS: invitation link and separate verification code are stored only as hashes
+PASS: link possession alone cannot activate or reset the reviewer account
+PASS: correct two-part invitation activates once and clears both credentials
+PASS: server elapsed time prevents rapid timer inflation
+PASS: only the currently open item can receive active-time credit
+PASS: punctuation padding cannot satisfy meaningful-comment validation
+PASS: completed items cannot receive further active-time credit
+PASS: shared assignment engine unconditionally enforces second-review parent and independence
+PASS: legacy one-part invitations are invalidated and reissued as two-part invitations
+PASS: eight failed verification attempts lock the invitation
+PASS: reissuing invalidates the previous link and verification code
+PASS: concurrent duplicate batch imports commit exactly one row
+PASS: concurrent first-review assignments commit exactly one row
+PASS: concurrent second-review claims commit exactly one item
+PASS: invitation UI requires a separate code and suppresses token referrers
+PASS: release health marker remains compatible with V6.2.7.1+
+
+V6.2.7.1 REVIEWER HARDENING CHECKS PASSED: 18
+
+=== smoke_tests_v6_2_7_2.py ===
+PASS: login page gives a clear email or ScoreMax ID sign-in label
+PASS: login field accepts non-email identifiers in the browser
+PASS: login field uses username autocomplete semantics
+PASS: registered email login is case-insensitive
+PASS: formal ScoreMax system User ID login is case-insensitive
+PASS: assigned username login remains supported
+PASS: bootstrap Admin can log in with the admin User ID
+PASS: older clients using the email form key remain compatible
+PASS: cross-field ambiguous identifiers are rejected instead of selecting an account
+PASS: unknown and wrong-password attempts follow the same neutral failure path
+PASS: login failure wording is neutral and does not enumerate accounts
+PASS: case-insensitive indexes protect email username and system User ID uniqueness
+PASS: release health marker is V6.2.7.2
+
+V6.2.7.2 LOGIN COMPATIBILITY CHECKS PASSED: 13
+
+=== smoke_tests_v6_2_8.py ===
+PASS: large reviewer import and package entitlement tables exist
+PASS: review batches preserve import position and assignment groups
+PASS: guided importer detects common non-template column names
+PASS: optional explanation and mastery details never trigger a raw first-row schema failure
+PASS: a large import is split automatically into 100-question batches
+PASS: batch size is auditable per import
+PASS: excluded rows are retained in an error report rather than aborting valid questions
+PASS: one invitation can govern several separately auditable batches
+PASS: accepting the group invitation activates every assigned batch
+PASS: reviewer may stop after 100 or continue across all assigned batches
+PASS: single-subject bundle and full-curriculum packages are seeded
+PASS: subject coverage and access tier remain separate entitlement dimensions
+PASS: upgrades preserve auditable entitlement history
+PASS: desktop student navigation has six persistent primary journeys plus a supporting account menu
+PASS: mobile uses reduced bottom navigation while the subject strip remains the only contextual study row
+PASS: subject switcher is package-aware
+PASS: Study Plans no longer ask for or display prescribed time
+PASS: public Daily Spark is visible before login without a submission form
+PASS: programme options are direct Available or Coming Soon cards without category layers
+PASS: public navigation and page heading consistently say About Us
+PASS: package-aware paywall combines coverage and access level
+PASS: reviewer import is guided and offers a safe demo
+PASS: reviewer tracking remains visible to Admin
+PASS: release health marker is V6.2.8
+
+V6.2.8 UPLIFT CHECKS PASSED: 24
+
+=== smoke_tests_v6_2_8_1.py ===
+PASS: instructional and reference worksheets are ignored
+PASS: all three Power House review sheet counts are preserved
+PASS: Power House V3 headers map without manual configuration
+PASS: Power House V3 workbook profile is recognised
+PASS: all 3566 records import including rubric-only constructed responses
+PASS: combined option text becomes reviewer choices
+PASS: matching and statement content is preserved for the reviewer
+PASS: marking rubric safely supplies a missing separate key
+PASS: stimulus/context is preserved inside the minimal review snapshot
+PASS: 3566 questions create 36 batches without crossing source-sheet boundaries
+PASS: each original review sheet creates twelve auditable parts
+PASS: source sheet part sizes are 100 with the correct final remainder
+PASS: no ScoreMax batch mixes questions from different workbook sheets
+PASS: reviewer snapshot stores source lineage and required content only
+PASS: pre-governed dual-review items still require a second reviewer after unchanged acceptance
+PASS: reviewer page displays context and structured response content without wider architecture
+PASS: Admin preview reports recognised Power House sheets and counts
+PASS: misleading map-question-and-answer failure has been removed
+PASS: release health marker is V6.2.8.1
+
+V6.2.8.1 POWER HOUSE V3 IMPORT CHECKS PASSED: 19
+
+=== smoke_tests_v6_3.py ===
+PASS: contract range SM-001..SM-069
+PASS: contract count is 69
+PASS: P0 count is 39
+PASS: legacy mastery remains authoritative in pilot
+PASS: reviewer workspace is not a forward dependency
+PASS: Laws-of-Motion QA fixture has 195 nodes
+PASS: Laws-of-Motion QA fixture has 52 claim families
+PASS: Laws-of-Motion QA fixture has 38 reasoning seeds
+PASS: Laws-of-Motion QA fixture has 29 mandatory gates
+PASS: Laws-of-Motion QA fixture has 10 prerequisite controls
+PASS: Laws-of-Motion QA fixture has 76 exam profiles
+PASS: 195/195 QA nodes resolve to a claim family
+PASS: synthetic architecture fixture is rejected in LIVE
+PASS: SOURCE_ONLY node has zero closure weight
+PASS: SOURCE_ONLY evidence cannot leak into family mastery
+PASS: dependent variant carries zero independent seed weight
+PASS: same seed remains one independent route despite variants
+PASS: assisted correctness does not close mastery
+PASS: later unassisted evidence can close mastery
+PASS: near-copy-only evidence remains provisional
+PASS: unseen transfer permits verified family mastery
+PASS: family can verify after mandatory misconception gate passes
+PASS: high-confidence failed hard gate reopens verified family
+PASS: one fresh correction repairs gate but cannot recycle stale routes to reverify
+PASS: fresh post-reopen evidence can reverify after closure thresholds are re-earned
+PASS: stale-positive fixture first verifies on two routes
+PASS: two later contradictions reopen the family
+PASS: one fresh route cannot reverify from stale pre-reopen route B
+PASS: repeat of the same fresh route still cannot recycle stale route B
+PASS: second fresh independent route legitimately reverifies
+PASS: high-confidence contradiction creates AT_RISK recovery epoch
+PASS: AT_RISK cannot recycle stale second route after one fresh correct
+PASS: AT_RISK closes only after fresh closure thresholds are re-earned
+PASS: maintenance reconfirmation remains due until fresh policy evidence is sufficient
+PASS: maintenance reconfirmation closes after fresh policy evidence
+PASS: QA evidence creates zero LIVE response events
+PASS: QA and LIVE evidence stores are partitioned
+PASS: retention scheduler moves verified evidence to MAINTENANCE_DUE
+PASS: isolated interleaved failure does not erase verified knowledge
+PASS: repeated contradictory blocked evidence can reopen mastery
+PASS: prerequisite candidates are discoverable
+PASS: confirmed prerequisite gap routes recovery to prerequisite entity
+PASS: MDCAT wrong answer has zero penalty
+PASS: NEET wrong answer has -1 penalty
+PASS: JEE numerical correct scores +4
+PASS: JEE numerical blank scores zero
+PASS: exam rules are source/version specific rather than a shared negative-marking default
+PASS: same common seed can be NEET-ready
+PASS: same common seed can remain JEE-developing due to fluency
+PASS: correct-but-slow exam evidence does not erase subject seed mastery
+PASS: high-confidence wrong on verified family creates AT_RISK state
+PASS: confidence analytics stay uncalibrated below sample gate
+PASS: attempt EV remains descriptive with no prescriptive threshold
+PASS: PYQ primary mark allocation sums to one with secondary zero
+PASS: SYLLABUS_NOVEL is protected from false zero-history low-yield logic
+PASS: outside-current-syllabus content receives no current score-opportunity priority
+PASS: repair-cost cold start uses content complexity only
+PASS: repair cost phases learner history in only after evidence gate
+PASS: learner goal can change target while rank promises remain prohibited
+PASS: full-exam execution loss has zero content-seed attribution
+PASS: universal mastery is off by default
+PASS: universal mastery can be enabled under a controlled pilot flag
+PASS: Pakistan adapter blocks release with missing exact authority inputs
+PASS: Pakistan adapter becomes ready only after all required authority roles are source-locked
+PASS: ScoreMax growth boundary writes an outbox event rather than synchronous control
+PASS: fixed evidence + ruleset replay produces identical mastery state
+
+V6.3.0 UNIVERSAL MASTERY FOUNDATION CHECKS PASSED: 66
+
+=== smoke_tests_v6_3_app.py ===
+PASS: universal schema initializes inside ScoreMax init
+PASS: V6.3 env flag enables universal mastery pilot
+PASS: runtime status reports V6.3.0 / architecture 0.8
+PASS: reviewer workspace is not a universal forward dependency
+PASS: compatibility health keeps parent marker and exposes current V6.3 descendant marker
+PASS: mapped legacy attempt shadow-feeds universal evidence
+PASS: shadow-fed learner receives separate universal family state
+PASS: assessment completion is queued to Growth Engine outbox
+PASS: unmapped existing questions are skipped instead of fabricating academic mappings
+PASS: internal-live full-access flag opens the complete learner journey
+PASS: repeat submit replays the existing result instead of creating duplicate attempts
+PASS: submitted session pins the one immutable attempt id
+PASS: database-level unique assessment-session attempt index is present
+PASS: 8-way concurrent submit race creates exactly one attempt
+PASS: all concurrent submit callers resolve without an exception
+PASS: admin universal-mastery status endpoint function responds
+
+V6.3.0 APPLICATION WIRING CHECKS PASSED: 16
+Temporary database: /tmp/scoremax_v63_app_rz_0n927/scoremax.db
+
+=== smoke_tests_v6_3_1_ux.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: demo-only chapter does not inflate potential mastery
+PASS: potential mastery is derived from governed production bank capacity
+PASS: unverified learner starts at zero existing mastery
+PASS: existing mastery comes from formal mastery records
+PASS: chapter opportunity shows only the unearned gap
+PASS: verification due preserves earned level while exposing freshness state
+PASS: student primary navigation is reduced to six learning journeys
+PASS: Knowledge support and account controls move out of primary navigation
+PASS: Academic Reviewer Workspace remains disabled from the forward ScoreMax shell
+PASS: student shell renders no contextual third navigation row
+PASS: mobile Learn opens subjects rather than the test builder
+PASS: mobile Practice remains a direct core action
+PASS: every subject chapter card exposes Existing Mastery and Potential Mastery
+PASS: chapter detail repeats the mastery opportunity prominently
+PASS: mastery opportunity cards keep practice accuracy separate from formal mastery
+PASS: home is organised around one Today focus
+PASS: home keeps subjects and coming-up actions visible without workspace tabs
+PASS: Daily Spark remains a single compact optional module
+PASS: Daily Spark still protects formal mastery
+PASS: practice wording is learner-facing
+PASS: technical governed-bank wording is removed from the main Practice choice
+PASS: progress opens with improvement language rather than evidence-system language
+PASS: result shows learner result before technical exam metadata
+PASS: blueprint and assembly metadata remain available under details
+PASS: mastery graph has distinct potential and existing layers
+PASS: only the subject strip remains as the sticky learner second row
+PASS: release marker identifies the Student UX V2 descendant
+
+V6.3.1 STUDENT UX V2 CHECKS PASSED: 27
+
+=== smoke_tests_v6_3_2_chapter_identity.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: explicit chapter number and name parse from the source label
+PASS: title-only source remains a chapter name without inventing a number
+PASS: number-only source remains unresolved rather than inventing a name
+PASS: chapter catalogue exists on a fresh V6.3.2 database
+PASS: fresh seed chapter is backfilled into the chapter catalogue
+PASS: governed metadata produces Chapter number plus chapter name
+PASS: derived backfill cannot overwrite governed chapter metadata
+PASS: student subject map carries canonical chapter display metadata
+PASS: chapter cards render number and name while URLs keep raw source chapter identity
+PASS: chapter page renders canonical display identity while practice filters keep raw identity
+PASS: Practice shows display labels but submits the raw chapter key
+PASS: Practice chapter renderer escapes imported display metadata before innerHTML use
+PASS: Study Plan and mastery selector use canonical chapter display labels
+PASS: release marker identifies the governed chapter identity descendant
+
+V6.3.2 CHAPTER IDENTITY CHECKS PASSED: 14
+
+=== smoke_tests_v6_4.py ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+PASS: health keeps immutable parent compatibility marker and exposes V6.4.0 release identity
+PASS: V6.4 migration adds persistent active programme context
+PASS: V6.4 migration adds referral rule versioning and one-level override fields
+PASS: V6.4 migration adds governed emergency-release state
+PASS: student programme selector always exposes FSc 1 FSc 2 and MDCAT
+PASS: student programme selector starts in the learner selected programme
+PASS: programme switch persists FSc 2 rather than being a decorative tab
+PASS: programme switch persists MDCAT independently of original registration programme
+PASS: new student mastery hero says starting point instead of fabricating Foundation
+PASS: first valid teacher attribution is immutable
+PASS: teacher recruited by teacher is explicitly marked as teacher recruitment
+PASS: paying student creates direct teacher commission linked to the exact payment
+PASS: teacher A receives only the one-level teacher-recruitment override
+PASS: direct and override rewards retain the rule versions used at transaction time
+PASS: teacher referral chain is capped at one upstream teacher level
+PASS: paid teacher referral remains in the reward ledger when direct rate is not configured
+PASS: one-level teacher-network attribution is retained even when override rate is not configured
+PASS: successful payments emit PAYMENT_RECORDED to the governed Growth Engine outbox
+PASS: teacher referral conversion event preserves payment direct teacher upstream teacher and eligible amount facts
+PASS: monthly teacher payout workbook contains summary detail and teacher-network sheets
+PASS: teacher payout workbook neutralizes formula-leading user text
+PASS: teacher monthly summary separates direct downstream and network sales and rewards
+PASS: student referral detail includes package programme payment amount direct and override reward evidence
+PASS: Emergency Direct Intake preview preserves intake mode original checksum and source file
+PASS: Emergency Direct Intake preserves source row lineage before import
+PASS: Emergency Direct Intake imports all valid records as Draft and inactive before release
+PASS: imported question retains source worksheet and source row lineage
+PASS: emergency release activates only explicitly ready rights-cleared non-held non-R2 rows
+PASS: emergency release also opens the governed family gate for the eligible question
+PASS: held and Reviewer-2-required content remains excluded from learner inventory
+PASS: 3,000-row emergency workbook parser reads exactly the question-bearing sheet
+PASS: Power House-style V3 headers map to canonical question answer rubric and mastery fields
+PASS: combined Statements / Options are deterministically split into A-D options
+INFO: 3000-row XLSX parse seconds: 0.824
+PASS: logged-in student shell renders the persistent programme selector from the FSc1/FSc2/MDCAT programme model
+PASS: subject chips no longer expose operational Open language
+PASS: Home hero uses mastery identity and one starting-point action without Full Access badge
+PASS: Home removes verified-mastery-record production jargon
+PASS: landing page includes programme context cinematic intelligence and motivational progression
+PASS: account entry wording clearly says Email or ScoreMax ID
+PASS: admin UI exposes Emergency Direct Intake as an explicit fallback route
+PASS: teacher referral UI is available from teacher shell and referral page supports student and teacher invite links
+
+V6.4.0 LIVE PILOT UX & OPERATIONS CHECKS PASSED: 41
+
+=== synthetic mastery simulation ===
+{
+  "architecture": "0.8",
+  "decision_log_rows": 9458,
+  "detailed_failures": 0,
+  "detailed_seconds": 1.449,
+  "detailed_synthetic_learners": 1000,
+  "execution_opportunity_rows": 77,
+  "failure_examples": [],
+  "fuzz_failure_examples": [],
+  "fuzz_failures": 0,
+  "fuzz_seconds": 0.281,
+  "governance_reference": "1.2",
+  "live_response_events_from_simulation": 0,
+  "note": "Synthetic QA evidence only; not student release or real mastery evidence.",
+  "pass": true,
+  "profile_counts": {
+    "ASSISTANCE_DEPENDENT": 57,
+    "BLOCKED_CONTRADICTION": 64,
+    "CHRONIC_GUESSER": 72,
+    "CONTENT_STRONG_BAD_PACING": 77,
+    "HIGH_CONFIDENCE_MISCONCEPTION": 64,
+    "INCONSISTENT": 72,
+    "INTERLEAVED_DIP": 74,
+    "MAINTENANCE_DUE": 79,
+    "PERFECT": 68,
+    "PREREQUISITE_GAP": 61,
+    "RECOVERED_GATE": 74,
+    "SLOW_BUT_CORRECT": 74,
+    "TRANSFER_FAILURE": 69,
+    "VARIANT_MEMORIZER": 95
+  },
+  "qa_response_events": 3076,
+  "randomized_invariant_checks": 10000,
+  "recovery_rows": 391,
+  "scoremax_version": "6.5.7",
+  "seed": 63017
+}
+
+=== 3,000-row Emergency Direct Intake scale gate ===
+[ScoreMax V6.5.10] SCOREMAX_SECRET not set; using an ephemeral local-session secret for this run.
+preview+validate+persist: 1.042s
+atomic Draft/inactive import: 0.385s
+eligible governed release: 0.180s
+PASS: 3,000-row XLSX end-to-end: preview=1.042s import=0.385s release=0.180s live=3000 integrity=ok
+
+SCOREMAX V6.4.0 ACCEPTANCE PASS: 441 inherited + 82 V6.3 + 27 UX V2 + 14 chapter identity + 41 V6.4 = 605 deterministic checks + synthetic mastery simulation + 3,000-row end-to-end intake scale gate.
+LIVE GATES STILL PENDING: domain/HTTPS/production host, real browser/accessibility, SMTP, real approved Power House chapter bridge, founder live acceptance.

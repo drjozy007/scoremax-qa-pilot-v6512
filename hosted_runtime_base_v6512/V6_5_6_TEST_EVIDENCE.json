@@ -1,0 +1,110 @@
+{
+  "explicitly_untouched": [
+    "mastery architecture",
+    "learner UX",
+    "reviewer architecture",
+    "payments",
+    "referrals",
+    "Emergency Direct Intake behavior",
+    "blueprint semantics",
+    "question admission semantics",
+    "V6.5.4 retry-cycle behavior",
+    "V6.5.4 strict JSON behavior",
+    "V6.5.4 Integration Health behavior",
+    "V6.5.5 trusted-origin/redirect policy except explicit-port normalization"
+  ],
+  "final_gate": "confirmed_total=0 \u00b7 P0=0 \u00b7 P1=0 \u00b7 integrity=ok \u00b7 foreign_key_violations=0",
+  "gates": {
+    "canonical_integration_scale": {
+      "question_counts": [
+        300,
+        1500
+      ],
+      "status": "PASSED"
+    },
+    "db_integrity": {
+      "foreign_key_violations": 0,
+      "integrity": "ok",
+      "status": "PASSED"
+    },
+    "inherited_v64_baseline": {
+      "deterministic_checks": 605,
+      "emergency_direct_intake_3000": "PASSED",
+      "status": "PASSED",
+      "synthetic_mastery_simulation": "PASSED"
+    },
+    "jinja_parse": {
+      "status": "PASSED",
+      "templates": 108
+    },
+    "python_compile": {
+      "files": 104,
+      "status": "PASSED"
+    },
+    "v651_deep": {
+      "assertions": "24/24",
+      "status": "PASSED"
+    },
+    "v651_rectification": {
+      "assertions": "23/23",
+      "status": "PASSED"
+    },
+    "v653_behavioral": {
+      "assertions": "48/48",
+      "status": "PASSED"
+    },
+    "v654_central_attacks": {
+      "P0": 0,
+      "P1": 0,
+      "confirmed_total": 0,
+      "foreign_key_violations": 0,
+      "integrity": "ok",
+      "status": "PASSED"
+    },
+    "v654_rectification_suite": {
+      "assertions": "31/31",
+      "status": "PASSED"
+    },
+    "v655_origin_security": {
+      "assertions": "23/23",
+      "status": "PASSED"
+    },
+    "v656_explicit_port_security": {
+      "assertions": "44/44",
+      "configured_non_default_port_compatibility": "PASSED",
+      "default_443_compatibility": "PASSED",
+      "direct_failure_point": "BEFORE_CREDENTIAL_AND_NETWORK",
+      "direct_invalid_ports": [
+        "non-numeric",
+        "negative",
+        "65536",
+        "999999"
+      ],
+      "direct_zero_ports": [
+        ":0",
+        ":00",
+        ":000"
+      ],
+      "redirect_zero_invalid_out_of_range": "BLOCKED_BEFORE_REDIRECTED_REQUEST",
+      "status": "PASSED",
+      "token_leakage": "NOT_FOUND"
+    },
+    "v65_focused_integration": {
+      "assertions": "48/48",
+      "status": "PASSED"
+    }
+  },
+  "parent_release": "ScoreMax V6.5.5",
+  "parent_zip_sha256": "d9cf823392ad405e82e10ca25354d0058e6ae740ef7ea52c811f11bd741a35ab",
+  "production_change": {
+    "app.py": "Release/build identity only.",
+    "scoremax_integration_v1.py": "Use HTTPS default 443 only when parsed.port is None; explicit ports must be 1..65535."
+  },
+  "rectified_finding": "V6.5.5 explicit-port normalisation defect",
+  "release": "ScoreMax V6.5.6",
+  "scope": "Explicit-port normalisation in Power House MANIFEST_PULL trusted-origin validation only",
+  "windows_qualification": {
+    "blocks_v656_rectification_return": false,
+    "status": "SEPARATE_INFRASTRUCTURE_CI_GATE"
+  }
+}

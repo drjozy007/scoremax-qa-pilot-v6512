@@ -1,0 +1,27 @@
+{
+  "batch_id": "PH-SM-CONNECTED-BATCH01-300-20260823",
+  "decision": "FAIL_CONNECTED_RECTIFICATION_REQUIRED",
+  "confirmed_total": 2,
+  "P0": 1,
+  "P1": 1,
+  "power_house_executed_return_sha256": "9f28052640ec0a68ee54d4d6389cb8e1a6f6443f52023783514aa29f02e1cbd8",
+  "power_house_package_sha256": "3ec6edf763f929ae43c277470254f0a452476ba06781132a8878f658e327b5de",
+  "scoremax_exact_receiver_status": 422,
+  "scoremax_receipt_status": "REJECTED",
+  "scoremax_semantic_error_count": 28,
+  "scoremax_release_rows_after_rejection": 0,
+  "findings": [
+    {
+      "id": "INT-PHSM-B01-P1-001",
+      "severity": "P1",
+      "owner": "POWER_HOUSE",
+      "summary": "TWO_TIER_DIAGNOSTIC serialized as TEXT while retaining option IDs; ScoreMax rejects 28 items."
+    },
+    {
+      "id": "INT-PHSM-B01-P0-002",
+      "severity": "P0",
+      "owner": "SCOREMAX",
+      "summary": "Accepted PH content auto-activates when effective_at is null/due instead of remaining inactive STAGED pending ScoreMax-owned product activation."
+    }
+  ]
+}

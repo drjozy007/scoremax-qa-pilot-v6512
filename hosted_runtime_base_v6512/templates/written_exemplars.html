@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Approved Answer Examples · ScoreMax{% endblock %}{% block content %}
+<section class="card page-intro"><p class="eyebrow">ACADEMICALLY APPROVED EXEMPLARS</p><h1>Learn from excellent student answers.</h1><p class="muted">Only perfect-score answers with academic approval and separate student opt-in consent appear here. They are anonymised by default.</p></section>
+{% for x in exemplars %}<section class="card"><p class="eyebrow">{{x.subject_id}} · {{x.chapter_id}} · {{x.exemplar_type}}</p><h2>{{x.question_text}}</h2><blockquote>{{x.confirmed_transcript or x.answer_text}}</blockquote><p class="muted">{{x.display_name}} · Package v{{x.package_version}} · Approved {{x.approved_at}}</p></section>{% else %}<section class="card"><p>No exemplars have been released.</p></section>{% endfor %}
+{% endblock %}

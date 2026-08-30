@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% block title %}Referrals · ScoreMax{% endblock %}{% block content %}
+<section class="page-shell referral-page-v640">
+  <header class="card referral-hero">
+    <p class="eyebrow">SCOREMAX REFERRALS</p>
+    {% if user.role=='teacher' %}
+      <h1>Share ScoreMax. Earn from the students you bring.</h1>
+      <p class="muted">Your direct student reward and the smaller one-level teacher-introduction reward are calculated only from eligible cleared payments. Registration alone never creates commission.</p>
+    {% else %}
+      <h1>Share ScoreMax with someone who could benefit.</h1>
+      <p class="muted">Qualifying rewards are created only after an eligible payment and remain subject to the configured hold/refund rules.</p>
+    {% endif %}
+  </header>
+
+  <section class="grid referral-link-grid">
+    <article class="card">
+      <p class="eyebrow">YOUR PERMANENT CODE</p><h2 class="referral-code">{{user.own_referral_code}}</h2>
+      <label>Student invite link<input id="studentRefLink" value="{{referral_link}}" readonly></label>
+      <button class="btn alt" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('studentRefLink').value)">Copy student link</button>
+    </article>
+    {% if user.role=='teacher' %}
+    <article class="card">
+      <p class="eyebrow">INVITE ANOTHER TEACHER</p><h2>Grow your teacher network</h2>
+      <p class="muted">If a teacher joins through your link and later brings paying students, the configured one-level teacher-introduction reward can apply.</p>
+      <label>Teacher invite link<input id="teacherRefLink" value="{{teacher_referral_link}}" readonly></label>
+      <button class="btn alt" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('teacherRefLink').value)">Copy teacher link</button>
+    </article>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="section-heading-row"><div><p class="eyebrow">YOUR REFERRAL PERFORMANCE</p><h2>What your code has generated</h2></div></div>
+    <div class="grid4">
+      <div class="metric"><span>Referred signups</span><strong>{{stats.signups or 0}}</strong></div>
+      <div class="metric"><span>Paying referrals</span><strong>{{stats.paid_referrals or 0}}</strong></div>
+      {% if user.role=='teacher' %}<div class="metric"><span>Teachers introduced</span><strong>{{stats.recruited_teachers or 0}}</strong></div><div class="metric"><span>Paying students via teachers</span><strong>{{stats.downstream_paying_students or 0}}</strong></div>{% else %}<div class="metric"><span>Reward type</span><strong>Wallet</strong></div>{% endif %}
+    </div>
+    {% if user.role=='teacher' and reward_money %}<div class="referral-money-strip">{% for row in reward_money %}<div><span>{{row.currency}}</span><strong>{{"%.2f"|format(((row.direct_minor or 0)+(row.override_minor or 0))/100)}}</strong><small>Direct {{"%.2f"|format((row.direct_minor or 0)/100)}} · Teacher-network {{"%.2f"|format((row.override_minor or 0)/100)}}</small></div>{% endfor %}</div>{% endif %}
+  </section>
+
+  {% if user.role!='teacher' %}<section class="card"><p class="eyebrow">AVAILABLE CREDIT</p>{% if balances %}<div class="wallet-grid">{% for b in balances %}<div class="wallet-balance"><span>{{b.currency}}</span><strong>{{"%.2f"|format((b.balance_minor or 0)/100)}}</strong></div>{% endfor %}</div>{% else %}<p class="muted">No released referral credit yet.</p>{% endif %}</section>{% endif %}
+
+  <section class="card">
+    <p class="eyebrow">REWARD HISTORY</p>
+    {% if rewards %}<div class="table-wrap"><table><thead><tr><th>Referred member</th>{% if user.role=='teacher' %}<th>Reward source</th>{% endif %}<th>Currency</th><th>Reward</th><th>Status</th><th>Available</th></tr></thead><tbody>
+    {% for r in rewards %}{% set is_override=(r.override_referrer_user_id==user.id and r.referrer_user_id!=user.id) %}<tr><td>{{r.referred_name}}</td>{% if user.role=='teacher' %}<td>{{'Teacher introduction' if is_override else 'Direct student referral'}}</td>{% endif %}<td>{{r.currency}}</td><td>{{"%.2f"|format(((r.override_reward_amount_minor if is_override else r.reward_amount_minor) or 0)/100)}}</td><td>{{(r.override_status if is_override else r.status)|replace('_',' ')|title}}</td><td>{{(r.override_available_at if is_override else r.available_at) or '—'}}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="muted">Your qualifying referrals will appear here after an eligible payment.</p>{% endif %}
+  </section>
+
+  {% if wallet %}<section class="card"><p class="eyebrow">WALLET LEDGER</p><div class="table-wrap"><table><tr><th>Date</th><th>Currency</th><th>Amount</th><th>Description</th></tr>{% for w in wallet %}<tr><td>{{w.created_at}}</td><td>{{w.currency}}</td><td>{{"%.2f"|format((w.amount_minor or 0)/100)}}</td><td>{{w.description}}</td></tr>{% endfor %}</table></div></section>{% endif %}
+</section>
+{% endblock %}

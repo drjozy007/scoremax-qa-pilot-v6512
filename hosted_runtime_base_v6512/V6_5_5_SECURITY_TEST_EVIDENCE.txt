@@ -1,0 +1,26 @@
+PASS: release identity is V6.5.5
+PASS: direct cross-origin blocked
+PASS: direct cross-origin fails before credential access and network
+PASS: suffix host confusion blocked
+PASS: suffix host confusion fails before credential access and network
+PASS: userinfo confusion blocked
+PASS: userinfo confusion fails before credential access and network
+PASS: unexpected port blocked
+PASS: unexpected port fails before credential access and network
+PASS: non-HTTPS blocked
+PASS: non-HTTPS fails before credential access and network
+PASS: misconfigured non-HTTPS trusted origin fails closed before secret/network
+PASS: cross-origin redirect credential leakage blocked
+PASS: same-origin redirect remains permitted
+PASS: same-origin redirect retains bearer authentication
+PASS: legitimate same-origin manifest pull accepted
+PASS: legitimate same-origin pull authenticates to Power House
+PASS: same-origin package checksum and manifest checksum verified before staging
+PASS: same-origin governed question staged
+PASS: wrong-origin admission rejected before bearer access
+PASS: no bearer token in receipts/quarantine/diagnostics or database evidence
+PASS: V6.5.5 security rectification DB integrity remains clean
+PASS: V6.5.5 security rectification FK violations remain zero
+
+SCOREMAX V6.5.5 MANIFEST ORIGIN SECURITY CHECKS PASSED: 23
+confirmed_total=0 · P0=0 · P1=0 · integrity=ok · foreign_key_violations=0

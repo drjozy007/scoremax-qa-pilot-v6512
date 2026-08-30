@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.scoremax.internal/v1/SM_PH_CONTENT_REQUIREMENT_V1.schema.json",
+  "title": "ScoreMax to Power House Content Requirement v1",
+  "description": "Governed cross-platform message envelope. External identifiers are opaque strings.",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "contract_name": {
+      "const": "SM_PH_CONTENT_REQUIREMENT_V1"
+    },
+    "contract_version": {
+      "const": "1"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "source_system": {
+      "const": "SCOREMAX"
+    },
+    "destination_system": {
+      "const": "POWER_HOUSE"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "producer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "retry_of_message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "payload_checksum_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "data_classification": {
+      "enum": [
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "PSEUDONYMOUS"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "request_batch_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "requirement_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "requirement_type": {
+                "enum": [
+                  "INSUFFICIENT_INDEPENDENT_EVIDENCE",
+                  "MISSING_MASTERY_LEVEL",
+                  "CHAPTER_COVERAGE_GAP",
+                  "BLUEPRINT_SHORTFALL",
+                  "RECOVERY_INVENTORY_GAP",
+                  "RECONFIRMATION_INVENTORY_GAP",
+                  "EXAM_AUTHENTIC_INVENTORY_GAP",
+                  "QUESTION_TYPE_GAP"
+                ]
+              },
+              "priority": {
+                "enum": [
+                  "P0",
+                  "P1",
+                  "P2"
+                ]
+              },
+              "market_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "board_exam_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 255
+              },
+              "programme_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "subject_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "chapter_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "topic_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 255
+              },
+              "blueprint_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 255
+              },
+              "blueprint_version": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 255
+              },
+              "requested_inventory": {
+                "type": "object",
+                "properties": {
+                  "minimum_count": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "mastery_levels": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "FOUNDATION",
+                        "EXAM_READY",
+                        "ADVANCED",
+                        "DISTINCTION"
+                      ]
+                    },
+                    "uniqueItems": true
+                  },
+                  "evidence_roles": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "INDEPENDENT",
+                        "DEPENDENT",
+                        "RECOVERY",
+                        "RECONFIRMATION"
+                      ]
+                    },
+                    "uniqueItems": true
+                  },
+                  "question_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "uniqueItems": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "minimum_count"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "supporting_metrics": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": true
+              },
+              "status": {
+                "const": "REQUESTED"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "requirement_id",
+              "created_at",
+              "requirement_type",
+              "priority",
+              "market_id",
+              "programme_id",
+              "subject_id",
+              "chapter_id",
+              "requested_inventory",
+              "reason",
+              "supporting_metrics",
+              "status"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "request_batch_id",
+        "requirements"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "contract_name",
+    "contract_version",
+    "schema_version",
+    "source_system",
+    "destination_system",
+    "occurred_at",
+    "sent_at",
+    "correlation_id",
+    "idempotency_key",
+    "producer_version",
+    "payload_checksum_sha256",
+    "data_classification",
+    "payload"
+  ]
+}

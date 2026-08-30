@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card test-shell">
+<div class="split">
+<div><p class="eyebrow">{% if exam_meta.get('assessment_kind')=='past_paper' %}PAST PAPER {{ 'PRACTICE' if exam_meta.get('guided_mode') else 'EXAM MODE' }}{% elif exam_meta.get('assessment_kind')=='mock' %}SCOREMAX MOCK{% else %}{{ 'PRACTICE' if assessment.mode=='practice' else ('MOCK EXAM' if assessment.mode=='mock' else 'TIMED TEST') }}{% endif %}</p><h2>Question {{ idx+1 }} of {{ total }}</h2>{% if exam_meta.get('exam_title') %}<p><strong>{{ exam_meta.get('exam_title') }}</strong></p>{% endif %}<p class="muted">{{ answered_count }} answered • {{ total-answered_count }} unanswered</p></div>
+{% if assessment.mode in ['exam','mock'] %}<div class="timer-box"><span>Time remaining</span><strong id="timer">--:--</strong></div>{% endif %}
+</div>
+<div class="progress-track-large"><div class="progress-fill-large" style="width:{{ (((idx+1)/total)*100)|round(0) }}%"></div></div>
+
+<form id="question-form" method="post">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<div class="question-card" {% if qa_sandbox %}data-qa-sandbox="true" data-qa-session="{{qa_session_id}}" data-render-checksum="{{qa_render_checksum}}"{% endif %}>
+<span class="pill">{{ q.level }}</span> <span class="pill">{{ qtype|replace('_',' ')|title }}</span>
+{% if q.marks %}<span class="pill">{{ q.marks|int if q.marks == q.marks|int else q.marks }} mark{% if q.marks != 1 %}s{% endif %}</span>{% endif %}
+{% if q.stimulus_data %}<div class="stimulus-box">{{ q.stimulus_data }}</div>{% endif %}
+<div class="question">{{ q.question }}</div>
+{% if qa_sandbox %}<span class="question-report-link" data-qa-only="true">⚑ Report this question</span>{% else %}<a class="question-report-link" href="{{url_for('pilot_report_issue',question_id=q.id,source='assessment_question',page=request.path)}}">⚑ Report this question</a>{% endif %}
+
+{% set saved=answers.get(q.id|string,'') %}
+{% if qtype in ['single_choice','true_false'] %}
+  {% for opt in options %}
+  <label class="option"><input type="radio" name="answer" value="{{ opt.id }}" {% if saved==opt.id %}checked{% endif %}> <strong>{{ opt.id }}.</strong> {{ opt.text }}</label>
+  {% endfor %}
+{% elif qtype=='multiple_select' %}
+  <p class="muted">Select all answers that apply.</p>
+  {% set selected=saved.split(',') if saved else [] %}
+  {% for opt in options %}
+  <label class="option"><input type="checkbox" name="answer" value="{{ opt.id }}" {% if opt.id in selected %}checked{% endif %}> <strong>{{ opt.id }}.</strong> {{ opt.text }}</label>
+  {% endfor %}
+{% elif qtype=='fill_blank' %}
+  <label>Your answer<input name="answer" value="{{ saved }}" autocomplete="off"></label>
+{% elif qtype=='numerical' %}
+  <label>Your numerical answer<input type="number" step="any" inputmode="decimal" name="answer" value="{{ saved }}" autocomplete="off" placeholder="Enter a number"></label>
+  {% if answer_cfg.get('unit') %}<p class="muted">Unit: {{ answer_cfg.get('unit') }}</p>{% endif %}
+{% elif qtype in ['short_response','extended_response'] %}
+  <label>Your answer<textarea name="answer" rows="{{ 8 if qtype=='extended_response' else 4 }}">{{ saved }}</textarea></label>
+  <p class="muted">This response type is stored for review; automated marking will be enabled in a later checkpoint.</p>
+{% else %}
+  <div class="notice">This question type is supported by the V5 architecture but its interactive renderer is not active yet.</div>
+{% endif %}
+</div>
+{% if assessment.mode=='practice' %}
+<div class="confidence-box">
+  <p class="eyebrow">OPTIONAL CONFIDENCE</p>
+  <p class="muted">How sure are you about this answer?</p>
+  {% set saved_conf=confidence.get(q.id|string,'') %}
+  <div class="confidence-options">
+    {% for label in ['Guessing','Not sure','Confident'] %}
+    <label class="confidence-choice"><input type="radio" name="confidence" value="{{ label }}" {% if saved_conf==label %}checked{% endif %}> {{ label }}</label>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+<input type="hidden" name="response_time_seconds" id="response_time_seconds" value="0">
+
+<label class="flag-row"><input type="checkbox" name="flagged" value="1" {% if q.id in flagged %}checked{% endif %}> Flag for review</label>
+<div class="test-nav-actions">
+{% if qa_sandbox %}
+<button class="btn" name="action" value="review" data-qa-submit="true">Review & Submit</button>
+{% else %}
+<button class="btn alt" name="action" value="previous" {% if idx==0 %}disabled{% endif %}>← Previous</button>
+{% if idx<total-1 %}<button class="btn" name="action" value="next">Save & Next →</button>{% else %}<button class="btn" name="action" value="review">Review & Submit</button>{% endif %}
+{% endif %}
+</div>
+<div class="navigator">
+<p class="eyebrow">QUESTION NAVIGATOR</p>
+<div class="nav-grid">
+{% for qid in ids %}{% set j=loop.index0 %}{% set answered=answers.get(qid|string) %}
+<button name="action" value="jump:{{ j }}" class="nav-q {% if j==idx %}current{% elif qid in flagged %}flagged{% elif answered %}answered{% endif %}">{{ loop.index }}</button>
+{% endfor %}
+</div>
+<div class="legend"><span><i class="legend-dot answered-dot"></i>Answered</span><span><i class="legend-dot flagged-dot"></i>Flagged</span><span><i class="legend-dot current-dot"></i>Current</span></div>
+</div>
+</form>
+{% if not qa_sandbox %}<form id="final-submit-form" method="post" action="{{ url_for('submit_assessment_v4',assessment_id=assessment_id) }}" style="display:none">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}</form>{% endif %}
+</div>
+{% if assessment.mode in ['exam','mock'] and remaining_seconds is not none %}
+<script>
+let r={{ remaining_seconds|int }},e=document.getElementById('timer'),timerDone=false;
+async function submitOnTimeout(){
+  const qf=document.getElementById('question-form');
+  try{
+    const data=new FormData(qf); data.set('action','review');
+    await fetch(window.location.href,{method:'POST',body:data,credentials:'same-origin'});
+  }catch(err){ console.warn('Could not save the current response before timeout submission.',err); }
+  document.getElementById('final-submit-form').requestSubmit();
+}
+function tick(){let m=Math.floor(Math.max(0,r)/60),s=Math.max(0,r)%60;e.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');if(r<=0&&!timerDone){timerDone=true;submitOnTimeout();return;}r--;}
+tick();setInterval(tick,1000);
+</script>
+{% endif %}
+<script>
+let questionSeconds=0;
+setInterval(function(){ questionSeconds++; const el=document.getElementById('response_time_seconds'); if(el) el.value=questionSeconds; },1000);
+</script>
+{% endblock %}

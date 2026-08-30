@@ -1,0 +1,25 @@
+ScoreMax V6.5.6 — explicit-port normalisation security evidence
+Exact parent: ScoreMax V6.5.5 frozen ZIP SHA-256 d9cf823392ad405e82e10ca25354d0058e6ae740ef7ea52c811f11bd741a35ab
+
+V6.5.6 permanent explicit-port attacks: 44/44 PASS
+- direct :0 blocked before credential/network
+- direct :00 blocked before credential/network
+- direct :000 blocked before credential/network
+- direct non-numeric port blocked before credential/network
+- direct negative port blocked before credential/network
+- direct >65535 port blocked before credential/network
+- direct very-out-of-range port blocked before credential/network
+- redirects to every zero/invalid/out-of-range port above blocked before redirected request
+- no bearer token disclosed by rejection messages or durable DB evidence
+- explicit :443 remains equivalent to omitted HTTPS default port
+- explicitly configured non-default trusted Power House port remains supported and exact
+
+Existing V6.5.5 origin-security suite: 23/23 PASS
+Prior V6.5.4 rectification suite: 31/31 PASS
+Prior V6.5.4 Integration Control central attacks: confirmed_total=0, P0=0, P1=0
+Canonical Power House integration scale: 300 PASS; 1,500 PASS
+Emergency Direct Intake: 3,000-row end-to-end PASS
+SQLite integrity: ok
+Foreign-key violations: 0
+
+FINAL_GATE: confirmed_total=0 · P0=0 · P1=0 · integrity=ok · foreign_key_violations=0

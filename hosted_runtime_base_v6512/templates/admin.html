@@ -1,0 +1,39 @@
+{% extends 'base.html' %}{% block content %}
+<div class='card'><p class='eyebrow'>SUPER ADMIN</p><h2>Platform control centre</h2><p>V5 question-bank operations, review and live quality monitoring.</p></div><div class='card gate-status {{ "gate-live" if commercial_gates_enabled else "gate-beta" }}'><div class='split'><div><p class='eyebrow'>COMMERCIAL GATING</p><strong>{{ 'LIVE / ENFORCED' if commercial_gates_enabled else 'BETA / NOT ENFORCED' }}</strong></div><span class='pill'>SCOREMAX_ENFORCE_PAYWALL={{ '1' if commercial_gates_enabled else '0' }}</span></div><p class='muted'>The entitlement architecture remains active in both modes. Set the environment flag to 1 only when you are ready to enforce student Access.</p></div>
+<div class='grid3'>
+  <div class='metric'><span>Students</span><strong>{{ m.students }}</strong></div><div class='metric'><span>Teachers</span><strong>{{ m.teachers }}</strong></div><div class='metric'><span>Institutions</span><strong>{{ m.institutions }}</strong></div>
+  <div class='metric'><span>Questions</span><strong>{{ m.questions }}</strong></div><div class='metric'><span>Attempts</span><strong>{{ m.attempts }}</strong></div><div class='metric'><span>Active subscriptions</span><strong>{{ m.active_subscriptions }}</strong></div><div class='metric'><span>Live questions</span><strong>{{ m.live }}</strong></div>
+</div>
+<div class='grid3'>
+  <div class='card'><p class='eyebrow'>CONTENT PIPELINE</p><h3>{{ m.draft }} Draft</h3><a class='btn' href='{{ url_for("admin_questions",status="Draft") }}'>Open drafts</a></div>
+  <div class='card'><p class='eyebrow'>REVIEW QUEUE</p><h3>{{ m.review }} In review</h3><a class='btn' href='{{ url_for("admin_pilot_readiness") }}'>Pilot Readiness</a>
+<a class='btn alt' href='{{ url_for("admin_powerhouse_prompt_bridge") }}'>Power House Prompt Bridge</a>
+<a class='btn alt' href='{{ url_for("admin_pilot_feedback") }}'>Pilot Issues</a>
+<a class='btn alt' href='{{ url_for("admin_pilot_analytics") }}'>Pilot Analytics</a>
+<a class='btn alt' href='{{ url_for("admin_knowledge") }}'>Knowledge Hub</a>
+<a class='btn' href='{{ url_for("admin_questions") }}'>Question bank</a></div>
+  <div class='card'><p class='eyebrow'>SECURE BANK</p><h3>{{ m.secure }} protected</h3><p>Reserved for future competitions and high-stakes assessments.</p></div>
+</div>
+<div class='card'><h3>Management</h3><div class='actions'>
+<a class='btn' href='{{ url_for("admin_pilot_readiness") }}'>Pilot Readiness</a>
+<a class='btn alt' href='{{ url_for("admin_powerhouse_prompt_bridge") }}'>Power House Prompt Bridge</a>
+<a class='btn alt' href='{{ url_for("admin_pilot_feedback") }}'>Pilot Issues</a>
+<a class='btn alt' href='{{ url_for("admin_pilot_analytics") }}'>Pilot Analytics</a>
+<a class='btn alt' href='{{ url_for("admin_knowledge") }}'>Knowledge Hub</a>
+<a class='btn' href='{{ url_for("admin_questions") }}'>Question bank</a>
+<a class='btn alt' href='{{ url_for("admin_question_families") }}'>Question families</a>
+<a class='btn alt' href='{{ url_for("admin_governance_audit") }}'>Governance audit</a>
+<a class='btn alt' href='{{ url_for("admin_question_health") }}'>Question health</a>
+<a class='btn alt' href='{{ url_for("admin_import") }}'>Import Excel / CSV</a>
+<a class='btn alt' href='{{ url_for("template") }}'>Download V5 template</a>
+<a class='btn alt' href='{{ url_for("admin_users") }}'>Users</a>
+<a class='btn alt' href='{{ url_for("institutions") }}'>Institutions</a>
+<a class='btn alt' href='{{ url_for("admin_analytics") }}'>Platform analytics</a>
+<a class='btn alt' href='{{ url_for("admin_payments") }}'>Payments & subscriptions</a>
+<a class='btn alt' href='{{ url_for("admin_referrals") }}'>Referrals & commissions</a>
+<a class='btn alt' href='{{ url_for("admin_integration_health") }}'>Integration health</a>
+<a class='btn alt' href='{{ url_for("admin_learning_capsules") }}'>Learning Capsules</a>
+</div></div>
+<div class='card'><p class='eyebrow'>EXAM OPERATIONS</p><h3>Exam Centre</h3><p class='muted'>Create exam blueprints, past-paper simulations and ScoreMax mocks.</p><a class='btn' href='{{ url_for("admin_exams") }}'>Manage Exam Centre</a></div>
+<div class='card'><p class='eyebrow'>MONTHLY CHALLENGES</p><h3>Competition Operations</h3><p class='muted'>Create secure monthly subject challenges and review voluntary ranking participation.</p><a class='btn' href='{{ url_for("admin_challenges") }}'>Manage Challenges</a></div>
+{% endblock %}

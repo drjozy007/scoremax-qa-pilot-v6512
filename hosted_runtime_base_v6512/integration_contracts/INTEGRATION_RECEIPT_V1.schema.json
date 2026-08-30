@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.scoremax.internal/v1/INTEGRATION_RECEIPT_V1.schema.json",
+  "title": "Integration Receipt v1",
+  "type": "object",
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "contract_name": {
+      "enum": [
+        "GE_PH_DEMAND_SIGNAL_V1",
+        "PH_GE_ACADEMIC_CATALOG_V1",
+        "PH_SM_APPROVED_CONTENT_V1",
+        "PH_SM_ASSESSMENT_BLUEPRINT_V1",
+        "SM_GE_PRODUCT_EVENT_V1",
+        "SM_PH_CONTENT_REQUIREMENT_V1",
+        "SM_PH_DELIVERY_EVIDENCE_V1"
+      ]
+    },
+    "receiver_system": {
+      "enum": [
+        "POWER_HOUSE",
+        "SCOREMAX",
+        "GROWTH_ENGINE"
+      ]
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "ACCEPTED",
+        "DUPLICATE",
+        "REJECTED",
+        "QUARANTINED"
+      ]
+    },
+    "duplicate_of_receipt_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "accepted_schema_version": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "payload_checksum_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "path",
+          "message",
+          "retryable"
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "receipt_id",
+    "message_id",
+    "contract_name",
+    "receiver_system",
+    "received_at",
+    "status",
+    "payload_checksum_sha256",
+    "errors"
+  ]
+}

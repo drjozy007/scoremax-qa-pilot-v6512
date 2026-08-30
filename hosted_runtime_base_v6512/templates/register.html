@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% block title %}Create Account · ScoreMax{% endblock %}{% block content %}
+<section class="card narrow account-entry-card">
+  <p class="eyebrow">START SCOREMAX</p><h1>Create your {{role}} account.</h1>
+  {% if role=='student' %}<p class="muted">Start with the essentials. After registration you can sign in with your email or the ScoreMax ID we assign you.</p>{% else %}<p class="muted">Start with the essentials. ScoreMax will give you a permanent account ID and referral code.</p>{% endif %}
+  <form method="post" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+    <label>Full name<input name="full_name" required autocomplete="name"></label>
+    <label>Email<input type="email" name="email" required autocomplete="email"><small>This is the easiest way to log back in.</small></label>
+    <label>Password<input type="password" name="password" minlength="8" required autocomplete="new-password"><small>At least 8 characters.</small></label>
+    {% if role=='student' %}<label>Preparing for<select name="academic_level" required><option value="">Choose</option>{% for value,label in [('FSc Part 1','FSc 1'),('FSc Part 2','FSc 2'),('MDCAT','MDCAT'),('Grade 9','Grade 9'),('Grade 10','Grade 10')] %}<option value="{{value}}" {% if selected_programme==value %}selected{% endif %}>{{label}}{{' — Available' if value=='FSc Part 1' else ' — Coming Soon'}}</option>{% endfor %}</select><small>You can switch between FSc 1, FSc 2 and MDCAT inside ScoreMax.</small></label>{% endif %}
+    <label>{% if role=='teacher' %}Invited by another teacher? Referral code{% elif role=='student' %}Teacher / referral code{% else %}Referral code{% endif %} <span class="optional-label">Optional</span><input name="referral_code" value="{{referral_code or ''}}" autocomplete="off" autocapitalize="characters"><small>{% if role=='student' %}If a teacher invited you, enter their ScoreMax referral code here.{% elif role=='teacher' %}Use the code of the teacher who introduced you to ScoreMax.{% else %}Enter the code if someone invited you.{% endif %}</small></label>
+    <details class="advanced-options"><summary>Optional profile details</summary>
+      <label>Mobile<input name="mobile" autocomplete="tel"></label><label>Date of birth<input type="date" name="dob"></label>
+      {% if role=='student' %}<label>Father / guardian name<input name="father_name"></label><label>Board<input name="board"></label><label>School / college<input name="institution_name" list="institutions"></label><datalist id="institutions">{% for i in institutions %}<option value="{{i.name}}">{% endfor %}</datalist><label>Province<input name="province"></label><label>Division<input name="division"></label><label>District<input name="district"></label>{% endif %}
+    </details>
+    <input type="hidden" name="referral_source" value="{{referral_source}}">
+    <button class="btn big">Create Free Account</button>
+  </form>
+  <p class="muted">Already registered? <a href="{{url_for('login')}}">Log in</a>.</p>
+</section>
+{% endblock %}

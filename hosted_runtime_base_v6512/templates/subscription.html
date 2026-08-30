@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block content %}
+<div class="card page-intro"><p class="eyebrow">MY PLAN</p><h1>Choose how far you want ScoreMax to take you.</h1><p class="muted">Free Access covers the starting journey. Higher Access levels progressively unlock more content, assessment opportunities and support while mastery still has to be earned.</p></div>
+<div class="premium-compare">
+<div class="plan-card"><p class="eyebrow">FREE ACCESS</p><h2>Build your foundation</h2><ul class="feature-list"><li>Test your knowledge</li><li>Topic and chapter practice</li><li>Basic weak-area insight</li><li>Foundation & Exam Ready pathway</li></ul></div>
+<div class="plan-card premium-sell"><span class="recommended-ribbon">RECOMMENDED</span><p class="eyebrow">FULL ACCESS</p><h2>Unlock the full ScoreMax opportunity</h2><p>Go beyond simply seeing your score. Find what is holding you back, learn it, practise it and prove you improved.</p><div class="benefit-grid">
+<div><strong>Find the real gaps</strong><small>Deeper weak-area and misconception insight.</small></div>
+<div><strong>Improve faster</strong><small>Learning Capsules and personalised weak-area practice.</small></div>
+<div><strong>Prepare properly</strong><small>Full mocks, past-paper practice and timed exam work.</small></div>
+<div><strong>Climb higher</strong><small>Advanced → Distinction → Expert → Elite pathway.</small></div>
+<div><strong>Stay on track</strong><small>Study Plans and personalised Daily Focus.</small></div>
+<div><strong>See the full picture</strong><small>Richer progress and performance trends.</small></div>
+</div><button class="btn big" disabled>Unlock My Full ScoreMax Journey</button><p class="muted small">Payments will be activated at commercial launch.</p></div>
+</div>
+
+<div class="card invite-card"><div class="split"><div><p class="eyebrow">INVITE A FRIEND</p><h2>Help a friend improve their grades.</h2><p class="muted">Share ScoreMax with someone who could benefit from better practice, clearer feedback and a stronger exam plan.</p><small>*Eligible referrals may also receive a reward under the current referral terms.</small></div><a class="btn alt" href="{{url_for('referral_account')}}">Invite a Friend</a></div></div>
+
+{% if transactions %}<div class="card"><h3>Payment history</h3><div class="table-wrap"><table><tr><th>Date</th><th>Plan</th><th>Status</th></tr>{% for tx in transactions %}<tr><td>{{tx.created_at}}</td><td>{{tx.plan_name or '—'}}</td><td>{{tx.status|title}}</td></tr>{% endfor %}</table></div></div>{% endif %}
+{% endblock %}

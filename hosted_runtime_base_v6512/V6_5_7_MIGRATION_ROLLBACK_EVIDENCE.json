@@ -1,0 +1,25 @@
+{
+  "exact_parent_zip_sha256": "64244e5d64d5df2bbeb262b0554b3c5e0b69b3f31378e8c338c71e5fb378cdb2",
+  "parent_integrity": "ok",
+  "parent_fk_violations": 0,
+  "child_integrity": "ok",
+  "child_fk_violations": 0,
+  "existing_staged_release_after_child": {
+    "release_id": "MIG-V657",
+    "release_version": "1",
+    "package_checksum_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "local_status": "STAGED",
+    "question_count": 300
+  },
+  "activation_authorization_table_present": true,
+  "activation_authorization_rows_after_migration": 0,
+  "rollback_integrity": "ok",
+  "rollback_fk_violations": 0,
+  "rollback_existing_release": {
+    "release_id": "MIG-V657",
+    "release_version": "1",
+    "local_status": "STAGED",
+    "question_count": 300
+  },
+  "result": "PASS"
+}

@@ -1,0 +1,1173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.scoremax.internal/v1/PH_SM_APPROVED_CONTENT_V1.schema.json",
+  "title": "Power House to ScoreMax Approved Content v1",
+  "description": "Governed cross-platform message envelope. External identifiers are opaque strings.",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "contract_name": {
+      "const": "PH_SM_APPROVED_CONTENT_V1"
+    },
+    "contract_version": {
+      "const": "1"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "source_system": {
+      "const": "POWER_HOUSE"
+    },
+    "destination_system": {
+      "const": "SCOREMAX"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "producer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "retry_of_message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255
+    },
+    "payload_checksum_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "data_classification": {
+      "enum": [
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "PSEUDONYMOUS"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "delivery_mode": {
+          "enum": [
+            "INLINE",
+            "MANIFEST_PULL"
+          ]
+        },
+        "package_download_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "release": {
+          "type": "object",
+          "properties": {
+            "release_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "release_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "release_status": {
+              "const": "ACADEMICALLY_READY"
+            },
+            "generated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "market_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "programme_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "subject_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "chapter_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "readiness_policy_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "question_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "stimulus_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "package_checksum_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "manifest_checksum_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "supersedes_release_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "release_id",
+            "release_version",
+            "release_status",
+            "generated_at",
+            "market_id",
+            "programme_id",
+            "subject_id",
+            "chapter_id",
+            "readiness_policy_version",
+            "question_count",
+            "stimulus_count",
+            "package_checksum_sha256",
+            "manifest_checksum_sha256"
+          ]
+        },
+        "stimuli": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "stimulus_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "stimulus_version_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "stimulus_checksum_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "stimulus_type": {
+                "enum": [
+                  "TEXT",
+                  "TABLE",
+                  "IMAGE_REFERENCE",
+                  "DIAGRAM_REFERENCE",
+                  "DATASET",
+                  "MIXED"
+                ]
+              },
+              "content": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": true
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "source_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "source_type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "source_version": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "source_title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "locator": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "source_file_sha256": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "worksheet": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "row": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  },
+                  "rights_status": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "source_id",
+                  "source_type",
+                  "rights_status"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "stimulus_id",
+              "stimulus_version_id",
+              "stimulus_checksum_sha256",
+              "stimulus_type",
+              "content"
+            ]
+          }
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "question_version_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "question_version_number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "question_checksum_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "supersedes_question_version_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 255
+              },
+              "effective_from": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "curriculum": {
+                "type": "object",
+                "properties": {
+                  "market_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "board_exam_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "qualification_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "programme_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "grade_year_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "subject_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "chapter_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "section_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "topic_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "subtopic_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "learning_outcome_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "uniqueItems": true
+                  },
+                  "teaching_learning_outcome_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "uniqueItems": true
+                  },
+                  "display": {
+                    "type": "object",
+                    "properties": {
+                      "programme": {
+                        "type": "string"
+                      },
+                      "grade_year": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "subject": {
+                        "type": "string"
+                      },
+                      "chapter_number": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "chapter": {
+                        "type": "string"
+                      },
+                      "section": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "topic": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "subtopic": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "outcome_text": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "programme",
+                      "subject",
+                      "chapter"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "market_id",
+                  "programme_id",
+                  "subject_id",
+                  "chapter_id",
+                  "display"
+                ]
+              },
+              "content": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "minLength": 2
+                  },
+                  "question_family_type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "pedagogical_type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "exam_question_type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "stem": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "stimulus_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "inline_stimulus": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": true
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "option_id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "is_display_only": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "option_id",
+                        "text"
+                      ]
+                    }
+                  },
+                  "statements": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "marking": {
+                    "type": "object",
+                    "properties": {
+                      "key_type": {
+                        "enum": [
+                          "SINGLE_OPTION",
+                          "MULTIPLE_OPTIONS",
+                          "TEXT",
+                          "NUMERIC",
+                          "BOOLEAN",
+                          "RUBRIC_ONLY"
+                        ]
+                      },
+                      "key": {},
+                      "accepted_answers": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "uniqueItems": true
+                      },
+                      "numeric_tolerance": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "marks": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "negative_marks": {
+                        "type": "number",
+                        "maximum": 0
+                      },
+                      "rubric": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {},
+                            "additionalProperties": true
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "explanation": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "key_type",
+                      "marks",
+                      "negative_marks",
+                      "rubric"
+                    ],
+                    "allOf": [
+                      {
+                        "if": {
+                          "properties": {
+                            "key_type": {
+                              "const": "RUBRIC_ONLY"
+                            }
+                          },
+                          "required": [
+                            "key_type"
+                          ]
+                        },
+                        "then": {
+                          "required": [
+                            "rubric"
+                          ],
+                          "properties": {
+                            "rubric": {
+                              "type": "object"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "key_type": {
+                              "enum": [
+                                "SINGLE_OPTION",
+                                "MULTIPLE_OPTIONS",
+                                "TEXT",
+                                "NUMERIC",
+                                "BOOLEAN"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "key_type"
+                          ]
+                        },
+                        "then": {
+                          "required": [
+                            "key"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "estimated_time_seconds": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  },
+                  "command_word": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "learner_hygiene_version": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "language",
+                  "question_family_type",
+                  "pedagogical_type",
+                  "exam_question_type",
+                  "stem",
+                  "options",
+                  "statements",
+                  "marking"
+                ]
+              },
+              "architecture": {
+                "type": "object",
+                "properties": {
+                  "knowledge_node_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                  },
+                  "claim_family_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "reasoning_seed_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "parent_question_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "dependency_group_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "dependency_type": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "evidence_role": {
+                    "enum": [
+                      "INDEPENDENT",
+                      "DEPENDENT",
+                      "RECOVERY",
+                      "RECONFIRMATION",
+                      "SHARED_STIMULUS_DEPENDENT"
+                    ]
+                  },
+                  "independent_mastery_eligible": {
+                    "type": "boolean"
+                  },
+                  "independent_mastery_weight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "transfer_level": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "common_cr": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "mastery_level": {
+                    "enum": [
+                      "FOUNDATION",
+                      "EXAM_READY",
+                      "ADVANCED",
+                      "DISTINCTION"
+                    ]
+                  },
+                  "mastery_ceiling": {
+                    "enum": [
+                      "FOUNDATION",
+                      "EXAM_READY",
+                      "ADVANCED",
+                      "DISTINCTION"
+                    ]
+                  },
+                  "cognitive_demand": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "misconception_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "uniqueItems": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "knowledge_node_ids",
+                  "claim_family_id",
+                  "reasoning_seed_id",
+                  "evidence_role",
+                  "independent_mastery_eligible",
+                  "independent_mastery_weight",
+                  "transfer_level",
+                  "mastery_level",
+                  "mastery_ceiling",
+                  "cognitive_demand"
+                ],
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "independent_mastery_eligible": {
+                          "const": false
+                        }
+                      },
+                      "required": [
+                        "independent_mastery_eligible"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "independent_mastery_weight": {
+                          "const": 0
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "evidence_role": {
+                          "enum": [
+                            "DEPENDENT",
+                            "RECOVERY",
+                            "RECONFIRMATION",
+                            "SHARED_STIMULUS_DEPENDENT"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "evidence_role"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "independent_mastery_eligible": {
+                          "const": false
+                        },
+                        "independent_mastery_weight": {
+                          "const": 0
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "governance": {
+                "type": "object",
+                "properties": {
+                  "academic_review_state": {
+                    "const": "APPROVED"
+                  },
+                  "r2_status": {
+                    "enum": [
+                      "CLEARED",
+                      "NOT_REQUIRED"
+                    ]
+                  },
+                  "hold_status": {
+                    "const": "CLEAR"
+                  },
+                  "source_check_status": {
+                    "enum": [
+                      "CLEAR",
+                      "NOT_REQUIRED"
+                    ]
+                  },
+                  "release_readiness": {
+                    "const": "READY"
+                  },
+                  "rights_status": {
+                    "enum": [
+                      "OWNED",
+                      "COMMISSIONED_IP_ASSIGNED",
+                      "LICENSED_COMMERCIAL",
+                      "OPEN_COMMERCIAL",
+                      "PUBLIC_DOMAIN"
+                    ]
+                  },
+                  "generated_clearance_status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "readiness_policy_version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "review_evidence_refs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "uniqueItems": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "academic_review_state",
+                  "r2_status",
+                  "hold_status",
+                  "source_check_status",
+                  "release_readiness",
+                  "rights_status",
+                  "readiness_policy_version"
+                ]
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "primary_source": {
+                    "type": "object",
+                    "properties": {
+                      "source_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "source_type": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "source_version": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 255
+                      },
+                      "source_title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "locator": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "source_file_sha256": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "worksheet": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "row": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1
+                      },
+                      "rights_status": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": true
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "source_id",
+                      "source_type",
+                      "rights_status"
+                    ]
+                  },
+                  "additional_sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "source_type": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "source_version": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 255
+                        },
+                        "source_title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "locator": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "source_file_sha256": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[a-f0-9]{64}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "worksheet": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "row": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1
+                        },
+                        "rights_status": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "metadata": {
+                          "type": "object",
+                          "properties": {},
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "source_id",
+                        "source_type",
+                        "rights_status"
+                      ]
+                    }
+                  },
+                  "lineage": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "primary_source",
+                  "lineage"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "question_id",
+              "question_version_id",
+              "question_version_number",
+              "question_checksum_sha256",
+              "curriculum",
+              "content",
+              "architecture",
+              "governance",
+              "provenance"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "delivery_mode",
+        "package_download_url",
+        "release",
+        "stimuli",
+        "questions"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "delivery_mode": {
+                "const": "MANIFEST_PULL"
+              }
+            },
+            "required": [
+              "delivery_mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "package_download_url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "contract_name",
+    "contract_version",
+    "schema_version",
+    "source_system",
+    "destination_system",
+    "occurred_at",
+    "sent_at",
+    "correlation_id",
+    "idempotency_key",
+    "producer_version",
+    "payload_checksum_sha256",
+    "data_classification",
+    "payload"
+  ]
+}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block content %}
+<div class="card"><p class="eyebrow">ADMIN • EXAM CENTRE</p><h1>Legacy Paper Builders & Papers</h1><p class="muted">Keep official/historical papers clearly separated from ScoreMax originals. A historical paper should not be activated for reproduction until rights are confirmed.</p><p><a class="btn" href="{{url_for('admin_assessment_blueprints')}}">Open Authoritative Assessment Blueprints</a></p></div>
+<div class="grid">
+<div class="card"><h3>Create exam blueprint</h3><form method="post" action="{{ url_for('admin_create_exam_blueprint') }}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<label>Code<input name="code" required placeholder="PK-FSC1-PHYS"></label><label>Title<input name="title" required placeholder="FSc Part I Physics"></label>
+<label>Country<input name="country" value="Pakistan"></label><label>Qualification<input name="qualification" placeholder="FSc Part I"></label>
+<label>Exam board<input name="exam_board" placeholder="Punjab"></label><label>Programme<input name="programme" placeholder="FSc"></label>
+<label>Subject<input name="subject" required placeholder="Physics"></label><label>Curriculum version<input name="curriculum_version" placeholder="2026"></label>
+<label>Paper name<input name="paper_name" placeholder="Physics Part I"></label><label>Duration minutes<input type="number" name="duration_minutes"></label>
+<label>Total marks<input type="number" step="0.5" name="total_marks"></label><button class="btn">Create blueprint</button></form></div>
+<div class="card"><h3>Create paper / mock</h3><form method="post" action="{{ url_for('admin_create_exam_paper') }}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+<label>Blueprint<select name="blueprint_id"><option value="">None</option>{% for b in blueprints %}<option value="{{ b.id }}">{{ b.title }}</option>{% endfor %}</select></label>
+<label>Paper code<input name="code" required placeholder="PK-FSC1-PHYS-MOCK01"></label><label>Title<input name="title" required placeholder="ScoreMax Physics Mock 01"></label>
+<label>Kind<select name="paper_kind"><option value="scoremax_mock">ScoreMax Original Mock</option><option value="official_past_paper">Official / Historical Past Paper</option></select></label>
+<label>Official year<input name="official_year"></label><label>Source label<input name="source_label"></label><label>Source URL / reference<input name="source_url"></label>
+<label>Reproduction status<select name="reproduction_status"><option value="scoremax_original">ScoreMax original</option><option value="permission_pending">Permission pending</option><option value="permitted">Permitted</option><option value="licensed">Licensed</option><option value="public_domain">Public domain</option></select></label>
+<label>Duration minutes<input type="number" name="duration_minutes"></label><label>Total marks<input type="number" step="0.5" name="total_marks"></label>
+<label>Instructions<textarea name="instructions"></textarea></label><label><input type="checkbox" name="premium_required" value="1"> Higher Access required</label>
+<label><input type="checkbox" name="active" value="1"> Publish in Exam Centre</label><button class="btn">Create paper</button></form></div>
+</div>
+<div class="card"><h3>Blueprints</h3><div class="table-wrap"><table><tr><th>Code</th><th>Title</th><th>Subject</th><th>Board</th><th>Papers</th></tr>{% for b in blueprints %}<tr><td>{{b.code}}</td><td>{{b.title}}</td><td>{{b.subject}}</td><td>{{b.exam_board}}</td><td>{{b.paper_count}}</td></tr>{% endfor %}</table></div></div>
+<div class="card"><h3>Papers</h3><div class="table-wrap"><table><tr><th>Code</th><th>Title</th><th>Kind</th><th>Questions</th><th>Rights</th><th>Active</th><th></th></tr>{% for p in papers %}<tr><td>{{p.code}}</td><td>{{p.title}}</td><td>{{p.paper_kind}}</td><td>{{p.question_count}}</td><td>{{p.reproduction_status}}</td><td>{{'Yes' if p.active else 'No'}}</td><td><a href="{{url_for('admin_exam_paper_questions',paper_id=p.id)}}">Build paper</a></td></tr>{% endfor %}</table></div></div>
+{% endblock %}

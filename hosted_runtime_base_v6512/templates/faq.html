@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% block title %}Help & FAQs · ScoreMax{% endblock %}{% block content %}
+<section class="public-page compact-page"><div class="page-heading"><div><p class="eyebrow">HELP & FAQs</p><h1>Find an answer quickly.</h1><p class="muted">Search by feature, exam or problem. Help is organised around what you are trying to do.</p></div></div>
+<label class="faq-search"><span>Search help</span><input id="faqSearch" type="search" placeholder="Try: Study Plan, mastery, mock, password…"></label>
+<div class="help-shortcuts"><a href="#getting-started">Getting started</a><a href="#learning">Practice & plans</a><a href="#exams">Exams</a><a href="#account">Account & safety</a></div>
+<div class="faq-groups" id="faqGroups">
+<section id="getting-started"><h2>Getting started</h2>
+<details open><summary>What is ScoreMax?</summary><p>ScoreMax is an evidence-led learning and assessment platform. It helps you practise, diagnose weaknesses, follow a Study Plan, verify improvement and prepare for the structure of your examination.</p></details>
+<details><summary>What should I do after signing in?</summary><p>Start with the recommendation on your Dashboard. New students are normally guided to set a pathway or complete a short diagnostic so ScoreMax can personalise the next step.</p></details>
+<details><summary>Why can I see subjects marked Coming Soon?</summary><p>The academic catalogue shows subjects and future routes even before the approved question bank is ready. Only subjects marked Live can currently create governed ScoreMax tests.</p></details>
+<details><summary>What is the Pathway Explorer?</summary><p>It helps Matric students explore routes such as Pre-Medical, Pre-Engineering, Computer Science, Commerce and Humanities without locking them into a decision.</p></details></section>
+<section id="learning"><h2>Practice, Study Plans and mastery</h2>
+<details><summary>What is the difference between Practice and Assess My Mastery?</summary><p>Practice helps you learn and improve. Formal mastery requires broader, repeated and sufficiently independent evidence under the active mastery policy.</p></details>
+<details><summary>What do Core, Stretch and Peak mean?</summary><p>They describe preparation intensity, coverage pace, testing rhythm and recovery depth. They are not mastery levels and they no longer promise one fixed number of minutes every day.</p></details>
+<details><summary>How does ScoreMax choose my weekly workload?</summary><p>It considers your pathway, exam date, current coverage, target and realistic weekly availability. The result is a recommended weekly range, not an instruction to study every available minute.</p></details>
+<details><summary>What are ScoreMax mastery levels?</summary><p>Foundation, Exam Ready, Advanced, Distinction, Expert and Elite are evidence levels. Commercial Access and Study Plan pathways are separate.</p></details>
+<details><summary>What does Verification Due mean?</summary><p>Your earlier evidence is preserved, but fresh evidence is needed to reconfirm that the learning remains stable. A calendar date alone does not automatically downgrade you.</p></details>
+<details><summary>Can an improved answer prove recovery?</summary><p>Improving an answer is valuable practice, but verified recovery normally needs a later clean unseen attempt rather than editing the same response after feedback.</p></details></section>
+<section id="exams"><h2>Tests, mocks and exam structure</h2>
+<details><summary>How many questions can I put in a custom test?</summary><p>Design My Own Test supports up to 60 questions for an hour-style practice session, subject to enough approved questions being available.</p></details>
+<details><summary>What is an Authentic Full Mock?</summary><p>It follows the exact active assessment blueprint, including required subjects or sections. ScoreMax blocks authentic release if a required allocation is missing.</p></details>
+<details><summary>Why are Diagnostic tests different from mocks?</summary><p>A diagnostic deliberately focuses on your needs and may deviate from official exam proportions. It is labelled Diagnostic so it cannot be mistaken for an authentic mock.</p></details>
+<details><summary>Can I practise past papers?</summary><p>Yes, where ScoreMax has permission to reproduce them. Historical papers and ScoreMax original mocks are labelled separately.</p></details>
+<details><summary>Why does my result show a blueprint version?</summary><p>It preserves which official assessment structure governed that test. Later blueprint changes never silently rewrite historical results.</p></details></section>
+<section id="account"><h2>Account, support and safety</h2>
+<details><summary>What are Free, Level 1, Level 2 and Full Access?</summary><p>They are commercial access levels. Access unlocks opportunities; mastery still has to be earned through evidence.</p></details>
+<details><summary>How do Academic Messages protect my phone number?</summary><p>Accepted teacher–student relationships can communicate inside ScoreMax without publicly sharing personal phone numbers. Messaging remains subject to consent, moderation and safeguarding controls.</p></details>
+<details><summary>How do I report an incorrect question?</summary><p>Use Report this question from the question or result page. ScoreMax captures the technical question and attempt references automatically—you do not need database IDs.</p></details>
+<details><summary>Where can I find ScoreMax articles and official channels?</summary><p>Open the Knowledge Hub for governed articles and Connect with ScoreMax for enabled official social channels.</p></details>
+<details><summary>I forgot my password. What should I do?</summary><p>Use Forgot password on the login page. A successful reset invalidates older signed-in sessions for your protection.</p></details>
+<details><summary>How can schools, teachers and parents use ScoreMax?</summary><p>Teachers can manage classes and governed assessments; parents can see permitted evidence-based progress; institutions can view appropriate cohort information within their organisation.</p></details></section>
+</div>
+<div class="card help-footer-card"><strong>Still stuck?</strong><p>Report a problem with the current page or contact the ScoreMax team.</p><div class="dual-actions"><a class="btn" href="{{url_for('pilot_report_issue',source='faq')}}">Report an issue</a><a class="btn alt" href="{{url_for('contact_page')}}">Contact us</a></div></div></section>
+<script>const faqInput=document.getElementById('faqSearch');faqInput?.addEventListener('input',()=>{const q=faqInput.value.trim().toLowerCase();document.querySelectorAll('#faqGroups details').forEach(d=>{const show=!q||d.textContent.toLowerCase().includes(q);d.hidden=!show;if(q&&show)d.open=true;});document.querySelectorAll('#faqGroups section').forEach(s=>{s.hidden=![...s.querySelectorAll('details')].some(d=>!d.hidden);});});</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+ScoreMax V6.3.1 backup / restore acceptance — 17 August 2026
+
+{
+  "created_at": "2026-08-17T09:50:34",
+  "database": "scoremax_v6_3_1_internal_live.db",
+  "backup": "scoremax_v6_3_1_20260817_095034.db",
+  "sha256": "35d97f03fabd7c8d45b0dee6ec8ec91277d19b92ba3ffa83934d5bb01375c6e3",
+  "integrity_check": "ok"
+}
+
+{
+  "created_at": "2026-08-17T09:50:35",
+  "database": "scoremax_v6_3_1_internal_live.db",
+  "backup": "scoremax_v6_3_1_20260817_095035.db",
+  "sha256": "40311b5ab27b2bc2b245cd86c2839c6bab2dc16932232a1f96bd6255344c2195",
+  "integrity_check": "ok"
+}
+Restored: /mnt/data/scoremax_v631_work/internal_live_data/scoremax_v6_3_1_internal_live.db
+SHA256: 35d97f03fabd7c8d45b0dee6ec8ec91277d19b92ba3ffa83934d5bb01375c6e3
+
+Final probe: RESTORED_VALUE=before
+Final probe: PRAGMA integrity_check=ok

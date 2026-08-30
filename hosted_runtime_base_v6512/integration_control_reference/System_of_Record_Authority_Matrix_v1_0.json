@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "status": "FROZEN",
+  "rows": [
+    {
+      "domain": "Academic source/curriculum truth",
+      "system_of_record": "POWER_HOUSE",
+      "boundary": "ScoreMax and Growth consume governed projections only."
+    },
+    {
+      "domain": "Question/variant/version identity",
+      "system_of_record": "POWER_HOUSE",
+      "boundary": "ScoreMax preserves exact version delivered; Growth receives catalogue availability only."
+    },
+    {
+      "domain": "Node/Claim Family/Reasoning Seed/dependency classification",
+      "system_of_record": "POWER_HOUSE",
+      "boundary": "No receiver may infer or manufacture mappings."
+    },
+    {
+      "domain": "Academic review/R2/hold/readiness/release",
+      "system_of_record": "POWER_HOUSE",
+      "boundary": "Only cleared, ready versions may enter ScoreMax learner inventory."
+    },
+    {
+      "domain": "Assessment blueprints/exam specification",
+      "system_of_record": "POWER_HOUSE",
+      "boundary": "ScoreMax executes released blueprint versions."
+    },
+    {
+      "domain": "Learner/teacher/parent/institution product identity",
+      "system_of_record": "SCOREMAX",
+      "boundary": "Growth receives minimized CRM/commercial projections."
+    },
+    {
+      "domain": "Attempts/responses/marking execution",
+      "system_of_record": "SCOREMAX",
+      "boundary": "Power House receives aggregated item evidence, not learner records."
+    },
+    {
+      "domain": "Learner mastery/recovery/reconfirmation/Study Plan/Progress",
+      "system_of_record": "SCOREMAX",
+      "boundary": "Neither Power House nor Growth may alter learner state."
+    },
+    {
+      "domain": "Packages/access/payment/referral transaction facts",
+      "system_of_record": "SCOREMAX",
+      "boundary": "Growth reports and analyses; it does not determine eligibility or payment truth."
+    },
+    {
+      "domain": "CRM/acquisition/campaigns/partnerships/lifecycle messaging",
+      "system_of_record": "GROWTH_ENGINE",
+      "boundary": "No direct writes to academic or learner mastery state."
+    },
+    {
+      "domain": "Commercial attribution/retention/conversion intelligence",
+      "system_of_record": "GROWTH_ENGINE",
+      "boundary": "Derived from ScoreMax-authoritative events and Growth-owned campaign data."
+    },
+    {
+      "domain": "Academic demand signals/prioritisation advice",
+      "system_of_record": "GROWTH_ENGINE",
+      "boundary": "Advisory only; Power House decides academic production response."
+    }
+  ]
+}

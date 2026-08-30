@@ -1,0 +1,71 @@
+{% extends "base.html" %}{% block content %}
+<nav class="public-programme-strip" aria-label="Choose programme">
+  <span>Explore</span>
+  {% for p in public_programme_choices %}
+    <a href="{{url_for('index',programme=p.value)}}" class="{{'active' if public_active_programme==p.value else ''}}" aria-current="{{'page' if public_active_programme==p.value else 'false'}}">{{p.label}}</a>
+  {% endfor %}
+</nav>
+
+<section class="landing-v640" aria-labelledby="scoremaxHeroTitle">
+  <div class="landing-v640-overlay"></div>
+  <div class="landing-v640-content">
+    <span class="hero-kicker">YOUR WORK. YOUR PROGRESS. YOUR SCORE.</span>
+    <h1 id="scoremaxHeroTitle">Know where you are.<br><span>See how far you can go.</span></h1>
+    <p class="hero-copy">ScoreMax turns practice into a clear journey: find your starting point, build mastery, recover weak areas and prepare with purpose.</p>
+    <div class="motivation-flow" aria-label="The ScoreMax journey">
+      <span>Discipline</span><i>→</i><span>Consistency</span><i>→</i><span>Progress</span><i>→</i><span>Mastery</span><i>→</i><span>Results</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn hero-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}">Start my journey</a>
+      <a class="btn hero-secondary" href="#programmes">Explore {{ public_programme_choices|selectattr('value','equalto',public_active_programme)|map(attribute='label')|first or 'programmes' }}</a>
+      <a class="hero-text-link" href="{{url_for('how_it_works')}}">How ScoreMax works →</a>
+    </div>
+    <p class="hero-micro">Your current score is a starting point — not your potential.</p>
+  </div>
+  <aside class="landing-intelligence-card" aria-label="ScoreMax mastery preview">
+    <span class="intelligence-pulse" aria-hidden="true"></span>
+    <p class="eyebrow">SCOREMAX INTELLIGENCE</p>
+    <h2>Turn effort into visible progress.</h2>
+    <div class="preview-mastery-row"><span>Existing Mastery</span><strong>Exam Ready</strong></div>
+    <div class="preview-mastery-track"><span></span><i></i></div>
+    <div class="preview-mastery-row potential"><span>Potential Mastery</span><strong>Distinction</strong></div>
+    <small>Every chapter shows where you are and what you can still unlock.</small>
+  </aside>
+</section>
+
+<section class="experience-pillars" aria-label="What ScoreMax helps you do">
+  <article><span>01</span><strong>Find your starting point</strong><small>See what you know before guessing what to revise.</small></article>
+  <article><span>02</span><strong>Build mastery</strong><small>Practice with evidence that actually proves improvement.</small></article>
+  <article><span>03</span><strong>Recover weak areas</strong><small>Mistakes stay visible until fresh evidence shows recovery.</small></article>
+  <article><span>04</span><strong>Perform when it matters</strong><small>Move from subject strength to exam-ready performance.</small></article>
+</section>
+
+<section id="programmes" class="public-programmes">
+  <div class="section-heading"><div><p class="eyebrow">CHOOSE WHAT YOU ARE PREPARING FOR</p><h2>One ScoreMax journey. Your programme.</h2><p class="muted">Switch between FSc 1, FSc 2 and MDCAT without losing your place. Other programmes remain visible as they are released.</p></div></div>
+  <div class="programme-card-grid">{% for p in public_programmes %}
+    <article class="programme-card {{'available' if p.status=='AVAILABLE' else 'coming-soon'}} {{'programme-featured' if p.name==public_active_programme else ''}}">
+      <span class="status-pill status-{{'strong' if p.status=='AVAILABLE' else 'pilot'}}">{{'Available' if p.status=='AVAILABLE' else 'Coming Soon'}}</span>
+      <h3>{{p.name}}</h3>
+      {% if p.subjects %}<p>{{p.subjects|join(' · ')}}</p>{% else %}<p class="muted">Subjects will appear here as the programme is released.</p>{% endif %}
+      {% if p.status=='AVAILABLE' %}<p class="muted">Learn, practise, track mastery and prepare for the next exam milestone.</p><a class="btn" href="{{url_for('register',role='student',programme=p.name)}}">Start learning</a>{% else %}<button class="btn alt" type="button" disabled aria-disabled="true">Coming Soon</button>{% endif %}
+    </article>{% endfor %}
+  </div>
+</section>
+
+<section class="public-daily-spark card" aria-labelledby="publicSparkTitle">
+  <div><p class="eyebrow">DAILY SPARK</p><h2 id="publicSparkTitle">A small win for today.</h2><p class="muted">A fresh learning moment before you log in. Your account adds personalised academic Sparks.</p></div>
+  <div class="public-spark-word"><span>{{public_spark.pronunciation}}</span><h3>{{public_spark.word}}</h3><p>{{public_spark.definition}}</p><blockquote>{{public_spark.example}}</blockquote>{% if public_spark.synonym %}<small><strong>Synonym:</strong> {{public_spark.synonym}}{% if public_spark.antonym %} · <strong>Antonym:</strong> {{public_spark.antonym}}{% endif %}</small>{% endif %}</div>
+  <a class="btn alt" href="{{url_for('register',role='student',programme=public_active_programme)}}">Get my personalised Spark</a>
+</section>
+
+<section class="home-four">
+  <a class="home-action" href="{{url_for('how_it_works')}}"><span>🎯</span><strong>Set Your Target</strong><small>Know what you are working towards.</small></a>
+  <a class="home-action" href="{{url_for('how_it_works')}}"><span>📝</span><strong>Test Yourself</strong><small>Topic, chapter, mixed practice, papers and mocks.</small></a>
+  <a class="home-action" href="{{url_for('how_it_works')}}"><span>💡</span><strong>Improve Weak Areas</strong><small>Turn mistakes into targeted recovery.</small></a>
+  <a class="home-action" href="{{url_for('how_it_works')}}"><span>📈</span><strong>See Your Progress</strong><small>Track mastery, momentum and next actions.</small></a>
+</section>
+
+<section class="compact-public-grid"><div class="card"><p class="eyebrow">LATEST</p><h3>Exam and admissions updates</h3><p class="muted">Verified dates, registration notices, merit information and official announcements.</p><a href="{{url_for('updates_page')}}">View Updates →</a></div><div class="card"><p class="eyebrow">WHY SCOREMAX</p><h3>Testing that leads to action.</h3><p class="muted">Find gaps, practise what matters and verify recovery through fresh evidence.</p><a href="{{url_for('how_it_works')}}">See how it works →</a></div><div class="card"><p class="eyebrow">QUESTIONS?</p><h3>Simple answers.</h3><p class="muted">Read the FAQs or contact ScoreMax.</p><a href="{{url_for('faq_page')}}">FAQs →</a> &nbsp; <a href="{{url_for('contact_page')}}">Contact →</a></div></section>
+<section class="teacher-award-strip"><div><p class="eyebrow">COMING SOON</p><h2>ScoreMax Teacher of the Year</h2><p>Students will soon be able to recognise teachers who inspire, support and transform learning.</p></div><a class="btn alt" href="{{url_for('teacher_of_year_page')}}">Discover the award</a></section>
+<section class="final-cta compact-final"><p class="eyebrow">DISCIPLINE BECOMES PROGRESS</p><h2>Ready to find your starting point?</h2><a class="btn" href="{{url_for('register',role='student',programme=public_active_programme)}}">Create Free Account</a></section>
+{% endblock %}

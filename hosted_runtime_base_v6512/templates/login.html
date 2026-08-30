@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}Log in · ScoreMax{% endblock %}{% block content %}
+<section class="card narrow login-card account-entry-card">
+  <p class="eyebrow">WELCOME BACK</p><h1>Log in to ScoreMax</h1>
+  <p class="muted">Use the email you registered with, or your ScoreMax ID such as <strong>STU-000123</strong>.</p>
+  <form method="post" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+    <label>Email or ScoreMax ID<input type="text" name="identity" required autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+    <div class="form-inline-between"><a href="{{url_for('forgot_password')}}">Forgot password?</a></div>
+    <button class="btn big">Log In</button>
+  </form>
+  <div class="login-divider"><span>New to ScoreMax?</span></div>
+  <a class="btn alt big" href="{{url_for('register',role='student')}}">Create Free Account</a>
+  <p class="muted small">Teacher? <a href="{{url_for('register',role='teacher')}}">Create teacher account</a> · Parent/guardian? <a href="{{url_for('register',role='parent')}}">Create parent account</a></p>
+</section>
+{% endblock %}

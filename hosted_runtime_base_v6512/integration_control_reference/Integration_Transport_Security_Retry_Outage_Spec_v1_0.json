@@ -1,0 +1,90 @@
+{
+  "version": "1.0",
+  "status": "FROZEN_FOR_IMPLEMENTATION",
+  "architecture": "In-platform adapters using HTTPS APIs/events; no shared database and no fourth integration application.",
+  "common_envelope_required_fields": [
+    "message_id",
+    "contract_name",
+    "contract_version",
+    "schema_version",
+    "source_system",
+    "destination_system",
+    "occurred_at",
+    "sent_at",
+    "correlation_id",
+    "idempotency_key",
+    "producer_version",
+    "retry_of_message_id",
+    "payload_checksum_sha256",
+    "data_classification",
+    "payload"
+  ],
+  "service_security": {
+    "authentication": "Per-direction service bearer credential with narrow contract scopes",
+    "message_integrity": "HMAC-SHA256 over canonical method + path + message_id + sent_at + payload SHA-256",
+    "headers": [
+      "Authorization: Bearer <service-token>",
+      "X-Message-Id",
+      "X-Sent-At",
+      "X-Content-SHA256",
+      "X-Signature: hmac-sha256=<digest>"
+    ],
+    "replay_protection": "Reject reused message_id/nonce outside idempotent duplicate path; validate clock skew; rotate secrets through deployment secret store",
+    "prohibited": [
+      "Anonymous integration endpoints",
+      "Browser-session credentials for service calls",
+      "Secrets in payloads or application data tables",
+      "Direct database access across platforms"
+    ]
+  },
+  "receipt": {
+    "contract": "INTEGRATION_RECEIPT_V1",
+    "statuses": [
+      "ACCEPTED",
+      "DUPLICATE",
+      "REJECTED",
+      "QUARANTINED"
+    ],
+    "http_status": {
+      "202": "Accepted and durably recorded",
+      "200": "Duplicate safely recognised; original receipt returned",
+      "400/422": "Non-retryable validation failure",
+      "401/403": "Authentication/authorisation failure",
+      "409": "Identity/version/checksum conflict; quarantine and operator review",
+      "429/503": "Retryable receiver pressure/unavailability"
+    }
+  },
+  "retry": {
+    "policy": "Bounded exponential retry after originating transaction commits",
+    "schedule": [
+      "immediate",
+      "1 minute",
+      "5 minutes",
+      "30 minutes",
+      "2 hours",
+      "12 hours"
+    ],
+    "after_final_attempt": "Move to dead-letter state with full payload/checksum/error/attempt history; operator may requeue without changing message or idempotency identity",
+    "ordering": "Preserve aggregate order by entity where material; receivers must also tolerate duplicate and late events"
+  },
+  "outage_behaviour": {
+    "POWER_HOUSE_UNAVAILABLE": [
+      "ScoreMax continues already-released learner delivery",
+      "ScoreMax queues delivery evidence/content requirements",
+      "Growth queues demand signals"
+    ],
+    "SCOREMAX_UNAVAILABLE": [
+      "Power House continues academic production/review",
+      "Growth continues prospecting/CRM but creates no product/payment facts"
+    ],
+    "GROWTH_ENGINE_UNAVAILABLE": [
+      "ScoreMax registration/access/payment/learning continue",
+      "ScoreMax queues growth events",
+      "No learner transaction waits for Growth"
+    ]
+  },
+  "large_payloads": {
+    "content_releases": "Use immutable manifest + authenticated pull for 300/1,500 packages; validate manifest and archive checksums before staging.",
+    "small_test_payloads": "Inline payloads allowed for contract/fixture tests only."
+  }
+}

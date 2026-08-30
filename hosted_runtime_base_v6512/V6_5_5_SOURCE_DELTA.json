@@ -1,0 +1,38 @@
+{
+  "added_files_before_evidence_manifest": [
+    "INSTALL_AND_START_SCOREMAX_V6_5_5.bat",
+    "README_SCOREMAX_V6_5_5.md",
+    "V6_5_5_PLATFORM_INTEGRATION_HANDOFF.md",
+    "run_v6_5_5_acceptance.py",
+    "scoremax_internal_live_v655.py",
+    "smoke_tests_v6_5_5_manifest_origin_security.py"
+  ],
+  "changed_existing_files": [
+    "app.py",
+    "scoremax_integration_v1.py",
+    "scoremax_v6_3_simulator.py",
+    "smoke_tests_v6_3_1_ux.py",
+    "smoke_tests_v6_3_2_chapter_identity.py",
+    "smoke_tests_v6_3_app.py",
+    "smoke_tests_v6_4.py",
+    "smoke_tests_v6_5_1_rectification.py",
+    "smoke_tests_v6_5_3_integration_admission.py",
+    "smoke_tests_v6_5_4_central_rectification.py",
+    "smoke_tests_v6_5_integration.py"
+  ],
+  "deleted_parent_files": [],
+  "notes": [
+    "app.py changes are release identity/build-label only.",
+    "scoremax_integration_v1.py contains the manifest origin/redirect security rectification.",
+    "inherited test files are changed only to recognize V6.5.5 as a valid descendant release marker.",
+    "scoremax_v6_3_simulator.py changes only the evidence version label from 6.5.4 to 6.5.5."
+  ],
+  "parent_release": "ScoreMax V6.5.4",
+  "parent_zip_sha256": "5c86d0fc9c703c5fd4c50b01442311a5f9e0897d0fbc45983b0a2794dbbcb7ee",
+  "production_code_files_changed": [
+    "app.py",
+    "scoremax_integration_v1.py"
+  ],
+  "release": "ScoreMax V6.5.5",
+  "scope": "INT-SM654-P0-001 only"
+}

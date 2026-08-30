@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% block title %}Referral Rewards · Admin{% endblock %}{% block content %}
+<section class="page-shell">
+  <header class="card"><p class="eyebrow">ADMIN · GROWTH</p><h1>Teacher referrals & rewards</h1><p class="muted">ScoreMax records who referred whom and which cleared payment created each reward. Academic access is never granted by referral attribution.</p></header>
+  <div class="grid3"><div class="metric card"><span>Attributed signups</span><strong>{{summary.attributed_signups or 0}}</strong></div><div class="metric card"><span>Qualifying reward records</span><strong>{{summary.qualifying_rewards or 0}}</strong></div><div class="metric card"><span>Released / approved / paid</span><strong>{% if reward_totals %}{% for r in reward_totals %}{{r.currency}} {{"%.2f"|format((r.released_minor or 0)/100)}}{% if not loop.last %} · {% endif %}{% endfor %}{% else %}—{% endif %}</strong></div></div>
+
+  <section class="card referral-export-card"><div><p class="eyebrow">MONTHLY PAYOUT WORKBOOK</p><h2>One-click teacher reward report</h2><p class="muted">Exports Teacher Monthly Summary, Student Referral Detail and Teacher-to-Teacher Rewards.</p></div><form method="get" action="{{url_for('admin_referrals_export')}}" class="inline-actions"><label>Month<input type="month" name="month" value="{{request.args.get('month') or ''}}"></label><button class="btn">Download Excel</button></form></section>
+
+  <section class="card"><p class="eyebrow">PROGRAMME SETTINGS</p><h2>Referral reward rules</h2><p class="muted">Teacher percentages are deliberately configurable. Set them before paid referrals go live; changing a rule affects future qualifying payments only.</p>
+  <div class="grid referral-rule-grid">{% for p in programmes %}
+    {% set labels={'student':'Student referral wallet','partner':'Approved partner commission','teacher_direct':'Teacher → paying student','teacher_override':'Teacher → teacher → paying student'} %}
+    <form method="post" class="card subcard"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="action" value="programme"><input type="hidden" name="role_group" value="{{p.role_group}}">
+      <strong>{{labels.get(p.role_group,p.role_group|replace('_',' ')|title)}}</strong><p class="muted">{{p.reward_type|replace('_',' ')|title}} · rule v{{p.programme_version or 1}}</p>
+      <label>Reward rate (%)<input type="number" min="0" max="100" step="0.1" name="reward_rate" value="{{(p.reward_rate*100)|round(1)}}"></label><label>Hold period (days)<input type="number" min="0" max="90" name="hold_days" value="{{p.hold_days}}"></label><button class="btn alt">Update rule</button>
+    </form>{% endfor %}</div></section>
+
+  <section class="card"><p class="eyebrow">TOP REFERRERS</p><div class="table-wrap"><table><thead><tr><th>Referrer</th><th>Role</th><th>Code</th><th>Signups</th><th>Paid conversions</th></tr></thead><tbody>{% for r in leaders %}<tr><td>{{r.full_name}}</td><td>{{r.role}}</td><td>{{r.own_referral_code}}</td><td>{{r.signups}}</td><td>{{r.paid_conversions}}</td></tr>{% else %}<tr><td colspan="5">No attributed referrals yet.</td></tr>{% endfor %}</tbody></table></div></section>
+
+  <section class="card"><p class="eyebrow">REWARD / COMMISSION LEDGER</p><div class="table-wrap"><table><thead><tr><th>Direct referrer</th><th>Referred student</th><th>Package</th><th>Payment</th><th>Direct reward</th><th>Teacher override</th><th>Status / actions</th></tr></thead><tbody>
+  {% for r in rewards %}<tr><td>{{r.referrer_name}}<br><small>{{r.referrer_role}}</small></td><td>{{r.referred_name}}</td><td>{{r.package_name or '—'}}<br><small>{{r.package_programme or ''}}</small></td><td>{{r.currency}} {{"%.2f"|format((r.net_amount_minor or 0)/100)}}<br><small>{{r.paid_at or '—'}}</small></td><td>{{r.currency}} {{"%.2f"|format((r.reward_amount_minor or 0)/100)}}<br><small>{{r.status}}</small></td><td>{% if r.override_referrer_user_id %}{{r.override_referrer_name}}<br>{{r.currency}} {{"%.2f"|format((r.override_reward_amount_minor or 0)/100)}} · <small>{{r.override_status}}</small>{% else %}—{% endif %}</td><td>
+    <form method="post" class="inline-actions"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="reward_id" value="{{r.id}}">
+      {% if r.reward_type=='commission' and r.status=='pending' %}<button class="btn tiny" name="action" value="approve">Approve direct</button>{% elif r.reward_type=='commission' and r.status=='approved' %}<button class="btn tiny" name="action" value="paid">Direct paid</button>{% endif %}
+      {% if r.status not in ['paid','reversed'] %}<button class="btn tiny danger" name="action" value="reverse">Reverse direct</button>{% endif %}
+      {% if r.override_referrer_user_id and r.override_status=='pending' %}<button class="btn tiny" name="action" value="approve_override">Approve override</button>{% elif r.override_referrer_user_id and r.override_status=='approved' %}<button class="btn tiny" name="action" value="paid_override">Override paid</button>{% endif %}
+      {% if r.override_referrer_user_id and r.override_status not in ['paid','reversed',''] %}<button class="btn tiny danger" name="action" value="reverse_override">Reverse override</button>{% endif %}
+    </form>
+  </td></tr>{% else %}<tr><td colspan="7">No qualifying payments yet.</td></tr>{% endfor %}</tbody></table></div></section>
+</section>
+{% endblock %}

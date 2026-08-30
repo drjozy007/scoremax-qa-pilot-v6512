@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block content %}
+<section class="card narrow">
+  <p class="eyebrow">WEEKLY SCOREMAX UPDATE • PREVIEW</p>
+  <h1>{{user.full_name}}, here’s your week.</h1>
+  <div class="weekly-email-status"><strong>{{weekly.status}}</strong><span>{{weekly.completion|round(0)|int}}% of this week's Study Plan complete</span></div>
+  <p>{{weekly.summary}}</p>
+  <div class="email-metrics">
+    <div><span>Plan</span><strong>{{weekly.done}} / {{weekly.planned}}</strong></div>
+    <div><span>Tests</span><strong>{{weekly.tests}}</strong></div>
+    <div><span>Average</span><strong>{{weekly.avg ~ '%' if weekly.avg is not none else '—'}}</strong></div>
+  </div>
+  <div class="visual-bar large"><i style="width:{{weekly.completion}}%"></i></div>
+  <h3>Next priority</h3><p>{{weekly.priorities}}</p>
+  {% if plan and plan.next_item %}<p><strong>Next planned activity:</strong> {{plan.next_item.title}}</p>{% endif %}
+  <p class="muted small">This is the content ScoreMax can send weekly once email delivery is connected in the hosted version.</p>
+</section>
+{% endblock %}

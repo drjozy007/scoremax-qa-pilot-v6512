@@ -1,0 +1,578 @@
+{
+  "metadata": {
+    "technical_sample_only": true
+  },
+  "questions": [
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-MCQ-1",
+      "family_type": "standard_mcq",
+      "relation_type": "independent_seed",
+      "seed_key": "SEED-A",
+      "mastery_level": "Foundation",
+      "cognitive_demand": "Recall",
+      "question": "Technical sample single-choice item.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Correct"
+        },
+        {
+          "id": "B",
+          "text": "Incorrect"
+        }
+      ],
+      "marking_config": {
+        "marks": 1,
+        "correct_option_ids": [
+          "A"
+        ]
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-4S-1",
+      "family_type": "four_statement_selection",
+      "relation_type": "true_variant",
+      "seed_key": "SEED-A",
+      "parent_question_id": "LAB-MCQ-1",
+      "mastery_level": "Foundation",
+      "cognitive_demand": "Understanding",
+      "question": "Technical sample four-statement selection.",
+      "options": [
+        {
+          "id": "A",
+          "text": "I only"
+        },
+        {
+          "id": "B",
+          "text": "II only"
+        }
+      ],
+      "marking_config": {
+        "marks": 1,
+        "correct_option_ids": [
+          "A"
+        ]
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-TF-1",
+      "family_type": "true_false",
+      "relation_type": "scaffold",
+      "seed_key": "SEED-A",
+      "parent_question_id": "LAB-MCQ-1",
+      "mastery_level": "Foundation",
+      "question": "Technical sample true/false.",
+      "options": [
+        {
+          "id": "A",
+          "text": "True"
+        },
+        {
+          "id": "B",
+          "text": "False"
+        }
+      ],
+      "marking_config": {
+        "marks": 1,
+        "correct_option_ids": [
+          "A"
+        ]
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-CLOZE-1",
+      "family_type": "cloze",
+      "relation_type": "independent_seed",
+      "seed_key": "SEED-B",
+      "mastery_level": "Exam Ready",
+      "cognitive_demand": "Application",
+      "question": "Technical sample cloze.",
+      "answer_config": {
+        "blanks": [
+          {
+            "accepted_answers": [
+              "alpha"
+            ]
+          },
+          {
+            "accepted_answers": [
+              "beta"
+            ]
+          }
+        ]
+      },
+      "marking_config": {
+        "marks": 2,
+        "partial_credit": true
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-MATCH-1",
+      "family_type": "matching",
+      "relation_type": "shared_stimulus_pair",
+      "seed_key": "SEED-C",
+      "stimulus_group_key": "STIM-1",
+      "mastery_level": "Exam Ready",
+      "question": "Technical sample matching.",
+      "marking_config": {
+        "marks": 2,
+        "correct_pairs": {
+          "1": "A",
+          "2": "B"
+        },
+        "partial_credit": true
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-ORDER-1",
+      "family_type": "ordering",
+      "relation_type": "shared_stimulus_pair",
+      "seed_key": "SEED-D",
+      "stimulus_group_key": "STIM-1",
+      "mastery_level": "Exam Ready",
+      "question": "Technical sample ordering.",
+      "marking_config": {
+        "marks": 2,
+        "correct_order": [
+          "A",
+          "B",
+          "C"
+        ],
+        "partial_credit": true
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-MR-1",
+      "family_type": "multiple_response",
+      "relation_type": "independent_seed",
+      "seed_key": "SEED-E",
+      "mastery_level": "Advanced",
+      "cognitive_demand": "Analysis",
+      "question": "Technical sample multiple response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Correct one"
+        },
+        {
+          "id": "B",
+          "text": "Correct two"
+        },
+        {
+          "id": "C",
+          "text": "Incorrect"
+        }
+      ],
+      "marking_config": {
+        "marks": 2,
+        "correct_option_ids": [
+          "A",
+          "B"
+        ],
+        "partial_credit": true
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-NUM-1",
+      "family_type": "numerical_interpretation",
+      "relation_type": "independent_seed",
+      "seed_key": "SEED-F",
+      "mastery_level": "Advanced",
+      "cognitive_demand": "Application",
+      "question": "Technical sample numerical interpretation.",
+      "marking_config": {
+        "marks": 2,
+        "correct_value": 10,
+        "tolerance": 0.1
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-DATA-1",
+      "family_type": "diagram_data_stimulus",
+      "response_mode": "single_choice",
+      "relation_type": "integrated_question",
+      "seed_key": "SEED-G",
+      "mastery_level": "Distinction",
+      "mastery_ceiling": "Distinction",
+      "cognitive_demand": "Integrated unfamiliar evidence",
+      "question": "Technical sample data-stimulus interpretation.",
+      "stimulus": {
+        "type": "table",
+        "data": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      "options": [
+        {
+          "id": "A",
+          "text": "Correct"
+        },
+        {
+          "id": "B",
+          "text": "Incorrect"
+        }
+      ],
+      "marking_config": {
+        "marks": 2,
+        "response_mode": "single_choice",
+        "correct_option_ids": [
+          "A"
+        ]
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-CR-1",
+      "family_type": "constructed_response",
+      "relation_type": "integrated_question",
+      "seed_key": "SEED-H",
+      "mastery_level": "Distinction",
+      "cognitive_demand": "Evaluation",
+      "question": "Technical sample constructed response.",
+      "marking_config": {
+        "marks": 3,
+        "rubric_points": [
+          {
+            "marks": 1,
+            "keywords": [
+              "alpha"
+            ]
+          },
+          {
+            "marks": 1,
+            "keywords": [
+              "beta"
+            ]
+          },
+          {
+            "marks": 1,
+            "keywords": [
+              "gamma"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-MIS-1",
+      "family_type": "misconception_probe",
+      "response_mode": "single_choice",
+      "relation_type": "recovery_item",
+      "seed_key": "SEED-A",
+      "parent_question_id": "LAB-MCQ-1",
+      "mastery_level": "Foundation",
+      "question": "Technical sample misconception probe.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Correct"
+        },
+        {
+          "id": "B",
+          "text": "Misconception"
+        }
+      ],
+      "misconception_tags": [
+        "MIS-QA-1"
+      ],
+      "marking_config": {
+        "marks": 1,
+        "response_mode": "single_choice",
+        "correct_option_ids": [
+          "A"
+        ],
+        "misconception_by_response": {
+          "B": "MIS-QA-1"
+        }
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-1"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-A"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-REC-1",
+      "family_type": "adaptive_recovery",
+      "response_mode": "single_choice",
+      "relation_type": "reconfirmation_item",
+      "seed_key": "SEED-I",
+      "mastery_level": "Advanced",
+      "cognitive_demand": "Application",
+      "question": "Technical sample reconfirmation item.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Correct"
+        },
+        {
+          "id": "B",
+          "text": "Incorrect"
+        }
+      ],
+      "marking_config": {
+        "marks": 1,
+        "response_mode": "single_choice",
+        "correct_option_ids": [
+          "A"
+        ]
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-2"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-B"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-DIST-2",
+      "family_type": "standard_mcq",
+      "relation_type": "independent_seed",
+      "seed_key": "SEED-J",
+      "mastery_level": "Distinction",
+      "mastery_ceiling": "Distinction",
+      "cognitive_demand": "Analysis of unfamiliar evidence",
+      "question": "Technical sample Distinction item two.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Correct"
+        },
+        {
+          "id": "B",
+          "text": "Incorrect"
+        }
+      ],
+      "marking_config": {
+        "marks": 1,
+        "correct_option_ids": [
+          "A"
+        ]
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-2"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-B"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-DIST-3",
+      "family_type": "numerical_interpretation",
+      "relation_type": "independent_seed",
+      "seed_key": "SEED-K",
+      "mastery_level": "Distinction",
+      "mastery_ceiling": "Distinction",
+      "cognitive_demand": "Integrated application",
+      "question": "Technical sample Distinction numerical item.",
+      "marking_config": {
+        "marks": 2,
+        "correct_value": 20,
+        "tolerance": 0.1
+      }
+    },
+    {
+      "programme": "FSc Part 1",
+      "subject": "Biology",
+      "chapter": "Chapter 1 QA Laboratory",
+      "learning_outcome_ids": [
+        "LO-QA-3"
+      ],
+      "concept_ids": [
+        "CONCEPT-QA-C"
+      ],
+      "source_lineage": {
+        "source": "TECHNICAL_SAMPLE_ONLY",
+        "approved_for_students": false
+      },
+      "question_id": "LAB-DIST-4",
+      "family_type": "ordering",
+      "relation_type": "independent_seed",
+      "seed_key": "SEED-L",
+      "mastery_level": "Distinction",
+      "mastery_ceiling": "Distinction",
+      "cognitive_demand": "Evaluation and integration",
+      "question": "Technical sample Distinction ordering item.",
+      "marking_config": {
+        "marks": 2,
+        "correct_order": [
+          "A",
+          "B",
+          "C"
+        ],
+        "partial_credit": false
+      }
+    }
+  ]
+}

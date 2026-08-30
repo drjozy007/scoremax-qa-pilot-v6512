@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Community Agreements · ScoreMax{% endblock %}
+{% block content %}
+<section class="page-shell community-page"><div class="page-heading"><div><span class="eyebrow">Professional and safeguarding boundaries</span><h1>Community agreements</h1><p>Teacher Discovery and Academic Messages require explicit acceptance of the current rules. These controls are separate from general account terms.</p></div></div>
+{% for item in agreements %}<article class="panel"><h2>{{item.name}}</h2><p><strong>Version:</strong> {{item.version}} · <strong>Status:</strong> {{'Accepted' if item.accepted else 'Not accepted'}}</p>
+{% if item.code=='ACADEMIC_MESSAGES_USER' %}<ul><li>Use ScoreMax only for genuine academic support.</li><li>Do not share personal phone numbers, private email addresses, payment details or unsafe links.</li><li>Use Report and Block when needed.</li><li>Messages may be accessed by authorised safety staff only for complaint, safeguarding or policy review.</li><li>Social activity never proves academic mastery.</li></ul>{% else %}<ul><li>Do not contact students without an accepted enquiry or approved group relationship.</li><li>Do not misrepresent identity, qualifications, experience or ScoreMax endorsement.</li><li>Keep communication professional and age appropriate.</li><li>Do not request off-platform secrecy or expose student contact details.</li><li>Independent tuition remains separate from ScoreMax academic approval.</li></ul>{% endif %}
+<form method="post" action="{{url_for('community_agreement_accept',agreement_code=item.code)}}" class="button-row"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><button class="btn" type="submit" name="decision" value="ACCEPTED">Accept current version</button>{% if item.accepted %}<button class="btn danger" type="submit" name="decision" value="REVOKED">Revoke</button>{% endif %}</form></article>{% endfor %}
+</section>
+{% endblock %}

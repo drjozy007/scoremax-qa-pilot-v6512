@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+{% if compliance %}<section class="card"><div class="split"><div><p class="eyebrow">ASSESSMENT RELATIONSHIP</p><h2>{{compliance.relation.label}}</h2><p>{{compliance.relation.description}}</p></div><span class="status-pill {{'good' if compliance.structural_status=='COMPLIANT' else 'mid'}}">{{compliance.structural_status}}</span></div>{% if structure %}<div class="subject-visuals">{% for sec in structure.sections %}<div class="subject-visual-row"><span>{{sec.subject}} · {{sec.weight_percent|round(1)}}%</span><div class="subject-track"><i style="width:{{sec.weight_percent}}%"></i></div><strong>{{sec.question_count}}</strong></div>{% endfor %}</div>{% endif %}<a href="{{url_for('exam_paper_compliance_report',paper_id=paper.id)}}">Open detailed Blueprint Compliance Report →</a></section>{% endif %}
+<div class="card paper-detail">
+  <a href="{{ url_for('exam_centre') }}">← Exam Centre</a>
+  <p class="eyebrow">{{ 'OFFICIAL / HISTORICAL PAPER' if paper.paper_kind=='official_past_paper' else ('AUTHENTIC BLUEPRINT MOCK' if paper.authenticity_status=='AUTHENTIC_BLUEPRINT' else 'SCOREMAX ORIGINAL MOCK') }}</p>
+  <h1>{{ paper.title }}</h1>
+  <p>{{ paper.subject }}{% if paper.exam_board %} • {{ paper.exam_board }}{% endif %}{% if paper.official_year %} • {{ paper.official_year }}{% endif %}</p>
+  {% if paper.paper_kind=='official_past_paper' %}
+    <div class="source-notice"><strong>Past Paper Exam Mode</strong><p>{{ paper.source_label or 'Historical examination content' }}. ScoreMax should only publish the original question content where reproduction is permitted.</p></div>
+  {% else %}
+    <div class="source-notice"><strong>{{'Authentic Blueprint Mock' if paper.authenticity_status=='AUTHENTIC_BLUEPRINT' else 'ScoreMax Original'}}</strong><p>{% if paper.authoritative_blueprint_id %}This mock follows immutable blueprint <strong>{{paper.authoritative_blueprint_id}} v{{paper.blueprint_version}}</strong> and assembly policy {{paper.assembly_policy_version or 'baseline'}}. The composition will not change if a later version becomes active.{% else %}This is an original ScoreMax mock. It is not an official examination paper.{% endif %}</p></div>
+  {% endif %}
+  <div class="grid3">
+    <div class="metric"><span>Questions</span><strong>{{ questions|length }}</strong></div>
+    <div class="metric"><span>Time</span><strong>{{ paper.duration_minutes or paper.blueprint_duration or '—' }}{% if paper.duration_minutes or paper.blueprint_duration %} min{% endif %}</strong></div>
+    <div class="metric"><span>Marks</span><strong>{{ paper.total_marks or paper.blueprint_marks or '—' }}</strong></div>
+  </div>
+  {% if required_level %}<div class="truth-banner"><strong>Access required: up to {{required_level}}</strong><span>Your current ceiling: {{access.mastery_ceiling}}</span></div>{% endif %}
+  {% if required_level and not access_ok %}<div class="warning-box"><strong>This paper is locked for your current Access.</strong><p>ScoreMax keeps exam papers intact rather than removing harder questions. Upgrade Access to {{required_level}} before starting this paper.</p></div>{% endif %}
+  {% if paper.instructions %}<div class="instructions-box">{{ paper.instructions }}</div>{% endif %}
+</div>
+
+<div class="grid">
+  <div class="card mode-card">
+    <p class="eyebrow">STRICT MODE</p><h2>Exam Mode</h2>
+    <p>Timed exam conditions. No hints or answers during the attempt. Review before final submission.</p>
+    <form method="post" action="{{ url_for('start_exam_paper',paper_id=paper.id) }}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+      <input type="hidden" name="mode" value="simulation">
+      <button class="btn" {% if not questions or not access_ok %}disabled{% endif %}>Start Exam Mode</button>
+    </form>
+  </div>
+  <div class="card mode-card">
+    <p class="eyebrow">PRACTICE MODE</p><h2>Past Paper Practice</h2>
+    <p>Use the same mapped paper without the strict timer. Your submission still helps ScoreMax find weak areas and guide your next practice.</p>
+    <form method="post" action="{{ url_for('start_exam_paper',paper_id=paper.id) }}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+      <input type="hidden" name="mode" value="guided">
+      <button class="btn alt" {% if not questions or not access_ok %}disabled{% endif %}>Start Practice Mode</button>
+    </form>
+  </div>
+</div>
+
+{% if questions %}
+<div class="card">
+  <p class="eyebrow">PAPER STRUCTURE</p><h3>{{ questions|length }} mapped questions</h3>
+  <div class="table-wrap"><table><tr><th>#</th><th>Section</th><th>Type</th><th>Level</th><th>Marks</th></tr>
+  {% for q in questions %}<tr><td>{{ q.display_number or loop.index }}</td><td>{{ q.section_label or '—' }}</td><td>{{ q.qtype }}</td><td>{{ q.level or 'Mixed' }}</td><td>{{ q.marks or '—' }}</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

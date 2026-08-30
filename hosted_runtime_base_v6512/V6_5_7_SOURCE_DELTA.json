@@ -1,0 +1,46 @@
+{
+  "exact_parent_zip_sha256": "64244e5d64d5df2bbeb262b0554b3c5e0b69b3f31378e8c338c71e5fb378cdb2",
+  "added_count": 12,
+  "changed_count": 17,
+  "deleted_count": 0,
+  "added": [
+    "README_SCOREMAX_V6_5_7.md",
+    "V6_5_7_ACCEPTANCE.md",
+    "V6_5_7_ACCEPTANCE_EVIDENCE.txt",
+    "V6_5_7_CHANGELOG.md",
+    "V6_5_7_MIGRATION_ROLLBACK_EVIDENCE.json",
+    "V6_5_7_PLATFORM_INTEGRATION_HANDOFF.md",
+    "integration_control_return_batch01/PH_SM_BATCH01_300_Independent_Central_Connected_Qualification_Report_v1_0.md",
+    "integration_control_return_batch01/PH_SM_BATCH01_300_Independent_Central_Result_v1_0.json",
+    "integration_control_return_batch01/Power_House_Batch01_Two_Tier_Connected_Rectification_Spec_v1_0.md",
+    "integration_control_return_batch01/ScoreMax_Batch01_Product_Activation_Gate_Rectification_Spec_v1_0.md",
+    "run_v6_5_7_acceptance.py",
+    "smoke_tests_v6_5_7_product_activation_gate.py"
+  ],
+  "changed": [
+    "V6_4_0_SIMULATION_RESULTS_QUICK.json",
+    "app.py",
+    "scale_test_v6_5_integration_releases.py",
+    "scoremax_integration_v1.py",
+    "scoremax_v6_3_simulator.py",
+    "smoke_tests_v6_3_1_ux.py",
+    "smoke_tests_v6_3_2_chapter_identity.py",
+    "smoke_tests_v6_3_app.py",
+    "smoke_tests_v6_4.py",
+    "smoke_tests_v6_5_1_deep.py",
+    "smoke_tests_v6_5_1_rectification.py",
+    "smoke_tests_v6_5_3_integration_admission.py",
+    "smoke_tests_v6_5_4_central_rectification.py",
+    "smoke_tests_v6_5_5_manifest_origin_security.py",
+    "smoke_tests_v6_5_6_explicit_port_normalisation.py",
+    "smoke_tests_v6_5_integration.py",
+    "templates/admin_integration_health.html"
+  ],
+  "deleted": [],
+  "changed_production_files": [
+    "app.py",
+    "scoremax_integration_v1.py",
+    "templates/admin_integration_health.html"
+  ],
+  "unexpected_changed_production_files": []
+}

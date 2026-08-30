@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<section class="public-page"><p class="eyebrow">EXAM & ADMISSIONS UPDATES</p><h1>Important information in one place.</h1><p class="lead">Exam dates, registration notices, merit updates and public announcements should only be published here when the source has been checked.</p>
+{% if updates %}<div class="updates-grid">{% for u in updates %}<article class="card update-card"><div class="split"><span class="pill">{{u.category}}</span>{% if u.verified %}<span class="verified">Verified ✓</span>{% endif %}</div><h2>{{u.title}}</h2><p>{{u.summary}}</p>{% if u.important_date %}<p><strong>Important date:</strong> {{u.important_date}}</p>{% endif %}<p class="muted">Source: {{u.source_name or 'ScoreMax'}}</p>{% if u.source_url %}<a href="{{u.source_url}}" target="_blank" rel="noopener">Official source →</a>{% endif %}</article>{% endfor %}</div>
+{% else %}<div class="card empty-state"><h2>No updates published yet.</h2><p>Verified exam and admissions updates will appear here.</p></div>{% endif %}
+</section>{% endblock %}

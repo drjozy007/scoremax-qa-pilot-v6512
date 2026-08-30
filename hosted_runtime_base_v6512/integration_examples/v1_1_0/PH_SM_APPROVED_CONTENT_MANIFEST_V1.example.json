@@ -1,0 +1,17 @@
+{
+  "manifest_schema_version": "1.1.0",
+  "release_id": "REL::PK::FSC1::CHEM::CH03::MANIFEST-DEMO",
+  "release_version": "1.1.0-demo",
+  "generated_at": "2026-08-21T16:00:00Z",
+  "content_file": "approved_content.json",
+  "content_file_sha256": "69069ac7c8eb61c453879afc12e3005aad20d870450a6978b0c95cff4c860814",
+  "question_count": 1,
+  "stimulus_count": 0,
+  "files": [
+    {
+      "path": "approved_content.json",
+      "sha256": "69069ac7c8eb61c453879afc12e3005aad20d870450a6978b0c95cff4c860814",
+      "size_bytes": 4523
+    }
+  ]
+}

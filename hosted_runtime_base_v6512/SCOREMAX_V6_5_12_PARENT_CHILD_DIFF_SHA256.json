@@ -1,0 +1,108 @@
+{
+  "added": [
+    {
+      "path": "README_SCOREMAX_V6_5_12.md",
+      "sha256": "d74bb4c394060cbdbb85d4cfec0922c5bedfd303afd7ef3514949a5ec021ab58"
+    },
+    {
+      "path": "RUN_WINDOWS_SCOREMAX_V6_5_12_QUALIFICATION.bat",
+      "sha256": "939f5753f2e7f381cb90be84eff9e01c5dc7e2155169afa9dc75742cf5ef8531"
+    },
+    {
+      "path": "SCOREMAX_V6_5_12_LOCAL_RECTIFICATION_TEST_EVIDENCE.txt",
+      "sha256": "9b4e6145342cd4389b3348f1c8931e0b2cb9ea80be9d988ebb8618845ec39d57"
+    },
+    {
+      "path": "SCOREMAX_V6_5_12_PARENT_LINEAGE.json",
+      "sha256": "e2091762f53ad3a93daf402a75bb92b38158f9974671be7911670b976f6f28cc"
+    },
+    {
+      "path": "SCOREMAX_V6_5_12_RECTIFICATION_ACCEPTANCE_EVIDENCE.json",
+      "sha256": "1bfc2e70154268d845ebf5a6e29ccb42169848e12f9339590283b592f8523d6d"
+    },
+    {
+      "path": "release_compatibility.py",
+      "sha256": "fd85a0f8396ea5bd833e9e51aee06d5f934ac7d82514370059e99a60ffb09261"
+    },
+    {
+      "path": "run_v6_5_12_acceptance.py",
+      "sha256": "6d93531be7e462fb09e62a1f035ef66bb38618b16a25cc8491174d80b0f7b5bc"
+    },
+    {
+      "path": "tests/test_v6_5_12_synthetic_isolation_rectification.py",
+      "sha256": "b6f1dd8dc4853ddc024ef8e0e528f8958a2f832066d05648380cd5a61b089796"
+    }
+  ],
+  "artifact": "ScoreMax V6.5.12",
+  "changed": [
+    {
+      "child_sha256": "c17492ae88492d3915c2605b8853b5bee0ffb3f3ef265bfe92391178505c6cd6",
+      "parent_sha256": "3d4322fb2de10aa249338e1eb17d02e251b2425f2fa6772b54c2a9002eb11a44",
+      "path": "app.py"
+    },
+    {
+      "child_sha256": "92c0f29d95a1b3b53b302e27cb7c108f612f91f2b4a2d30df1943538b91b7dbd",
+      "parent_sha256": "0daa8c871df30c24a8c54cc973cdfcc0fe3ad3dfc4979f176f4a499c7158d2e7",
+      "path": "smoke_tests_v6_3_1_ux.py"
+    },
+    {
+      "child_sha256": "5120df809a93151ba0b7850082d6b086ca33ab8665048d680535847965fbcac1",
+      "parent_sha256": "0797053173799a865e08c67006d33c8900969a46b17e96a926d923922390930c",
+      "path": "smoke_tests_v6_3_2_chapter_identity.py"
+    },
+    {
+      "child_sha256": "c35562fb188b600cd9aa986b8e2b75e045fe8c13c278a20c2265a1ace2af14dc",
+      "parent_sha256": "d3d7482228b5c22f73e232784f7af92cb78b53644f42aff0b3f9976114e91776",
+      "path": "smoke_tests_v6_3_app.py"
+    },
+    {
+      "child_sha256": "4843aaa22cf040d9c2ca15e1325eee10f1ca6218adaa5826a3878e6d9847ab1e",
+      "parent_sha256": "2155c5e5bdde50fd0e30917fde32234fbab829def3213cea2d52c37139069e2b",
+      "path": "smoke_tests_v6_4.py"
+    },
+    {
+      "child_sha256": "78268b6c169a9cb745cd242965ec4c611651e33c8a8d8ac62da6bf507757cd5c",
+      "parent_sha256": "b95aae76da5aba65f40eae93ca7b3aa492ee40395327c1dae9b7ebbea810f052",
+      "path": "smoke_tests_v6_5_10_terminal_payment_state.py"
+    },
+    {
+      "child_sha256": "67acb5dd76cefa14eb34927f11e45c4ceba470f0930890fedf5970ddc86dbe49",
+      "parent_sha256": "f4202d2d2ebc892118828ddd7bc3a1cceaf96df3a2411546f042a5af0e50794e",
+      "path": "smoke_tests_v6_5_1_rectification.py"
+    },
+    {
+      "child_sha256": "48457caa11d3b4da01ab8b14989341f568824c480eb0a988f7f24a1dd8fce0af",
+      "parent_sha256": "d842d7389fedf1b196889ab1401aaae0bd8a2d97deab1e01d74de3fb06c17e2a",
+      "path": "smoke_tests_v6_5_3_integration_admission.py"
+    },
+    {
+      "child_sha256": "500cb7372bdd10cb9b9a8f8f62d8878b98a23f7f8a1b4dd27c84e4d62fb7b9ef",
+      "parent_sha256": "8bd8133e952d7758ba5418bab784ab3d1b1da3326c82ccebef6eda4c92b94418",
+      "path": "smoke_tests_v6_5_4_central_rectification.py"
+    },
+    {
+      "child_sha256": "b8ad9efaf8d7c2892a1e50dd24d8f3a0a3d12a4a60074049fc4b255dacbaaeaa",
+      "parent_sha256": "222f46f210794515e2892e5109ef68ee4f600a7c13d7534528c0868eaf299dfb",
+      "path": "smoke_tests_v6_5_5_manifest_origin_security.py"
+    },
+    {
+      "child_sha256": "af2a18ffb2122f73812ec99f8b4ae0ac5c5bf39a70b29183a351f4fb9bbf7591",
+      "parent_sha256": "89a31a00c0c8cc948b41d496a6a4fd5bd8cc24962fe2ab4ff01a39ee880a4ce5",
+      "path": "smoke_tests_v6_5_6_explicit_port_normalisation.py"
+    },
+    {
+      "child_sha256": "afcaf31b93540c4900773010bb311bcef61716de1d0b7253823f998c67846332",
+      "parent_sha256": "9ebc6e428c769ce7af039852b4569143de9fbd52591ba97bc9925279eeec0084",
+      "path": "smoke_tests_v6_5_9_sm_ge_commercial.py"
+    },
+    {
+      "child_sha256": "5f20393a17771b93aa705e90968a127e91777d335676c468f27791b377dee5a4",
+      "parent_sha256": "9727c4cc416ad70b24ba3f6b6858f86b8745263b3914595869430d8d1c9c28ec",
+      "path": "smoke_tests_v6_5_integration.py"
+    }
+  ],
+  "comparison": "exact_sealed_parent_zip_to_child_preseal_excluding_child_diff_and_self_manifest",
+  "parent": "ScoreMax V6.5.11",
+  "parent_zip_sha256": "730cf135cb4cc227e37afcf363a8c001adba462cfb5943fda3e28dad969f38b4",
+  "removed": []
+}

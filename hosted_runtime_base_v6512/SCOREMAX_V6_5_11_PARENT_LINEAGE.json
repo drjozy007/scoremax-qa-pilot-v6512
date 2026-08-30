@@ -1,0 +1,16 @@
+{
+  "child_version": "ScoreMax V6.5.11",
+  "classification": "LOCALLY_CONTRACT_TESTED_CANDIDATE_PENDING_RUNTIME_3IN1_ACCEPTANCE",
+  "parent": {
+    "version": "ScoreMax V6.5.10",
+    "zip_sha256": "b028f7b7250a06310f92c25e3b562eb05d2c7998c8668d81fb08e1bbfadc5142",
+    "zip_members": 551,
+    "zip_integrity": "PASS"
+  },
+  "power_house_peer": {
+    "baseline": "CHANGE013H",
+    "zip_sha256": "bc07ff9cdc7c8039ac16d8f04482f9a36aa74e1417d969258cdad017d4b2feb0"
+  },
+  "growth_engine_changed": false,
+  "rollback": "Use the exact frozen ScoreMax V6.5.10 parent ZIP; parent bytes remain untouched."
+}

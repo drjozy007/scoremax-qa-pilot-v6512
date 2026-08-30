@@ -1,0 +1,35 @@
+{
+  "central_findings": {
+    "INT-SM653-P1-001": "PASSED_NOT_CONFIRMED",
+    "INT-SM653-P1-002": "PASSED_NOT_CONFIRMED",
+    "INT-SM653-P1-003": "PASSED_NOT_CONFIRMED",
+    "P0": 0,
+    "P1": 0,
+    "confirmed_total": 0,
+    "foreign_key_violations": 0,
+    "integrity": "ok"
+  },
+  "exact_parent_sha256": "344b9e8f7246858250192bf1b9c4d8f17a0675b41f412fe3bee20f3bf8e8eceb",
+  "gates": {
+    "G_canonical_1500": "PASSED",
+    "G_canonical_300": "PASSED",
+    "G_clean_package_sealed_byte_verification": "PENDING_SEAL",
+    "G_cross_system_qualification": "PENDING_ADMITTED_PEERS",
+    "G_exact_parent_migration_backup_restore_rollback": "PASSED",
+    "G_full_python_compile": "PASSED_98_FILES",
+    "G_jinja_parse": "PASSED_108_TEMPLATES",
+    "G_parent_exact_sha": "PASSED",
+    "G_render_live": "PENDING_LIVE_VERIFICATION",
+    "G_supported_windows_clean_extraction": "PENDING_EMPIRICAL_WINDOWS_EXECUTION",
+    "G_v64_inherited": "PASSED_605_PLUS_SIMULATION_PLUS_EMERGENCY_3000",
+    "G_v651_deep": "PASSED_24_OF_24",
+    "G_v651_rectification": "PASSED_23_OF_23",
+    "G_v653_behavioral": "PASSED_48_OF_48",
+    "G_v654_adjacent_31": "PASSED_31_OF_31",
+    "G_v65_focused": "PASSED_48_OF_48"
+  },
+  "prohibited_claim": "THREE-SYSTEM INTEGRATED FOUNDATION ACCEPTED",
+  "release": "ScoreMax V6.5.4 \u2014 Three-System Integration Central Admission Rectification Candidate",
+  "status": "PLATFORM_SIDE_INTEGRATION_RECTIFIED_CANDIDATE_PENDING_CROSS_SYSTEM_QUALIFICATION",
+  "windows_instruction": "Extract the sealed candidate to a new empty Windows folder and run RUN_WINDOWS_SCOREMAX_V6_5_4_QUALIFICATION.bat; return V6_5_4_WINDOWS_QUALIFICATION_EVIDENCE.txt without rebuilding the ZIP."
+}
