@@ -1,0 +1,85 @@
+name: V6512 to V669B Runtime Delta
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/v6512-v669b-delta.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  delta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Compare legacy runtime to V6.6.9B target
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,shutil,zipfile
+          root=pathlib.Path('SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip'); assert root.is_file()
+          target=[]
+          for p in sorted(pathlib.Path('qualification').glob('v669b_target_*.json')):
+              target.extend(json.loads(p.read_text()))
+          assert len(target)==184, len(target)
+          target_map={r['path']:r for r in target}; assert len(target_map)==184
+          work=pathlib.Path('/tmp/v6512_recursive'); shutil.rmtree(work,ignore_errors=True); work.mkdir()
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1048576),b''): h.update(b)
+              return h.hexdigest()
+          seen=set(); queue=[root]; n=0
+          while queue:
+              z=queue.pop(0); key=(z.resolve(),sha(z))
+              if key in seen: continue
+              seen.add(key); d=work/f'z{n:04d}'; n+=1; d.mkdir(parents=True)
+              try:
+                  with zipfile.ZipFile(z) as xf: xf.extractall(d)
+              except zipfile.BadZipFile: continue
+              queue.extend(sorted(d.rglob('*.zip')))
+          candidates=[]
+          for app in work.rglob('app.py'):
+              d=app.parent
+              score=sum(int((d/x).is_file()) for x in ('scoremax_production.py','requirements.txt','scoremax_integration_v1.py','qa_synthetic_learner.py'))
+              candidates.append((score,len([p for p in d.rglob('*') if p.is_file()]),str(d),d))
+          candidates.sort(reverse=True); score,_,_,appdir=candidates[0]; assert score>=3
+          old={}
+          for p in appdir.rglob('*'):
+              if p.is_file(): old[p.relative_to(appdir).as_posix()]={'sha256':sha(p),'size':p.stat().st_size}
+          unchanged=[]; changed=[]; new=[]
+          for path,row in sorted(target_map.items()):
+              prior=old.get(path)
+              if prior is None: new.append(row)
+              elif prior['sha256']==row['sha256']: unchanged.append(row)
+              else: changed.append({**row,'old_sha256':prior['sha256'],'old_size':prior['size']})
+          payload={
+              'source_zip_sha256':sha(root),
+              'target_count':len(target),
+              'legacy_file_count':len(old),
+              'unchanged_count':len(unchanged),
+              'changed_count':len(changed),
+              'new_count':len(new),
+              'unchanged':unchanged,
+              'changed':changed,
+              'new':new,
+          }
+          pathlib.Path('/tmp/v6512_to_v669b_delta_manifest.json').write_text(json.dumps(payload,sort_keys=True,indent=2)+'\n')
+          print('V6512_V669B_DELTA',json.dumps({k:payload[k] for k in ('target_count','legacy_file_count','unchanged_count','changed_count','new_count')},sort_keys=True))
+          PY
+      - name: Commit delta manifest to qualification branch
+        shell: bash
+        run: |
+          git fetch origin production-v6-6-9b-hosted-qualification
+          git switch production-v6-6-9b-hosted-qualification
+          cp /tmp/v6512_to_v669b_delta_manifest.json v6512_to_v669b_delta_manifest.json
+          git config user.name 'ScoreMax Qualification Bot'
+          git config user.email 'scoremax-qualification@users.noreply.github.com'
+          git add v6512_to_v669b_delta_manifest.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Record exact V6.5.12 to V6.6.9B runtime delta'
+          git push origin HEAD:production-v6-6-9b-hosted-qualification
