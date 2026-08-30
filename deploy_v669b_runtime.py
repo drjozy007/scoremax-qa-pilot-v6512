@@ -4,13 +4,12 @@ import base64
 import hashlib
 import io
 import json
-import lzma
 import shutil
 import tarfile
 import zipfile
 from pathlib import Path
 
-EXPECTED_TEXT_PAYLOAD_SHA256 = "9a1d9aef81dfdb5aefc28d0a1c33645b4679347e6277afd21eddeb6682d2321a"
+EXPECTED_TEXT_PAYLOAD_SHA256 = "aa7bf37c677385396de0b01e83fd0b91ead35abc87847bc01ae74e64bd0d2b74"
 EXPECTED_SOURCE_ZIP_SHA256 = "70a181237cd028b86f34650b0fbc912174ee1516965dd62f8d4b2862bea63ffa"
 EXPECTED_HERO_SHA256 = "ada647f2678abcb08f3423394422cceea8d2c81f5eaf14b57c328bf3d1d591d5"
 EXPECTED_RELEASE = "6.6.9B"
