@@ -5,7 +5,7 @@ from pathlib import Path
 BASE=Path('hosted_runtime_base_v6512')
 OUT=Path('scoremax_runtime_v669b')
 PATHS_FILE=Path('qualification/v6610f_runtime_paths.json')
-REPL_SHA='aa06e33a04cddc11c07d028e38770433d43d4789db9e3eb9de7855a841c188bd'
+REPL_SHA='1a258f4cf7c1d34e24c5c8d404b5ab14050687cc375941fa2bc85f5cf12ad67f'
 DELTA_SHA='5f20e0ca9219c40bb0ffe0470c076a911c70ee3c8ddef9e40bdc74b797e131a2'
 TREE_SHA='e4de5db8fc107a1e1485550b904040df328f76266518abb183daec029dd9c0c1'
 SOURCE_ZIP_SHA='6dc69467b01016d32da8775eb6e79d9b3e008208408ddaa3115a14adcc9b52d0'
@@ -53,8 +53,8 @@ def main():
         if src.is_file():
             dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
 
-    # Deterministic replacement bridge built from exact governed V6.6.9B runtime bytes.
-    repl=bounded_payload('V669B_DET_PART_',49,REPL_SHA)
+    # Deterministic replacement bridge: exact governed 9B runtime delta, excluding obsolete 9B docs.
+    repl=bounded_payload('V669B_DET_PART_',45,REPL_SHA)
     safe_extract(repl,OUT)
 
     # Exact V6.6.9B -> V6.6.10G runtime delta.
