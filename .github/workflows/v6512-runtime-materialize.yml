@@ -1,0 +1,99 @@
+name: V6512 Runtime Materialize
+
+on:
+  push:
+    branches:
+      - production-v6-6-9b-hosted-qualification
+    paths:
+      - '.github/workflows/v6512-runtime-materialize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production-v6-6-9b-hosted-qualification
+          fetch-depth: 0
+      - name: Materialize exact V6.5.12 runtime tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, pathlib, shutil, zipfile
+
+          source = pathlib.Path('SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip')
+          expected_source_sha = '39ac8cba4f27b76eb229d409daae1b296605599414435a6af9ad56d05b920a4f'
+
+          def sha(path):
+              h=hashlib.sha256()
+              with path.open('rb') as f:
+                  for block in iter(lambda:f.read(1024*1024), b''):
+                      h.update(block)
+              return h.hexdigest()
+
+          got = sha(source)
+          assert got == expected_source_sha, (got, expected_source_sha)
+
+          work = pathlib.Path('/tmp/v6512_materialize')
+          shutil.rmtree(work, ignore_errors=True)
+          work.mkdir(parents=True)
+          seen=set(); queue=[source]; seq=0
+          while queue:
+              z=queue.pop(0)
+              key=(str(z.resolve()),sha(z))
+              if key in seen:
+                  continue
+              seen.add(key)
+              dest=work/f'z{seq:04d}'; seq+=1; dest.mkdir(parents=True)
+              try:
+                  with zipfile.ZipFile(z) as xf:
+                      xf.extractall(dest)
+              except zipfile.BadZipFile:
+                  continue
+              queue.extend(sorted(dest.rglob('*.zip')))
+
+          candidates=[]
+          for app in work.rglob('app.py'):
+              root=app.parent
+              score=sum(int((root/n).is_file()) for n in (
+                  'scoremax_production.py','requirements.txt','scoremax_integration_v1.py','qa_synthetic_learner.py'
+              ))
+              count=sum(1 for p in root.rglob('*') if p.is_file())
+              candidates.append((score,count,str(root),root))
+          assert candidates, 'no ScoreMax runtime root found'
+          candidates.sort(reverse=True)
+          score,count,_,root=candidates[0]
+          assert score >= 3, (score,root)
+
+          target=pathlib.Path('hosted_runtime_base_v6512')
+          shutil.rmtree(target, ignore_errors=True)
+          shutil.copytree(root,target)
+
+          files=[]
+          for p in sorted(target.rglob('*')):
+              if p.is_file():
+                  files.append({'path':p.relative_to(target).as_posix(),'size':p.stat().st_size,'sha256':sha(p)})
+          manifest={
+              'release':'6.5.12',
+              'source_zip_sha256':got,
+              'selection_score':score,
+              'file_count':len(files),
+              'files':files,
+              'status':'EXACT_REPOSITORY_BASELINE_MATERIALIZED_NOT_PRODUCTION_RELEASE',
+          }
+          pathlib.Path('hosted_runtime_base_v6512_manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          print('V6512_RUNTIME_MATERIALIZED', 'score='+str(score), 'files='+str(len(files)), 'source_sha256='+got)
+          PY
+      - name: Commit materialized baseline
+        shell: bash
+        run: |
+          git config user.name 'ScoreMax Qualification Bot'
+          git config user.email 'scoremax-qualification@users.noreply.github.com'
+          git add hosted_runtime_base_v6512 hosted_runtime_base_v6512_manifest.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Materialize exact V6.5.12 hosted runtime baseline'
+          git push origin HEAD:production-v6-6-9b-hosted-qualification
