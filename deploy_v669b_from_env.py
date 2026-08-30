@@ -1,5 +1,5 @@
 from __future__ import annotations
-import base64, hashlib, io, json, os, shutil, tarfile, zipfile
+import base64, hashlib, io, os, shutil, tarfile, zipfile
 from pathlib import Path
 
 PAYLOAD_SHA='aa7bf37c677385396de0b01e83fd0b91ead35abc87847bc01ae74e64bd0d2b74'
@@ -30,19 +30,32 @@ def hero_from_zip(raw, depth=0):
     except zipfile.BadZipFile: pass
     return None
 
-def payload_text():
+def decode_candidate(encoded):
+    try:
+        raw=base64.b64decode(encoded,validate=True)
+    except Exception:
+        return None
+    return raw if sha(raw)==PAYLOAD_SHA else None
+
+def governed_payload():
     keys=sorted(k for k in os.environ if k.startswith('V669B_PAYLOAD_PART_'))
     if keys:
-        return ''.join(os.environ[k].strip() for k in keys), 'environment'
+        encoded=''.join(os.environ[k].strip() for k in keys)
+        raw=decode_candidate(encoded)
+        if raw is not None:
+            return raw,'environment'
+        print('V669B_ENV_PAYLOAD_REJECTED_FALLING_BACK_TO_COMMITTED_PARTS')
     parts=sorted(PAYLOAD_DIR.glob('v669b_text_runtime.b64.part*'))
     if not parts:
-        raise SystemExit('V669B_PAYLOAD_MISSING_ENV_AND_COMMITTED_PARTS')
-    return ''.join(p.read_text(encoding='ascii').strip() for p in parts), 'committed_parts'
+        raise SystemExit('V669B_COMMITTED_PAYLOAD_MISSING')
+    encoded=''.join(p.read_text(encoding='ascii').strip() for p in parts)
+    raw=decode_candidate(encoded)
+    if raw is None:
+        raise SystemExit('V669B_COMMITTED_PAYLOAD_INVALID_OR_SHA_MISMATCH')
+    return raw,'committed_parts'
 
 def main():
-    encoded,transport=payload_text()
-    raw=base64.b64decode(encoded,validate=True)
-    if sha(raw)!=PAYLOAD_SHA: raise SystemExit('V669B_PAYLOAD_SHA_MISMATCH')
+    raw,transport=governed_payload()
     shutil.rmtree(OUT,ignore_errors=True); OUT.mkdir(parents=True)
     with tarfile.open(fileobj=io.BytesIO(raw),mode='r:xz') as t:
         for m in t.getmembers():
