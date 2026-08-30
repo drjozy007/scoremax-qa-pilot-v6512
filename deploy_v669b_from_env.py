@@ -54,7 +54,8 @@ def main():
             dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
 
     # Deterministic gzip replacement bridge: exact governed 9B runtime delta, excluding obsolete 9B docs.
-    repl=bounded_payload('V669B_GZ_PART_',58,REPL_SHA)
+    # GZ2 is an isolated qualification transport namespace so stale prior bridge variables cannot be counted.
+    repl=bounded_payload('V669B_GZ2_PART_',58,REPL_SHA)
     safe_extract(repl,OUT)
 
     # Exact V6.6.9B -> V6.6.10G runtime delta (existing XZ payload).
