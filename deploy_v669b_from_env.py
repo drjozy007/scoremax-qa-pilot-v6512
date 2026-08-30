@@ -2,7 +2,7 @@ from __future__ import annotations
 import base64, hashlib, io, os, shutil, tarfile, zipfile
 from pathlib import Path
 
-PAYLOAD_SHA='aa7bf37c677385396de0b01e83fd0b91ead35abc87847bc01ae74e64bd0d2b74'
+PAYLOAD_SHA='f73a6bdfc2ba95b62532d736e05eabce08e9fd80cd6e9ba7f6e74e37dfc62b75'
 HERO_SHA='ada647f2678abcb08f3423394422cceea8d2c81f5eaf14b57c328bf3d1d591d5'
 SOURCE_SHA='70a181237cd028b86f34650b0fbc912174ee1516965dd62f8d4b2862bea63ffa'
 BASE=Path('SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip')
