@@ -1,0 +1,66 @@
+name: V6512 Runtime Manifest
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/v6512-runtime-manifest.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Build recursive V6.5.12 runtime manifest
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, shutil, zipfile
+          root=pathlib.Path('SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip'); assert root.is_file()
+          work=pathlib.Path('/tmp/v6512_recursive'); shutil.rmtree(work,ignore_errors=True); work.mkdir()
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1048576),b''): h.update(b)
+              return h.hexdigest()
+          seen=set(); queue=[root]; n=0
+          while queue:
+              z=queue.pop(0); key=(z.resolve(),sha(z))
+              if key in seen: continue
+              seen.add(key); d=work/f'z{n:04d}'; n+=1; d.mkdir(parents=True)
+              try:
+                  with zipfile.ZipFile(z) as xf: xf.extractall(d)
+              except zipfile.BadZipFile: continue
+              queue.extend(sorted(d.rglob('*.zip')))
+          candidates=[]
+          for app in work.rglob('app.py'):
+              d=app.parent
+              score=sum(int((d/x).is_file()) for x in ('scoremax_production.py','requirements.txt','scoremax_integration_v1.py','qa_synthetic_learner.py'))
+              files=[p for p in d.rglob('*') if p.is_file()]
+              candidates.append((score,len(files),str(d),d))
+          assert candidates
+          candidates.sort(reverse=True); score,count,_,appdir=candidates[0]; assert score>=3
+          files=[]
+          for p in sorted(appdir.rglob('*')):
+              if p.is_file(): files.append({'path':p.relative_to(appdir).as_posix(),'size':p.stat().st_size,'sha256':sha(p)})
+          payload={'source_zip_sha256':sha(root),'selected_app_root':str(appdir),'selection_score':score,'file_count':len(files),'files':files}
+          pathlib.Path('/tmp/v6512_runtime_manifest.json').write_text(json.dumps(payload,sort_keys=True,indent=2)+'\n')
+          print('V6512_RUNTIME_MANIFEST_READY',score,len(files),appdir)
+          PY
+      - name: Commit manifest to qualification branch
+        shell: bash
+        run: |
+          git fetch origin production-v6-6-9b-hosted-qualification
+          git switch production-v6-6-9b-hosted-qualification
+          cp /tmp/v6512_runtime_manifest.json v6512_runtime_manifest.json
+          git config user.name 'ScoreMax Qualification Bot'
+          git config user.email 'scoremax-qualification@users.noreply.github.com'
+          git add v6512_runtime_manifest.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Record recursive V6.5.12 runtime manifest'
+          git push origin HEAD:production-v6-6-9b-hosted-qualification
