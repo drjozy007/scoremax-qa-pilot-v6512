@@ -26,7 +26,7 @@ jobs:
           import hashlib, json, pathlib, shutil, zipfile
 
           source = pathlib.Path('SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip')
-          expected_source_sha = '39ac8cba4f27b76eb229d409daae1b296605599414435a6af9ad56d05b920a4f'
+          expected_source_sha = '0717b0d90b1198af35d02ab2d8ee2328361b4f42853a67a87c23c3e5b8b3a87c'
 
           def sha(path):
               h=hashlib.sha256()
