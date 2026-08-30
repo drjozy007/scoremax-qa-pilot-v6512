@@ -54,7 +54,7 @@ def main():
             dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
 
     # Exact replacement bridge built from the governed V6.6.9B candidate bytes.
-    repl=bounded_payload('V669B_REPL_PART_',49,REPL_SHA)
+    repl=bounded_payload('V669B_REPLACEMENT_PART_',49,REPL_SHA)
     safe_extract(repl,OUT)
 
     # Exact V6.6.9B -> V6.6.10G runtime delta.
