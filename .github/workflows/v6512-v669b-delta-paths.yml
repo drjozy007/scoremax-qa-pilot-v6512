@@ -1,0 +1,33 @@
+name: V6512 to V669B Delta Paths
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/v6512-v669b-delta-paths.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: production-v6-6-9b-hosted-qualification, fetch-depth: 0}
+      - name: Compact changed and new paths
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          d=json.loads(pathlib.Path('v6512_to_v669b_delta_manifest.json').read_text())
+          out={'changed':[x['path'] for x in d['changed']],'new':[x['path'] for x in d['new']]}
+          pathlib.Path('v6512_to_v669b_delta_paths.json').write_text(json.dumps(out,sort_keys=True,separators=(',',':'))+'\n')
+          print('DELTA_PATHS',len(out['changed']),len(out['new']))
+          PY
+      - name: Commit compact paths
+        run: |
+          git config user.name 'ScoreMax Qualification Bot'
+          git config user.email 'scoremax-qualification@users.noreply.github.com'
+          git add v6512_to_v669b_delta_paths.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Record compact V6.6.9B upgrade paths'
+          git push origin HEAD:production-v6-6-9b-hosted-qualification
