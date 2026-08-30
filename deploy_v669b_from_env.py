@@ -5,7 +5,7 @@ from pathlib import Path
 BASE=Path('hosted_runtime_base_v6512')
 OUT=Path('scoremax_runtime_v669b')
 PATHS_FILE=Path('qualification/v6610f_runtime_paths.json')
-REPL_SHA='a5580f097b754a4634e31d79e97666ebc36188091b3ec7b643a55b6517aefb2e'
+REPL_SHA='aa06e33a04cddc11c07d028e38770433d43d4789db9e3eb9de7855a841c188bd'
 DELTA_SHA='5f20e0ca9219c40bb0ffe0470c076a911c70ee3c8ddef9e40bdc74b797e131a2'
 TREE_SHA='e4de5db8fc107a1e1485550b904040df328f76266518abb183daec029dd9c0c1'
 SOURCE_ZIP_SHA='6dc69467b01016d32da8775eb6e79d9b3e008208408ddaa3115a14adcc9b52d0'
@@ -53,8 +53,8 @@ def main():
         if src.is_file():
             dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
 
-    # Exact replacement bridge built from the governed V6.6.9B candidate bytes.
-    repl=bounded_payload('V669B_REPLACEMENT_PART_',49,REPL_SHA)
+    # Deterministic replacement bridge built from exact governed V6.6.9B runtime bytes.
+    repl=bounded_payload('V669B_DET_PART_',49,REPL_SHA)
     safe_extract(repl,OUT)
 
     # Exact V6.6.9B -> V6.6.10G runtime delta.
@@ -86,6 +86,6 @@ def main():
     if "SCOREMAX_RELEASE_VERSION='6.6.10G'" not in app or '6.6.10G' not in integ: raise SystemExit('V6610G_RELEASE_IDENTITY_MISSING')
     for reqfile in ('scoremax_production.py','scoremax_production_entrypoint.py','production_content_seed_policy.py','request_security_engine.py','security_rate_limit_engine.py','public_origin_engine.py','referral_attribution_engine.py'):
         if not (OUT/reqfile).is_file(): raise SystemExit('V6610G_REQUIRED_FILE_MISSING:'+reqfile)
-    print('V6610G_HOSTED_RUNTIME_VERIFIED',f'replacement_bridge_sha256={REPL_SHA}',f'delta_sha256={DELTA_SHA}',f'runtime_tree_sha256={TREE_SHA}',f'files={len(paths)}',f'release={RELEASE}','status=PREQUALIFICATION_CANDIDATE_NOT_CURRENT_HEAD_NOT_FROZEN')
+    print('V6610G_HOSTED_RUNTIME_VERIFIED',f'deterministic_bridge_sha256={REPL_SHA}',f'delta_sha256={DELTA_SHA}',f'runtime_tree_sha256={TREE_SHA}',f'files={len(paths)}',f'release={RELEASE}','status=PREQUALIFICATION_CANDIDATE_NOT_CURRENT_HEAD_NOT_FROZEN')
 
 if __name__=='__main__': main()
