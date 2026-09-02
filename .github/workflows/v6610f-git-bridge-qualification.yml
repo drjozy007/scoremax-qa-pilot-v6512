@@ -1,0 +1,26 @@
+name: V6.6.10F Git Bridge Qualification
+
+on:
+  push:
+    branches:
+      - production-v6-6-9b-hosted-qualification
+    paths:
+      - 'deploy_v6610f_from_env.py'
+      - 'qualification/v6610f_overlay/**'
+      - 'qualification/v6610f_runtime_paths.json'
+      - '.github/workflows/v6610f-git-bridge-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-10f-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Reconstruct and verify governed V6.6.10F runtime
+        run: python deploy_v6610f_from_env.py
