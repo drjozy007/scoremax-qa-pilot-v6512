@@ -69,6 +69,9 @@ def main() -> None:
     if not parts:
         raise SystemExit("V669B_TEXT_PAYLOAD_MISSING")
     encoded = "".join(p.read_text(encoding="ascii").strip() for p in parts)
+    # Git transport omitted terminal base64 padding. Restore only canonical '=' padding;
+    # the decoded bytes must still match the original governed payload SHA below.
+    encoded += "=" * (-len(encoded) % 4)
     try:
         compressed = base64.b64decode(encoded, validate=True)
     except Exception as exc:
