@@ -7,6 +7,7 @@ OUT=Path('scoremax_runtime_v669b')
 PATHS_FILE=Path('qualification/v6610f_runtime_paths.json')
 BRIDGE_FILE=Path('qualification/v669b_xz3_bridge.tar.xz')
 REPL_SHA='cee0f4069764510e0c601f07a5036101ecd3b4e2544f480376351c9b2cc78123'
+GIT_BRIDGE_SHA='2ea52d3aeda9a0291ca868ade904052ee522ae58811edf8b03cc8beafc5078bc'
 DELTA_SHA='5f20e0ca9219c40bb0ffe0470c076a911c70ee3c8ddef9e40bdc74b797e131a2'
 TREE_SHA='e4de5db8fc107a1e1485550b904040df328f76266518abb183daec029dd9c0c1'
 SOURCE_ZIP_SHA='6dc69467b01016d32da8775eb6e79d9b3e008208408ddaa3115a14adcc9b52d0'
@@ -116,7 +117,7 @@ def main():
     if not BASE.is_dir(): raise SystemExit('V6610G_BASELINE_MISSING')
     if not BRIDGE_FILE.is_file(): raise SystemExit('V6610G_GIT_BRIDGE_MISSING')
     repl=BRIDGE_FILE.read_bytes()
-    if sha(repl)!=REPL_SHA: raise SystemExit(f'V6610G_GIT_BRIDGE_SHA_MISMATCH got={sha(repl)} expected={REPL_SHA}')
+    if sha(repl)!=GIT_BRIDGE_SHA: raise SystemExit(f'V6610G_GIT_BRIDGE_SHA_MISMATCH got={sha(repl)} expected={GIT_BRIDGE_SHA}')
     paths=set(json.loads(PATHS_FILE.read_text(encoding='utf-8')))
     paths.discard('README_SCOREMAX_V6_6_9B.md')
     paths.discard('V6_6_9B_PACKAGE_MANIFEST.json')
@@ -140,6 +141,6 @@ def main():
             rel=p.relative_to(new_root); dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(p,dst)
     parent_tree=verify_v6610g(paths)
     final_paths=apply_and_verify_v6611c(paths)
-    print('V6611C_HOSTED_RUNTIME_VERIFIED',f'parent_release={RELEASE}',f'parent_runtime_tree_sha256={parent_tree}',f'source_zip_sha256={V6611C_SOURCE_ZIP_SHA}',f'patch_xz_sha256={V6611C_PATCH_XZ_SHA}',f'v669b_git_bridge_sha256={REPL_SHA}',f'patch_sha256={V6611C_PATCH_SHA}',f'files={len(final_paths)}','release=6.6.11C','status=PRE_DOMAIN_PREQUALIFICATION_CANDIDATE_NOT_FROZEN')
+    print('V6611C_HOSTED_RUNTIME_VERIFIED',f'parent_release={RELEASE}',f'parent_runtime_tree_sha256={parent_tree}',f'source_zip_sha256={V6611C_SOURCE_ZIP_SHA}',f'patch_xz_sha256={V6611C_PATCH_XZ_SHA}',f'v669b_git_bridge_sha256={GIT_BRIDGE_SHA}',f'patch_sha256={V6611C_PATCH_SHA}',f'files={len(final_paths)}','release=6.6.11C','status=PRE_DOMAIN_PREQUALIFICATION_CANDIDATE_NOT_FROZEN')
 
 if __name__=='__main__': main()
