@@ -5,7 +5,6 @@ from pathlib import Path
 BASE=Path('hosted_runtime_base_v6512')
 OUT=Path('scoremax_runtime_v669b')
 PATHS_FILE=Path('qualification/v6610f_runtime_paths.json')
-BRIDGE_FILE=Path('qualification/v669b_xz3_bridge.tar.xz')
 REPL_SHA='cee0f4069764510e0c601f07a5036101ecd3b4e2544f480376351c9b2cc78123'
 GIT_BRIDGE_SHA='2ea52d3aeda9a0291ca868ade904052ee522ae58811edf8b03cc8beafc5078bc'
 DELTA_SHA='5f20e0ca9219c40bb0ffe0470c076a911c70ee3c8ddef9e40bdc74b797e131a2'
@@ -70,6 +69,18 @@ def bounded_payload(prefix,count,expected_sha):
     if got!=expected_sha: raise SystemExit(f'{prefix}SHA_MISMATCH got={got} expected={expected_sha}')
     return raw
 
+def governed_payload(prefix,expected_sha,max_parts=64,max_encoded_bytes=10000000):
+    keys=sorted(k for k in os.environ if k.startswith(prefix))
+    if not keys or len(keys)>max_parts: raise SystemExit(f'{prefix}PART_COUNT_INVALID got={len(keys)} max={max_parts}')
+    vals=[os.environ[k].strip() for k in keys]
+    encoded=''.join(vals)
+    if not encoded or len(encoded)>max_encoded_bytes: raise SystemExit(f'{prefix}ENCODED_SIZE_INVALID got={len(encoded)} max={max_encoded_bytes}')
+    try: raw=base64.b64decode(encoded,validate=True)
+    except Exception as exc: raise SystemExit(f'{prefix}BASE64_INVALID:{type(exc).__name__}') from exc
+    got=sha(raw)
+    if got!=expected_sha: raise SystemExit(f'{prefix}SHA_MISMATCH got={got} expected={expected_sha} parts={len(keys)}')
+    return raw,len(keys)
+
 def verify_v6610g(paths):
     actual=sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob('*') if p.is_file())
     if actual!=sorted(paths):
@@ -115,9 +126,7 @@ def apply_and_verify_v6611c(paths):
 
 def main():
     if not BASE.is_dir(): raise SystemExit('V6610G_BASELINE_MISSING')
-    if not BRIDGE_FILE.is_file(): raise SystemExit('V6610G_GIT_BRIDGE_MISSING')
-    repl=BRIDGE_FILE.read_bytes()
-    if sha(repl)!=GIT_BRIDGE_SHA: raise SystemExit(f'V6610G_GIT_BRIDGE_SHA_MISMATCH got={sha(repl)} expected={GIT_BRIDGE_SHA}')
+    repl,repl_parts=governed_payload('V669B_XZ3_PART_',REPL_SHA)
     paths=set(json.loads(PATHS_FILE.read_text(encoding='utf-8')))
     paths.discard('README_SCOREMAX_V6_6_9B.md')
     paths.discard('V6_6_9B_PACKAGE_MANIFEST.json')
@@ -141,6 +150,6 @@ def main():
             rel=p.relative_to(new_root); dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(p,dst)
     parent_tree=verify_v6610g(paths)
     final_paths=apply_and_verify_v6611c(paths)
-    print('V6611C_HOSTED_RUNTIME_VERIFIED',f'parent_release={RELEASE}',f'parent_runtime_tree_sha256={parent_tree}',f'source_zip_sha256={V6611C_SOURCE_ZIP_SHA}',f'patch_xz_sha256={V6611C_PATCH_XZ_SHA}',f'v669b_git_bridge_sha256={GIT_BRIDGE_SHA}',f'patch_sha256={V6611C_PATCH_SHA}',f'files={len(final_paths)}','release=6.6.11C','status=PRE_DOMAIN_PREQUALIFICATION_CANDIDATE_NOT_FROZEN')
+    print('V6611C_HOSTED_RUNTIME_VERIFIED',f'parent_release={RELEASE}',f'parent_runtime_tree_sha256={parent_tree}',f'source_zip_sha256={V6611C_SOURCE_ZIP_SHA}',f'patch_xz_sha256={V6611C_PATCH_XZ_SHA}',f'v669b_env_payload_sha256={REPL_SHA}',f'v669b_env_parts={repl_parts}',f'patch_sha256={V6611C_PATCH_SHA}',f'files={len(final_paths)}','release=6.6.11C','status=PRE_DOMAIN_PREQUALIFICATION_CANDIDATE_NOT_FROZEN')
 
 if __name__=='__main__': main()
