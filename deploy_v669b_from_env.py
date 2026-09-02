@@ -73,6 +73,7 @@ def governed_payload(prefix,expected_sha,max_parts=64,max_encoded_bytes=10000000
     keys=sorted(k for k in os.environ if k.startswith(prefix))
     if not keys or len(keys)>max_parts: raise SystemExit(f'{prefix}PART_COUNT_INVALID got={len(keys)} max={max_parts}')
     vals=[os.environ[k].strip() for k in keys]
+    print(prefix+'FRAGMENT_META',','.join(f'{k}:{len(v)}' for k,v in zip(keys,vals)))
     encoded=''.join(vals)
     if not encoded or len(encoded)>max_encoded_bytes: raise SystemExit(f'{prefix}ENCODED_SIZE_INVALID got={len(encoded)} max={max_encoded_bytes}')
     try: raw=base64.b64decode(encoded,validate=True)
