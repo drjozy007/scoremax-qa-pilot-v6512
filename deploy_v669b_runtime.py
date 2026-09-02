@@ -9,7 +9,9 @@ import tarfile
 import zipfile
 from pathlib import Path
 
-EXPECTED_TEXT_PAYLOAD_SHA256 = "aa7bf37c677385396de0b01e83fd0b91ead35abc87847bc01ae74e64bd0d2b74"
+# Git-native transport SHA. The historical local compression had a different transport SHA;
+# runtime identity remains enforced by the embedded manifest and the downstream exact 10G tree SHA.
+EXPECTED_TEXT_PAYLOAD_SHA256 = "fe9a97e9b16af49f67b26a4e7c3f3d50c0eea500c0c89a6af15e0a5d5f1a8590"
 EXPECTED_SOURCE_ZIP_SHA256 = "70a181237cd028b86f34650b0fbc912174ee1516965dd62f8d4b2862bea63ffa"
 EXPECTED_HERO_SHA256 = "ada647f2678abcb08f3423394422cceea8d2c81f5eaf14b57c328bf3d1d591d5"
 EXPECTED_RELEASE = "6.6.9B"
@@ -69,8 +71,6 @@ def main() -> None:
     if not parts:
         raise SystemExit("V669B_TEXT_PAYLOAD_MISSING")
     encoded = "".join(p.read_text(encoding="ascii").strip() for p in parts)
-    # Git transport omitted terminal base64 padding. Restore only canonical '=' padding;
-    # the decoded bytes must still match the original governed payload SHA below.
     encoded += "=" * (-len(encoded) % 4)
     try:
         compressed = base64.b64decode(encoded, validate=True)
