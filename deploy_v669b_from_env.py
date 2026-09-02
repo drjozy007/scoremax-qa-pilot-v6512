@@ -5,6 +5,7 @@ from pathlib import Path
 BASE=Path('hosted_runtime_base_v6512')
 OUT=Path('scoremax_runtime_v669b')
 PATHS_FILE=Path('qualification/v6610f_runtime_paths.json')
+BRIDGE_FILE=Path('qualification/v669b_xz3_bridge.tar.xz')
 REPL_SHA='cee0f4069764510e0c601f07a5036101ecd3b4e2544f480376351c9b2cc78123'
 DELTA_SHA='5f20e0ca9219c40bb0ffe0470c076a911c70ee3c8ddef9e40bdc74b797e131a2'
 TREE_SHA='e4de5db8fc107a1e1485550b904040df328f76266518abb183daec029dd9c0c1'
@@ -113,6 +114,9 @@ def apply_and_verify_v6611c(paths):
 
 def main():
     if not BASE.is_dir(): raise SystemExit('V6610G_BASELINE_MISSING')
+    if not BRIDGE_FILE.is_file(): raise SystemExit('V6610G_GIT_BRIDGE_MISSING')
+    repl=BRIDGE_FILE.read_bytes()
+    if sha(repl)!=REPL_SHA: raise SystemExit(f'V6610G_GIT_BRIDGE_SHA_MISMATCH got={sha(repl)} expected={REPL_SHA}')
     paths=set(json.loads(PATHS_FILE.read_text(encoding='utf-8')))
     paths.discard('README_SCOREMAX_V6_6_9B.md')
     paths.discard('V6_6_9B_PACKAGE_MANIFEST.json')
@@ -123,7 +127,7 @@ def main():
         src=BASE/rel
         if src.is_file():
             dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
-    repl=bounded_payload('V669B_XZ3_PART_',40,REPL_SHA); safe_extract(repl,OUT,'V669B')
+    safe_extract(repl,OUT,'V669B')
     delta=bounded_payload('V6610G_DELTA_PART_',4,DELTA_SHA)
     tmp=Path('/tmp/v6610g_delta'); shutil.rmtree(tmp,ignore_errors=True); tmp.mkdir(parents=True); safe_extract(delta,tmp,'V6610G_DELTA')
     patch=tmp/'v669b_to_v6610g_runtime.patch'
@@ -136,6 +140,6 @@ def main():
             rel=p.relative_to(new_root); dst=OUT/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(p,dst)
     parent_tree=verify_v6610g(paths)
     final_paths=apply_and_verify_v6611c(paths)
-    print('V6611C_HOSTED_RUNTIME_VERIFIED',f'parent_release={RELEASE}',f'parent_runtime_tree_sha256={parent_tree}',f'source_zip_sha256={V6611C_SOURCE_ZIP_SHA}',f'patch_xz_sha256={V6611C_PATCH_XZ_SHA}',f'patch_sha256={V6611C_PATCH_SHA}',f'files={len(final_paths)}','release=6.6.11C','status=PRE_DOMAIN_PREQUALIFICATION_CANDIDATE_NOT_FROZEN')
+    print('V6611C_HOSTED_RUNTIME_VERIFIED',f'parent_release={RELEASE}',f'parent_runtime_tree_sha256={parent_tree}',f'source_zip_sha256={V6611C_SOURCE_ZIP_SHA}',f'patch_xz_sha256={V6611C_PATCH_XZ_SHA}',f'v669b_git_bridge_sha256={REPL_SHA}',f'patch_sha256={V6611C_PATCH_SHA}',f'files={len(final_paths)}','release=6.6.11C','status=PRE_DOMAIN_PREQUALIFICATION_CANDIDATE_NOT_FROZEN')
 
 if __name__=='__main__': main()
