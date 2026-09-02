@@ -1,10 +1,11 @@
 from __future__ import annotations
-import base64,hashlib,io,json,lzma,os,shutil,tarfile
+import base64,hashlib,io,json,os,shutil,tarfile
 from pathlib import Path
 
 BASE=Path("hosted_runtime_base_v6512")
 OUT=Path("scoremax_runtime_v6610f")
 PATHS_FILE=Path("qualification/v6610f_runtime_paths.json")
+GIT_OVERLAY_DIR=Path("qualification/v6610f_overlay")
 OVERLAY_SHA="d3734fc8ac16a4a438f1b525f08ac7db41634db9783ca4c0f92c661318a510ce"
 TREE_SHA="dc3a3c47e050a6c0b0e51aa6312d195e631700c9f5482dc1fc354f7c5745c7a7"
 SOURCE_ZIP_SHA="3d2970ad2106f681527271a9855463cb7799b3dabcea6e32378cb7df2687b57e"
@@ -12,16 +13,30 @@ SOURCE_ZIP_SHA="3d2970ad2106f681527271a9855463cb7799b3dabcea6e32378cb7df2687b57e
 def sha(b): return hashlib.sha256(b).hexdigest()
 def fsha(p): return sha(Path(p).read_bytes())
 
+def _overlay_bytes():
+    keys=sorted(k for k in os.environ if k.startswith("V6610F_OVERLAY_PART_"))
+    if keys:
+        encoded="".join(os.environ[k].strip() for k in keys)
+        source=f"env:{len(keys)}"
+    else:
+        parts=sorted(GIT_OVERLAY_DIR.glob("part*.b64"))
+        if len(parts)!=7:
+            raise SystemExit(f"V6610F_OVERLAY_GIT_PART_COUNT_MISMATCH got={len(parts)} expected=7")
+        encoded="".join(p.read_text(encoding="ascii").strip() for p in parts)
+        source=f"git:{len(parts)}"
+    try:
+        raw=base64.b64decode(encoded,validate=True)
+    except Exception as exc:
+        raise SystemExit(f"V6610F_OVERLAY_BASE64_INVALID:{type(exc).__name__}") from exc
+    if sha(raw)!=OVERLAY_SHA:
+        raise SystemExit(f"V6610F_OVERLAY_SHA_MISMATCH got={sha(raw)}")
+    return raw,source
+
 def main():
     if not BASE.is_dir(): raise SystemExit("V6610F_BASELINE_MISSING")
     paths=json.loads(PATHS_FILE.read_text(encoding="utf-8"))
     if len(paths)!=189 or len(set(paths))!=189: raise SystemExit("V6610F_PATH_CONTRACT_INVALID")
-    keys=sorted(k for k in os.environ if k.startswith("V6610F_OVERLAY_PART_"))
-    if not keys: raise SystemExit("V6610F_OVERLAY_ENV_MISSING")
-    encoded="".join(os.environ[k] for k in keys)
-    raw=base64.b64decode(encoded,validate=True)
-    if sha(raw)!=OVERLAY_SHA:
-        raise SystemExit(f"V6610F_OVERLAY_SHA_MISMATCH got={sha(raw)}")
+    raw,source=_overlay_bytes()
     shutil.rmtree(OUT,ignore_errors=True); OUT.mkdir(parents=True)
     for rel in paths:
         src=BASE/rel
@@ -45,6 +60,6 @@ def main():
     print("V6610F_HOSTED_RUNTIME_VERIFIED",
           f"source_zip_sha256={SOURCE_ZIP_SHA}",
           f"overlay_sha256={OVERLAY_SHA}",f"runtime_tree_sha256={TREE_SHA}",
-          f"files={len(paths)}", "status=PREQUALIFICATION_CANDIDATE_NOT_CURRENT_HEAD_NOT_FROZEN")
+          f"transport={source}",f"files={len(paths)}", "status=PREQUALIFICATION_CANDIDATE_NOT_CURRENT_HEAD_NOT_FROZEN")
 
 if __name__=="__main__": main()
