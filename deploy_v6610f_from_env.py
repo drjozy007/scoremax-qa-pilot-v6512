@@ -6,7 +6,7 @@ BASE=Path("hosted_runtime_base_v6512")
 OUT=Path("scoremax_runtime_v6610f")
 PATHS_FILE=Path("qualification/v6610f_runtime_paths.json")
 GIT_OVERLAY_DIR=Path("qualification/v6610f_overlay")
-OVERLAY_SHA="d3734fc8ac16a4a438f1b525f08ac7db41634db9783ca4c0f92c661318a510ce"
+OVERLAY_SHA="871a7e23a8a941f485152cebcfc5169a44fc168f26ebea41d0907cfa35177177"
 TREE_SHA="dc3a3c47e050a6c0b0e51aa6312d195e631700c9f5482dc1fc354f7c5745c7a7"
 SOURCE_ZIP_SHA="3d2970ad2106f681527271a9855463cb7799b3dabcea6e32378cb7df2687b57e"
 
@@ -29,7 +29,7 @@ def _overlay_bytes():
     except Exception as exc:
         raise SystemExit(f"V6610F_OVERLAY_BASE64_INVALID:{type(exc).__name__}") from exc
     if sha(raw)!=OVERLAY_SHA:
-        raise SystemExit(f"V6610F_OVERLAY_SHA_MISMATCH got={sha(raw)}")
+        raise SystemExit(f"V6610F_OVERLAY_SHA_MISMATCH got={sha(raw)} expected={OVERLAY_SHA}")
     return raw,source
 
 def main():
@@ -54,7 +54,7 @@ def main():
     for rel in sorted(paths):
         p=OUT/rel; tree.update(f"{rel}\0{fsha(p)}\0{p.stat().st_size}\n".encode())
     got=tree.hexdigest()
-    if got!=TREE_SHA: raise SystemExit(f"V6610F_RUNTIME_TREE_SHA_MISMATCH got={got}")
+    if got!=TREE_SHA: raise SystemExit(f"V6610F_RUNTIME_TREE_SHA_MISMATCH got={got} expected={TREE_SHA}")
     for req in ("app.py","scoremax_production_entrypoint.py","request_security_engine.py","security_rate_limit_engine.py","public_origin_engine.py","referral_attribution_engine.py","requirements.txt"):
         if not (OUT/req).is_file(): raise SystemExit("V6610F_REQUIRED_FILE_MISSING:"+req)
     print("V6610F_HOSTED_RUNTIME_VERIFIED",
