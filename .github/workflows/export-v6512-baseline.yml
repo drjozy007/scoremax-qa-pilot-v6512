@@ -1,0 +1,21 @@
+name: Export V6.5.12 Baseline
+on:
+  push:
+    branches: [production-v6-6-9b-hosted-qualification]
+    paths: ['.github/workflows/export-v6512-baseline.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive exact committed V6.5.12 baseline
+        run: tar -czf v6512-baseline.tar.gz hosted_runtime_base_v6512
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v6512-baseline
+          path: v6512-baseline.tar.gz
+          if-no-files-found: error
+          retention-days: 1
