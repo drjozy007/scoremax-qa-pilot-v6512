@@ -16,6 +16,29 @@ def _argv0() -> str:
     return Path(str(sys.argv[0] or '')).name
 
 
+def _stage_v6611c_patch_transport() -> None:
+    """Load the governed V6.6.11C patch parts from this exact Git checkout.
+
+    The existing Render service already invokes deploy_v669b_from_env.py. Keeping the
+    payload in SHA-governed repository files avoids another mutable Render environment
+    transport while preserving the existing build architecture.
+    """
+    if _argv0() != 'deploy_v669b_from_env.py':
+        return
+    root = Path(__file__).resolve().parent / 'qualification'
+    for index in range(3):
+        key = f'V6611C_PATCH_PART_{index:02d}'
+        if os.environ.get(key, '').strip():
+            continue
+        source = root / f'v6611c_patch_part_{index:02d}.b64'
+        if not source.is_file():
+            raise RuntimeError(f'Missing governed V6.6.11C patch transport: {source}')
+        value = source.read_text(encoding='utf-8').strip()
+        if not value:
+            raise RuntimeError(f'Empty governed V6.6.11C patch transport: {source}')
+        os.environ[key] = value
+
+
 def _install_log_redaction() -> None:
     original = builtins.print
     sensitive = re.compile(
@@ -96,6 +119,8 @@ def _run_browser_worker() -> None:
     serve(app, host='0.0.0.0', port=int(os.environ['PORT']), threads=4, channel_timeout=300)
     raise SystemExit(0)
 
+
+_stage_v6611c_patch_transport()
 
 _browser_mode = os.getenv('QA_ORCH_BROWSER_WORKER_MODE', '').strip() == '1'
 if _browser_mode and _argv0() == '-c' and os.getenv('QA_ORCH_BROWSER_BUILD_ACTIVE') != '1':
