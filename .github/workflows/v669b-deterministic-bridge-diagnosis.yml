@@ -1,0 +1,66 @@
+name: ScoreMax deterministic bridge qualification
+
+on:
+  push:
+    branches: [production-v6-6-9b-hosted-qualification]
+    paths:
+      - '.github/workflows/v669b-deterministic-bridge-diagnosis.yml'
+      - 'qualification/v669b_det_bridge/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Decode and inspect deterministic bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat qualification/v669b_det_bridge/part*.txt | base64 -d > /tmp/v669b_det_bridge.bin
+          echo "BRIDGE_SHA256=$(sha256sum /tmp/v669b_det_bridge.bin | awk '{print $1}')"
+          echo "BRIDGE_BYTES=$(wc -c < /tmp/v669b_det_bridge.bin)"
+          xz -t /tmp/v669b_det_bridge.bin
+          echo "BRIDGE_XZ_TEST=PASS"
+          tar -tJf /tmp/v669b_det_bridge.bin | sort > /tmp/bridge_members.txt
+          echo "BRIDGE_MEMBER_COUNT=$(wc -l < /tmp/bridge_members.txt)"
+          echo 'BRIDGE_MEMBERS_BEGIN'
+          cat /tmp/bridge_members.txt
+          echo 'BRIDGE_MEMBERS_END'
+      - name: Replay bridge against committed baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/replay
+          mkdir -p /tmp/replay
+          cp -a hosted_runtime_base_v6512/. /tmp/replay/
+          tar -xJf /tmp/v669b_det_bridge.bin -C /tmp/replay
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          root=Path('/tmp/replay')
+          paths=set(json.loads(Path('qualification/v6610f_runtime_paths.json').read_text()))
+          paths.discard('README_SCOREMAX_V6_6_9B.md')
+          paths.discard('V6_6_9B_PACKAGE_MANIFEST.json')
+          paths.add('production_content_seed_policy.py')
+          actual=sorted(p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file() and p.relative_to(root).as_posix() in paths)
+          missing=sorted(paths-set(actual))
+          print('TARGET_PATHS',len(paths),'PRESENT',len(actual),'MISSING',len(missing))
+          print('MISSING_SAMPLE',missing[:20])
+          h=hashlib.sha256()
+          if not missing:
+              for rel in sorted(paths):
+                  p=root/rel
+                  b=p.read_bytes(); sh=hashlib.sha256(b).hexdigest()
+                  h.update(f'{rel}\0{sh}\0{len(b)}\n'.encode())
+              print('REPLAY_TARGET_TREE_SHA256',h.hexdigest())
+          for req in ['app.py','requirements.txt','static/scoremax_intelligence_hero.png','scoremax_production.py']:
+              p=root/req
+              print('REPLAY_FILE',req,'exists',p.is_file(),'sha256',hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else '-')
+          PY
