@@ -1,0 +1,46 @@
+name: ScoreMax V6.6.11C direct hosted replay qualification
+on:
+  push:
+    branches: [production-v6-6-9b-hosted-qualification]
+    paths:
+      - '.github/workflows/v6611c-direct-replay.yml'
+      - 'deploy_v669b_from_env.py'
+      - 'qualification/v6611c_direct_patch/**'
+      - 'qualification/v6611c_direct_patch_manifest.json'
+      - '.python-version'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify-direct-11c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Reconstruct exact V6.6.11C runtime
+        run: |
+          set -euo pipefail
+          python --version
+          python deploy_v669b_from_env.py | tee /tmp/v6611c-replay.log
+          grep -q 'V6611C_HOSTED_RUNTIME_VERIFIED' /tmp/v6611c-replay.log
+          grep -q 'runtime_tree_sha256=0d2d399dcb6a23591a00b05d827a00804094cc17f94a676494b285eca4c79e5a' /tmp/v6611c-replay.log
+      - name: Compile governed architecture modules
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            scoremax_runtime_v669b/account_security_engine.py \
+            scoremax_runtime_v669b/production_startup_engine.py \
+            scoremax_runtime_v669b/simple_onboarding_engine.py \
+            scoremax_runtime_v669b/sqlite_mutation_engine.py \
+            scoremax_runtime_v669b/scoremax_production.py \
+            scoremax_runtime_v669b/scoremax_production_entrypoint.py
+      - name: Install exact runtime dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -r scoremax_runtime_v669b/requirements.txt
+          python - <<'PY'
+          import flask, werkzeug, gunicorn, jsonschema, openpyxl, PIL, qrcode
+          print('V6611C_DEPENDENCY_IMPORTS=PASS')
+          PY
