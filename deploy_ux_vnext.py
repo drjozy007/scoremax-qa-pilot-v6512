@@ -24,27 +24,40 @@ def replace_public_nav(text: str, replacement: str, *, occurrence: int) -> str:
     return text[:m.start()] + replacement + text[m.end():]
 
 
+def copy_overlay(rel: str) -> None:
+    src = OVERLAY / rel
+    dst = OUT / rel
+    if not src.is_file():
+        raise SystemExit(f"UX_VNEXT_OVERLAY_MISSING:{rel}")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+
+
 def main() -> None:
     deploy_v669b_from_env.main()
 
     for rel in (
         "templates/index.html",
+        "templates/ux_register_interest.html",
+        "templates/ux_nominate_school.html",
         "static/ux_vnext.css",
         "static/ux_header_fix.css",
+        "static/ux_structure_v2.css",
         "static/ux_text_editor.js",
+        "ux_staging_routes.py",
     ):
-        src = OVERLAY / rel
-        dst = OUT / rel
-        if not src.is_file():
-            raise SystemExit(f"UX_VNEXT_OVERLAY_MISSING:{rel}")
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+        copy_overlay(rel)
 
     base = OUT / "templates/base.html"
     text = base.read_text(encoding="utf-8")
 
     marker = '<link rel="stylesheet" href="{{url_for(\'static\',filename=\'styles.css\')}}">'
-    inject = marker + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_vnext.css\')}}">\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_header_fix.css\')}}">'
+    inject = (
+        marker
+        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_vnext.css\')}}">'
+        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_header_fix.css\')}}">'
+        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_structure_v2.css\')}}">'
+    )
     if marker not in text:
         raise SystemExit("UX_VNEXT_BASE_STYLESHEET_MARKER_MISSING")
     text = text.replace(marker, inject, 1)
@@ -55,8 +68,8 @@ def main() -> None:
         raise SystemExit("UX_VNEXT_BRAND_MARKER_MISSING")
     text = text.replace(old_brand, new_brand, 1)
 
-    desktop_nav = '''<a href="{{url_for('index')}}#choose-programme">Programmes</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('about_page')}}">About</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>'''
-    mobile_nav = '''<a href="{{url_for('index')}}#choose-programme">Programmes</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('about_page')}}">About</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>'''
+    desktop_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#choose-programme">Programmes</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a></div></details><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>'''
+    mobile_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#choose-programme">Programmes</a><p class="mobile-menu-label">Get Involved</p><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>'''
 
     text = replace_public_nav(text, desktop_nav, occurrence=1)
     text = replace_public_nav(text, mobile_nav, occurrence=1)
@@ -66,8 +79,23 @@ def main() -> None:
     if script_marker not in text:
         raise SystemExit("UX_VNEXT_TEXT_EDITOR_SCRIPT_MARKER_MISSING")
     text = text.replace(script_marker, script_inject, 1)
-
     base.write_text(text, encoding="utf-8")
+
+    # Staging-only public routes and persistence. Keep them outside production lineage.
+    app_py = OUT / "app.py"
+    app_text = app_py.read_text(encoding="utf-8")
+    public_marker = "'teacher_of_year_page','reviewer_invite'"
+    public_replacement = "'teacher_of_year_page','reviewer_invite','ux_register_interest','ux_nominate_school'"
+    if public_marker not in app_text:
+        raise SystemExit("UX_VNEXT_PUBLIC_ENDPOINT_MARKER_MISSING")
+    app_text = app_text.replace(public_marker, public_replacement, 1)
+
+    installer_marker = "\nif __name__=='__main__':\n"
+    installer = "\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\n"
+    if installer_marker not in app_text:
+        raise SystemExit("UX_VNEXT_ROUTE_INSTALL_MARKER_MISSING")
+    app_text = app_text.replace(installer_marker, installer + installer_marker, 1)
+    app_py.write_text(app_text, encoding="utf-8")
 
     landing = (OUT / "templates/index.html").read_text(encoding="utf-8")
     forbidden = ("Power House", "Growth Engine", "qualification", "runtime", "release_id", "build_id")
@@ -75,7 +103,17 @@ def main() -> None:
     if leaked:
         raise SystemExit("UX_VNEXT_PUBLIC_LEAKAGE:" + ",".join(leaked))
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C presentation_only=true text_editor=true public_nav=ordered header_collision_fix=true brand_lockup=true")
+    required_landing = (
+        "PREPARING FOR", "MDCAT", "ECAT", "FSc", "Matric",
+        "Foundation", "Exam Ready", "Advanced", "Distinction", "Expert", "Elite",
+        "GET INVOLVED", "Science Genius", "Student Council", "Teacher of the Year",
+        "SCOREMAX IMPACT", "Nominate a school", "Register interest",
+    )
+    missing = [term for term in required_landing if term not in landing]
+    if missing:
+        raise SystemExit("UX_VNEXT_REQUIRED_PUBLIC_CONTENT_MISSING:" + ",".join(missing))
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C presentation_only=false staging_routes=true public_nav=layered programme_rail=true progression_top=true get_involved=true impact=true register_interest=true")
 
 
 if __name__ == "__main__":
