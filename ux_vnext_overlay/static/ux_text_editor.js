@@ -1,6 +1,18 @@
 (() => {
   'use strict';
 
+  const style = document.createElement('style');
+  style.textContent = `
+    .ux-text-editor-toolbar{position:fixed;right:18px;bottom:18px;z-index:9999;width:min(340px,calc(100vw - 36px));background:rgba(15,23,42,.96);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:18px;box-shadow:0 18px 55px rgba(15,23,42,.28);padding:14px;backdrop-filter:blur(16px);font:500 14px/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .ux-text-editor-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.ux-text-editor-title strong{font-size:15px}.ux-text-editor-title span{font-size:11px;font-weight:800;letter-spacing:.08em;color:#93c5fd;text-transform:uppercase}
+    .ux-text-editor-actions{display:flex;gap:8px;flex-wrap:wrap}.ux-text-editor-actions button{border:0;border-radius:999px;padding:9px 12px;background:#fff;color:#0f172a;font-weight:800;cursor:pointer}.ux-text-editor-actions button.secondary{background:#2563eb;color:#fff}.ux-text-editor-actions button.quiet{background:rgba(255,255,255,.1);color:#e2e8f0}
+    .ux-text-editor-status{margin-top:9px;color:#cbd5e1;font-size:12px}
+    body.ux-text-editing [data-ux-edit-key]{outline:2px dashed #f59e0b;outline-offset:4px;border-radius:4px;cursor:text;background-color:rgba(254,243,199,.35)}
+    body.ux-text-editing [data-ux-edit-key]:focus{outline-style:solid;outline-color:#2563eb;background-color:rgba(219,234,254,.6)}
+    @media(max-width:640px){.ux-text-editor-toolbar{left:10px;right:10px;bottom:10px;width:auto}.ux-text-editor-actions button{padding:8px 10px}}
+  `;
+  document.head.appendChild(style);
+
   const editables = Array.from(document.querySelectorAll('[data-ux-edit-key]'));
   if (!editables.length) return;
 
