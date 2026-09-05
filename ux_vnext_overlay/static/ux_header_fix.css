@@ -1,22 +1,23 @@
-/* ScoreMax UX vNext brand + readable public-header layout. Staging only. */
-.site-header>.brand.ux-brand{
-  display:inline-flex!important;align-items:center!important;gap:8px!important;text-decoration:none!important;color:#0f172a!important;min-width:max-content!important;
-}
-.ux-brand-mark{width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:flex-end;justify-content:center;gap:3px;padding:7px 6px;background:linear-gradient(145deg,#2563eb 0%,#5b5cf0 55%,#7c3aed 100%);box-shadow:0 7px 18px rgba(37,99,235,.2);position:relative;overflow:hidden;flex:0 0 auto}.ux-brand-mark:after{content:"";position:absolute;width:26px;height:26px;border:1px solid rgba(255,255,255,.22);border-radius:50%;right:-9px;top:-10px}.ux-brand-bar{display:block;width:4px;border-radius:3px 3px 1px 1px;background:#fff;position:relative;z-index:1}.ux-brand-bar:nth-child(1){height:8px;opacity:.82}.ux-brand-bar:nth-child(2){height:12px;opacity:.92}.ux-brand-bar:nth-child(3){height:17px}.ux-brand-name{display:inline-flex;align-items:baseline;letter-spacing:-.045em;font-size:1.3rem;line-height:1;font-weight:900;white-space:nowrap}.ux-brand-score{color:#0f172a}.ux-brand-max{margin-left:1px;background:linear-gradient(90deg,#2563eb,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* ScoreMax UX vNext brand + two-row public-header layout. Staging only. */
+.site-header>.brand.ux-brand{display:inline-flex!important;align-items:center!important;gap:8px!important;text-decoration:none!important;color:#0f172a!important;min-width:max-content!important}
+.ux-brand-mark{width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:flex-end;justify-content:center;gap:3px;padding:7px 6px;background:linear-gradient(145deg,#2563eb 0%,#5b5cf0 55%,#7c3aed 100%);box-shadow:0 7px 18px rgba(37,99,235,.2);position:relative;overflow:hidden;flex:0 0 auto}.ux-brand-mark:after{content:"";position:absolute;width:26px;height:26px;border:1px solid rgba(255,255,255,.22);border-radius:50%;right:-9px;top:-10px}.ux-brand-bar{display:block;width:4px;border-radius:3px 3px 1px 1px;background:#fff;position:relative;z-index:1}.ux-brand-bar:nth-child(1){height:8px;opacity:.82}.ux-brand-bar:nth-child(2){height:12px;opacity:.92}.ux-brand-bar:nth-child(3){height:17px}.ux-brand-name{display:inline-flex;align-items:baseline;letter-spacing:-.045em;font-size:1.34rem;line-height:1;font-weight:900;white-space:nowrap}.ux-brand-score{color:#0f172a}.ux-brand-max{margin-left:1px;background:linear-gradient(90deg,#2563eb,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* Only show the full desktop navigation when there is enough space for readable labels. */
-@media (min-width: 1541px){
-  .site-header{display:grid!important;grid-template-columns:max-content minmax(0,1fr)!important;align-items:center!important;column-gap:18px!important;padding:10px 18px!important}
-  .site-header>.brand{position:static!important;inset:auto!important;transform:none!important;display:inline-flex!important;width:max-content!important;min-width:max-content!important;max-width:none!important;margin:0!important;white-space:nowrap!important;line-height:1!important;z-index:2!important}
-  .site-header>.desktop-nav{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-wrap:nowrap!important;justify-content:flex-end!important;align-items:center!important;gap:10px!important;width:100%!important;min-width:0!important;margin:0!important;overflow:visible!important}
-  .site-header>.desktop-nav>a,.site-header>.desktop-nav>.ux-nav-dropdown>summary{margin-left:0!important;white-space:nowrap!important;font-size:.91rem!important;line-height:1.1!important;font-weight:750!important}
-  .site-header>.desktop-nav>a{padding-inline:2px!important}.site-header>.desktop-nav .nav-cta{padding:9px 12px!important}.site-header>.mobile-menu-toggle{display:none!important}
+/* Desktop/laptop: brand row first, readable main navigation on its own full-width row. */
+@media (min-width: 901px){
+  .site-header{display:grid!important;grid-template-columns:1fr auto!important;grid-template-rows:auto auto!important;align-items:center!important;gap:7px 16px!important;padding:9px 18px 8px!important}
+  .site-header>.brand{grid-column:1!important;grid-row:1!important;position:static!important;inset:auto!important;transform:none!important;display:inline-flex!important;width:max-content!important;min-width:max-content!important;max-width:none!important;margin:0!important;white-space:nowrap!important;line-height:1!important;z-index:2!important}
+  .site-header>.mobile-menu-toggle{display:none!important}
+  .site-header>.desktop-nav{grid-column:1/-1!important;grid-row:2!important;position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:center!important;gap:8px 16px!important;width:100%!important;min-width:0!important;margin:0!important;overflow:visible!important;padding:2px 0 1px!important}
+  .site-header>.desktop-nav>a,.site-header>.desktop-nav>.ux-nav-dropdown>summary{margin-left:0!important;white-space:nowrap!important;font-size:.94rem!important;line-height:1.15!important;font-weight:760!important}
+  .site-header>.desktop-nav>a{padding:4px 2px!important}
+  .site-header>.desktop-nav .nav-cta{padding:8px 13px!important}
 }
 
-/* At narrower widths use the menu rather than shrinking labels or overlapping the brand. */
-@media (max-width:1540px){
+/* Mobile/tablet: use the menu. */
+@media (max-width:900px){
   .site-header{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:16px!important;padding:10px 16px!important}
   .site-header>.brand{position:static!important;inset:auto!important;transform:none!important;width:max-content!important;min-width:max-content!important;margin:0!important;white-space:nowrap!important;line-height:1!important}
-  .site-header>.desktop-nav{display:none!important}.site-header>.mobile-menu-toggle{display:inline-flex!important;position:static!important;margin-left:auto!important;flex:0 0 auto!important}
+  .site-header>.desktop-nav{display:none!important}
+  .site-header>.mobile-menu-toggle{display:inline-flex!important;position:static!important;margin-left:auto!important;flex:0 0 auto!important}
 }
 @media (max-width:420px){.ux-brand-mark{width:30px;height:30px;border-radius:9px;padding:6px 5px}.ux-brand-name{font-size:1.2rem}}
