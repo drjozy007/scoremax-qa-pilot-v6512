@@ -43,7 +43,6 @@ jobs:
           s=requests.Session()
           s.headers['User-Agent']='ScoreMax-V6611C-Public-Qualification/1.0'
 
-          # HTTPS/root/domain behaviour
           r=s.get(BASE+'/', timeout=30, allow_redirects=True)
           record('root_https_200', r.status_code==200, f'{r.status_code} {r.url}')
           record('root_canonical_https', r.url.startswith(BASE), r.url)
@@ -52,13 +51,11 @@ jobs:
           rw=s.get('https://www.scoremax.pk/', timeout=30, allow_redirects=True)
           record('www_redirects_to_root', rw.status_code==200 and rw.url.startswith(BASE), rw.url)
 
-          # Public operational endpoints. readyz is required; healthz is expected in the governed production contract.
           for path in ['/healthz','/readyz']:
               rr=s.get(BASE+path, timeout=30, allow_redirects=False)
               record(path+'_reachable', rr.status_code==200, f'{rr.status_code} {rr.text[:200]}')
 
-          # Key unauthenticated learner/account surfaces.
-          public_paths=['/','/login','/register','/forgot-password']
+          public_paths=['/','/login','/register/student','/forgot-password']
           viewports={
               'desktop': {'width':1440,'height':1000},
               'mobile': {'width':390,'height':844},
@@ -83,7 +80,6 @@ jobs:
                       record(f'{mode}:{path}:body', len(body.strip())>20, len(body))
                       record(f'{mode}:{path}:overflow', not overflow, overflow)
                       record(f'{mode}:{path}:page_errors', len(page_errors)==0, page_errors)
-                      # Ignore expected browser-level favicon/resource noise by limiting to actual JS console errors on page load.
                       record(f'{mode}:{path}:console_errors', len(console_errors)==0, console_errors)
                   ctx.close()
               browser.close()
