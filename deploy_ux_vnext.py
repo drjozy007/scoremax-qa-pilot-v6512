@@ -14,7 +14,7 @@ def main() -> None:
     deploy_v669b_from_env.main()
 
     # Then apply presentation-only staging files.
-    for rel in ("templates/index.html", "static/ux_vnext.css"):
+    for rel in ("templates/index.html", "static/ux_vnext.css", "static/ux_text_editor.js"):
         src = OVERLAY / rel
         dst = OUT / rel
         if not src.is_file():
@@ -38,7 +38,7 @@ def main() -> None:
     if leaked:
         raise SystemExit("UX_VNEXT_PUBLIC_LEAKAGE:" + ",".join(leaked))
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C presentation_only=true")
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C presentation_only=true text_editor=true")
 
 
 if __name__ == "__main__":
