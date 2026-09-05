@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% block title %}Nominate a school · ScoreMax{% endblock %}{% block content %}
+<section class="ux-interest-shell">
+  <div class="ux-interest-card">
+    <p class="ux-kicker">SCOREMAX IMPACT</p>
+    <h1>Nominate a school</h1>
+    <p>Students, teachers, parents and communities can nominate a school or college that could benefit from future ScoreMax-supported education improvement work.</p>
+    {% if success %}
+      <div class="ux-interest-success">Thank you — the school nomination has been recorded.</div>
+      <p><a class="ux-btn ux-btn-primary" href="{{url_for('index')}}#impact">Back to ScoreMax Impact</a></p>
+    {% else %}
+      {% if error %}<div class="ux-interest-error">{{error}}</div>{% endif %}
+      <form class="ux-interest-form" method="post">
+        <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+        <label>Your name<input name="nominator_name" value="{{values.nominator_name}}" required></label>
+        <label>I am a<select name="role"><option {{'selected' if values.role=='Student' else ''}}>Student</option><option {{'selected' if values.role=='Teacher' else ''}}>Teacher</option><option {{'selected' if values.role=='Parent' else ''}}>Parent</option><option {{'selected' if values.role=='Community member' else ''}}>Community member</option><option {{'selected' if values.role=='Other' else ''}}>Other</option></select></label>
+        <label>Email<input type="email" name="email" value="{{values.email}}"></label>
+        <label>City / area<input name="city" value="{{values.city}}"></label>
+        <label class="full">School / college name<input name="school_name" value="{{values.school_name}}" required></label>
+        <label class="full">Your relationship to the school<input name="relationship" value="{{values.relationship}}" placeholder="e.g. student, teacher, parent, former pupil"></label>
+        <label class="full">Why are you nominating this school?<textarea name="reason" required>{{values.reason}}</textarea></label>
+        <div class="full ux-interest-note">This is a nomination only. It does not guarantee funding or selection.</div>
+        <div class="full"><button class="ux-btn ux-btn-primary" type="submit">Submit nomination</button></div>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
