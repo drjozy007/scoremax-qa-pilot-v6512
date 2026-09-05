@@ -84,11 +84,15 @@ def main() -> None:
     # Staging-only public routes and persistence. Keep them outside production lineage.
     app_py = OUT / "app.py"
     app_text = app_py.read_text(encoding="utf-8")
-    public_marker = "'teacher_of_year_page','reviewer_invite'"
-    public_replacement = "'teacher_of_year_page','reviewer_invite','ux_register_interest','ux_nominate_school'"
-    if public_marker not in app_text:
-        raise SystemExit("UX_VNEXT_PUBLIC_ENDPOINT_MARKER_MISSING")
-    app_text = app_text.replace(public_marker, public_replacement, 1)
+    public_pattern = re.compile(r"public_endpoints\s*=\s*\{(?P<body>[^}]*)\}")
+    public_match = public_pattern.search(app_text)
+    if not public_match:
+        raise SystemExit("UX_VNEXT_PUBLIC_ENDPOINT_SET_MISSING")
+    body = public_match.group("body")
+    for endpoint in ("ux_register_interest", "ux_nominate_school"):
+        if f"'{endpoint}'" not in body:
+            body = body.rstrip() + f",'{endpoint}'"
+    app_text = app_text[:public_match.start()] + "public_endpoints={" + body + "}" + app_text[public_match.end():]
 
     installer_marker = "\nif __name__=='__main__':\n"
     installer = "\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\n"
