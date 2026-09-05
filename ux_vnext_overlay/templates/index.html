@@ -8,7 +8,7 @@
   {% if p.name=='Grade 10' %}{% set ns.g10=p.status %}{% endif %}
 {% endfor %}
 
-<nav class="ux-programme-rail" aria-label="ScoreMax programmes">
+<nav id="programmes" class="ux-programme-rail" aria-label="ScoreMax programmes">
   <span class="ux-programme-rail-label">PREPARING FOR</span>
   <a class="ux-programme-tab {{'interest' if ns.mdcat!='AVAILABLE' else ''}}" href="{{url_for('register',role='student',programme='MDCAT') if ns.mdcat=='AVAILABLE' else url_for('ux_register_interest',programme='MDCAT')}}">MDCAT</a>
   <a class="ux-programme-tab interest" href="{{url_for('ux_register_interest',programme='ECAT')}}">ECAT</a>
