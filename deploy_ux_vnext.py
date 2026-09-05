@@ -10,7 +10,7 @@ OUT = Path("scoremax_runtime_v669b")
 OVERLAY = Path("ux_vnext_overlay")
 
 
-def replace_public_nav(text: str, replacement: str, *, occurrence: int) -> str:
+def replace_public_nav_pair(text: str, desktop_replacement: str, mobile_replacement: str) -> str:
     pattern = re.compile(
         r'<a href="\{\{url_for\(\'how_it_works\'\)\}\}">How It Works</a>'
         r'.*?'
@@ -18,10 +18,13 @@ def replace_public_nav(text: str, replacement: str, *, occurrence: int) -> str:
         re.S,
     )
     matches = list(pattern.finditer(text))
-    if len(matches) < occurrence:
-        raise SystemExit(f"UX_VNEXT_PUBLIC_NAV_MATCH_MISSING occurrence={occurrence} matches={len(matches)}")
-    m = matches[occurrence - 1]
-    return text[:m.start()] + replacement + text[m.end():]
+    if len(matches) != 2:
+        raise SystemExit(f"UX_VNEXT_PUBLIC_NAV_PAIR_MISMATCH matches={len(matches)}")
+    # Replace from right to left so offsets stay valid and the two original blocks cannot overlap.
+    replacements = ((matches[1], mobile_replacement), (matches[0], desktop_replacement))
+    for match, replacement in replacements:
+        text = text[:match.start()] + replacement + text[match.end():]
+    return text
 
 
 def copy_overlay(rel: str) -> None:
@@ -68,11 +71,15 @@ def main() -> None:
         raise SystemExit("UX_VNEXT_BRAND_MARKER_MISSING")
     text = text.replace(old_brand, new_brand, 1)
 
-    desktop_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#choose-programme">Programmes</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a></div></details><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>'''
-    mobile_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#choose-programme">Programmes</a><p class="mobile-menu-label">Get Involved</p><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>'''
+    desktop_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a></div></details><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>'''
+    mobile_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><p class="mobile-menu-label">Get Involved</p><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('updates_page')}}">Updates</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>'''
 
-    text = replace_public_nav(text, desktop_nav, occurrence=1)
-    text = replace_public_nav(text, mobile_nav, occurrence=1)
+    text = replace_public_nav_pair(text, desktop_nav, mobile_nav)
+
+    # Guard against the prior duplicate-About regression.
+    desktop_segment = text[text.find('<nav class="desktop-nav"'):text.find('</nav>', text.find('<nav class="desktop-nav"'))]
+    if desktop_segment.count('>About Us</a>') != 1:
+        raise SystemExit("UX_VNEXT_DESKTOP_ABOUT_DUPLICATE")
 
     script_marker = '<button id="backTop" class="back-top" aria-label="Back to top" title="Back to top">↑</button>'
     script_inject = script_marker + '\n{% if not session.get(\'user_id\') and request.endpoint == \'index\' %}<script src="{{url_for(\'static\',filename=\'ux_text_editor.js\')}}"></script>{% endif %}'
@@ -110,14 +117,17 @@ def main() -> None:
     required_landing = (
         "PREPARING FOR", "MDCAT", "ECAT", "FSc", "Matric",
         "Foundation", "Exam Ready", "Advanced", "Distinction", "Expert", "Elite",
+        "Mastery", "Weak Areas", "Practice", "Past Papers", "Mock Exams", "Study Plan", "Progress", "Exam Centre", "Daily Spark",
         "GET INVOLVED", "Science Genius", "Student Council", "Teacher of the Year",
         "SCOREMAX IMPACT", "Nominate a school", "Register interest",
     )
     missing = [term for term in required_landing if term not in landing]
     if missing:
         raise SystemExit("UX_VNEXT_REQUIRED_PUBLIC_CONTENT_MISSING:" + ",".join(missing))
+    if "Choose the route you are preparing for." in landing:
+        raise SystemExit("UX_VNEXT_REMOVED_PROGRAMME_SECTION_STILL_PRESENT")
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C presentation_only=false staging_routes=true public_nav=layered programme_rail=true progression_top=true get_involved=true impact=true register_interest=true")
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=layered about_single=true programme_rail=true progression_top=true feature_showcase=true daily_spark_collapsed=true get_involved=true impact=true register_interest=true")
 
 
 if __name__ == "__main__":
