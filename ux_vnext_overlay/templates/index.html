@@ -1,50 +1,50 @@
 {% extends "base.html" %}{% block content %}
 <section class="ux-hero" aria-labelledby="uxHeroTitle">
   <div class="ux-hero-copy">
-    <p class="ux-kicker">SMARTER PRACTICE. CLEARER PROGRESS.</p>
-    <h1 id="uxHeroTitle">Know where you are.<br><span>Know what to do next.</span></h1>
-    <p class="ux-lead">ScoreMax turns practice into a clear path from your first attempt to exam-ready confidence.</p>
+    <p class="ux-kicker" data-ux-edit-key="hero.kicker">SMARTER PRACTICE. CLEARER PROGRESS.</p>
+    <h1 id="uxHeroTitle"><span data-ux-edit-key="hero.title1">Know where you are.</span><br><span data-ux-edit-key="hero.title2">Know what to do next.</span></h1>
+    <p class="ux-lead" data-ux-edit-key="hero.lead">ScoreMax turns practice into a clear path from your first attempt to exam-ready confidence.</p>
     <div class="ux-hero-actions">
-      <a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}">Start free</a>
-      <a class="ux-btn ux-btn-secondary" href="#choose-programme">Choose my programme</a>
+      <a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}" data-ux-edit-key="hero.primaryCta">Start free</a>
+      <a class="ux-btn ux-btn-secondary" href="#choose-programme" data-ux-edit-key="hero.secondaryCta">Choose my programme</a>
     </div>
     <div class="ux-proof-row" aria-label="ScoreMax benefits">
-      <span>✓ Find weak areas</span><span>✓ Build mastery</span><span>✓ Track real progress</span>
+      <span data-ux-edit-key="hero.benefit1">✓ Find weak areas</span><span data-ux-edit-key="hero.benefit2">✓ Build mastery</span><span data-ux-edit-key="hero.benefit3">✓ Track real progress</span>
     </div>
   </div>
 
   <div class="ux-intelligence" aria-label="Digital learning intelligence preview">
     <div class="ux-grid-glow"></div>
     <div class="ux-tech-orbit orbit-a"></div><div class="ux-tech-orbit orbit-b"></div>
-    <div class="ux-tech-core"><span>78%</span><small>Mastery</small></div>
-    <div class="ux-node node-a"><b>01</b><span>Practice</span></div>
-    <div class="ux-node node-b"><b>02</b><span>Analyse</span></div>
-    <div class="ux-node node-c"><b>03</b><span>Improve</span></div>
-    <div class="ux-node node-d"><b>04</b><span>Advance</span></div>
-    <div class="ux-signal-card"><small>NEXT BEST ACTION</small><strong>Strengthen Chapter 4</strong><span>+12% potential mastery</span></div>
+    <div class="ux-tech-core"><span>78%</span><small data-ux-edit-key="visual.masteryLabel">Mastery</small></div>
+    <div class="ux-node node-a"><b>01</b><span data-ux-edit-key="visual.node1">Practice</span></div>
+    <div class="ux-node node-b"><b>02</b><span data-ux-edit-key="visual.node2">Analyse</span></div>
+    <div class="ux-node node-c"><b>03</b><span data-ux-edit-key="visual.node3">Improve</span></div>
+    <div class="ux-node node-d"><b>04</b><span data-ux-edit-key="visual.node4">Advance</span></div>
+    <div class="ux-signal-card"><small data-ux-edit-key="visual.actionLabel">NEXT BEST ACTION</small><strong data-ux-edit-key="visual.actionTitle">Strengthen Chapter 4</strong><span data-ux-edit-key="visual.actionMeta">+12% potential mastery</span></div>
   </div>
 </section>
 
 <section class="ux-progress-section" aria-labelledby="progressTitle">
   <div class="ux-section-head">
-    <p class="ux-kicker">YOUR SCOREMAX JOURNEY</p>
-    <h2 id="progressTitle">Six stages. One clear direction.</h2>
-    <p>You always know where you are now, what comes next, and what evidence moves you forward.</p>
+    <p class="ux-kicker" data-ux-edit-key="journey.kicker">YOUR SCOREMAX JOURNEY</p>
+    <h2 id="progressTitle" data-ux-edit-key="journey.title">Six stages. One clear direction.</h2>
+    <p data-ux-edit-key="journey.lead">You always know where you are now, what comes next, and what evidence moves you forward.</p>
   </div>
   <div class="ux-levels" role="list">
-    <article class="ux-level level-1" role="listitem"><span>01</span><div><strong>Foundation</strong><small>Build secure basics</small></div></article>
-    <article class="ux-level level-2" role="listitem"><span>02</span><div><strong>Exam Ready</strong><small>Perform reliably</small></div></article>
-    <article class="ux-level level-3" role="listitem"><span>03</span><div><strong>Advanced</strong><small>Tackle harder work</small></div></article>
-    <article class="ux-level level-4" role="listitem"><span>04</span><div><strong>Distinction</strong><small>Show strong control</small></div></article>
-    <article class="ux-level level-5" role="listitem"><span>05</span><div><strong>Expert</strong><small>Master complex tasks</small></div></article>
-    <article class="ux-level level-6" role="listitem"><span>06</span><div><strong>Elite</strong><small>Perform at your peak</small></div></article>
+    <article class="ux-level level-1" role="listitem"><span>01</span><div><strong data-ux-edit-key="journey.level1.title">Foundation</strong><small data-ux-edit-key="journey.level1.copy">Build secure basics</small></div></article>
+    <article class="ux-level level-2" role="listitem"><span>02</span><div><strong data-ux-edit-key="journey.level2.title">Exam Ready</strong><small data-ux-edit-key="journey.level2.copy">Perform reliably</small></div></article>
+    <article class="ux-level level-3" role="listitem"><span>03</span><div><strong data-ux-edit-key="journey.level3.title">Advanced</strong><small data-ux-edit-key="journey.level3.copy">Tackle harder work</small></div></article>
+    <article class="ux-level level-4" role="listitem"><span>04</span><div><strong data-ux-edit-key="journey.level4.title">Distinction</strong><small data-ux-edit-key="journey.level4.copy">Show strong control</small></div></article>
+    <article class="ux-level level-5" role="listitem"><span>05</span><div><strong data-ux-edit-key="journey.level5.title">Expert</strong><small data-ux-edit-key="journey.level5.copy">Master complex tasks</small></div></article>
+    <article class="ux-level level-6" role="listitem"><span>06</span><div><strong data-ux-edit-key="journey.level6.title">Elite</strong><small data-ux-edit-key="journey.level6.copy">Perform at your peak</small></div></article>
   </div>
 </section>
 
 <section id="choose-programme" class="ux-programmes" aria-labelledby="programmeTitle">
   <div class="ux-section-head compact">
-    <p class="ux-kicker">CHOOSE YOUR PATH</p>
-    <h2 id="programmeTitle">What are you preparing for?</h2>
+    <p class="ux-kicker" data-ux-edit-key="programmes.kicker">CHOOSE YOUR PATH</p>
+    <h2 id="programmeTitle" data-ux-edit-key="programmes.title">What are you preparing for?</h2>
   </div>
   <div class="ux-programme-grid">
     {% for p in public_programmes %}
@@ -59,18 +59,19 @@
 </section>
 
 <section class="ux-how" aria-labelledby="howTitle">
-  <div class="ux-section-head compact"><p class="ux-kicker">HOW IT WORKS</p><h2 id="howTitle">Practice that tells you something useful.</h2></div>
+  <div class="ux-section-head compact"><p class="ux-kicker" data-ux-edit-key="how.kicker">HOW IT WORKS</p><h2 id="howTitle" data-ux-edit-key="how.title">Practice that tells you something useful.</h2></div>
   <div class="ux-how-grid">
-    <article><span>1</span><h3>Check</h3><p>See what you already know and where the gaps really are.</p></article>
-    <article><span>2</span><h3>Focus</h3><p>Spend your time on the chapters and skills that need it most.</p></article>
-    <article><span>3</span><h3>Prove</h3><p>Move forward when fresh evidence shows that you have improved.</p></article>
+    <article><span>1</span><h3 data-ux-edit-key="how.step1.title">Check</h3><p data-ux-edit-key="how.step1.copy">See what you already know and where the gaps really are.</p></article>
+    <article><span>2</span><h3 data-ux-edit-key="how.step2.title">Focus</h3><p data-ux-edit-key="how.step2.copy">Spend your time on the chapters and skills that need it most.</p></article>
+    <article><span>3</span><h3 data-ux-edit-key="how.step3.title">Prove</h3><p data-ux-edit-key="how.step3.copy">Move forward when fresh evidence shows that you have improved.</p></article>
   </div>
 </section>
 
 <section class="ux-spark" aria-labelledby="sparkTitle">
-  <div><p class="ux-kicker">DAILY SPARK</p><h2 id="sparkTitle">One small learning win today.</h2><p>Build momentum with a quick idea, word or challenge before you start studying.</p></div>
+  <div><p class="ux-kicker" data-ux-edit-key="spark.kicker">DAILY SPARK</p><h2 id="sparkTitle" data-ux-edit-key="spark.title">One small learning win today.</h2><p data-ux-edit-key="spark.copy">Build momentum with a quick idea, word or challenge before you start studying.</p></div>
   <div class="ux-spark-word"><small>{{public_spark.pronunciation}}</small><strong>{{public_spark.word}}</strong><span>{{public_spark.definition}}</span></div>
 </section>
 
-<section class="ux-final-cta"><p class="ux-kicker">READY WHEN YOU ARE</p><h2>Start with where you are. Build toward where you want to be.</h2><a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}">Create free account</a></section>
+<section class="ux-final-cta"><p class="ux-kicker" data-ux-edit-key="final.kicker">READY WHEN YOU ARE</p><h2 data-ux-edit-key="final.title">Start with where you are. Build toward where you want to be.</h2><a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}" data-ux-edit-key="final.cta">Create free account</a></section>
+<script src="{{url_for('static',filename='ux_text_editor.js')}}" defer></script>
 {% endblock %}
