@@ -1,71 +1,54 @@
-/* ScoreMax UX vNext public-header collision fix. Staging only. */
+/* ScoreMax UX vNext brand + public-header collision fix. Staging only. */
+.site-header>.brand.ux-brand{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  text-decoration:none!important;
+  color:#0f172a!important;
+  min-width:max-content!important;
+}
+.ux-brand-mark{
+  width:36px;height:36px;border-radius:11px;display:inline-flex;align-items:flex-end;justify-content:center;gap:3px;
+  padding:8px 7px;background:linear-gradient(145deg,#2563eb 0%,#5b5cf0 55%,#7c3aed 100%);
+  box-shadow:0 8px 22px rgba(37,99,235,.22);position:relative;overflow:hidden;
+}
+.ux-brand-mark:after{content:"";position:absolute;width:28px;height:28px;border:1px solid rgba(255,255,255,.22);border-radius:50%;right:-10px;top:-11px}
+.ux-brand-bar{display:block;width:5px;border-radius:3px 3px 1px 1px;background:#fff;position:relative;z-index:1}
+.ux-brand-bar:nth-child(1){height:9px;opacity:.82}.ux-brand-bar:nth-child(2){height:14px;opacity:.92}.ux-brand-bar:nth-child(3){height:20px}
+.ux-brand-name{display:inline-flex;align-items:baseline;letter-spacing:-.045em;font-size:1.42rem;line-height:1;font-weight:900;white-space:nowrap}
+.ux-brand-score{color:#0f172a}.ux-brand-max{margin-left:1px;background:linear-gradient(90deg,#2563eb,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
+
 @media (min-width: 1101px){
   .site-header{
     display:grid!important;
     grid-template-columns:max-content minmax(0,1fr)!important;
     align-items:center!important;
-    column-gap:40px!important;
-    padding:16px clamp(24px,4vw,64px)!important;
+    column-gap:clamp(30px,3vw,48px)!important;
+    padding:14px clamp(24px,4vw,64px)!important;
   }
   .site-header>.brand{
-    position:static!important;
-    inset:auto!important;
-    transform:none!important;
-    display:block!important;
-    width:max-content!important;
-    min-width:max-content!important;
-    max-width:none!important;
-    margin:0!important;
-    white-space:nowrap!important;
-    line-height:1!important;
-    z-index:2!important;
+    position:static!important;inset:auto!important;transform:none!important;display:inline-flex!important;
+    width:max-content!important;min-width:max-content!important;max-width:none!important;margin:0!important;
+    white-space:nowrap!important;line-height:1!important;z-index:2!important;
   }
   .site-header>.desktop-nav{
-    position:static!important;
-    inset:auto!important;
-    transform:none!important;
-    display:flex!important;
-    flex-wrap:nowrap!important;
-    justify-content:flex-end!important;
-    align-items:center!important;
-    gap:clamp(11px,1.25vw,20px)!important;
-    width:auto!important;
-    min-width:0!important;
-    margin:0!important;
-    overflow:visible!important;
+    position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-wrap:nowrap!important;
+    justify-content:flex-end!important;align-items:center!important;gap:clamp(10px,1.15vw,18px)!important;
+    width:auto!important;min-width:0!important;margin:0!important;overflow:visible!important;
   }
-  .site-header>.desktop-nav a{
-    margin-left:0!important;
-    white-space:nowrap!important;
-    font-size:clamp(.82rem,.9vw,.93rem)!important;
-  }
+  .site-header>.desktop-nav a{margin-left:0!important;white-space:nowrap!important;font-size:clamp(.81rem,.88vw,.92rem)!important}
   .site-header>.mobile-menu-toggle{display:none!important}
 }
 
-/* Switch to the menu before the desktop links become crowded. */
+/* Switch to menu before desktop links become crowded. */
 @media (max-width:1100px){
-  .site-header{
-    display:flex!important;
-    justify-content:space-between!important;
-    align-items:center!important;
-    gap:24px!important;
-    padding:15px 20px!important;
-  }
-  .site-header>.brand{
-    position:static!important;
-    inset:auto!important;
-    transform:none!important;
-    width:max-content!important;
-    min-width:max-content!important;
-    margin:0!important;
-    white-space:nowrap!important;
-    line-height:1!important;
-  }
+  .site-header{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:24px!important;padding:13px 18px!important}
+  .site-header>.brand{position:static!important;inset:auto!important;transform:none!important;width:max-content!important;min-width:max-content!important;margin:0!important;white-space:nowrap!important;line-height:1!important}
   .site-header>.desktop-nav{display:none!important}
-  .site-header>.mobile-menu-toggle{
-    display:inline-flex!important;
-    position:static!important;
-    margin-left:auto!important;
-    flex:0 0 auto!important;
-  }
+  .site-header>.mobile-menu-toggle{display:inline-flex!important;position:static!important;margin-left:auto!important;flex:0 0 auto!important}
+}
+
+@media (max-width:420px){
+  .ux-brand-mark{width:32px;height:32px;border-radius:10px;padding:7px 6px}
+  .ux-brand-name{font-size:1.25rem}
 }
