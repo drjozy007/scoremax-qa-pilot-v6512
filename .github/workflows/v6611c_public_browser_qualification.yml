@@ -1,0 +1,107 @@
+name: V6.6.11C Public Browser Qualification
+
+on:
+  push:
+    branches:
+      - qualification/v6611c-public-browser-20260905
+    paths:
+      - .github/workflows/v6611c_public_browser_qualification.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install browser tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright requests
+          python -m playwright install --with-deps chromium
+      - name: Public HTTPS and browser qualification
+        env:
+          BASE: https://scoremax.pk
+        run: |
+          cat > /tmp/public_browser_qual.py <<'PY'
+          import json, sys, requests
+          from playwright.sync_api import sync_playwright
+
+          BASE='https://scoremax.pk'
+          results=[]
+
+          def record(name, ok, detail=''):
+              results.append({'check':name,'ok':bool(ok),'detail':str(detail)[:500]})
+              print(('PASS' if ok else 'FAIL'), name, detail)
+
+          s=requests.Session()
+          s.headers['User-Agent']='ScoreMax-V6611C-Public-Qualification/1.0'
+
+          # HTTPS/root/domain behaviour
+          r=s.get(BASE+'/', timeout=30, allow_redirects=True)
+          record('root_https_200', r.status_code==200, f'{r.status_code} {r.url}')
+          record('root_canonical_https', r.url.startswith(BASE), r.url)
+          record('root_nonempty_html', len(r.text)>1000 and '<html' in r.text.lower(), len(r.text))
+
+          rw=s.get('https://www.scoremax.pk/', timeout=30, allow_redirects=True)
+          record('www_redirects_to_root', rw.status_code==200 and rw.url.startswith(BASE), rw.url)
+
+          # Public operational endpoints. readyz is required; healthz is expected in the governed production contract.
+          for path in ['/healthz','/readyz']:
+              rr=s.get(BASE+path, timeout=30, allow_redirects=False)
+              record(path+'_reachable', rr.status_code==200, f'{rr.status_code} {rr.text[:200]}')
+
+          # Key unauthenticated learner/account surfaces.
+          public_paths=['/','/login','/register','/forgot-password']
+          viewports={
+              'desktop': {'width':1440,'height':1000},
+              'mobile': {'width':390,'height':844},
+          }
+
+          with sync_playwright() as pw:
+              browser=pw.chromium.launch(headless=True)
+              for mode,vp in viewports.items():
+                  ctx=browser.new_context(viewport=vp, is_mobile=(mode=='mobile'), has_touch=(mode=='mobile'))
+                  page=ctx.new_page()
+                  page_errors=[]
+                  console_errors=[]
+                  page.on('pageerror', lambda exc, store=page_errors: store.append(str(exc)))
+                  page.on('console', lambda msg, store=console_errors: store.append(msg.text) if msg.type=='error' else None)
+                  for path in public_paths:
+                      page_errors.clear(); console_errors.clear()
+                      resp=page.goto(BASE+path, wait_until='domcontentloaded', timeout=45000)
+                      status=resp.status if resp else 0
+                      body=page.locator('body').inner_text(timeout=15000)
+                      overflow=page.evaluate('document.documentElement.scrollWidth > document.documentElement.clientWidth + 2')
+                      record(f'{mode}:{path}:status', status==200, status)
+                      record(f'{mode}:{path}:body', len(body.strip())>20, len(body))
+                      record(f'{mode}:{path}:overflow', not overflow, overflow)
+                      record(f'{mode}:{path}:page_errors', len(page_errors)==0, page_errors)
+                      # Ignore expected browser-level favicon/resource noise by limiting to actual JS console errors on page load.
+                      record(f'{mode}:{path}:console_errors', len(console_errors)==0, console_errors)
+                  ctx.close()
+              browser.close()
+
+          failed=[x for x in results if not x['ok']]
+          with open('/tmp/v6611c_public_browser_evidence.json','w',encoding='utf-8') as f:
+              json.dump({'release':'6.6.11C','base':BASE,'results':results,'failed':failed},f,indent=2)
+          print('SUMMARY', json.dumps({'total':len(results),'passed':len(results)-len(failed),'failed':len(failed)}))
+          if failed:
+              print(json.dumps(failed,indent=2))
+              sys.exit(1)
+          print('V6611C_PUBLIC_BROWSER_QUALIFICATION=PASS')
+          PY
+          python /tmp/public_browser_qual.py
+      - name: Upload qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v6611c-public-browser-evidence
+          path: /tmp/v6611c_public_browser_evidence.json
+          if-no-files-found: warn
