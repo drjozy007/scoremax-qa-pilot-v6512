@@ -1,0 +1,64 @@
+name: V6.6.11C Live Visual Capture
+
+on:
+  push:
+    branches:
+      - qualification/v6611c-public-browser-20260905
+    paths:
+      - .github/workflows/v6611c_live_visual_capture.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Capture live ScoreMax screens
+        run: |
+          mkdir -p visual_capture
+          cat > /tmp/capture.py <<'PY'
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+
+          base='https://scoremax.pk'
+          out=Path('visual_capture')
+          pages={
+              'home':'/',
+              'login':'/login',
+              'student-register':'/register/student',
+              'forgot-password':'/forgot-password',
+          }
+          viewports={
+              'desktop': {'width':1440,'height':1000},
+              'mobile': {'width':390,'height':844},
+          }
+          with sync_playwright() as pw:
+              browser=pw.chromium.launch(headless=True)
+              for mode,vp in viewports.items():
+                  ctx=browser.new_context(viewport=vp, is_mobile=(mode=='mobile'), has_touch=(mode=='mobile'))
+                  page=ctx.new_page()
+                  for name,path in pages.items():
+                      page.goto(base+path, wait_until='networkidle', timeout=45000)
+                      page.screenshot(path=str(out/f'{mode}__{name}.png'), full_page=True)
+                  ctx.close()
+              browser.close()
+          PY
+          python /tmp/capture.py
+          ls -lh visual_capture
+      - name: Upload live visual capture
+        uses: actions/upload-artifact@v4
+        with:
+          name: v6611c-live-visual-capture
+          path: visual_capture/*.png
+          if-no-files-found: error
