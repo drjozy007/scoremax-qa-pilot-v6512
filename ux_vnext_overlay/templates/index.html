@@ -1,4 +1,38 @@
 {% extends "base.html" %}{% block content %}
+{% set ns=namespace(mdcat='COMING_SOON',fsc1='COMING_SOON',fsc2='COMING_SOON',g9='COMING_SOON',g10='COMING_SOON') %}
+{% for p in public_programmes %}
+  {% if p.name=='MDCAT' %}{% set ns.mdcat=p.status %}{% endif %}
+  {% if p.name=='FSc Part 1' %}{% set ns.fsc1=p.status %}{% endif %}
+  {% if p.name=='FSc Part 2' %}{% set ns.fsc2=p.status %}{% endif %}
+  {% if p.name=='Grade 9' %}{% set ns.g9=p.status %}{% endif %}
+  {% if p.name=='Grade 10' %}{% set ns.g10=p.status %}{% endif %}
+{% endfor %}
+
+<nav class="ux-programme-rail" aria-label="ScoreMax programmes">
+  <span class="ux-programme-rail-label">PREPARING FOR</span>
+  <a class="ux-programme-tab {{'interest' if ns.mdcat!='AVAILABLE' else ''}}" href="{{url_for('register',role='student',programme='MDCAT') if ns.mdcat=='AVAILABLE' else url_for('ux_register_interest',programme='MDCAT')}}">MDCAT</a>
+  <a class="ux-programme-tab interest" href="{{url_for('ux_register_interest',programme='ECAT')}}">ECAT</a>
+  <a class="ux-programme-tab {{'interest' if ns.fsc1!='AVAILABLE' and ns.fsc2!='AVAILABLE' else ''}}" href="{{'#choose-programme' if ns.fsc1=='AVAILABLE' or ns.fsc2=='AVAILABLE' else url_for('ux_register_interest',programme='FSc')}}">FSc</a>
+  <a class="ux-programme-tab {{'interest' if ns.g9!='AVAILABLE' and ns.g10!='AVAILABLE' else ''}}" href="{{'#choose-programme' if ns.g9=='AVAILABLE' or ns.g10=='AVAILABLE' else url_for('ux_register_interest',programme='Matric')}}">Matric</a>
+  <a class="ux-programme-tab interest" href="{{url_for('ux_register_interest',programme='Other ScoreMax programme')}}">More programmes</a>
+</nav>
+
+<section class="ux-progress-section ux-progress-top" aria-labelledby="progressTitle">
+  <div class="ux-section-head">
+    <p class="ux-kicker" data-ux-edit-key="journey.kicker">YOUR SCOREMAX JOURNEY</p>
+    <h2 id="progressTitle" data-ux-edit-key="journey.title">Six stages. One clear direction.</h2>
+    <p data-ux-edit-key="journey.lead">See where you are now, what comes next, and what evidence moves you forward.</p>
+  </div>
+  <div class="ux-levels" role="list">
+    <article class="ux-level level-1" role="listitem"><span>01</span><div><strong data-ux-edit-key="journey.level1.title">Foundation</strong><small data-ux-edit-key="journey.level1.copy">Build secure basics</small></div></article>
+    <article class="ux-level level-2" role="listitem"><span>02</span><div><strong data-ux-edit-key="journey.level2.title">Exam Ready</strong><small data-ux-edit-key="journey.level2.copy">Perform reliably</small></div></article>
+    <article class="ux-level level-3" role="listitem"><span>03</span><div><strong data-ux-edit-key="journey.level3.title">Advanced</strong><small data-ux-edit-key="journey.level3.copy">Tackle harder work</small></div></article>
+    <article class="ux-level level-4" role="listitem"><span>04</span><div><strong data-ux-edit-key="journey.level4.title">Distinction</strong><small data-ux-edit-key="journey.level4.copy">Show strong control</small></div></article>
+    <article class="ux-level level-5" role="listitem"><span>05</span><div><strong data-ux-edit-key="journey.level5.title">Expert</strong><small data-ux-edit-key="journey.level5.copy">Master complex tasks</small></div></article>
+    <article class="ux-level level-6" role="listitem"><span>06</span><div><strong data-ux-edit-key="journey.level6.title">Elite</strong><small data-ux-edit-key="journey.level6.copy">Perform at your peak</small></div></article>
+  </div>
+</section>
+
 <section class="ux-hero" aria-labelledby="uxHeroTitle">
   <div class="ux-hero-copy">
     <p class="ux-kicker" data-ux-edit-key="hero.kicker">SMARTER PRACTICE. CLEARER PROGRESS.</p>
@@ -25,36 +59,26 @@
   </div>
 </section>
 
-<section class="ux-progress-section" aria-labelledby="progressTitle">
-  <div class="ux-section-head">
-    <p class="ux-kicker" data-ux-edit-key="journey.kicker">YOUR SCOREMAX JOURNEY</p>
-    <h2 id="progressTitle" data-ux-edit-key="journey.title">Six stages. One clear direction.</h2>
-    <p data-ux-edit-key="journey.lead">You always know where you are now, what comes next, and what evidence moves you forward.</p>
-  </div>
-  <div class="ux-levels" role="list">
-    <article class="ux-level level-1" role="listitem"><span>01</span><div><strong data-ux-edit-key="journey.level1.title">Foundation</strong><small data-ux-edit-key="journey.level1.copy">Build secure basics</small></div></article>
-    <article class="ux-level level-2" role="listitem"><span>02</span><div><strong data-ux-edit-key="journey.level2.title">Exam Ready</strong><small data-ux-edit-key="journey.level2.copy">Perform reliably</small></div></article>
-    <article class="ux-level level-3" role="listitem"><span>03</span><div><strong data-ux-edit-key="journey.level3.title">Advanced</strong><small data-ux-edit-key="journey.level3.copy">Tackle harder work</small></div></article>
-    <article class="ux-level level-4" role="listitem"><span>04</span><div><strong data-ux-edit-key="journey.level4.title">Distinction</strong><small data-ux-edit-key="journey.level4.copy">Show strong control</small></div></article>
-    <article class="ux-level level-5" role="listitem"><span>05</span><div><strong data-ux-edit-key="journey.level5.title">Expert</strong><small data-ux-edit-key="journey.level5.copy">Master complex tasks</small></div></article>
-    <article class="ux-level level-6" role="listitem"><span>06</span><div><strong data-ux-edit-key="journey.level6.title">Elite</strong><small data-ux-edit-key="journey.level6.copy">Perform at your peak</small></div></article>
-  </div>
-</section>
-
 <section id="choose-programme" class="ux-programmes" aria-labelledby="programmeTitle">
   <div class="ux-section-head compact">
-    <p class="ux-kicker" data-ux-edit-key="programmes.kicker">CHOOSE YOUR PATH</p>
-    <h2 id="programmeTitle" data-ux-edit-key="programmes.title">What are you preparing for?</h2>
+    <p class="ux-kicker" data-ux-edit-key="programmes.kicker">PROGRAMMES</p>
+    <h2 id="programmeTitle" data-ux-edit-key="programmes.title">Choose the route you are preparing for.</h2>
+    <p>Every route has a next action. If it is not live yet, join the launch list.</p>
   </div>
   <div class="ux-programme-grid">
     {% for p in public_programmes %}
-    <article class="ux-programme-card {{'is-live' if p.status=='AVAILABLE' else 'is-soon'}} {{'is-active' if p.name==public_active_programme else ''}}">
-      <div class="ux-card-top"><span class="ux-status">{{'Available now' if p.status=='AVAILABLE' else 'Coming soon'}}</span>{% if p.name==public_active_programme %}<span class="ux-current">Selected</span>{% endif %}</div>
+    <article class="ux-programme-card {{'is-live' if p.status=='AVAILABLE' else 'is-interest'}} {{'is-active' if p.name==public_active_programme else ''}}">
+      <div class="ux-card-top"><span class="ux-status">{{'Available now' if p.status=='AVAILABLE' else 'Register interest'}}</span>{% if p.name==public_active_programme %}<span class="ux-current">Selected</span>{% endif %}</div>
       <h3>{{p.name}}</h3>
-      {% if p.subjects %}<p>{{p.subjects|join(' · ')}}</p>{% else %}<p>Programme content is being prepared.</p>{% endif %}
-      {% if p.status=='AVAILABLE' %}<a class="ux-card-link" href="{{url_for('register',role='student',programme=p.name)}}">Start {{p.name}} →</a>{% else %}<span class="ux-card-link muted">Coming soon</span>{% endif %}
+      {% if p.subjects %}<p>{{p.subjects|join(' · ')}}</p>{% else %}<p>Tell us you are interested and we will use demand to help prioritise the launch.</p>{% endif %}
+      {% if p.status=='AVAILABLE' %}<a class="ux-card-link" href="{{url_for('register',role='student',programme=p.name)}}">Start {{p.name}} →</a>{% else %}<a class="ux-card-link" href="{{url_for('ux_register_interest',programme=p.name)}}">Register interest →</a>{% endif %}
     </article>
     {% endfor %}
+    <article class="ux-programme-card is-interest">
+      <div class="ux-card-top"><span class="ux-status">Register interest</span></div>
+      <h3>ECAT</h3><p>Engineering-entry preparation is part of the ScoreMax expansion plan.</p>
+      <a class="ux-card-link" href="{{url_for('ux_register_interest',programme='ECAT')}}">Register interest →</a>
+    </article>
   </div>
 </section>
 
@@ -64,6 +88,24 @@
     <article><span>1</span><h3 data-ux-edit-key="how.step1.title">Check</h3><p data-ux-edit-key="how.step1.copy">See what you already know and where the gaps really are.</p></article>
     <article><span>2</span><h3 data-ux-edit-key="how.step2.title">Focus</h3><p data-ux-edit-key="how.step2.copy">Spend your time on the chapters and skills that need it most.</p></article>
     <article><span>3</span><h3 data-ux-edit-key="how.step3.title">Prove</h3><p data-ux-edit-key="how.step3.copy">Move forward when fresh evidence shows that you have improved.</p></article>
+  </div>
+</section>
+
+<section id="get-involved" class="ux-involved" aria-labelledby="involvedTitle">
+  <div class="ux-section-head compact"><p class="ux-kicker">GET INVOLVED</p><h2 id="involvedTitle">ScoreMax is more than revision.</h2><p>Compete, contribute and help shape the learning community around you.</p></div>
+  <div class="ux-engagement-grid">
+    <article class="ux-engagement-card"><span class="eyebrow">COMPETE</span><h3>Science Genius</h3><p>Challenge yourself through ScoreMax science competitions and progression events.</p><a href="/science-genius">Explore Science Genius →</a></article>
+    <article class="ux-engagement-card"><span class="eyebrow">STUDENT VOICE</span><h3>Student Council</h3><p>Help shape ScoreMax and represent what students need from learning, assessment and support.</p><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Register interest →</a></article>
+    <article class="ux-engagement-card"><span class="eyebrow">CELEBRATE TEACHERS</span><h3>Teacher of the Year</h3><p>Recognise teachers who make an exceptional difference to students and their communities.</p><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year →</a></article>
+  </div>
+</section>
+
+<section id="impact" class="ux-impact" aria-labelledby="impactTitle">
+  <div class="ux-section-head compact"><p class="ux-kicker">SCOREMAX IMPACT</p><h2 id="impactTitle">Learning should improve more than a score.</h2><p>ScoreMax intends to direct 10% of income toward education and school improvement, with transparent reporting as the programme develops.</p></div>
+  <div class="ux-impact-grid">
+    <article class="ux-impact-card primary"><p class="ux-kicker">OUR COMMITMENT</p><h3>10% for education improvement</h3><p>Our intention is to invest part of ScoreMax income back into schools, learning environments and education improvement. The final accounting basis will be published clearly before the commitment becomes operational.</p><a href="#impact">How the commitment will work →</a></article>
+    <article class="ux-impact-card"><p class="ux-kicker">NOMINATE</p><h3>Nominate a school</h3><p>Students, teachers, parents and communities can tell us which schools or colleges should be considered for future improvement projects.</p><a href="{{url_for('ux_nominate_school')}}">Nominate a school →</a></article>
+    <article class="ux-impact-card"><p class="ux-kicker">SUPPORT</p><h3>Help improve education</h3><p>People will be able to support selected education and school-improvement work. Donations will open only after the payment, accounting and fund-handling arrangements are fully governed.</p><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Register as a supporter →</a></article>
   </div>
 </section>
 
