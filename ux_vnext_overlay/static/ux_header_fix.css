@@ -1,0 +1,71 @@
+/* ScoreMax UX vNext public-header collision fix. Staging only. */
+@media (min-width: 1101px){
+  .site-header{
+    display:grid!important;
+    grid-template-columns:max-content minmax(0,1fr)!important;
+    align-items:center!important;
+    column-gap:40px!important;
+    padding:16px clamp(24px,4vw,64px)!important;
+  }
+  .site-header>.brand{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    display:block!important;
+    width:max-content!important;
+    min-width:max-content!important;
+    max-width:none!important;
+    margin:0!important;
+    white-space:nowrap!important;
+    line-height:1!important;
+    z-index:2!important;
+  }
+  .site-header>.desktop-nav{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    justify-content:flex-end!important;
+    align-items:center!important;
+    gap:clamp(11px,1.25vw,20px)!important;
+    width:auto!important;
+    min-width:0!important;
+    margin:0!important;
+    overflow:visible!important;
+  }
+  .site-header>.desktop-nav a{
+    margin-left:0!important;
+    white-space:nowrap!important;
+    font-size:clamp(.82rem,.9vw,.93rem)!important;
+  }
+  .site-header>.mobile-menu-toggle{display:none!important}
+}
+
+/* Switch to the menu before the desktop links become crowded. */
+@media (max-width:1100px){
+  .site-header{
+    display:flex!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+    gap:24px!important;
+    padding:15px 20px!important;
+  }
+  .site-header>.brand{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    width:max-content!important;
+    min-width:max-content!important;
+    margin:0!important;
+    white-space:nowrap!important;
+    line-height:1!important;
+  }
+  .site-header>.desktop-nav{display:none!important}
+  .site-header>.mobile-menu-toggle{
+    display:inline-flex!important;
+    position:static!important;
+    margin-left:auto!important;
+    flex:0 0 auto!important;
+  }
+}
