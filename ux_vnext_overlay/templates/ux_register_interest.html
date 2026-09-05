@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% block title %}Register interest · ScoreMax{% endblock %}{% block content %}
+<section class="ux-interest-shell">
+  <div class="ux-interest-card">
+    <p class="ux-kicker">JOIN THE LAUNCH LIST</p>
+    <h1>{{values.programme}}</h1>
+    <p>Tell us what you are interested in. We will use this to understand demand and contact you when this ScoreMax route is ready.</p>
+    {% if success %}
+      <div class="ux-interest-success">Thank you — your interest has been registered.</div>
+      <p><a class="ux-btn ux-btn-primary" href="{{url_for('index')}}">Back to ScoreMax</a></p>
+    {% else %}
+      {% if error %}<div class="ux-interest-error">{{error}}</div>{% endif %}
+      <form class="ux-interest-form" method="post">
+        <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+        <input type="hidden" name="programme" value="{{values.programme}}">
+        <label>Full name<input name="full_name" value="{{values.full_name}}" required></label>
+        <label>I am a<select name="role"><option {{'selected' if values.role=='Student' else ''}}>Student</option><option {{'selected' if values.role=='Teacher' else ''}}>Teacher</option><option {{'selected' if values.role=='Parent' else ''}}>Parent</option><option {{'selected' if values.role=='School / College' else ''}}>School / College</option><option {{'selected' if values.role=='Other' else ''}}>Other</option></select></label>
+        <label>Email<input type="email" name="email" value="{{values.email}}"></label>
+        <label>Mobile<input name="mobile" value="{{values.mobile}}"></label>
+        <label>School / college<input name="school" value="{{values.school}}"></label>
+        <label>City / area<input name="city" value="{{values.city}}"></label>
+        <label class="full">Anything else you want us to know?<textarea name="note">{{values.note}}</textarea></label>
+        <div class="full ux-interest-note">Please provide at least an email address or mobile number so we can contact you about the programme.</div>
+        <div class="full"><button class="ux-btn ux-btn-primary" type="submit">Register interest</button></div>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
