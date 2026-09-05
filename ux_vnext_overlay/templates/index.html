@@ -1,0 +1,76 @@
+{% extends "base.html" %}{% block content %}
+<section class="ux-hero" aria-labelledby="uxHeroTitle">
+  <div class="ux-hero-copy">
+    <p class="ux-kicker">SMARTER PRACTICE. CLEARER PROGRESS.</p>
+    <h1 id="uxHeroTitle">Know where you are.<br><span>Know what to do next.</span></h1>
+    <p class="ux-lead">ScoreMax turns practice into a clear path from your first attempt to exam-ready confidence.</p>
+    <div class="ux-hero-actions">
+      <a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}">Start free</a>
+      <a class="ux-btn ux-btn-secondary" href="#choose-programme">Choose my programme</a>
+    </div>
+    <div class="ux-proof-row" aria-label="ScoreMax benefits">
+      <span>✓ Find weak areas</span><span>✓ Build mastery</span><span>✓ Track real progress</span>
+    </div>
+  </div>
+
+  <div class="ux-intelligence" aria-label="Digital learning intelligence preview">
+    <div class="ux-grid-glow"></div>
+    <div class="ux-tech-orbit orbit-a"></div><div class="ux-tech-orbit orbit-b"></div>
+    <div class="ux-tech-core"><span>78%</span><small>Mastery</small></div>
+    <div class="ux-node node-a"><b>01</b><span>Practice</span></div>
+    <div class="ux-node node-b"><b>02</b><span>Analyse</span></div>
+    <div class="ux-node node-c"><b>03</b><span>Improve</span></div>
+    <div class="ux-node node-d"><b>04</b><span>Advance</span></div>
+    <div class="ux-signal-card"><small>NEXT BEST ACTION</small><strong>Strengthen Chapter 4</strong><span>+12% potential mastery</span></div>
+  </div>
+</section>
+
+<section class="ux-progress-section" aria-labelledby="progressTitle">
+  <div class="ux-section-head">
+    <p class="ux-kicker">YOUR SCOREMAX JOURNEY</p>
+    <h2 id="progressTitle">Six stages. One clear direction.</h2>
+    <p>You always know where you are now, what comes next, and what evidence moves you forward.</p>
+  </div>
+  <div class="ux-levels" role="list">
+    <article class="ux-level level-1" role="listitem"><span>01</span><div><strong>Foundation</strong><small>Build secure basics</small></div></article>
+    <article class="ux-level level-2" role="listitem"><span>02</span><div><strong>Exam Ready</strong><small>Perform reliably</small></div></article>
+    <article class="ux-level level-3" role="listitem"><span>03</span><div><strong>Advanced</strong><small>Tackle harder work</small></div></article>
+    <article class="ux-level level-4" role="listitem"><span>04</span><div><strong>Distinction</strong><small>Show strong control</small></div></article>
+    <article class="ux-level level-5" role="listitem"><span>05</span><div><strong>Expert</strong><small>Master complex tasks</small></div></article>
+    <article class="ux-level level-6" role="listitem"><span>06</span><div><strong>Elite</strong><small>Perform at your peak</small></div></article>
+  </div>
+</section>
+
+<section id="choose-programme" class="ux-programmes" aria-labelledby="programmeTitle">
+  <div class="ux-section-head compact">
+    <p class="ux-kicker">CHOOSE YOUR PATH</p>
+    <h2 id="programmeTitle">What are you preparing for?</h2>
+  </div>
+  <div class="ux-programme-grid">
+    {% for p in public_programmes %}
+    <article class="ux-programme-card {{'is-live' if p.status=='AVAILABLE' else 'is-soon'}} {{'is-active' if p.name==public_active_programme else ''}}">
+      <div class="ux-card-top"><span class="ux-status">{{'Available now' if p.status=='AVAILABLE' else 'Coming soon'}}</span>{% if p.name==public_active_programme %}<span class="ux-current">Selected</span>{% endif %}</div>
+      <h3>{{p.name}}</h3>
+      {% if p.subjects %}<p>{{p.subjects|join(' · ')}}</p>{% else %}<p>Programme content is being prepared.</p>{% endif %}
+      {% if p.status=='AVAILABLE' %}<a class="ux-card-link" href="{{url_for('register',role='student',programme=p.name)}}">Start {{p.name}} →</a>{% else %}<span class="ux-card-link muted">Coming soon</span>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="ux-how" aria-labelledby="howTitle">
+  <div class="ux-section-head compact"><p class="ux-kicker">HOW IT WORKS</p><h2 id="howTitle">Practice that tells you something useful.</h2></div>
+  <div class="ux-how-grid">
+    <article><span>1</span><h3>Check</h3><p>See what you already know and where the gaps really are.</p></article>
+    <article><span>2</span><h3>Focus</h3><p>Spend your time on the chapters and skills that need it most.</p></article>
+    <article><span>3</span><h3>Prove</h3><p>Move forward when fresh evidence shows that you have improved.</p></article>
+  </div>
+</section>
+
+<section class="ux-spark" aria-labelledby="sparkTitle">
+  <div><p class="ux-kicker">DAILY SPARK</p><h2 id="sparkTitle">One small learning win today.</h2><p>Build momentum with a quick idea, word or challenge before you start studying.</p></div>
+  <div class="ux-spark-word"><small>{{public_spark.pronunciation}}</small><strong>{{public_spark.word}}</strong><span>{{public_spark.definition}}</span></div>
+</section>
+
+<section class="ux-final-cta"><p class="ux-kicker">READY WHEN YOU ARE</p><h2>Start with where you are. Build toward where you want to be.</h2><a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}">Create free account</a></section>
+{% endblock %}
