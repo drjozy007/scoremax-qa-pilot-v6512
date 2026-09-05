@@ -12,8 +12,8 @@
   <span class="ux-programme-rail-label">PREPARING FOR</span>
   <a class="ux-programme-tab {{'interest' if ns.mdcat!='AVAILABLE' else ''}}" href="{{url_for('register',role='student',programme='MDCAT') if ns.mdcat=='AVAILABLE' else url_for('ux_register_interest',programme='MDCAT')}}">MDCAT</a>
   <a class="ux-programme-tab interest" href="{{url_for('ux_register_interest',programme='ECAT')}}">ECAT</a>
-  <a class="ux-programme-tab {{'interest' if ns.fsc1!='AVAILABLE' and ns.fsc2!='AVAILABLE' else ''}}" href="{{'#choose-programme' if ns.fsc1=='AVAILABLE' or ns.fsc2=='AVAILABLE' else url_for('ux_register_interest',programme='FSc')}}">FSc</a>
-  <a class="ux-programme-tab {{'interest' if ns.g9!='AVAILABLE' and ns.g10!='AVAILABLE' else ''}}" href="{{'#choose-programme' if ns.g9=='AVAILABLE' or ns.g10=='AVAILABLE' else url_for('ux_register_interest',programme='Matric')}}">Matric</a>
+  <a class="ux-programme-tab {{'interest' if ns.fsc1!='AVAILABLE' and ns.fsc2!='AVAILABLE' else ''}}" href="{{url_for('register',role='student',programme='FSc Part 1') if ns.fsc1=='AVAILABLE' or ns.fsc2=='AVAILABLE' else url_for('ux_register_interest',programme='FSc')}}">FSc</a>
+  <a class="ux-programme-tab {{'interest' if ns.g9!='AVAILABLE' and ns.g10!='AVAILABLE' else ''}}" href="{{url_for('register',role='student',programme='Grade 9') if ns.g9=='AVAILABLE' or ns.g10=='AVAILABLE' else url_for('ux_register_interest',programme='Matric')}}">Matric</a>
   <a class="ux-programme-tab interest" href="{{url_for('ux_register_interest',programme='Other ScoreMax programme')}}">More programmes</a>
 </nav>
 
@@ -40,7 +40,7 @@
     <p class="ux-lead" data-ux-edit-key="hero.lead">ScoreMax turns practice into a clear path from your first attempt to exam-ready confidence.</p>
     <div class="ux-hero-actions">
       <a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}" data-ux-edit-key="hero.primaryCta">Start free</a>
-      <a class="ux-btn ux-btn-secondary" href="#choose-programme" data-ux-edit-key="hero.secondaryCta">Choose my programme</a>
+      <a class="ux-btn ux-btn-secondary" href="#scoremax-features" data-ux-edit-key="hero.secondaryCta">Explore ScoreMax</a>
     </div>
     <div class="ux-proof-row" aria-label="ScoreMax benefits">
       <span data-ux-edit-key="hero.benefit1">✓ Find weak areas</span><span data-ux-edit-key="hero.benefit2">✓ Build mastery</span><span data-ux-edit-key="hero.benefit3">✓ Track real progress</span>
@@ -59,26 +59,25 @@
   </div>
 </section>
 
-<section id="choose-programme" class="ux-programmes" aria-labelledby="programmeTitle">
+<section id="scoremax-features" class="ux-features" aria-labelledby="featuresTitle">
   <div class="ux-section-head compact">
-    <p class="ux-kicker" data-ux-edit-key="programmes.kicker">PROGRAMMES</p>
-    <h2 id="programmeTitle" data-ux-edit-key="programmes.title">Choose the route you are preparing for.</h2>
-    <p>Every route has a next action. If it is not live yet, join the launch list.</p>
+    <p class="ux-kicker">BUILT AROUND YOUR PROGRESS</p>
+    <h2 id="featuresTitle">The tools that move you forward.</h2>
+    <p>ScoreMax brings the most useful parts of exam preparation into one connected learning journey.</p>
   </div>
-  <div class="ux-programme-grid">
-    {% for p in public_programmes %}
-    <article class="ux-programme-card {{'is-live' if p.status=='AVAILABLE' else 'is-interest'}} {{'is-active' if p.name==public_active_programme else ''}}">
-      <div class="ux-card-top"><span class="ux-status">{{'Available now' if p.status=='AVAILABLE' else 'Register interest'}}</span>{% if p.name==public_active_programme %}<span class="ux-current">Selected</span>{% endif %}</div>
-      <h3>{{p.name}}</h3>
-      {% if p.subjects %}<p>{{p.subjects|join(' · ')}}</p>{% else %}<p>Tell us you are interested and we will use demand to help prioritise the launch.</p>{% endif %}
-      {% if p.status=='AVAILABLE' %}<a class="ux-card-link" href="{{url_for('register',role='student',programme=p.name)}}">Start {{p.name}} →</a>{% else %}<a class="ux-card-link" href="{{url_for('ux_register_interest',programme=p.name)}}">Register interest →</a>{% endif %}
-    </article>
-    {% endfor %}
-    <article class="ux-programme-card is-interest">
-      <div class="ux-card-top"><span class="ux-status">Register interest</span></div>
-      <h3>ECAT</h3><p>Engineering-entry preparation is part of the ScoreMax expansion plan.</p>
-      <a class="ux-card-link" href="{{url_for('ux_register_interest',programme='ECAT')}}">Register interest →</a>
-    </article>
+  <div class="ux-feature-grid">
+    <article class="ux-feature-card"><span class="ux-feature-index">01</span><h3>Mastery</h3><p>See what you have genuinely mastered and what level you are working toward.</p></article>
+    <article class="ux-feature-card"><span class="ux-feature-index">02</span><h3>Weak Areas</h3><p>Find the chapters, topics and skills that are holding your score back.</p></article>
+    <article class="ux-feature-card"><span class="ux-feature-index">03</span><h3>Practice</h3><p>Target practice where it matters instead of working through questions at random.</p></article>
+    <article class="ux-feature-card"><span class="ux-feature-index">04</span><h3>Past Papers</h3><p>Prepare with exam-style and past-paper practice organised around your needs.</p></article>
+    <article class="ux-feature-card"><span class="ux-feature-index">05</span><h3>Mock Exams</h3><p>Use timed mock exams to test performance under realistic exam conditions.</p></article>
+    <article class="ux-feature-card"><span class="ux-feature-index">06</span><h3>Study Plan</h3><p>Turn your evidence into a clear next-action plan for what to study next.</p></article>
+    <article class="ux-feature-card"><span class="ux-feature-index">07</span><h3>Progress</h3><p>Track improvement over time and see whether your work is actually changing outcomes.</p></article>
+    <article class="ux-feature-card"><span class="ux-feature-index">08</span><h3>Exam Centre</h3><p>Bring exam preparation, timed assessment and readiness evidence into one place.</p></article>
+    <details id="daily-spark" class="ux-feature-card ux-feature-spark">
+      <summary><span class="ux-feature-index">09</span><span><strong>Daily Spark</strong><small>A quick daily learning boost. Open today’s Spark.</small></span></summary>
+      <div class="ux-feature-spark-detail"><small>{{public_spark.pronunciation}}</small><strong>{{public_spark.word}}</strong><p>{{public_spark.definition}}</p></div>
+    </details>
   </div>
 </section>
 
@@ -107,11 +106,6 @@
     <article class="ux-impact-card"><p class="ux-kicker">NOMINATE</p><h3>Nominate a school</h3><p>Students, teachers, parents and communities can tell us which schools or colleges should be considered for future improvement projects.</p><a href="{{url_for('ux_nominate_school')}}">Nominate a school →</a></article>
     <article class="ux-impact-card"><p class="ux-kicker">SUPPORT</p><h3>Help improve education</h3><p>People will be able to support selected education and school-improvement work. Donations will open only after the payment, accounting and fund-handling arrangements are fully governed.</p><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Register as a supporter →</a></article>
   </div>
-</section>
-
-<section class="ux-spark" aria-labelledby="sparkTitle">
-  <div><p class="ux-kicker" data-ux-edit-key="spark.kicker">DAILY SPARK</p><h2 id="sparkTitle" data-ux-edit-key="spark.title">One small learning win today.</h2><p data-ux-edit-key="spark.copy">Build momentum with a quick idea, word or challenge before you start studying.</p></div>
-  <div class="ux-spark-word"><small>{{public_spark.pronunciation}}</small><strong>{{public_spark.word}}</strong><span>{{public_spark.definition}}</span></div>
 </section>
 
 <section class="ux-final-cta"><p class="ux-kicker" data-ux-edit-key="final.kicker">READY WHEN YOU ARE</p><h2 data-ux-edit-key="final.title">Start with where you are. Build toward where you want to be.</h2><a class="ux-btn ux-btn-primary" href="{{url_for('register',role='student',programme=public_active_programme)}}" data-ux-edit-key="final.cta">Create free account</a></section>
