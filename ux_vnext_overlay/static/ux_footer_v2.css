@@ -36,3 +36,18 @@
 @media(max-width:1050px){.ux-public-sitemap-inner{grid-template-columns:1.4fr repeat(3,1fr);row-gap:24px}.ux-footer-brand{grid-row:span 2}}
 @media(max-width:720px){.ux-public-sitemap{padding:26px 18px 28px}.ux-public-sitemap-inner{grid-template-columns:1fr 1fr;gap:22px 20px}.ux-footer-brand{grid-column:1/-1;grid-row:auto;padding-right:0}.ux-footer-brand p{max-width:360px}.ux-footer-bottom{align-items:flex-start;flex-direction:column;gap:8px}}
 @media(max-width:430px){.ux-public-sitemap-inner{grid-template-columns:1fr}.ux-footer-brand{grid-column:auto}.ux-footer-col a{margin-bottom:8px}}
+
+/* Hero headline: keep the two intended statements on two clean desktop lines. */
+@media (min-width:981px){
+  .ux-hero{grid-template-columns:1.14fr .86fr!important;gap:44px!important}
+  .ux-hero h1{font-size:clamp(2.85rem,3.75vw,3.5rem)!important;line-height:1.03!important;letter-spacing:-.045em!important;max-width:none!important}
+  .ux-hero h1 span{white-space:nowrap!important}
+  .ux-hero-copy{padding-right:0!important}
+}
+@media (min-width:981px) and (max-width:1120px){
+  .ux-hero{grid-template-columns:1.16fr .84fr!important;gap:34px!important}
+  .ux-hero h1{font-size:2.75rem!important}
+}
+@media (max-width:980px){
+  .ux-hero h1 span{white-space:normal!important}
+}
