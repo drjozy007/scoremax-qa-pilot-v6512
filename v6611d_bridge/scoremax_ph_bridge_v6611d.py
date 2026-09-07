@@ -196,13 +196,14 @@ def admit_withdrawal_envelope(c, envelope, content_sha_header=''):
       'export_public_id':export_id,
       'population_sha256':pop,
       'items':results,
+      'historical_attempts_preserved':True,
       'scoremax_release':RELEASE,
       'release_authority_conferred':False,
     }
     idem='withdrawal-ack::'+export_id+'::'+pop
     env=i._envelope(WITHDRAWAL_ACK,'POWER_HOUSE',idem,export_id,ack_payload,RELEASE,'INTERNAL')
     ack_msg=i._queue(c,env,export_id,'PH_WITHDRAWAL_EXPORT',export_id)
-    receipt_sha=_sha_text(i.canonical_json({'export_public_id':export_id,'population_sha256':pop,'items':results}))
+    receipt_sha=_sha_text(i.canonical_json({'export_public_id':export_id,'population_sha256':pop,'items':results,'historical_attempts_preserved':True}))
     c.execute('''INSERT INTO ph_bridge_withdrawal_receipts_v6611d(export_public_id,population_sha256,inbound_message_id,item_count,ack_message_id,receipt_sha256,created_at)
                  VALUES(?,?,?,?,?,?,?)''',(export_id,pop,str(envelope.get('message_id') or ''),len(items),ack_msg,receipt_sha,i.utcnow()))
     rec=i._receipt(c,envelope,'ACCEPTED'); c.commit(); return rec,202
