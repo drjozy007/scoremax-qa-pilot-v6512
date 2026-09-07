@@ -142,6 +142,7 @@ def test_withdrawal_stops_future_delivery_and_preserves_history(tmp_path):
     q2=c.execute("SELECT active,status FROM questions WHERE id=?",(q['id'],)).fetchone(); assert q2['active']==0 and q2['status']=='Withdrawn'
     assert c.execute('SELECT COUNT(*) n FROM attempts').fetchone()['n']==before_attempts and c.execute('SELECT COUNT(*) n FROM attempt_answers').fetchone()['n']==before_answers
     ack=json.loads(c.execute("SELECT envelope_json FROM integration_outbox WHERE contract_name=?",(bridge.WITHDRAWAL_ACK,)).fetchone()['envelope_json'])['payload']
+    assert ack['historical_attempts_preserved'] is True
     assert ack['items'][0]['state']=='WITHDRAWN' and ack['items'][0]['historical_attempts_preserved'] is True and ack['release_authority_conferred'] is False
     c.close()
 
@@ -160,5 +161,6 @@ def test_unknown_withdrawal_returns_not_present(tmp_path):
     rec,status=bridge.admit_withdrawal_envelope(c,env,env['payload_checksum_sha256'])
     assert status==202 and rec['status']=='ACCEPTED'
     out=json.loads(c.execute("SELECT envelope_json FROM integration_outbox WHERE contract_name=?",(bridge.WITHDRAWAL_ACK,)).fetchone()['envelope_json'])
+    assert out['payload']['historical_attempts_preserved'] is True
     assert out['payload']['items'][0]['state']=='NOT_PRESENT'
     c.close()
