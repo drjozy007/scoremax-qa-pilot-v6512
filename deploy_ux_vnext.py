@@ -44,6 +44,7 @@ def main() -> None:
         "static/ux_vnext.css",
         "static/ux_header_fix.css",
         "static/ux_structure_v2.css",
+        "static/ux_footer_v2.css",
         "static/ux_text_editor.js",
         "ux_staging_routes.py",
     ):
@@ -58,6 +59,7 @@ def main() -> None:
         + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_vnext.css\')}}">'
         + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_header_fix.css\')}}">'
         + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_structure_v2.css\')}}">'
+        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_footer_v2.css\')}}">'
     )
     if marker not in text:
         raise SystemExit("UX_VNEXT_BASE_STYLESHEET_MARKER_MISSING")
@@ -69,20 +71,31 @@ def main() -> None:
         raise SystemExit("UX_VNEXT_BRAND_MARKER_MISSING")
     text = text.replace(old_brand, new_brand, 1)
 
-    desktop_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('index')}}#impact">Our 10% Commitment</a><a href="{{url_for('ux_nominate_school')}}">Nominate a School</a><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Support Education</a></div></details><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>'''
-    mobile_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><p class="mobile-menu-label">Get Involved</p><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('index')}}#impact">Our 10% Commitment</a><a href="{{url_for('ux_nominate_school')}}">Nominate a School</a><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Support Education</a><p class="mobile-menu-label">Explore</p><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>'''
+    desktop_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a></div></details><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>'''
+    mobile_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><p class="mobile-menu-label">Get Involved</p><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><p class="mobile-menu-label">Impact</p><a href="{{url_for('index')}}#impact">ScoreMax Impact</a><a href="{{url_for('ux_nominate_school')}}">Nominate a School</a><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Support Education</a><p class="mobile-menu-label">Explore</p><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>'''
 
     text = replace_public_nav_pair(text, desktop_nav, mobile_nav)
 
     desktop_segment = text[text.find('<nav class="desktop-nav"'):text.find('</nav>', text.find('<nav class="desktop-nav"'))]
     if desktop_segment.count('>About Us</a>') != 1:
         raise SystemExit("UX_VNEXT_DESKTOP_ABOUT_DUPLICATE")
-    for required_nav in ("Science Genius of the Year", "Teacher of the Year", "Get Involved"):
+    for required_nav in ("Science Genius of the Year", "Teacher of the Year", "Get Involved", "Impact"):
         if required_nav not in desktop_segment:
             raise SystemExit("UX_VNEXT_REQUIRED_TOP_NAV_MISSING:" + required_nav)
 
     script_marker = '<button id="backTop" class="back-top" aria-label="Back to top" title="Back to top">↑</button>'
-    script_inject = script_marker + '\n{% if not session.get(\'user_id\') and request.endpoint == \'index\' %}<script src="{{url_for(\'static\',filename=\'ux_text_editor.js\')}}"></script>{% endif %}'
+    footer = '''{% if not session.get('user_id') and request.endpoint == 'index' %}
+<section class="ux-public-sitemap" aria-label="ScoreMax site links"><div class="ux-public-sitemap-inner">
+  <div class="ux-footer-brand"><a class="ux-footer-brand-lockup" href="{{url_for('index')}}"><span class="ux-footer-mini-mark" aria-hidden="true"></span><span>ScoreMax</span></a><p>Smarter practice, clearer progress and a better route to exam readiness.</p></div>
+  <nav class="ux-footer-col" aria-label="Explore"><h3>Explore</h3><a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a></nav>
+  <nav class="ux-footer-col" aria-label="Programmes"><h3>Programmes</h3><a href="{{url_for('ux_register_interest',programme='MDCAT')}}">MDCAT</a><a href="{{url_for('ux_register_interest',programme='ECAT')}}">ECAT</a><a href="{{url_for('ux_register_interest',programme='FSc')}}">FSc</a><a href="{{url_for('ux_register_interest',programme='Matric')}}">Matric</a></nav>
+  <nav class="ux-footer-col" aria-label="Community"><h3>Community</h3><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a></nav>
+  <nav class="ux-footer-col" aria-label="Impact"><h3>Impact</h3><a href="{{url_for('index')}}#impact">ScoreMax Impact</a><a href="{{url_for('ux_nominate_school')}}">Nominate a School</a><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Support Education</a></nav>
+  <nav class="ux-footer-col" aria-label="Resources"><h3>Resources</h3><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a></nav>
+  <nav class="ux-footer-col" aria-label="Account"><h3>Account</h3><a href="{{url_for('login')}}">Login</a><a class="ux-footer-primary" href="{{url_for('register',role='student')}}">Start Free</a></nav>
+</div><div class="ux-footer-bottom"><span>© ScoreMax</span><div class="ux-footer-bottom-links"><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('about_page')}}">About</a></div></div></section>
+{% endif %}'''
+    script_inject = footer + '\n' + script_marker + '\n{% if not session.get(\'user_id\') and request.endpoint == \'index\' %}<script src="{{url_for(\'static\',filename=\'ux_text_editor.js\')}}"></script>{% endif %}'
     if script_marker not in text:
         raise SystemExit("UX_VNEXT_TEXT_EDITOR_SCRIPT_MARKER_MISSING")
     text = text.replace(script_marker, script_inject, 1)
@@ -126,7 +139,7 @@ def main() -> None:
     if "Choose the route you are preparing for." in landing:
         raise SystemExit("UX_VNEXT_REMOVED_PROGRAMME_SECTION_STILL_PRESENT")
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=flagship_tabs larger_nav=true get_involved=expanded feature_showcase=true daily_spark_collapsed=true")
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true")
 
 
 if __name__ == "__main__":
