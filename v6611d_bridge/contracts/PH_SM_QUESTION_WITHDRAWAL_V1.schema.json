@@ -1,0 +1,22 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object","additionalProperties":false,
+  "required":["message_id","contract_name","contract_version","schema_version","source_system","destination_system","occurred_at","sent_at","correlation_id","idempotency_key","producer_version","retry_of_message_id","payload_checksum_sha256","data_classification","payload"],
+  "properties":{
+    "message_id":{"type":"string","minLength":1,"maxLength":255},"contract_name":{"const":"PH_SM_QUESTION_WITHDRAWAL_V1"},"contract_version":{"const":"1"},"schema_version":{"const":"1.0.0"},
+    "source_system":{"const":"POWER_HOUSE"},"destination_system":{"const":"SCOREMAX"},"occurred_at":{"type":"string","format":"date-time"},"sent_at":{"type":"string","format":"date-time"},
+    "correlation_id":{"type":"string","minLength":1,"maxLength":255},"idempotency_key":{"type":"string","minLength":1,"maxLength":500},"producer_version":{"type":"string","minLength":1,"maxLength":100},
+    "retry_of_message_id":{"type":["string","null"],"maxLength":255},"payload_checksum_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"data_classification":{"const":"INTERNAL"},
+    "payload":{"type":"object","additionalProperties":false,"required":["export_public_id","population_sha256","items","release_authority_conferred"],
+      "properties":{
+        "export_public_id":{"type":"string","minLength":1,"maxLength":255},"population_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"release_authority_conferred":{"const":false},
+        "items":{"type":"array","minItems":1,"maxItems":5000,"items":{"type":"object","additionalProperties":false,
+          "required":["item_public_id","withdrawal_queue_id","question_public_id","question_version_fingerprint","hold_id","defect_code","reason","requested_action","historical_attempts_must_be_preserved","item_sha256"],
+          "properties":{
+            "item_public_id":{"type":"string","minLength":1,"maxLength":255},"withdrawal_queue_id":{"type":["integer","string"]},"question_public_id":{"type":"string","minLength":1,"maxLength":255},
+            "question_version_fingerprint":{"type":"string","maxLength":255},"hold_id":{"type":["integer","string"]},"defect_code":{"type":"string","minLength":1,"maxLength":255},"reason":{"type":"string","minLength":1,"maxLength":4000},
+            "requested_action":{"const":"STOP_FUTURE_DELIVERY_PRESERVE_HISTORICAL_ATTEMPTS"},"historical_attempts_must_be_preserved":{"const":true},"item_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}
+          }}}
+      }}
+  }
+}

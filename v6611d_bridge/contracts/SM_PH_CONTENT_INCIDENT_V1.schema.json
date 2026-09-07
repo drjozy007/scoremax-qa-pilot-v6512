@@ -1,0 +1,31 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object","additionalProperties":false,
+  "required":["message_id","contract_name","contract_version","schema_version","source_system","destination_system","occurred_at","sent_at","correlation_id","idempotency_key","producer_version","retry_of_message_id","payload_checksum_sha256","data_classification","payload"],
+  "properties":{
+    "message_id":{"type":"string","minLength":1,"maxLength":255},
+    "contract_name":{"const":"SM_PH_CONTENT_INCIDENT_V1"},"contract_version":{"const":"1"},"schema_version":{"const":"1.0.0"},
+    "source_system":{"const":"SCOREMAX"},"destination_system":{"const":"POWER_HOUSE"},
+    "occurred_at":{"type":"string","format":"date-time"},"sent_at":{"type":"string","format":"date-time"},
+    "correlation_id":{"type":"string","minLength":1,"maxLength":255},"idempotency_key":{"type":"string","minLength":1,"maxLength":500},
+    "producer_version":{"type":"string","minLength":1,"maxLength":100},"retry_of_message_id":{"type":["string","null"],"maxLength":255},
+    "payload_checksum_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"data_classification":{"const":"INTERNAL"},
+    "payload":{"type":"object","additionalProperties":false,
+      "required":["incident_id","scoremax_feedback_code","category","severity","description","source","page_path","question","reporter_identity_included","student_pii_included","release_authority_conferred"],
+      "properties":{
+        "incident_id":{"type":"string","minLength":1,"maxLength":255},"scoremax_feedback_code":{"type":"string","minLength":1,"maxLength":255},
+        "category":{"type":"string","minLength":1,"maxLength":120},"severity":{"enum":["LOW","MEDIUM","HIGH","CRITICAL"]},
+        "description":{"type":"string","minLength":12,"maxLength":4000},"source":{"type":"string","maxLength":80},"page_path":{"type":"string","maxLength":500},
+        "question":{"type":"object","additionalProperties":false,
+          "required":["question_id","question_version_id","question_checksum_sha256","release_id","release_version","release_checksum_sha256","market_id","programme_id","subject_id","chapter_id","rendered_question_sha256"],
+          "properties":{
+            "question_id":{"type":"string","minLength":1,"maxLength":255},"question_version_id":{"type":"string","minLength":1,"maxLength":255},
+            "question_checksum_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"release_id":{"type":"string","minLength":1,"maxLength":255},
+            "release_version":{"type":"string","minLength":1,"maxLength":255},"release_checksum_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+            "market_id":{"type":"string","maxLength":255},"programme_id":{"type":"string","maxLength":255},"subject_id":{"type":"string","maxLength":255},"chapter_id":{"type":"string","maxLength":255},
+            "rendered_question_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}
+          }},
+        "reporter_identity_included":{"const":false},"student_pii_included":{"const":false},"release_authority_conferred":{"const":false}
+      }}
+  }
+}
