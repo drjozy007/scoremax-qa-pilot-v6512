@@ -2,7 +2,6 @@
 .site-header>.brand.ux-brand{display:inline-flex!important;align-items:center!important;gap:8px!important;text-decoration:none!important;color:#0f172a!important;min-width:max-content!important}
 .ux-brand-mark{width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:flex-end;justify-content:center;gap:3px;padding:7px 6px;background:linear-gradient(145deg,#2563eb 0%,#5b5cf0 55%,#7c3aed 100%);box-shadow:0 7px 18px rgba(37,99,235,.2);position:relative;overflow:hidden;flex:0 0 auto}.ux-brand-mark:after{content:"";position:absolute;width:26px;height:26px;border:1px solid rgba(255,255,255,.22);border-radius:50%;right:-9px;top:-10px}.ux-brand-bar{display:block;width:4px;border-radius:3px 3px 1px 1px;background:#fff;position:relative;z-index:1}.ux-brand-bar:nth-child(1){height:8px;opacity:.82}.ux-brand-bar:nth-child(2){height:12px;opacity:.92}.ux-brand-bar:nth-child(3){height:17px}.ux-brand-name{display:inline-flex;align-items:baseline;letter-spacing:-.045em;font-size:1.34rem;line-height:1;font-weight:900;white-space:nowrap}.ux-brand-score{color:#0f172a}.ux-brand-max{margin-left:1px;background:linear-gradient(90deg,#2563eb,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* Desktop/laptop: brand row first, readable main navigation on its own full-width row. */
 @media (min-width: 901px){
   .site-header{display:grid!important;grid-template-columns:1fr auto!important;grid-template-rows:auto auto!important;align-items:center!important;gap:7px 16px!important;padding:9px 18px 8px!important}
   .site-header>.brand{grid-column:1!important;grid-row:1!important;position:static!important;inset:auto!important;transform:none!important;display:inline-flex!important;width:max-content!important;min-width:max-content!important;max-width:none!important;margin:0!important;white-space:nowrap!important;line-height:1!important;z-index:2!important}
@@ -13,7 +12,6 @@
   .site-header>.desktop-nav .nav-cta{padding:8px 13px!important}
 }
 
-/* Mobile/tablet: use the menu. */
 @media (max-width:900px){
   .site-header{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:16px!important;padding:10px 16px!important}
   .site-header>.brand{position:static!important;inset:auto!important;transform:none!important;width:max-content!important;min-width:max-content!important;margin:0!important;white-space:nowrap!important;line-height:1!important}
@@ -22,7 +20,6 @@
 }
 @media (max-width:420px){.ux-brand-mark{width:30px;height:30px;border-radius:9px;padding:6px 5px}.ux-brand-name{font-size:1.2rem}}
 
-/* Hero refinement: premium scale, less decorative UI, more product clarity. */
 @media (min-width:981px){
   .ux-hero{grid-template-columns:1.08fr .92fr!important;gap:54px!important;align-items:center!important;padding-top:34px!important;padding-bottom:58px!important}
   .ux-hero-copy{padding-right:8px}
@@ -48,7 +45,6 @@
 @media (max-width:980px){.ux-hero h1{font-size:clamp(2.7rem,8vw,3.8rem)!important;max-width:650px!important}.ux-intelligence{min-height:410px!important}}
 @media (max-width:640px){.ux-hero h1{font-size:2.55rem!important;line-height:1.02!important}.ux-intelligence{min-height:360px!important}.ux-node{padding:6px 8px!important}.ux-node b{width:23px!important;height:23px!important}.ux-signal-card{width:78%!important;padding:11px 13px!important}}
 
-/* Feature showcase refinement: denser, faster to scan, less card-heavy. */
 .ux-features{padding-top:42px!important;padding-bottom:50px!important}
 .ux-features .ux-section-head.compact{margin-bottom:20px!important}
 .ux-features .ux-section-head.compact h2{font-size:clamp(1.85rem,3vw,2.75rem)!important}
@@ -74,3 +70,27 @@
 @media (max-width:1100px){.ux-feature-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media (max-width:900px){.ux-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media (max-width:640px){.ux-features{padding-top:36px!important;padding-bottom:42px!important}.ux-feature-grid{grid-template-columns:1fr!important;gap:9px!important}.ux-feature-card,.ux-feature-spark summary{min-height:0!important}.ux-feature-card{padding:14px 15px!important}}
+
+/* Compact How It Works: slim premium process strip. */
+.ux-how{padding-top:34px!important;padding-bottom:42px!important}
+.ux-how .ux-section-head.compact{margin-bottom:16px!important}
+.ux-how .ux-section-head.compact h2{font-size:clamp(1.75rem,2.8vw,2.5rem)!important}
+.ux-how-grid{gap:10px!important}
+.ux-how-grid article{padding:16px 18px!important;border-radius:16px!important;background:linear-gradient(180deg,#fbfdff,#f8fafc)!important;display:grid!important;grid-template-columns:34px 1fr!important;grid-template-rows:auto auto!important;column-gap:12px!important;align-items:center!important;box-shadow:0 6px 18px rgba(15,23,42,.03)!important}
+.ux-how-grid article>span{grid-row:1/3!important;width:32px!important;height:32px!important;border-radius:10px!important;font-size:.78rem!important}
+.ux-how-grid h3{font-size:1rem!important;margin:0 0 3px!important}
+.ux-how-grid p{font-size:.82rem!important;line-height:1.4!important;margin:0!important}
+
+/* Compact Get Involved: lighter cards, less vertical real estate. */
+.ux-involved{padding-top:38px!important;padding-bottom:44px!important}
+.ux-involved .ux-section-head.compact{margin-bottom:18px!important}
+.ux-involved .ux-section-head.compact h2{font-size:clamp(1.8rem,2.9vw,2.55rem)!important}
+.ux-involved .ux-section-head.compact>p:last-child{font-size:.92rem!important;line-height:1.45!important}
+.ux-engagement-grid{gap:10px!important}
+.ux-engagement-card{min-height:158px!important;padding:17px 18px!important;border-radius:18px!important;box-shadow:0 8px 22px rgba(15,23,42,.04)!important}
+.ux-engagement-card .eyebrow{font-size:.65rem!important;letter-spacing:.11em!important;margin-bottom:9px!important}
+.ux-engagement-card h3{font-size:1.08rem!important;margin:0 0 6px!important}
+.ux-engagement-card p{font-size:.82rem!important;line-height:1.42!important;margin:0 0 12px!important}
+.ux-engagement-card a{font-size:.82rem!important}
+@media(max-width:900px){.ux-how-grid{grid-template-columns:1fr!important}.ux-engagement-card{min-height:0!important}}
+@media(max-width:640px){.ux-how{padding-top:30px!important;padding-bottom:36px!important}.ux-involved{padding-top:32px!important;padding-bottom:38px!important}.ux-how-grid article{padding:14px 15px!important}.ux-engagement-card{padding:15px 16px!important}}
