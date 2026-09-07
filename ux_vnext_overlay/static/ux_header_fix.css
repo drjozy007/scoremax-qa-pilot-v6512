@@ -59,7 +59,6 @@
 .ux-feature-card p{font-size:.82rem!important;line-height:1.42!important}
 .ux-feature-spark{padding:0!important}
 .ux-feature-spark summary{min-height:130px!important;padding:15px 16px!important;gap:10px!important}
-.ux-feature-spark summary .ux-feature-index{margin-bottom:0!important}
 .ux-feature-spark summary span:last-child{gap:5px!important}
 .ux-feature-spark summary strong{font-size:1.04rem!important;line-height:1.2!important}
 .ux-feature-spark summary small{font-size:.82rem!important;line-height:1.42!important}
@@ -71,7 +70,6 @@
 @media (max-width:900px){.ux-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media (max-width:640px){.ux-features{padding-top:36px!important;padding-bottom:42px!important}.ux-feature-grid{grid-template-columns:1fr!important;gap:9px!important}.ux-feature-card,.ux-feature-spark summary{min-height:0!important}.ux-feature-card{padding:14px 15px!important}}
 
-/* Compact How It Works: slim premium process strip. */
 .ux-how{padding-top:34px!important;padding-bottom:42px!important}
 .ux-how .ux-section-head.compact{margin-bottom:16px!important}
 .ux-how .ux-section-head.compact h2{font-size:clamp(1.75rem,2.8vw,2.5rem)!important}
@@ -81,7 +79,6 @@
 .ux-how-grid h3{font-size:1rem!important;margin:0 0 3px!important}
 .ux-how-grid p{font-size:.82rem!important;line-height:1.4!important;margin:0!important}
 
-/* Compact Get Involved: lighter cards, less vertical real estate. */
 .ux-involved{padding-top:38px!important;padding-bottom:44px!important}
 .ux-involved .ux-section-head.compact{margin-bottom:18px!important}
 .ux-involved .ux-section-head.compact h2{font-size:clamp(1.8rem,2.9vw,2.55rem)!important}
@@ -92,5 +89,18 @@
 .ux-engagement-card h3{font-size:1.08rem!important;margin:0 0 6px!important}
 .ux-engagement-card p{font-size:.82rem!important;line-height:1.42!important;margin:0 0 12px!important}
 .ux-engagement-card a{font-size:.82rem!important}
-@media(max-width:900px){.ux-how-grid{grid-template-columns:1fr!important}.ux-engagement-card{min-height:0!important}}
-@media(max-width:640px){.ux-how{padding-top:30px!important;padding-bottom:36px!important}.ux-involved{padding-top:32px!important;padding-bottom:38px!important}.ux-how-grid article{padding:14px 15px!important}.ux-engagement-card{padding:15px 16px!important}}
+
+/* Compact ScoreMax Impact: premium panel, reduced height, stronger hierarchy. */
+.ux-impact{margin-top:8px!important;padding:36px 28px 38px!important;border-radius:24px!important;background:linear-gradient(135deg,#f8fbff 0%,#f8f7ff 100%)!important}
+.ux-impact .ux-section-head.compact{margin-bottom:18px!important}
+.ux-impact .ux-section-head.compact h2{font-size:clamp(1.85rem,2.9vw,2.55rem)!important}
+.ux-impact .ux-section-head.compact>p:last-child{font-size:.9rem!important;line-height:1.45!important;max-width:660px!important;margin-left:auto!important;margin-right:auto!important}
+.ux-impact-grid{grid-template-columns:1.2fr 1fr 1fr!important;gap:10px!important}
+.ux-impact-card{min-height:164px!important;padding:18px!important;border-radius:18px!important;box-shadow:0 8px 22px rgba(15,23,42,.035)!important}
+.ux-impact-card.primary{background:linear-gradient(145deg,#111827,#1d4ed8)!important;box-shadow:0 12px 30px rgba(30,64,175,.14)!important}
+.ux-impact-card .ux-kicker{font-size:.64rem!important;letter-spacing:.11em!important;margin-bottom:7px!important}
+.ux-impact-card h3{font-size:1.08rem!important;line-height:1.22!important;margin:0 0 7px!important}
+.ux-impact-card p{font-size:.81rem!important;line-height:1.42!important;margin:0 0 12px!important}
+.ux-impact-card a{font-size:.81rem!important}
+@media(max-width:900px){.ux-how-grid{grid-template-columns:1fr!important}.ux-engagement-card{min-height:0!important}.ux-impact-grid{grid-template-columns:1fr!important}.ux-impact-card{min-height:0!important}}
+@media(max-width:640px){.ux-how{padding-top:30px!important;padding-bottom:36px!important}.ux-involved{padding-top:32px!important;padding-bottom:38px!important}.ux-how-grid article{padding:14px 15px!important}.ux-engagement-card{padding:15px 16px!important}.ux-impact{padding:32px 18px 34px!important;border-radius:0!important}.ux-impact-card{padding:16px!important}}
