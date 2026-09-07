@@ -18,9 +18,37 @@ bridge=importlib.import_module('scoremax_ph_bridge_v6611d')
 bridge.install(integration)
 
 
+def _bootstrap_core_scoremax_schema(c):
+    """Minimal real-app core tables that integration.init_schema() additively extends."""
+    c.executescript('''
+      CREATE TABLE IF NOT EXISTS assessment_sessions(
+        id INTEGER PRIMARY KEY
+      );
+      CREATE TABLE IF NOT EXISTS attempts(
+        id INTEGER PRIMARY KEY,
+        student_id INTEGER
+      );
+      CREATE TABLE IF NOT EXISTS attempt_answers(
+        id INTEGER PRIMARY KEY,
+        attempt_id INTEGER,
+        question_db_id INTEGER,
+        selected_answer TEXT,
+        is_correct INTEGER
+      );
+      CREATE TABLE IF NOT EXISTS questions(
+        id INTEGER PRIMARY KEY,
+        question_id TEXT UNIQUE,
+        question TEXT DEFAULT '',
+        active INTEGER DEFAULT 1,
+        status TEXT DEFAULT 'Approved'
+      );
+    ''')
+
+
 def conn(tmp_path):
     c=sqlite3.connect(tmp_path/'bridge.db')
     c.row_factory=sqlite3.Row
+    _bootstrap_core_scoremax_schema(c)
     integration.init_schema(c)
     bridge.init_schema(c)
     return c
@@ -48,18 +76,9 @@ def envelope(contract, source, destination, payload, *, mid='MSG-1', idem='IDEM-
 
 
 def ensure_question_table(c):
-    c.executescript('''
-      CREATE TABLE IF NOT EXISTS questions(
-        id INTEGER PRIMARY KEY,
-        question_id TEXT UNIQUE,
-        question TEXT DEFAULT '',
-        active INTEGER DEFAULT 1,
-        status TEXT DEFAULT 'Approved'
-      );
-      CREATE TABLE IF NOT EXISTS attempts(id INTEGER PRIMARY KEY, student_id INTEGER, ph_release_pins_json TEXT DEFAULT '{}', ph_question_pins_json TEXT DEFAULT '{}');
-      CREATE TABLE IF NOT EXISTS attempt_answers(id INTEGER PRIMARY KEY, attempt_id INTEGER, question_db_id INTEGER, selected_answer TEXT, is_correct INTEGER);
-    ''')
-    integration.init_schema(c)
+    # conn() already bootstraps the real core table and integration.init_schema()
+    # adds all governed Power House projection columns.
+    assert c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='questions'").fetchone()
 
 
 def insert_release(c, rid='REL-1', ver='1', checksum='a'*64):
