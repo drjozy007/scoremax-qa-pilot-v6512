@@ -1,0 +1,38 @@
+/* ScoreMax UX vNext — balanced tools composition + complete public sitemap. Staging only. */
+
+/* Align the two lead feature panels and eight capability tiles to one 4-column rhythm. */
+@media (min-width:1001px){
+  .ux-feature-bento{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important}
+  .ux-feature-lead{grid-column:span 2!important}
+  .ux-tool-grid{display:contents!important}
+}
+@media (min-width:701px) and (max-width:1000px){
+  .ux-feature-bento{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .ux-feature-lead{grid-column:span 1!important}
+  .ux-tool-grid{display:contents!important}
+}
+@media (max-width:700px){
+  .ux-feature-bento{grid-template-columns:1fr!important}
+  .ux-feature-lead{grid-column:auto!important}
+  .ux-tool-grid{display:contents!important}
+}
+
+/* Complete public navigation at the foot of the landing page. */
+.ux-public-sitemap{max-width:1200px;margin:18px auto 0;padding:30px 28px 32px;border-top:1px solid #e6ebf3}
+.ux-public-sitemap-inner{display:grid;grid-template-columns:1.35fr repeat(5,1fr);gap:28px;align-items:start}
+.ux-footer-brand{padding-right:12px}
+.ux-footer-brand-lockup{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#0f172a;font-size:1.2rem;font-weight:900;letter-spacing:-.04em;margin-bottom:10px}
+.ux-footer-mini-mark{width:28px;height:28px;border-radius:9px;background:linear-gradient(145deg,#2563eb,#7c3aed);display:grid;place-items:center;box-shadow:0 7px 18px rgba(37,99,235,.14)}
+.ux-footer-mini-mark:before{content:'↗';color:#fff;font-size:.8rem;font-weight:900}
+.ux-footer-brand p{margin:0;max-width:220px;color:#64748b;font-size:.79rem;line-height:1.5}
+.ux-footer-col h3{margin:1px 0 10px;color:#334155;font-size:.69rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
+.ux-footer-col a{display:block;width:max-content;max-width:100%;margin:0 0 7px;color:#56657a;text-decoration:none;font-size:.8rem;line-height:1.35;font-weight:650;transition:.15s ease}
+.ux-footer-col a:hover,.ux-footer-col a:focus-visible{color:#2563eb;transform:translateX(1px)}
+.ux-footer-col .ux-footer-primary{color:#1d4ed8;font-weight:850}
+.ux-footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:24px;padding-top:16px;border-top:1px solid #edf1f6;color:#94a3b8;font-size:.72rem}
+.ux-footer-bottom-links{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ux-footer-bottom-links a{color:#64748b;text-decoration:none;font-weight:700}
+.ux-footer-bottom-links a:hover{color:#2563eb}
+@media(max-width:1050px){.ux-public-sitemap-inner{grid-template-columns:1.4fr repeat(3,1fr);row-gap:24px}.ux-footer-brand{grid-row:span 2}}
+@media(max-width:720px){.ux-public-sitemap{padding:26px 18px 28px}.ux-public-sitemap-inner{grid-template-columns:1fr 1fr;gap:22px 20px}.ux-footer-brand{grid-column:1/-1;grid-row:auto;padding-right:0}.ux-footer-brand p{max-width:360px}.ux-footer-bottom{align-items:flex-start;flex-direction:column;gap:8px}}
+@media(max-width:430px){.ux-public-sitemap-inner{grid-template-columns:1fr}.ux-footer-brand{grid-column:auto}.ux-footer-col a{margin-bottom:8px}}
