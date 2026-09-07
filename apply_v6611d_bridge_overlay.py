@@ -9,17 +9,46 @@ from pathlib import Path
 PARENT_TREE_SHA256='0d2d399dcb6a23591a00b05d827a00804094cc17f94a676494b285eca4c79e5a'
 MARKER='SM-PH-BRIDGE-V6611D-1'
 ROOT=Path(sys.argv[1] if len(sys.argv)>1 else 'scoremax_runtime_v669b').resolve()
-SRC=Path(__file__).resolve().parent/'v6611d_bridge'
+BASE=Path(__file__).resolve().parent
+SRC=BASE/'v6611d_bridge'
+PARENT_PATHS_FILE=BASE/'qualification/v6610f_runtime_paths.json'
+ADDED_11C={
+    'account_security_engine.py',
+    'production_startup_engine.py',
+    'simple_onboarding_engine.py',
+    'sqlite_mutation_engine.py',
+}
 
 
-def tree_sha(root: Path) -> str:
+def sha256_file(path: Path) -> str:
     h=hashlib.sha256()
-    for p in sorted(x for x in root.rglob('*') if x.is_file()):
-        rel=p.relative_to(root).as_posix().encode('utf-8')
-        data=p.read_bytes()
-        h.update(len(rel).to_bytes(8,'big')); h.update(rel)
-        h.update(len(data).to_bytes(8,'big')); h.update(data)
+    with path.open('rb') as fh:
+        for block in iter(lambda: fh.read(1024*1024),b''):
+            h.update(block)
     return h.hexdigest()
+
+
+def qualified_parent_paths() -> set[str]:
+    paths=set(json.loads(PARENT_PATHS_FILE.read_text(encoding='utf-8')))
+    paths.discard('README_SCOREMAX_V6_6_9B.md')
+    paths.discard('V6_6_9B_PACKAGE_MANIFEST.json')
+    paths.add('production_content_seed_policy.py')
+    paths.update(ADDED_11C)
+    return paths
+
+
+def qualified_digest(root: Path, paths: set[str]) -> str:
+    h=hashlib.sha256()
+    for rel in sorted(paths):
+        path=root/rel
+        if not path.is_file():
+            raise SystemExit(f'V6611D_PARENT_PATH_MISSING:{rel}')
+        h.update(f'{rel}\0{sha256_file(path)}\0{path.stat().st_size}\n'.encode())
+    return h.hexdigest()
+
+
+def full_runtime_digest(root: Path) -> str:
+    return qualified_digest(root,{p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()})
 
 
 def replace_once(path: Path, old: str, new: str):
@@ -32,7 +61,12 @@ def replace_once(path: Path, old: str, new: str):
 
 if not ROOT.exists():
     raise SystemExit('V6611D_RUNTIME_ROOT_MISSING')
-actual_parent=tree_sha(ROOT)
+parent_paths=qualified_parent_paths()
+actual_paths={p.relative_to(ROOT).as_posix() for p in ROOT.rglob('*') if p.is_file()}
+if actual_paths!=parent_paths:
+    missing=sorted(parent_paths-actual_paths); extra=sorted(actual_paths-parent_paths)
+    raise SystemExit(f'V6611D_PARENT_PATH_SET_MISMATCH missing={missing[:8]} extra={extra[:8]}')
+actual_parent=qualified_digest(ROOT,parent_paths)
 if actual_parent!=PARENT_TREE_SHA256:
     raise SystemExit(f'V6611D_PARENT_TREE_SHA_MISMATCH expected={PARENT_TREE_SHA256} actual={actual_parent}')
 
@@ -91,5 +125,5 @@ marker={
   'cross_system_calls_on_learner_request':False,
 }
 (ROOT/'V6611D_PH_BRIDGE_MARKER.json').write_text(json.dumps(marker,sort_keys=True,indent=2)+'\n',encoding='utf-8')
-final_sha=tree_sha(ROOT)
+final_sha=full_runtime_digest(ROOT)
 print(f'V6611D_BRIDGE_OVERLAY_APPLIED marker={MARKER} parent_tree_sha256={PARENT_TREE_SHA256} runtime_tree_sha256={final_sha} release=6.6.11D')
