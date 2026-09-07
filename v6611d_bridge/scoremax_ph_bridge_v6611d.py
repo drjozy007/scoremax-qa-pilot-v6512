@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+from urllib.parse import urlsplit
 
 MARKER='SM-PH-BRIDGE-V6611D-1'
 RELEASE='6.6.11D'
@@ -62,6 +64,23 @@ def _sha_text(value):
     return hashlib.sha256(str(value).encode('utf-8')).hexdigest()
 
 
+def _redact_free_text(value, limit=4000):
+    text=str(value or '')[:limit]
+    text=re.sub(r'(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b','[redacted-email]',text)
+    text=re.sub(r'(?<!\d)(?:\+?\d[\d\s().-]{7,}\d)(?!\d)','[redacted-phone]',text)
+    return text
+
+
+def _safe_page_path(value):
+    raw=str(value or '')[:1000]
+    try:
+        parsed=urlsplit(raw)
+        path=parsed.path if (parsed.scheme or parsed.netloc) else raw.split('?',1)[0].split('#',1)[0]
+    except Exception:
+        path=raw.split('?',1)[0].split('#',1)[0]
+    return path[:500]
+
+
 def _event_key(release_id, release_version, state):
     return f'{release_id}|{release_version}|{state}'
 
@@ -92,7 +111,7 @@ def _queue_delivery_state(c, release_id, release_version, state):
 
 
 def queue_reported_question_incident(c, question, feedback_code, category, severity, description, context):
-    """Queue one PII-free incident only for an exact Power House learner projection."""
+    """Queue one privacy-minimised incident only for an exact Power House learner projection."""
     if not question: return ''
     keys=set(question.keys()) if hasattr(question,'keys') else set(question)
     def val(k): return question[k] if k in keys else None
@@ -109,9 +128,9 @@ def queue_reported_question_incident(c, question, feedback_code, category, sever
       'scoremax_feedback_code':code,
       'category':str(category or 'Other')[:120],
       'severity':str(severity or 'MEDIUM').upper()[:20],
-      'description':str(description or '')[:4000],
+      'description':_redact_free_text(description),
       'source':str(ctx.get('source') or '')[:80],
-      'page_path':str(ctx.get('page') or '')[:500],
+      'page_path':_safe_page_path(ctx.get('page')),
       'question':{
         'question_id':str(val('ph_question_id')),
         'question_version_id':str(val('ph_question_version_id')),
