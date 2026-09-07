@@ -21,3 +21,29 @@
   .site-header>.mobile-menu-toggle{display:inline-flex!important;position:static!important;margin-left:auto!important;flex:0 0 auto!important}
 }
 @media (max-width:420px){.ux-brand-mark{width:30px;height:30px;border-radius:9px;padding:6px 5px}.ux-brand-name{font-size:1.2rem}}
+
+/* Hero refinement: premium scale, less decorative UI, more product clarity. */
+@media (min-width:981px){
+  .ux-hero{grid-template-columns:1.08fr .92fr!important;gap:54px!important;align-items:center!important;padding-top:34px!important;padding-bottom:58px!important}
+  .ux-hero-copy{padding-right:8px}
+  .ux-hero h1{font-size:clamp(3.2rem,4.65vw,4.35rem)!important;line-height:1.01!important;letter-spacing:-.048em!important;max-width:640px!important}
+  .ux-hero .ux-kicker{margin-bottom:15px!important;font-size:.72rem!important;letter-spacing:.16em!important}
+  .ux-lead{font-size:1.08rem!important;line-height:1.58!important;max-width:575px!important;margin:22px 0 23px!important}
+  .ux-hero-actions{gap:10px!important}.ux-btn{min-height:46px!important;padding:0 20px!important}
+  .ux-proof-row{margin-top:19px!important;gap:15px!important;font-size:.84rem!important}
+  .ux-intelligence{min-height:430px!important;border-radius:32px!important;box-shadow:0 24px 65px rgba(30,64,175,.1)!important}
+  .ux-grid-glow{background-size:32px 32px!important;opacity:.72}
+  .ux-tech-core{top:47%!important;width:128px!important;height:128px!important;border-width:10px!important;box-shadow:0 18px 46px rgba(79,70,229,.14)!important}
+  .ux-tech-core:after{inset:-10px!important;border-top-width:10px!important;border-right-width:10px!important}
+  .ux-tech-core span{font-size:1.8rem!important}.ux-tech-core small{font-size:.78rem!important;margin-top:6px!important}
+  .ux-tech-orbit{top:47%!important}.orbit-a{width:248px!important;height:248px!important}.orbit-b{width:348px!important;height:348px!important;opacity:.75}
+  .ux-node{gap:7px!important;padding:7px 10px!important;border-radius:13px!important;box-shadow:0 9px 22px rgba(15,23,42,.065)!important}
+  .ux-node b{width:24px!important;height:24px!important;border-radius:8px!important;font-size:.66rem!important}
+  .ux-node span{font-size:.78rem!important;font-weight:760!important}
+  .node-a{left:8%!important;top:21%!important}.node-b{right:7%!important;top:27%!important}.node-c{left:7%!important;bottom:22%!important}.node-d{right:8%!important;bottom:19%!important}
+  .ux-signal-card{bottom:5%!important;width:66%!important;padding:12px 15px!important;border-radius:15px!important;gap:2px!important;box-shadow:0 14px 34px rgba(15,23,42,.16)!important}
+  .ux-signal-card small{font-size:.7rem!important;letter-spacing:.12em!important}.ux-signal-card strong{font-size:.9rem!important}.ux-signal-card span{font-size:.77rem!important}
+}
+@media (min-width:981px) and (max-width:1120px){.ux-hero h1{font-size:3.45rem!important}.ux-hero{gap:40px!important}.ux-intelligence{min-height:405px!important}}
+@media (max-width:980px){.ux-hero h1{font-size:clamp(2.7rem,8vw,3.8rem)!important;max-width:650px!important}.ux-intelligence{min-height:410px!important}}
+@media (max-width:640px){.ux-hero h1{font-size:2.55rem!important;line-height:1.02!important}.ux-intelligence{min-height:360px!important}.ux-node{padding:6px 8px!important}.ux-node b{width:23px!important;height:23px!important}.ux-signal-card{width:78%!important;padding:11px 13px!important}}
