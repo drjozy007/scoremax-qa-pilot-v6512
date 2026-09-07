@@ -145,5 +145,29 @@ def main() -> None:
     )
 
 
+def apply_qualification_bridge() -> None:
+    """Hosted-qualification-only step: apply the already-qualified V6.6.11D overlay after exact parent verification."""
+    result = subprocess.run(
+        ["python", "apply_v6611d_bridge_overlay.py", str(OUT)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise SystemExit("V6611D_HOSTED_QUALIFICATION_OVERLAY_FAILED:" + result.stdout[-3000:])
+    print(result.stdout.strip(), flush=True)
+    app = (OUT / "app.py").read_text(encoding="utf-8")
+    integ = (OUT / "scoremax_integration_v1.py").read_text(encoding="utf-8")
+    marker = OUT / "V6611D_PH_BRIDGE_MARKER.json"
+    if "SCOREMAX_RELEASE_VERSION='6.6.11D'" not in app:
+        raise SystemExit("V6611D_HOSTED_APP_RELEASE_IDENTITY_MISSING")
+    if "SCOREMAX_INTEGRATION_RELEASE='6.6.11D'" not in integ:
+        raise SystemExit("V6611D_HOSTED_INTEGRATION_RELEASE_IDENTITY_MISSING")
+    if not marker.is_file() or "SM-PH-BRIDGE-V6611D-1" not in marker.read_text(encoding="utf-8"):
+        raise SystemExit("V6611D_HOSTED_MARKER_MISSING")
+    print("V6611D_HOSTED_QUALIFICATION_RUNTIME_READY release=6.6.11D release_authority=false", flush=True)
+
+
 if __name__ == "__main__":
     main()
+    apply_qualification_bridge()
