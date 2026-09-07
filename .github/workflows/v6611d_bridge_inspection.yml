@@ -7,19 +7,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstruct exact V6611C and inspect patch anchors
+      - name: Reconstruct exact V6611C and inspect transaction/startup anchors
         shell: bash
         run: |
           set -eu
           python deploy_v669b_from_env.py
           ROOT=scoremax_runtime_v669b
-          echo '=== APP CONTENT ROUTES 7080-7135 ==='
-          sed -n '7080,7135p' "$ROOT/app.py"
-          echo '=== INTEGRATION SCHEMA HELPERS 1-180 ==='
-          sed -n '1,180p' "$ROOT/scoremax_integration_v1.py"
-          echo '=== ACTIVATE RELEASE 1140-1215 ==='
-          sed -n '1140,1215p' "$ROOT/scoremax_integration_v1.py"
-          echo '=== DISPATCH 1960-2085 ==='
-          sed -n '1960,2085p' "$ROOT/scoremax_integration_v1.py"
-          echo '=== INIT SCHEMA CALLS IN APP ==='
-          grep -nE 'integration_v1.init_schema|def init\(' "$ROOT/app.py" | head -n 30
+          echo '=== BEGIN IMMEDIATE ==='
+          grep -n "def _begin_immediate" "$ROOT/scoremax_integration_v1.py" | while IFS=: read -r L REST; do sed -n "$((L-5)),$((L+35))p" "$ROOT/scoremax_integration_v1.py"; done
+          echo '=== AUTHORIZE ACTIVATION ==='
+          L=$(grep -n "def authorize_product_activation" "$ROOT/scoremax_integration_v1.py" | head -1 | cut -d: -f1)
+          sed -n "$L,$((L+100))p" "$ROOT/scoremax_integration_v1.py"
+          echo '=== APP IMPORTS/INIT 1-410 ==='
+          sed -n '1,410p' "$ROOT/app.py"
+          echo '=== WORKER ==='
+          cat "$ROOT/scoremax_integration_dispatch_v1.py"
