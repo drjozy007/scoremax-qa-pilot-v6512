@@ -1,0 +1,31 @@
+name: V6611D Bridge Inspection
+on:
+  push:
+    branches: [feature/v6611d-ph-delivery-incident-bridge-20260907]
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct exact V6611C and inspect bridge seams
+        shell: bash
+        run: |
+          set -eu
+          python deploy_v669b_from_env.py
+          ROOT=scoremax_runtime_v669b
+          echo '=== RELEASE IDENTITIES ==='
+          grep -nE 'SCOREMAX_RELEASE_VERSION|SCOREMAX_INTEGRATION_RELEASE' "$ROOT/app.py" "$ROOT/scoremax_integration_v1.py" | head -n 20
+          echo '=== REPORT ISSUE ROUTE ==='
+          L=$(grep -n "def pilot_report_issue" "$ROOT/app.py" | head -1 | cut -d: -f1)
+          sed -n "$((L-20)),$((L+120))p" "$ROOT/app.py"
+          echo '=== CONTENT INBOUND ROUTES ==='
+          grep -nE 'content-releases|admit_content_envelope|integration_power_house' "$ROOT/app.py" "$ROOT/scoremax_integration_v1.py" | head -n 100 || true
+          echo '=== OUTBOUND TARGET/QUEUE ==='
+          L=$(grep -n "def _dispatch_target" "$ROOT/scoremax_integration_v1.py" | head -1 | cut -d: -f1)
+          sed -n "$((L-20)),$((L+80))p" "$ROOT/scoremax_integration_v1.py"
+          L=$(grep -n "def _queue" "$ROOT/scoremax_integration_v1.py" | head -1 | cut -d: -f1)
+          sed -n "$((L-40)),$((L+100))p" "$ROOT/scoremax_integration_v1.py"
+          echo '=== WITHDRAW RELEASE ADMISSION ==='
+          grep -n "operation=='WITHDRAW_RELEASE'" "$ROOT/scoremax_integration_v1.py" | while IFS=: read -r L REST; do sed -n "$((L-20)),$((L+90))p" "$ROOT/scoremax_integration_v1.py"; done
+          echo '=== REPORT TEMPLATE ==='
+          cat "$ROOT/templates/report_issue.html"
