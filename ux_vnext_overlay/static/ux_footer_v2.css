@@ -91,3 +91,36 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Account-entry cleanup: programme selection belongs in onboarding, not the sign-in/create-account surface. */
 .account-entry-card label:has(select[name="academic_level"]){display:none!important}
+
+/* Student study context — one learner-specific row, not a public programme catalogue. */
+.student-context-stack{position:sticky!important;top:64px!important;z-index:42!important;display:flex!important;align-items:center!important;gap:8px!important;overflow-x:auto!important;padding:8px max(18px,calc((100vw - 1200px)/2))!important;background:#fff!important;border-bottom:1px solid #e7ecef!important;scrollbar-width:none!important}
+.student-context-stack::-webkit-scrollbar{display:none!important}
+.student-context-stack .programme-context-strip,.student-context-stack .subject-quick-strip{position:static!important;top:auto!important;z-index:auto!important;display:flex!important;align-items:center!important;gap:6px!important;flex:0 0 auto!important;overflow:visible!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.student-context-stack .context-label{display:none!important}
+.student-context-stack .programme-switch-form{flex:0 0 auto!important}
+.student-context-stack .programme-tab{min-height:34px!important;padding:6px 12px!important;border:1px solid transparent!important;border-radius:999px!important;font-size:.82rem!important;font-weight:850!important;line-height:1!important;white-space:nowrap!important}
+.student-context-stack .programme-tab:not(.active){background:#f5f7f8!important;color:#465463!important}
+.student-context-stack .programme-tab.active{background:#E8F6F5!important;color:#236765!important;border-color:#B9E1DF!important}
+.student-context-stack .programme-tab .context-soon,.student-context-stack .programme-tab small{display:none!important}
+.student-context-stack .subject-quick-strip{padding-left:12px!important;margin-left:6px!important;border-left:1px solid #dce5e5!important}
+.student-context-stack .subject-quick-strip:before{content:'Subjects';font-size:.64rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#89939f;margin-right:3px;white-space:nowrap}
+.student-context-stack .subject-quick-strip a{position:static!important;min-height:34px!important;padding:6px 12px!important;margin:0!important;border-radius:999px!important;background:#f7f9f9!important;color:#42515f!important;font-size:.82rem!important;font-weight:800!important;white-space:nowrap!important}
+.student-context-stack .subject-quick-strip a.active{background:#E8F6F5!important;color:#236765!important}
+
+/* FSc Year 1: current year + Year 2 + MDCAT only. Hide unrelated routes such as Matric/Grade 9/Grade 10/ECAT. */
+.student-context-stack:has(.programme-switch-form:has(input[name='programme_code'][value='fsc1']) .programme-tab.active) .programme-switch-form:not(:has(input[name='programme_code'][value='fsc1'])):not(:has(input[name='programme_code'][value='fsc2'])):not(:has(input[name='programme_code'][value='mdcat'])){display:none!important}
+.student-context-stack:has(.programme-switch-form:has(input[name='programme_code'][value='fsc2']) .programme-tab.active) .programme-switch-form:not(:has(input[name='programme_code'][value='fsc2'])):not(:has(input[name='programme_code'][value='mdcat'])){display:none!important}
+.student-context-stack:has(.programme-switch-form:has(input[name='programme_code'][value='mdcat']) .programme-tab.active) .programme-switch-form:not(:has(input[name='programme_code'][value='mdcat'])){display:none!important}
+
+/* Use learner language rather than internal short codes. */
+.student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc1']) .programme-tab{font-size:0!important}
+.student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc1']) .programme-tab:after{content:'FSc Year 1';font-size:.82rem!important}
+.student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc2']) .programme-tab{font-size:0!important}
+.student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc2']) .programme-tab:after{content:'FSc Year 2';font-size:.82rem!important}
+
+@media(max-width:900px){
+  .student-context-stack{top:58px!important;padding:7px 12px!important;gap:5px!important}
+  .student-context-stack .programme-tab,.student-context-stack .subject-quick-strip a{min-height:32px!important;padding:6px 10px!important;font-size:.78rem!important}
+  .student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc1']) .programme-tab:after,.student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc2']) .programme-tab:after{font-size:.78rem!important}
+  .student-context-stack .subject-quick-strip{padding-left:9px!important;margin-left:3px!important}
+}
