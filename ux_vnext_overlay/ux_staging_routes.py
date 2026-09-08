@@ -129,6 +129,15 @@ def _install_staging_page_guards(app) -> None:
     if getattr(app, "_ux_staging_page_guards_installed", False):
         return
 
+    # Keep staging browser sessions valid across deploys. Render's start command
+    # still creates an ephemeral SCOREMAX_SECRET, but UX staging deliberately
+    # overrides it here with a separate stable staging-only secret.
+    stable_secret = os.environ.get("SCOREMAX_STAGING_SESSION_SECRET", "").strip()
+    if not stable_secret:
+        raise RuntimeError("UX_STAGING_SESSION_SECRET_MISSING")
+    app.secret_key = stable_secret
+    app.config["SECRET_KEY"] = stable_secret
+
     base_loader = app.jinja_loader
     if base_loader is None:
         raise RuntimeError("UX_LOGIN_BASE_TEMPLATE_LOADER_MISSING")
