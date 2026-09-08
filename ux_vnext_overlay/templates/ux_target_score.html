@@ -1,0 +1,75 @@
+{% extends "base.html" %}{% block title %}Target Score · ScoreMax{% endblock %}{% block content %}
+<section class="compact-page ux-target-score-page">
+  <div class="page-heading"><div><p class="eyebrow">ADMISSION TARGET</p><h1>Know the score you need.</h1><p class="muted">Calculate your current Punjab medical admission aggregate and work backwards from the target you want to reach.</p></div></div>
+
+  <section class="card ux-target-formula-card">
+    <div><p class="eyebrow">PUNJAB MBBS / BDS</p><h2>Current merit formula</h2><p>Matric / SSC <strong>10%</strong> · FSc / HSSC Pre-Medical <strong>40%</strong> · MDCAT <strong>50%</strong></p></div>
+    <span class="ux-target-formula-badge">10 · 40 · 50</span>
+  </section>
+
+  <div class="ux-target-grid">
+    <section class="card ux-target-calculator" aria-labelledby="aggregateTitle">
+      <p class="eyebrow">AGGREGATE CALCULATOR</p><h2 id="aggregateTitle">What is my aggregate?</h2>
+      <div class="ux-mark-grid">
+        <fieldset><legend>Matric / SSC</legend><label>Marks obtained<input id="sscObt" type="number" min="0" step="0.01" inputmode="decimal"></label><label>Total marks<input id="sscTotal" type="number" min="1" step="0.01" inputmode="decimal"></label></fieldset>
+        <fieldset><legend>FSc / HSSC</legend><label>Marks obtained<input id="fscObt" type="number" min="0" step="0.01" inputmode="decimal"></label><label>Total marks<input id="fscTotal" type="number" min="1" step="0.01" inputmode="decimal"></label></fieldset>
+        <fieldset><legend>MDCAT</legend><label>Marks obtained<input id="mdcatObt" type="number" min="0" step="0.01" inputmode="decimal"></label><label>Total marks<input id="mdcatTotal" type="number" min="1" step="0.01" inputmode="decimal"></label></fieldset>
+      </div>
+      <div class="ux-target-result" aria-live="polite"><span>Your aggregate</span><strong id="aggregateResult">—</strong><small id="aggregateBreakdown">Enter your marks above.</small></div>
+    </section>
+
+    <section class="card ux-target-calculator" aria-labelledby="targetTitle">
+      <p class="eyebrow">WORK BACKWARDS</p><h2 id="targetTitle">What MDCAT score do I need?</h2>
+      <p class="muted">Use your Matric and FSc marks above, then set the admission aggregate you want to target.</p>
+      <label>Target aggregate (%)<input id="targetAggregate" type="number" min="0" max="100" step="0.0001" inputmode="decimal" placeholder="e.g. 92.5000"></label>
+      <label>MDCAT total marks<input id="targetMdcatTotal" type="number" min="1" step="1" inputmode="numeric"></label>
+      <div class="ux-target-result secondary" aria-live="polite"><span>Required MDCAT score</span><strong id="requiredMdcat">—</strong><small id="requiredMdcatNote">Enter your target aggregate.</small></div>
+    </section>
+  </div>
+
+  <p class="muted ux-target-source-note">ScoreMax uses the published merit weightage for Punjab medical and dental admissions. Admission criteria can change by admission cycle, so the formula is governed by the applicable official policy.</p>
+</section>
+
+<script>
+(function(){
+  const byId=id=>document.getElementById(id);
+  const n=id=>{const v=parseFloat(byId(id)?.value);return Number.isFinite(v)?v:null;};
+  const validPair=(o,t)=>o!==null&&t!==null&&t>0&&o>=0&&o<=t;
+  function calculate(){
+    const so=n('sscObt'),st=n('sscTotal'),fo=n('fscObt'),ft=n('fscTotal'),mo=n('mdcatObt'),mt=n('mdcatTotal');
+    const s=validPair(so,st)?(so/st)*10:null;
+    const f=validPair(fo,ft)?(fo/ft)*40:null;
+    const m=validPair(mo,mt)?(mo/mt)*50:null;
+    if(s!==null&&f!==null&&m!==null){
+      const total=s+f+m;
+      byId('aggregateResult').textContent=total.toFixed(4)+'%';
+      byId('aggregateBreakdown').textContent=`Matric ${s.toFixed(2)} + FSc ${f.toFixed(2)} + MDCAT ${m.toFixed(2)}`;
+    }else{
+      byId('aggregateResult').textContent='—';
+      byId('aggregateBreakdown').textContent='Enter valid obtained and total marks for all three components.';
+    }
+    const target=n('targetAggregate'),targetTotal=n('targetMdcatTotal');
+    if(s!==null&&f!==null&&target!==null&&targetTotal!==null&&targetTotal>0){
+      const neededWeighted=target-s-f;
+      const neededPct=neededWeighted/50;
+      const neededMarks=neededPct*targetTotal;
+      if(neededMarks<=0){
+        byId('requiredMdcat').textContent='0 / '+Math.round(targetTotal);
+        byId('requiredMdcatNote').textContent='Your Matric and FSc contribution already reaches this target before MDCAT weightage is added.';
+      }else if(neededMarks>targetTotal){
+        byId('requiredMdcat').textContent='Above maximum';
+        byId('requiredMdcatNote').textContent=`This target would require ${neededMarks.toFixed(1)} out of ${targetTotal}, so it is not reachable with these Matric and FSc marks under this formula.`;
+      }else{
+        byId('requiredMdcat').textContent=Math.ceil(neededMarks)+' / '+Math.round(targetTotal);
+        byId('requiredMdcatNote').textContent=`Approximately ${neededMarks.toFixed(1)} marks are required; aim above the minimum to protect your target.`;
+      }
+    }else{
+      byId('requiredMdcat').textContent='—';
+      byId('requiredMdcatNote').textContent='Enter valid Matric and FSc marks, your target aggregate and MDCAT total.';
+    }
+  }
+  ['sscObt','sscTotal','fscObt','fscTotal','mdcatObt','mdcatTotal','targetAggregate','targetMdcatTotal'].forEach(id=>byId(id)?.addEventListener('input',calculate));
+  calculate();
+})();
+</script>
+{% endblock %}
