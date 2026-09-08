@@ -58,6 +58,7 @@ def main() -> None:
         "ux_staging_routes.py",
         "ux_student_batch.py",
         "ux_content_reviewer.py",
+        "ux_reviewer_accounts.py",
     ):
         copy_overlay(rel)
 
@@ -126,7 +127,7 @@ def main() -> None:
     app_text = app_text[:public_match.start()] + "public_endpoints={" + body + "}" + app_text[public_match.end():]
 
     installer_marker = "\nif __name__=='__main__':\n"
-    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\n"
+    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\nfrom ux_reviewer_accounts import ensure_reviewer_accounts\nensure_reviewer_accounts()\n"
     if installer_marker not in app_text:
         raise SystemExit("UX_VNEXT_ROUTE_INSTALL_MARKER_MISSING")
     app_text = app_text.replace(installer_marker, installer + installer_marker, 1)
@@ -165,7 +166,7 @@ def main() -> None:
 
     for rel in (
         "templates/ux_student_learn.html","templates/ux_subject_chapters.html","templates/ux_progress.html","ux_student_batch.py",
-        "templates/ux_content_review.html","templates/ux_content_review_question.html","ux_content_reviewer.py"
+        "templates/ux_content_review.html","templates/ux_content_review_question.html","ux_content_reviewer.py","ux_reviewer_accounts.py"
     ):
         if not (OUT/rel).is_file():
             raise SystemExit("UX_VNEXT_STUDENT_BATCH_MISSING:"+rel)
@@ -175,7 +176,12 @@ def main() -> None:
         if required not in reviewer_text:
             raise SystemExit("UX_VNEXT_REVIEWER_CONTROL_MISSING:"+required)
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true content_reviewer=true subjects_chapters_progress=true science_corner=true interest_routes=true")
+    accounts_text=(OUT/"ux_reviewer_accounts.py").read_text(encoding="utf-8")
+    for required in ("REVIEWER-01","REVIEWER-05","SCOREMAX_STAGING_REVIEWER_01_PASSWORD","SCOREMAX_STAGING_REVIEWER_05_PASSWORD"):
+        if required not in accounts_text:
+            raise SystemExit("UX_VNEXT_REVIEWER_ACCOUNT_CONTROL_MISSING:"+required)
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true content_reviewer=true reviewer_accounts=5 subjects_chapters_progress=true science_corner=true interest_routes=true")
 
 
 if __name__ == "__main__":
