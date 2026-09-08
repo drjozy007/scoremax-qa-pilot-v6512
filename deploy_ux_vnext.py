@@ -40,6 +40,7 @@ def main() -> None:
     for rel in (
         "templates/index.html",
         "templates/login.html",
+        "templates/register.html",
         "templates/ux_register_interest.html",
         "templates/ux_nominate_school.html",
         "static/ux_vnext.css",
@@ -150,7 +151,15 @@ def main() -> None:
         if required_login not in login:
             raise SystemExit("UX_VNEXT_LOGIN_CONTROL_MISSING:" + required_login)
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true clean_login=true")
+    register = (OUT / "templates/register.html").read_text(encoding="utf-8")
+    register_lower = register.lower()
+    if "coming next" in register_lower or "coming soon" in register_lower:
+        raise SystemExit("UX_VNEXT_REGISTER_PROMO_STILL_PRESENT")
+    for required_register in ('name="full_name"', 'name="email"', 'name="password"', 'name="referral_code"', "Create Free Account"):
+        if required_register not in register:
+            raise SystemExit("UX_VNEXT_REGISTER_CONTROL_MISSING:" + required_register)
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true clean_login=true clean_register=true")
 
 
 if __name__ == "__main__":
