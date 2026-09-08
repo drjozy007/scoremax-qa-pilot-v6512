@@ -125,9 +125,10 @@ class _UxLoginCleanLoader(BaseLoader):
         return source, filename, uptodate
 
 
-def _install_login_cleaner(app) -> None:
-    if getattr(app, "_ux_login_cleaner_installed", False):
+def _install_staging_page_guards(app) -> None:
+    if getattr(app, "_ux_staging_page_guards_installed", False):
         return
+
     base_loader = app.jinja_loader
     if base_loader is None:
         raise RuntimeError("UX_LOGIN_BASE_TEMPLATE_LOADER_MISSING")
@@ -137,28 +138,86 @@ def _install_login_cleaner(app) -> None:
     app.jinja_env.cache.clear()
 
     @app.after_request
-    def _ux_login_final_render_guard(response):
-        if request.endpoint != "login" or not response.is_sequence:
+    def _ux_staging_final_render_guards(response):
+        if not response.is_sequence:
             return response
         content_type = (response.content_type or "").lower()
         if "text/html" not in content_type:
             return response
+
         html = response.get_data(as_text=True)
-        guard = r'''<script id="ux-login-final-guard">(function(){function clean(){var terms=['coming next','mdcat','ecat','fsc','matric','grade 9','grade 10'];var nodes=[].slice.call(document.querySelectorAll('aside,section,article,div'));nodes.forEach(function(el){if(el.querySelector('input[name="identity"],input[name="password"]'))return;var t=(el.textContent||'').toLowerCase();if(t.indexOf('coming next')===-1)return;if(!terms.some(function(x){return t.indexOf(x)!==-1;}))return;var child=[].slice.call(el.children).some(function(c){var ct=(c.textContent||'').toLowerCase();return ct.indexOf('coming next')!==-1;});if(!child||el.children.length<5){el.remove();}});}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',clean);}else{clean();}})();</script>'''
-        if "ux-login-final-guard" not in html:
-            if "</body>" in html:
-                html = html.replace("</body>", guard + "</body>", 1)
-            else:
-                html += guard
-            response.set_data(html)
-            response.content_length = len(response.get_data())
+
+        if request.endpoint == "login" and "ux-login-final-guard" not in html:
+            login_guard = r'''<script id="ux-login-final-guard">(function(){function clean(){var terms=['coming next','mdcat','ecat','fsc','matric','grade 9','grade 10'];var nodes=[].slice.call(document.querySelectorAll('aside,section,article,div'));nodes.forEach(function(el){if(el.querySelector('input[name="identity"],input[name="password"]'))return;var t=(el.textContent||'').toLowerCase();if(t.indexOf('coming next')===-1)return;if(!terms.some(function(x){return t.indexOf(x)!==-1;}))return;var child=[].slice.call(el.children).some(function(c){var ct=(c.textContent||'').toLowerCase();return ct.indexOf('coming next')!==-1;});if(!child||el.children.length<5){el.remove();}});}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',clean);}else{clean();}})();</script>'''
+            html = html.replace("</body>", login_guard + "</body>", 1) if "</body>" in html else html + login_guard
+
+        endpoint = request.endpoint or ""
+        learner_page = (
+            "student-context-stack" in html
+            or "student-home-v2" in html
+            or endpoint == "dashboard"
+            or endpoint.startswith("student_")
+        )
+        if learner_page and "ux-staging-disable-legacy-tour" not in html:
+            tour_guard = r'''<script id="ux-staging-disable-legacy-tour">(function(){
+var marker=/(?:part\s*)?[123]\s+of\s+3/i;
+function text(el){return ((el&&el.textContent)||'').replace(/\s+/g,' ').trim();}
+function isMarker(el){var t=text(el);return t.length>0&&t.length<1400&&marker.test(t);}
+function removeLegacyTour(){
+  var all=[].slice.call(document.querySelectorAll('body *'));
+  var markers=all.filter(isMarker);
+  if(!markers.length)return false;
+  markers.sort(function(a,b){return text(a).length-text(b).length;});
+  markers.slice(0,10).forEach(function(el){
+    var n=el,victim=null;
+    while(n&&n!==document.body){
+      var cs=getComputedStyle(n),r=n.getBoundingClientRect(),z=parseInt(cs.zIndex||'0',10);
+      var named=((n.id||'')+' '+(n.className||'')).toLowerCase();
+      if((cs.position==='fixed'||cs.position==='absolute')&&r.width>220&&r.height>70&&(z>=30||/tour|onboard|walkthrough|coach.?mark/.test(named)))victim=n;
+      n=n.parentElement;
+    }
+    (victim||el).remove();
+  });
+  all=[].slice.call(document.querySelectorAll('body *'));
+  all.forEach(function(el){
+    var cs=getComputedStyle(el),r=el.getBoundingClientRect(),z=parseInt(cs.zIndex||'0',10);
+    var named=((el.id||'')+' '+(el.className||'')).toLowerCase();
+    if((/tour|onboard|walkthrough|coach.?mark/.test(named))&&(cs.position==='fixed'||cs.position==='absolute')){el.remove();return;}
+    if(cs.position==='fixed'&&z>=30&&r.width>=window.innerWidth*.88&&r.height>=window.innerHeight*.82){
+      var bg=cs.backgroundColor||'';
+      if(bg!=='rgba(0, 0, 0, 0)'&&parseFloat(cs.opacity||'1')>.05){el.remove();return;}
+    }
+    if(/tour|onboard|walkthrough|coach.?mark/.test(named)){
+      [].slice.call(el.classList||[]).forEach(function(c){if(/tour|onboard|walkthrough|coach.?mark/i.test(c))el.classList.remove(c);});
+    }
+    var outline=parseFloat(cs.outlineWidth||'0');
+    var visual=(cs.outlineColor||'')+' '+(cs.boxShadow||'');
+    if(outline>=2&&/37,\s*99,\s*235|49,\s*94,\s*251|47,\s*98,\s*204|0,\s*102,\s*255/.test(visual))el.style.setProperty('outline','none','important');
+    if((el.classList.contains('today-focus-card')||el.classList.contains('home-progress-card'))&&/37,\s*99,\s*235|49,\s*94,\s*251|0,\s*102,\s*255/.test(cs.boxShadow||''))el.style.setProperty('box-shadow','0 10px 30px rgba(15,23,42,.045)','important');
+  });
+  [].slice.call(document.body.classList||[]).forEach(function(c){if(/tour|onboard|walkthrough/i.test(c))document.body.classList.remove(c);});
+  document.body.style.overflow='';document.documentElement.style.overflow='';
+  return true;
+}
+function start(){
+  removeLegacyTour();
+  var count=0,obs=new MutationObserver(function(){removeLegacyTour();if(++count>120)obs.disconnect();});
+  obs.observe(document.body,{childList:true,subtree:true,attributes:true});
+  setTimeout(function(){obs.disconnect();removeLegacyTour();},12000);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();</script>'''
+            html = html.replace("</body>", tour_guard + "</body>", 1) if "</body>" in html else html + tour_guard
+
+        response.set_data(html)
+        response.content_length = len(response.get_data())
         return response
 
-    app._ux_login_cleaner_installed = True
+    app._ux_staging_page_guards_installed = True
 
 
 def install_ux_staging_routes(app) -> None:
-    _install_login_cleaner(app)
+    _install_staging_page_guards(app)
 
     if "ux_register_interest" in app.view_functions:
         return
