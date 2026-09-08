@@ -1,17 +1,50 @@
-{% extends "base.html" %}{% block title %}Log in · ScoreMax{% endblock %}{% block content %}
-<section class="card narrow login-card account-entry-card ux-login-clean">
-  <p class="eyebrow">WELCOME BACK</p>
-  <h1>Log in to ScoreMax</h1>
-  <p class="muted">Use the email you registered with, or your ScoreMax ID.</p>
-  <form method="post" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
-    <label>Email or ScoreMax ID<input type="text" name="identity" required autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></label>
-    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
-    <div class="form-inline-between"><a href="{{url_for('forgot_password')}}">Forgot password?</a></div>
-    <button class="btn big">Log In</button>
-  </form>
-  <div class="login-divider"><span>New to ScoreMax?</span></div>
-  <a class="btn alt big" href="{{url_for('register',role='student')}}">Create Free Account</a>
-  <p class="muted small">Teacher? <a href="{{url_for('register',role='teacher')}}">Create teacher account</a> · Parent/guardian? <a href="{{url_for('register',role='parent')}}">Create parent account</a></p>
-</section>
-<script src="{{url_for('static',filename='ux_login_clean.js')}}" defer></script>
-{% endblock %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Log in · ScoreMax</title>
+  <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='ux_vnext.css')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='ux_header_fix.css')}}">
+  <style>
+    body{min-height:100vh;background:#f8fafc;margin:0}
+    .ux-login-shell{min-height:100vh;display:flex;flex-direction:column}
+    .ux-login-top{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 28px;background:#fff;border-bottom:1px solid #e8edf5}
+    .ux-login-brand{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:#0f172a;font-weight:900;font-size:1.18rem;letter-spacing:-.04em}
+    .ux-login-mark{width:29px;height:29px;border-radius:9px;background:linear-gradient(145deg,#2563eb,#7c3aed);display:grid;place-items:center;color:#fff;font-size:.8rem}
+    .ux-login-home{font-size:.82rem;font-weight:750;color:#475569;text-decoration:none}
+    .ux-login-main{flex:1;display:grid;place-items:center;padding:42px 20px}
+    .ux-login-clean{width:min(100%,450px);margin:0!important}
+    .ux-login-clean h1{margin-top:4px}
+    .ux-login-foot{text-align:center;padding:0 20px 24px;color:#94a3b8;font-size:.73rem}
+    @media(max-width:600px){.ux-login-top{padding:15px 18px}.ux-login-main{padding:30px 15px}}
+  </style>
+</head>
+<body>
+<div class="ux-login-shell">
+  <header class="ux-login-top">
+    <a class="ux-login-brand" href="{{url_for('index')}}" aria-label="ScoreMax home"><span class="ux-login-mark" aria-hidden="true">↗</span><span>ScoreMax</span></a>
+    <a class="ux-login-home" href="{{url_for('index')}}">Back to home</a>
+  </header>
+  <main class="ux-login-main">
+    <section class="card narrow login-card account-entry-card ux-login-clean" aria-labelledby="loginTitle">
+      {% for c,m in get_flashed_messages(with_categories=true) %}<div class="flash {{c}}">{{m}}</div>{% endfor %}
+      <p class="eyebrow">WELCOME BACK</p>
+      <h1 id="loginTitle">Log in to ScoreMax</h1>
+      <p class="muted">Use the email you registered with, or your ScoreMax ID.</p>
+      <form method="post" class="simple-form">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+        <label>Email or ScoreMax ID<input type="text" name="identity" required autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></label>
+        <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+        <div class="form-inline-between"><a href="{{url_for('forgot_password')}}">Forgot password?</a></div>
+        <button class="btn big">Log In</button>
+      </form>
+      <div class="login-divider"><span>New to ScoreMax?</span></div>
+      <a class="btn alt big" href="{{url_for('register',role='student')}}">Create Free Account</a>
+      <p class="muted small">Teacher? <a href="{{url_for('register',role='teacher')}}">Create teacher account</a> · Parent/guardian? <a href="{{url_for('register',role='parent')}}">Create parent account</a></p>
+    </section>
+  </main>
+  <footer class="ux-login-foot">© ScoreMax</footer>
+</div>
+</body>
+</html>
