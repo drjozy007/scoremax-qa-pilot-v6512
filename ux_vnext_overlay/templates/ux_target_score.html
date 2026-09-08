@@ -1,9 +1,12 @@
-{% extends "base.html" %}{% block title %}Target Score · ScoreMax{% endblock %}{% block content %}
+{% extends "base.html" %}{% block title %}Calculators · ScoreMax{% endblock %}{% block content %}
+<style>
+.ux-target-score-page{max-width:1180px;margin:0 auto;padding:34px 24px 54px}.ux-target-formula-card{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:20px 0;padding:24px 28px;background:linear-gradient(135deg,#f2fbfa,#fff);border-color:#cbe8e6}.ux-target-formula-card h2{margin:.2rem 0}.ux-target-formula-card p{margin:.35rem 0}.ux-target-formula-badge{flex:0 0 auto;display:grid;place-items:center;min-width:122px;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,#3FA6A3,#2F7F7D);color:#fff;font-weight:900;letter-spacing:.05em;box-shadow:0 14px 30px rgba(47,127,125,.17)}.ux-target-grid{display:grid;grid-template-columns:1.35fr .85fr;gap:18px;align-items:start}.ux-target-calculator{padding:26px}.ux-mark-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.ux-mark-grid fieldset{border:1px solid #dde7e7;border-radius:16px;padding:14px;background:#fbfdfd}.ux-mark-grid legend{padding:0 6px;font-weight:850;color:#263543}.ux-target-calculator label{display:grid;gap:6px;margin:10px 0;font-weight:750;color:#344454}.ux-target-calculator input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #ccd8da;border-radius:10px;background:#fff;font:inherit}.ux-target-calculator input:focus{outline:3px solid rgba(63,166,163,.18);border-color:#3FA6A3}.ux-target-result{display:grid;gap:4px;margin-top:18px;padding:18px 20px;border-radius:16px;background:#102f35;color:#fff}.ux-target-result.secondary{background:linear-gradient(135deg,#edf8f7,#f8fcfc);color:#17363a;border:1px solid #cbe8e6}.ux-target-result span{font-size:.72rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;opacity:.78}.ux-target-result strong{font-size:2rem;line-height:1.05}.ux-target-result small{opacity:.82;line-height:1.45}.ux-target-source-note{margin:18px 2px 0;font-size:.78rem;line-height:1.5}.ux-target-calculator .eyebrow,.ux-target-formula-card .eyebrow{color:#2F7F7D}@media(max-width:860px){.ux-target-grid{grid-template-columns:1fr}.ux-mark-grid{grid-template-columns:1fr 1fr}.ux-target-formula-card{align-items:flex-start}.ux-target-formula-badge{min-width:auto}}@media(max-width:560px){.ux-target-score-page{padding:24px 14px 42px}.ux-target-formula-card{flex-direction:column}.ux-mark-grid{grid-template-columns:1fr}.ux-target-calculator{padding:20px}.ux-target-result strong{font-size:1.65rem}}
+</style>
 <section class="compact-page ux-target-score-page">
-  <div class="page-heading"><div><p class="eyebrow">ADMISSION TARGET</p><h1>Know the score you need.</h1><p class="muted">Calculate your current Punjab medical admission aggregate and work backwards from the target you want to reach.</p></div></div>
+  <div class="page-heading"><div><p class="eyebrow">CALCULATORS</p><h1>Know where you stand — and what score you need.</h1><p class="muted">Start with Punjab medical admission. More governed calculators can be added here as ScoreMax expands.</p></div></div>
 
   <section class="card ux-target-formula-card">
-    <div><p class="eyebrow">PUNJAB MBBS / BDS</p><h2>Current merit formula</h2><p>Matric / SSC <strong>10%</strong> · FSc / HSSC Pre-Medical <strong>40%</strong> · MDCAT <strong>50%</strong></p></div>
+    <div><p class="eyebrow">PUNJAB MBBS / BDS</p><h2>Medical aggregate & target score</h2><p>Matric / SSC <strong>10%</strong> · FSc / HSSC Pre-Medical <strong>40%</strong> · MDCAT <strong>50%</strong></p></div>
     <span class="ux-target-formula-badge">10 · 40 · 50</span>
   </section>
 
@@ -19,7 +22,7 @@
     </section>
 
     <section class="card ux-target-calculator" aria-labelledby="targetTitle">
-      <p class="eyebrow">WORK BACKWARDS</p><h2 id="targetTitle">What MDCAT score do I need?</h2>
+      <p class="eyebrow">REVERSE CALCULATOR</p><h2 id="targetTitle">What MDCAT score do I need?</h2>
       <p class="muted">Use your Matric and FSc marks above, then set the admission aggregate you want to target.</p>
       <label>Target aggregate (%)<input id="targetAggregate" type="number" min="0" max="100" step="0.0001" inputmode="decimal" placeholder="e.g. 92.5000"></label>
       <label>MDCAT total marks<input id="targetMdcatTotal" type="number" min="1" step="1" inputmode="numeric"></label>
@@ -27,7 +30,7 @@
     </section>
   </div>
 
-  <p class="muted ux-target-source-note">ScoreMax uses the published merit weightage for Punjab medical and dental admissions. Admission criteria can change by admission cycle, so the formula is governed by the applicable official policy.</p>
+  <p class="muted ux-target-source-note">ScoreMax uses the applicable official merit weightage for the relevant admission cycle. If the official formula changes, this calculator must be updated before release.</p>
 </section>
 
 <script>
