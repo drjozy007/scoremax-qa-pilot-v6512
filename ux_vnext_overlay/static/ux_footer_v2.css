@@ -51,3 +51,26 @@
 @media (max-width:980px){
   .ux-hero h1 span{white-space:normal!important}
 }
+
+/* Seaweed accent trial — staging only. */
+:root{--ux-blue:#3FA6A3;--ux-violet:#2F7F7D;--ux-seaweed:#3FA6A3;--ux-seaweed-deep:#2F7F7D;--ux-seaweed-soft:#E8F6F5}
+.ux-brand-mark{background:linear-gradient(145deg,#3FA6A3 0%,#378F8C 58%,#2F7F7D 100%)!important;box-shadow:0 7px 18px rgba(63,166,163,.22)!important}
+.ux-brand-max{background:linear-gradient(90deg,#3FA6A3,#2F7F7D)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+.site-header .desktop-nav .nav-cta,.ux-btn-primary{background:linear-gradient(135deg,#3FA6A3,#2F7F7D)!important;border-color:#2F7F7D!important;color:#fff!important;box-shadow:0 12px 30px rgba(63,166,163,.20)!important}
+.site-header .desktop-nav .nav-cta:hover,.ux-btn-primary:hover{background:linear-gradient(135deg,#378F8C,#236765)!important}
+.site-header .desktop-nav>a:hover,.site-header .desktop-nav>a:focus-visible,.ux-nav-dropdown summary:hover,.ux-nav-dropdown summary:focus-visible{color:#2F7F7D!important}
+.ux-kicker,.ux-feature-eyebrow,.ux-card-link{color:#2F7F7D!important}
+.ux-hero h1 span{background:linear-gradient(90deg,#3FA6A3,#2F7F7D)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+.ux-intelligence{background:linear-gradient(150deg,#F1FAF9 0%,#E8F6F5 48%,#F8FCFC 100%)!important;border-color:#CBE9E7!important;box-shadow:0 30px 80px rgba(47,127,125,.12)!important}
+.ux-grid-glow{background-image:linear-gradient(rgba(63,166,163,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(63,166,163,.09) 1px,transparent 1px)!important}
+.ux-tech-core{border-color:rgba(63,166,163,.14)!important;box-shadow:0 20px 60px rgba(47,127,125,.16)!important}
+.ux-tech-core:after{border-top-color:#3FA6A3!important;border-right-color:#2F7F7D!important}
+.ux-tech-orbit{border-color:rgba(63,166,163,.26)!important}.ux-node b{background:#E8F6F5!important;color:#2F7F7D!important}.ux-signal-card small{color:#89D0CD!important}
+.ux-feature-ai{background:radial-gradient(circle at 86% 20%,rgba(63,166,163,.17),transparent 36%),linear-gradient(145deg,#F8FCFC,#EDF8F7)!important}
+.ux-feature-plan{background:radial-gradient(circle at 82% 18%,rgba(47,127,125,.14),transparent 34%),linear-gradient(145deg,#FAFDFC,#EFF8F7)!important}
+.ux-feature-plan .ux-feature-eyebrow{color:#2F7F7D!important}.ux-plan-flow strong{background:#2F7F7D!important;border-color:#2F7F7D!important}
+.ux-tool-glyph{background:linear-gradient(145deg,#E8F6F5,#F3FAF9)!important;color:#2F7F7D!important}.ux-tool-spark summary:after{color:#2F7F7D!important}.ux-tool-card:hover{border-color:#B9E1DF!important}
+.level-2{border-top-color:#74C4C1!important}.level-3{border-top-color:#3FA6A3!important}.level-4{border-top-color:#2F7F7D!important}
+.ux-programme-card.is-active{border-color:#9ED6D3!important;box-shadow:0 16px 40px rgba(63,166,163,.13)!important}.ux-current{background:#E8F6F5!important;color:#236765!important}.ux-how-grid article>span{color:#2F7F7D!important}.ux-spark{background:linear-gradient(120deg,#EDF8F7,#F7FCFB)!important}
+.ux-impact{background:linear-gradient(135deg,#F3FAF9 0%,#F8FCFC 100%)!important}.ux-impact-card.primary{background:linear-gradient(145deg,#102F35,#2F7F7D)!important;box-shadow:0 12px 30px rgba(47,127,125,.18)!important}
+.ux-footer-mini-mark{background:linear-gradient(145deg,#3FA6A3,#2F7F7D)!important;box-shadow:0 7px 18px rgba(63,166,163,.16)!important}.ux-footer-col a:hover,.ux-footer-col a:focus-visible,.ux-footer-bottom-links a:hover{color:#2F7F7D!important}.ux-footer-col .ux-footer-primary{color:#236765!important}
