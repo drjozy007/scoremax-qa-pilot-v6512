@@ -43,6 +43,7 @@ def main() -> None:
         "templates/register.html",
         "templates/ux_register_interest.html",
         "templates/ux_nominate_school.html",
+        "templates/ux_target_score.html",
         "static/ux_vnext.css",
         "static/ux_header_fix.css",
         "static/ux_structure_v2.css",
@@ -159,7 +160,12 @@ def main() -> None:
         if required_register not in register:
             raise SystemExit("UX_VNEXT_REGISTER_CONTROL_MISSING:" + required_register)
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true clean_login=true clean_register=true")
+    calculators = (OUT / "templates/ux_target_score.html").read_text(encoding="utf-8")
+    for required_calc in ("AGGREGATE CALCULATOR", "REVERSE CALCULATOR", "10 · 40 · 50", "aggregateResult", "requiredMdcat"):
+        if required_calc not in calculators:
+            raise SystemExit("UX_VNEXT_CALCULATOR_CONTROL_MISSING:" + required_calc)
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true clean_login=true clean_register=true calculators=true")
 
 
 if __name__ == "__main__":
