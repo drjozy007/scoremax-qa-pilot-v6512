@@ -1,0 +1,80 @@
+/* ScoreMax UX vNext — student navigation/mastery refinement. Staging only. */
+
+/* Logged-in context row: subjects only. No programme catalogue and no generic All subjects chip. */
+.student-context-stack.subject-only-context{
+  position:sticky!important;top:64px!important;z-index:42!important;
+  display:flex!important;align-items:center!important;min-height:48px!important;
+  padding:7px max(18px,calc((100vw - 1200px)/2))!important;
+  background:rgba(255,255,255,.98)!important;border-bottom:1px solid #e5ecec!important;
+  overflow-x:auto!important;scrollbar-width:none!important;
+}
+.student-context-stack.subject-only-context::-webkit-scrollbar{display:none!important}
+.student-context-stack.subject-only-context .programme-context-strip,
+.student-context-stack.subject-only-context .programme-switch-form,
+.student-context-stack.subject-only-context .context-label{display:none!important}
+.student-context-stack.subject-only-context .subject-quick-strip{
+  position:static!important;display:flex!important;align-items:center!important;gap:7px!important;
+  padding:0!important;margin:0!important;border:0!important;background:transparent!important;
+  overflow:visible!important;white-space:nowrap!important;
+}
+.student-context-stack.subject-only-context .subject-quick-strip:before{display:none!important;content:none!important}
+.student-context-stack.subject-only-context .subject-quick-strip>a{
+  display:inline-flex!important;align-items:center!important;gap:6px!important;min-height:34px!important;
+  padding:7px 13px!important;margin:0!important;border:1px solid #e4eaea!important;border-radius:999px!important;
+  background:#f7f9f9!important;color:#42515f!important;text-decoration:none!important;
+  font-size:.82rem!important;font-weight:850!important;line-height:1!important;
+}
+.student-context-stack.subject-only-context .subject-quick-strip>a:hover{background:#eef7f6!important;border-color:#c8e3e1!important;color:#236765!important}
+.student-context-stack.subject-only-context .subject-quick-strip>a.active{background:#E8F6F5!important;border-color:#9fd5d2!important;color:#236765!important;box-shadow:inset 0 0 0 1px rgba(63,166,163,.05)!important}
+.student-context-stack.subject-only-context .subject-quick-strip>a small{font-size:.61rem!important;opacity:.66!important}
+
+/* Student mastery: six-stage rail, compact and explicit about the learner's current position. */
+.student-home-v2 .mastery-hero-card{padding:18px 20px!important;border-radius:19px!important}
+.student-home-v2 .mastery-hero-top h2{font-size:clamp(1.35rem,2.2vw,1.85rem)!important;margin:.08rem 0!important}
+.student-home-v2 .mastery-status-pill{padding:5px 8px!important;font-size:.64rem!important}
+.student-home-v2 .mastery-ladder{grid-template-columns:repeat(6,minmax(0,1fr))!important;margin:14px 0 12px!important;gap:0!important}
+.student-home-v2 .mastery-ladder:before{left:6%!important;right:6%!important;top:6px!important;height:2px!important;background:#365065!important}
+.student-home-v2 .mastery-step{font-size:.56rem!important;line-height:1.15!important;min-width:0!important;color:#7f94a5!important}
+.student-home-v2 .mastery-step i{width:13px!important;height:13px!important;margin-bottom:6px!important;border-width:2px!important}
+.student-home-v2 .mastery-step span{display:block!important;padding:0 2px!important;white-space:normal!important}
+.student-home-v2 .mastery-step.reached{color:#d9fffc!important}
+.student-home-v2 .mastery-step.current{color:#fff!important;font-weight:950!important}
+.student-home-v2 .mastery-step.current i{background:#3FA6A3!important;box-shadow:0 0 0 4px rgba(63,166,163,.14),0 0 15px rgba(63,166,163,.38)!important}
+.student-home-v2 .mastery-step.current span:after{content:'YOU';display:block;margin:3px auto 0;width:max-content;padding:2px 4px;border-radius:999px;background:rgba(63,166,163,.16);color:#9ce3df;font-size:.45rem;letter-spacing:.08em;font-weight:950}
+.student-home-v2 .mastery-hero-card>p{margin:.55rem 0!important;font-size:.8rem!important}
+.student-home-v2 .mastery-next{padding:7px 10px!important;margin:8px 0!important}
+.student-home-v2 .mastery-start{margin-top:3px!important;padding:9px 12px!important;font-size:.8rem!important}
+
+/* Public six-stage strip: preserve all stages but reduce vertical weight. */
+.ux-progress-top{padding-top:16px!important;padding-bottom:16px!important}
+.ux-progress-top .ux-section-head{margin-bottom:10px!important}
+.ux-progress-top .ux-section-head h2{font-size:clamp(1.25rem,2.1vw,1.7rem)!important;margin:.15rem 0 .3rem!important}
+.ux-progress-top .ux-section-head>p:last-child{font-size:.82rem!important;margin:.25rem 0!important}
+.ux-progress-top .ux-levels{gap:7px!important}
+.ux-progress-top .ux-level{min-height:62px!important;padding:9px 10px!important;border-radius:12px!important}
+.ux-progress-top .ux-level>span{font-size:.58rem!important}
+.ux-progress-top .ux-level strong{font-size:.78rem!important}
+.ux-progress-top .ux-level small{font-size:.62rem!important;line-height:1.25!important;margin-top:2px!important}
+
+/* Public calculator promotion. */
+.ux-calculator-promo{max-width:1200px;margin:18px auto;padding:0 24px}
+.ux-calculator-promo-inner{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:22px 26px;border:1px solid #cbe7e5;border-radius:20px;background:linear-gradient(135deg,#f0faf9 0%,#fff 62%);box-shadow:0 10px 30px rgba(47,127,125,.06)}
+.ux-calculator-promo .ux-kicker{margin:0 0 5px!important;color:#2F7F7D!important}
+.ux-calculator-promo h2{margin:.05rem 0 .35rem;font-size:clamp(1.35rem,2.5vw,1.9rem);letter-spacing:-.025em}
+.ux-calculator-promo p{margin:0;color:#617080;line-height:1.5;font-size:.88rem;max-width:720px}
+.ux-calculator-promo-actions{display:flex;gap:8px;align-items:center;white-space:nowrap}
+
+@media(max-width:900px){
+  .student-context-stack.subject-only-context{top:58px!important;padding:7px 12px!important}
+  .student-home-v2 .mastery-hero-card{padding:17px!important}
+  .student-home-v2 .mastery-step{font-size:.52rem!important}
+  .ux-progress-top .ux-levels{grid-template-columns:repeat(3,1fr)!important}
+  .ux-calculator-promo-inner{grid-template-columns:1fr!important;gap:14px!important}
+}
+@media(max-width:560px){
+  .student-home-v2 .mastery-ladder{overflow-x:auto!important;grid-template-columns:repeat(6,minmax(70px,1fr))!important;padding-bottom:3px!important}
+  .student-home-v2 .mastery-ladder:before{left:35px!important;right:35px!important}
+  .ux-progress-top .ux-levels{grid-template-columns:repeat(2,1fr)!important}
+  .ux-calculator-promo{padding:0 14px}
+  .ux-calculator-promo-inner{padding:18px!important}
+}
