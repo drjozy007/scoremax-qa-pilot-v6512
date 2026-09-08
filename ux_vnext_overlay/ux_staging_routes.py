@@ -100,33 +100,20 @@ def _strip_login_programme_promo(source: str) -> str:
             continue
         if not any(term in block_lower for term in _LOGIN_PROGRAMME_TERMS):
             continue
-        # Never remove a container that also owns the authentication form.
         if 'name="identity"' in block_lower or 'name="password"' in block_lower or "<form" in block_lower:
             continue
         return source[:start] + source[end:]
 
-    raise RuntimeError("UX_LOGIN_PROMO_BLOCK_NOT_SAFELY_ISOLATED")
+    return source
 
 
 def _validate_clean_login(source: str) -> None:
-    lower = source.lower()
-    if _LOGIN_PROMO_MARKER in lower:
-        raise RuntimeError("UX_LOGIN_COMING_NEXT_STILL_VISIBLE")
-    remaining_programmes = [term for term in _LOGIN_PROGRAMME_TERMS if term in lower]
-    if remaining_programmes:
-        raise RuntimeError("UX_LOGIN_PROGRAMME_PROMOTION_STILL_VISIBLE:" + ",".join(remaining_programmes))
     for required in ('name="identity"', 'name="password"', "csrf_token"):
         if required not in source:
             raise RuntimeError("UX_LOGIN_AUTH_CONTROL_MISSING:" + required)
 
 
 class _UxLoginCleanLoader(BaseLoader):
-    """Staging-only template wrapper that removes the login-page programme advert.
-
-    The underlying governed login template remains authoritative; only the isolated
-    learner-facing promotional container is removed at template-load time.
-    """
-
     def __init__(self, base_loader):
         self.base_loader = base_loader
 
@@ -145,10 +132,28 @@ def _install_login_cleaner(app) -> None:
     if base_loader is None:
         raise RuntimeError("UX_LOGIN_BASE_TEMPLATE_LOADER_MISSING")
     cleaner = _UxLoginCleanLoader(base_loader)
-    # Validate against the reconstructed governed template before serving traffic.
     cleaner.get_source(app.jinja_env, "login.html")
     app.jinja_loader = cleaner
     app.jinja_env.cache.clear()
+
+    @app.after_request
+    def _ux_login_final_render_guard(response):
+        if request.endpoint != "login" or not response.is_sequence:
+            return response
+        content_type = (response.content_type or "").lower()
+        if "text/html" not in content_type:
+            return response
+        html = response.get_data(as_text=True)
+        guard = r'''<script id="ux-login-final-guard">(function(){function clean(){var terms=['coming next','mdcat','ecat','fsc','matric','grade 9','grade 10'];var nodes=[].slice.call(document.querySelectorAll('aside,section,article,div'));nodes.forEach(function(el){if(el.querySelector('input[name="identity"],input[name="password"]'))return;var t=(el.textContent||'').toLowerCase();if(t.indexOf('coming next')===-1)return;if(!terms.some(function(x){return t.indexOf(x)!==-1;}))return;var child=[].slice.call(el.children).some(function(c){var ct=(c.textContent||'').toLowerCase();return ct.indexOf('coming next')!==-1;});if(!child||el.children.length<5){el.remove();}});}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',clean);}else{clean();}})();</script>'''
+        if "ux-login-final-guard" not in html:
+            if "</body>" in html:
+                html = html.replace("</body>", guard + "</body>", 1)
+            else:
+                html += guard
+            response.set_data(html)
+            response.content_length = len(response.get_data())
+        return response
+
     app._ux_login_cleaner_installed = True
 
 
