@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% block title %}Learn · ScoreMax{% endblock %}{% block content %}
+<style>
+.ux-learn{max-width:1180px;margin:0 auto;padding:28px 22px 52px}.ux-learn-head{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}.ux-learn h1{margin:.15rem 0 .45rem;font-size:clamp(2rem,4vw,3rem);letter-spacing:-.035em}.ux-learn-head p{max-width:720px}.ux-learn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.ux-learn-card{display:block;text-decoration:none;color:inherit;padding:20px;border:1px solid #e0e8e8;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.035);transition:.15s ease}.ux-learn-card:hover{transform:translateY(-2px);border-color:#a8d8d5;box-shadow:0 12px 28px rgba(47,127,125,.08)}.ux-learn-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.ux-learn-card h2{margin:.2rem 0;font-size:1.25rem}.ux-learn-card .status{font-size:.63rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#2F7F7D;background:#E8F6F5;padding:5px 7px;border-radius:999px}.ux-subject-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:16px 0}.ux-subject-metrics div{padding:10px;border-radius:11px;background:#f7f9fa}.ux-subject-metrics strong,.ux-subject-metrics span{display:block}.ux-subject-metrics strong{font-size:1rem}.ux-subject-metrics span{font-size:.62rem;color:#74808d;margin-top:2px}.ux-progress-mini{height:7px;border-radius:999px;background:#eef2f2;overflow:hidden}.ux-progress-mini span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#3FA6A3,#2F7F7D)}.ux-open-link{display:block;margin-top:10px;color:#2F7F7D;font-size:.78rem;font-weight:900}.ux-future{margin-top:22px;padding:20px;border:1px solid #dce7e7;border-radius:18px;background:linear-gradient(135deg,#f7fcfb,#fff)}.ux-future-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.ux-future-card{display:block;padding:15px 16px;border:1px solid #dfe8e8;border-radius:14px;background:#fff;text-decoration:none;color:inherit}.ux-future-card strong,.ux-future-card span{display:block}.ux-future-card span{font-size:.72rem;color:#73808e;margin-top:5px}.ux-future-card b{float:right;color:#2F7F7D;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em}@media(max-width:860px){.ux-learn-grid,.ux-future-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.ux-learn{padding:22px 14px 44px}.ux-learn-grid,.ux-future-grid{grid-template-columns:1fr}.ux-subject-metrics{grid-template-columns:repeat(3,1fr)}}
+</style>
+<section class="ux-learn">
+  <div class="ux-learn-head"><div><p class="eyebrow">LEARN</p><h1>Choose a subject. See every chapter.</h1><p class="muted">Open a subject to see its chapters, your progress in each chapter, current mastery evidence and the next useful action.</p></div></div>
+  <div class="ux-learn-grid">
+    {% for s in subjects %}
+    <a class="ux-learn-card" href="{{s.url}}">
+      <div class="ux-learn-card-head"><div><p class="eyebrow">{{programme_label}}</p><h2>{{s.name}}</h2></div><span class="status">{{'In progress' if s.started_chapters else 'Ready'}}</span></div>
+      <div class="ux-subject-metrics"><div><strong>{{s.chapter_count}}</strong><span>chapters</span></div><div><strong>{{s.started_chapters}}</strong><span>started</span></div><div><strong>{{s.avg_accuracy ~ '%' if s.answered else '—'}}</strong><span>accuracy</span></div></div>
+      <div class="ux-progress-mini" aria-label="{{s.progress_pct}}% chapter progress"><span style="width:{{s.progress_pct}}%"></span></div>
+      <span class="ux-open-link">Open chapters →</span>
+    </a>
+    {% endfor %}
+  </div>
+  <section class="ux-future"><p class="eyebrow">ALSO ON YOUR ROUTE</p><h2>MDCAT preparation stays visible.</h2><p class="muted">You can see the next route even before it is included in your current access.</p><div class="ux-future-grid">
+    {% for x in future_options %}<a class="ux-future-card" href="{{x.url}}"><b>{{x.badge}}</b><strong>{{x.name}}</strong><span>{{x.copy}}</span></a>{% endfor %}
+  </div></section>
+</section>
+{% endblock %}
