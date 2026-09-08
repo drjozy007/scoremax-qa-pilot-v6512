@@ -6,6 +6,11 @@ from pathlib import Path
 import os
 
 from flask import render_template, request, session, url_for
+from werkzeug.security import generate_password_hash
+
+TEST_STUDENT_EMAIL='ux-premed-student@scoremax.test'
+TEST_STUDENT_ID='STU-900001'
+TEST_STUDENT_USERNAME='ux-premed-student'
 
 
 def _db_path() -> Path:
@@ -17,6 +22,27 @@ def _connect() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout=5000")
     return conn
+
+
+def _ensure_fixed_test_student() -> None:
+    password=os.environ.get('SCOREMAX_STAGING_TEST_STUDENT_PASSWORD','').strip()
+    if not password:
+        return
+    conn=_connect()
+    try:
+        row=conn.execute("SELECT id FROM users WHERE lower(COALESCE(email,''))=?",(TEST_STUDENT_EMAIL,)).fetchone()
+        password_hash=generate_password_hash(password)
+        if row:
+            conn.execute("""UPDATE users SET system_user_id=?,username=?,full_name=?,password_hash=?,role='student',
+              academic_level='FSc Part 1',subjects='Biology,Chemistry,Physics',account_status='active',active_programme='FSc Part 1'
+              WHERE id=?""",(TEST_STUDENT_ID,TEST_STUDENT_USERNAME,'ScoreMax UX Pre-Medical Student',password_hash,row['id']))
+        else:
+            conn.execute("""INSERT INTO users(system_user_id,role,full_name,email,username,password_hash,province,board,academic_level,subjects,account_status,active_programme,login_provider)
+              VALUES(?,'student',?,?,?,?,?,?,?,'Biology,Chemistry,Physics','active','FSc Part 1','password')""",
+              (TEST_STUDENT_ID,'ScoreMax UX Pre-Medical Student',TEST_STUDENT_EMAIL,TEST_STUDENT_USERNAME,password_hash,'Punjab','Punjab Board','FSc Part 1'))
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _subjects_for_student(conn, student_id: int) -> list[str]:
@@ -89,6 +115,7 @@ def _student_shell_patch() -> str:
 
 def install_student_batch(app) -> None:
     if getattr(app,'_ux_student_batch_installed',False): return
+    _ensure_fixed_test_student()
 
     @app.route('/student/learn-vnext',endpoint='ux_student_learn')
     def ux_student_learn():
