@@ -49,6 +49,7 @@ def main() -> None:
         "templates/ux_progress.html",
         "templates/ux_content_review.html",
         "templates/ux_content_review_question.html",
+        "templates/ux_verify_email_pending.html",
         "static/ux_vnext.css",
         "static/ux_header_fix.css",
         "static/ux_structure_v2.css",
@@ -59,6 +60,7 @@ def main() -> None:
         "ux_student_batch.py",
         "ux_content_reviewer.py",
         "ux_reviewer_accounts.py",
+        "ux_email_verification.py",
     ):
         copy_overlay(rel)
 
@@ -121,13 +123,13 @@ def main() -> None:
     if not public_match:
         raise SystemExit("UX_VNEXT_PUBLIC_ENDPOINT_SET_MISSING")
     body = public_match.group("body")
-    for endpoint in ("ux_register_interest", "ux_nominate_school"):
+    for endpoint in ("ux_register_interest", "ux_nominate_school", "ux_verify_email", "ux_verification_pending", "ux_resend_verification"):
         if f"'{endpoint}'" not in body:
             body = body.rstrip() + f",'{endpoint}'"
     app_text = app_text[:public_match.start()] + "public_endpoints={" + body + "}" + app_text[public_match.end():]
 
     installer_marker = "\nif __name__=='__main__':\n"
-    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\nfrom ux_reviewer_accounts import ensure_reviewer_accounts\nensure_reviewer_accounts()\n"
+    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\nfrom ux_reviewer_accounts import ensure_reviewer_accounts\nensure_reviewer_accounts()\nfrom ux_email_verification import install_email_verification\ninstall_email_verification(app, send_transactional_email)\n"
     if installer_marker not in app_text:
         raise SystemExit("UX_VNEXT_ROUTE_INSTALL_MARKER_MISSING")
     app_text = app_text.replace(installer_marker, installer + installer_marker, 1)
@@ -166,7 +168,8 @@ def main() -> None:
 
     for rel in (
         "templates/ux_student_learn.html","templates/ux_subject_chapters.html","templates/ux_progress.html","ux_student_batch.py",
-        "templates/ux_content_review.html","templates/ux_content_review_question.html","ux_content_reviewer.py","ux_reviewer_accounts.py"
+        "templates/ux_content_review.html","templates/ux_content_review_question.html","ux_content_reviewer.py","ux_reviewer_accounts.py",
+        "templates/ux_verify_email_pending.html","ux_email_verification.py"
     ):
         if not (OUT/rel).is_file():
             raise SystemExit("UX_VNEXT_STUDENT_BATCH_MISSING:"+rel)
@@ -181,7 +184,12 @@ def main() -> None:
         if required not in accounts_text:
             raise SystemExit("UX_VNEXT_REVIEWER_ACCOUNT_CONTROL_MISSING:"+required)
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true content_reviewer=true reviewer_accounts=5 subjects_chapters_progress=true science_corner=true interest_routes=true")
+    verify_text=(OUT/"ux_email_verification.py").read_text(encoding="utf-8")
+    for required in ("email_verified","pending_email_verification","ux_resend_verification","SCOREMAX_REQUIRE_EMAIL_VERIFICATION","STU-900001","REVIEWER-05"):
+        if required not in verify_text:
+            raise SystemExit("UX_VNEXT_EMAIL_VERIFICATION_CONTROL_MISSING:"+required)
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true content_reviewer=true reviewer_accounts=5 email_verification=true subjects_chapters_progress=true science_corner=true interest_routes=true")
 
 
 if __name__ == "__main__":
