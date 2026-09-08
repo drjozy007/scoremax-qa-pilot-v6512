@@ -39,6 +39,7 @@ def main() -> None:
 
     for rel in (
         "templates/index.html",
+        "templates/login.html",
         "templates/ux_register_interest.html",
         "templates/ux_nominate_school.html",
         "static/ux_vnext.css",
@@ -46,6 +47,7 @@ def main() -> None:
         "static/ux_structure_v2.css",
         "static/ux_footer_v2.css",
         "static/ux_text_editor.js",
+        "static/ux_login_clean.js",
         "ux_staging_routes.py",
     ):
         copy_overlay(rel)
@@ -139,7 +141,16 @@ def main() -> None:
     if "Choose the route you are preparing for." in landing:
         raise SystemExit("UX_VNEXT_REMOVED_PROGRAMME_SECTION_STILL_PRESENT")
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true")
+    login = (OUT / "templates/login.html").read_text(encoding="utf-8")
+    login_lower = login.lower()
+    for forbidden_login in ("coming next", "mdcat", "ecat", "fsc", "matric", "grade 9", "grade 10"):
+        if forbidden_login in login_lower:
+            raise SystemExit("UX_VNEXT_LOGIN_PROMO_STILL_PRESENT:" + forbidden_login)
+    for required_login in ('name="identity"', 'name="password"', "Create Free Account"):
+        if required_login not in login:
+            raise SystemExit("UX_VNEXT_LOGIN_CONTROL_MISSING:" + required_login)
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true clean_login=true")
 
 
 if __name__ == "__main__":
