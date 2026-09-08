@@ -126,7 +126,7 @@ def main() -> None:
     app_text = app_text[:public_match.start()] + "public_endpoints={" + body + "}" + app_text[public_match.end():]
 
     installer_marker = "\nif __name__=='__main__':\n"
-    installer = "\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\n"
+    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\n"
     if installer_marker not in app_text:
         raise SystemExit("UX_VNEXT_ROUTE_INSTALL_MARKER_MISSING")
     app_text = app_text.replace(installer_marker, installer + installer_marker, 1)
