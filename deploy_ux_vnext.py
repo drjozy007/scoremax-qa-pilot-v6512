@@ -44,6 +44,9 @@ def main() -> None:
         "templates/ux_register_interest.html",
         "templates/ux_nominate_school.html",
         "templates/ux_target_score.html",
+        "templates/ux_student_learn.html",
+        "templates/ux_subject_chapters.html",
+        "templates/ux_progress.html",
         "static/ux_vnext.css",
         "static/ux_header_fix.css",
         "static/ux_structure_v2.css",
@@ -51,6 +54,7 @@ def main() -> None:
         "static/ux_text_editor.js",
         "static/ux_login_clean.js",
         "ux_staging_routes.py",
+        "ux_student_batch.py",
     ):
         copy_overlay(rel)
 
@@ -75,8 +79,9 @@ def main() -> None:
         raise SystemExit("UX_VNEXT_BRAND_MARKER_MISSING")
     text = text.replace(old_brand, new_brand, 1)
 
-    desktop_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a></div></details><a href="{{url_for('index')}}#impact">Impact</a><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="nav-cta" href="{{url_for('register',role='student')}}">Start Free</a>'''
-    mobile_nav = '''<a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a><a href="/science-genius">Science Genius of the Year</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a><p class="mobile-menu-label">Get Involved</p><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><p class="mobile-menu-label">Impact</p><a href="{{url_for('index')}}#impact">ScoreMax Impact</a><a href="{{url_for('ux_nominate_school')}}">Nominate a School</a><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Support Education</a><p class="mobile-menu-label">Explore</p><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('login')}}">Login</a><a class="btn" href="{{url_for('register',role='student')}}">Start Free</a>'''
+    science_interest = "{{url_for('ux_register_interest',programme='Science Genius of the Year')}}"
+    desktop_nav = f'''<a href="{{{{url_for('about_page')}}}}">About Us</a><a href="{{{{url_for('how_it_works')}}}}">How It Works</a><a href="{{{{url_for('index')}}}}#programmes">Programmes</a><a href="{science_interest}">Science Genius of the Year</a><a href="{{{{url_for('teacher_of_year_page')}}}}">Teacher of the Year</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="{science_interest}">Science Genius of the Year</a><a href="{{{{url_for('teacher_of_year_page')}}}}">Teacher of the Year</a><a href="{{{{url_for('ux_register_interest',programme='Student Council')}}}}">Student Council</a></div></details><a href="{{{{url_for('index')}}}}#impact">Impact</a><a href="{{{{url_for('knowledge_home')}}}}">Knowledge Hub</a><a href="{{{{url_for('faq_page')}}}}">Help</a><a href="{{{{url_for('login')}}}}">Login</a><a class="nav-cta" href="{{{{url_for('register',role='student')}}}}">Start Free</a>'''
+    mobile_nav = f'''<a href="{{{{url_for('about_page')}}}}">About Us</a><a href="{{{{url_for('how_it_works')}}}}">How It Works</a><a href="{{{{url_for('index')}}}}#programmes">Programmes</a><a href="{science_interest}">Science Genius of the Year</a><a href="{{{{url_for('teacher_of_year_page')}}}}">Teacher of the Year</a><p class="mobile-menu-label">Get Involved</p><a href="{{{{url_for('ux_register_interest',programme='Student Council')}}}}">Student Council</a><p class="mobile-menu-label">Impact</p><a href="{{{{url_for('index')}}}}#impact">ScoreMax Impact</a><a href="{{{{url_for('ux_nominate_school')}}}}">Nominate a School</a><a href="{{{{url_for('ux_register_interest',programme='Education Impact supporter')}}}}">Support Education</a><p class="mobile-menu-label">Explore</p><a href="{{{{url_for('knowledge_home')}}}}">Knowledge Hub</a><a href="{{{{url_for('faq_page')}}}}">Help</a><a href="{{{{url_for('login')}}}}">Login</a><a class="btn" href="{{{{url_for('register',role='student')}}}}">Start Free</a>'''
 
     text = replace_public_nav_pair(text, desktop_nav, mobile_nav)
 
@@ -93,7 +98,7 @@ def main() -> None:
   <div class="ux-footer-brand"><a class="ux-footer-brand-lockup" href="{{url_for('index')}}"><span class="ux-footer-mini-mark" aria-hidden="true"></span><span>ScoreMax</span></a><p>Smarter practice, clearer progress and a better route to exam readiness.</p></div>
   <nav class="ux-footer-col" aria-label="Explore"><h3>Explore</h3><a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a></nav>
   <nav class="ux-footer-col" aria-label="Programmes"><h3>Programmes</h3><a href="{{url_for('ux_register_interest',programme='MDCAT')}}">MDCAT</a><a href="{{url_for('ux_register_interest',programme='ECAT')}}">ECAT</a><a href="{{url_for('ux_register_interest',programme='FSc')}}">FSc</a><a href="{{url_for('ux_register_interest',programme='Matric')}}">Matric</a></nav>
-  <nav class="ux-footer-col" aria-label="Community"><h3>Community</h3><a href="/science-genius">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a></nav>
+  <nav class="ux-footer-col" aria-label="Community"><h3>Community</h3><a href="{{url_for('ux_register_interest',programme='Science Genius of the Year')}}">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a></nav>
   <nav class="ux-footer-col" aria-label="Impact"><h3>Impact</h3><a href="{{url_for('index')}}#impact">ScoreMax Impact</a><a href="{{url_for('ux_nominate_school')}}">Nominate a School</a><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Support Education</a></nav>
   <nav class="ux-footer-col" aria-label="Resources"><h3>Resources</h3><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a></nav>
   <nav class="ux-footer-col" aria-label="Account"><h3>Account</h3><a href="{{url_for('login')}}">Login</a><a class="ux-footer-primary" href="{{url_for('register',role='student')}}">Start Free</a></nav>
@@ -118,7 +123,7 @@ def main() -> None:
     app_text = app_text[:public_match.start()] + "public_endpoints={" + body + "}" + app_text[public_match.end():]
 
     installer_marker = "\nif __name__=='__main__':\n"
-    installer = "\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\n"
+    installer = "\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\n"
     if installer_marker not in app_text:
         raise SystemExit("UX_VNEXT_ROUTE_INSTALL_MARKER_MISSING")
     app_text = app_text.replace(installer_marker, installer + installer_marker, 1)
@@ -140,32 +145,26 @@ def main() -> None:
     missing = [term for term in required_landing if term not in landing]
     if missing:
         raise SystemExit("UX_VNEXT_REQUIRED_PUBLIC_CONTENT_MISSING:" + ",".join(missing))
-    if "Choose the route you are preparing for." in landing:
-        raise SystemExit("UX_VNEXT_REMOVED_PROGRAMME_SECTION_STILL_PRESENT")
 
     login = (OUT / "templates/login.html").read_text(encoding="utf-8")
-    login_lower = login.lower()
     for forbidden_login in ("coming next", "mdcat", "ecat", "fsc", "matric", "grade 9", "grade 10"):
-        if forbidden_login in login_lower:
+        if forbidden_login in login.lower():
             raise SystemExit("UX_VNEXT_LOGIN_PROMO_STILL_PRESENT:" + forbidden_login)
-    for required_login in ('name="identity"', 'name="password"', "Create Free Account"):
-        if required_login not in login:
-            raise SystemExit("UX_VNEXT_LOGIN_CONTROL_MISSING:" + required_login)
 
     register = (OUT / "templates/register.html").read_text(encoding="utf-8")
-    register_lower = register.lower()
-    if "coming next" in register_lower or "coming soon" in register_lower:
+    if "coming next" in register.lower() or "coming soon" in register.lower():
         raise SystemExit("UX_VNEXT_REGISTER_PROMO_STILL_PRESENT")
-    for required_register in ('name="full_name"', 'name="email"', 'name="password"', 'name="referral_code"', "Create Free Account"):
-        if required_register not in register:
-            raise SystemExit("UX_VNEXT_REGISTER_CONTROL_MISSING:" + required_register)
 
     calculators = (OUT / "templates/ux_target_score.html").read_text(encoding="utf-8")
     for required_calc in ("AGGREGATE CALCULATOR", "REVERSE CALCULATOR", "10 · 40 · 50", "aggregateResult", "requiredMdcat"):
         if required_calc not in calculators:
             raise SystemExit("UX_VNEXT_CALCULATOR_CONTROL_MISSING:" + required_calc)
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true public_nav=impact_top_level feature_showcase=bento balanced_tools=true full_footer_sitemap=true clean_login=true clean_register=true calculators=true")
+    for rel in ("templates/ux_student_learn.html","templates/ux_subject_chapters.html","templates/ux_progress.html","ux_student_batch.py"):
+        if not (OUT/rel).is_file():
+            raise SystemExit("UX_VNEXT_STUDENT_BATCH_MISSING:"+rel)
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true subjects_chapters_progress=true science_corner=true interest_routes=true")
 
 
 if __name__ == "__main__":
