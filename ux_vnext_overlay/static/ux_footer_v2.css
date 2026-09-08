@@ -53,7 +53,7 @@
 }
 
 /* Seaweed accent trial — staging only. */
-:root{--ux-blue:#3FA6A3;--ux-violet:#2F7F7D;--ux-seaweed:#3FA6A3;--ux-seaweed-deep:#2F7F7D;--ux-seaweed-soft:#E8F6F5}
+:root{--ux-blue:#3FA6A3;--ux-violet:#2F7F7D;--ux-seaweed:#3FA6A3;--ux-seaweed-deep:#2F7F7D;--ux-seaweed-soft:#E8F6F5;--brand:#3FA6A3;--brand2:#2F7F7D}
 .ux-brand-mark{background:linear-gradient(145deg,#3FA6A3 0%,#378F8C 58%,#2F7F7D 100%)!important;box-shadow:0 7px 18px rgba(63,166,163,.22)!important}
 .ux-brand-max{background:linear-gradient(90deg,#3FA6A3,#2F7F7D)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
 .site-header .desktop-nav .nav-cta,.ux-btn-primary{background:linear-gradient(135deg,#3FA6A3,#2F7F7D)!important;border-color:#2F7F7D!important;color:#fff!important;box-shadow:0 12px 30px rgba(63,166,163,.20)!important}
@@ -74,3 +74,20 @@
 .ux-programme-card.is-active{border-color:#9ED6D3!important;box-shadow:0 16px 40px rgba(63,166,163,.13)!important}.ux-current{background:#E8F6F5!important;color:#236765!important}.ux-how-grid article>span{color:#2F7F7D!important}.ux-spark{background:linear-gradient(120deg,#EDF8F7,#F7FCFB)!important}
 .ux-impact{background:linear-gradient(135deg,#F3FAF9 0%,#F8FCFC 100%)!important}.ux-impact-card.primary{background:linear-gradient(145deg,#102F35,#2F7F7D)!important;box-shadow:0 12px 30px rgba(47,127,125,.18)!important}
 .ux-footer-mini-mark{background:linear-gradient(145deg,#3FA6A3,#2F7F7D)!important;box-shadow:0 7px 18px rgba(63,166,163,.16)!important}.ux-footer-col a:hover,.ux-footer-col a:focus-visible,.ux-footer-bottom-links a:hover{color:#2F7F7D!important}.ux-footer-col .ux-footer-primary{color:#236765!important}
+
+/* Authenticated student UX — brand/action colour only; semantic state colours are preserved. */
+.site-header .desktop-nav a.active{color:#236765!important}
+.programme-tab:hover{background:#E8F6F5!important;color:#236765!important}
+.programme-tab.active,.mobile-programme-grid button.active,.workspace-tabs button.active,.app-tab-list button.active{background:#2F7F7D!important;color:#fff!important;border-color:#2F7F7D!important}
+.subject-quick-strip a.active{background:#E8F6F5!important;color:#236765!important}
+.mobile-bottom-nav a:hover,.mobile-bottom-nav a:focus-visible,.mobile-bottom-nav button:hover,.mobile-bottom-nav button:focus-visible{color:#236765!important}
+.btn:not(.alt):not(.danger),.coach-toggle{background:linear-gradient(135deg,#3FA6A3,#2F7F7D)!important;color:#fff!important;border-color:#2F7F7D!important;box-shadow:0 7px 18px rgba(63,166,163,.16)!important}
+.btn:not(.alt):not(.danger):hover,.coach-toggle:hover{background:linear-gradient(135deg,#378F8C,#236765)!important}
+.command-focus-card,.plan-next-card{border-top-color:#3FA6A3!important}
+.command-coach-card{background:linear-gradient(145deg,#F2FBFA,#fff)!important;border-top-color:#2F7F7D!important}
+.pathway-explorer-card.selected{border-color:#3FA6A3!important}.context-card{border-left-color:#3FA6A3!important}.action-list>div>span{background:#2F7F7D!important}
+.dashboard-quick-actions a:hover,.compact-route-grid .route-card:hover,.workspace-block:hover{border-color:#B9E1DF!important}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline-color:#3FA6A3!important}
+
+/* Account-entry cleanup: programme selection belongs in onboarding, not the sign-in/create-account surface. */
+.account-entry-card label:has(select[name="academic_level"]){display:none!important}
