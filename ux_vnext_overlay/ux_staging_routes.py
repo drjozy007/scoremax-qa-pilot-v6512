@@ -5,12 +5,12 @@ import re
 import sqlite3
 from pathlib import Path
 
-from flask import render_template, request
+from flask import render_template, request, session
 from jinja2 import BaseLoader
-
 
 _LOGIN_PROMO_MARKER = "coming next"
 _LOGIN_PROGRAMME_TERMS = ("mdcat", "ecat", "fsc", "matric", "grade 9", "grade 10")
+_PREMED_DEFAULT_SUBJECTS = ("Biology", "Chemistry", "Physics")
 
 
 def _db_path() -> Path:
@@ -48,7 +48,6 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_ux_interest_programme ON ux_interest_registrations(programme);
         CREATE INDEX IF NOT EXISTS idx_ux_interest_email ON ux_interest_registrations(lower(email));
-
         CREATE TABLE IF NOT EXISTS ux_school_nominations(
           id INTEGER PRIMARY KEY,
           nominator_name TEXT NOT NULL,
@@ -85,11 +84,9 @@ def _strip_login_programme_promo(source: str) -> str:
     marker_at = lower.find(_LOGIN_PROMO_MARKER)
     if marker_at < 0:
         return source
-
     candidates: list[tuple[int, str]] = []
     for match in re.finditer(r"<(aside|article|section|div)\b[^>]*>", source[:marker_at], re.I):
         candidates.append((match.start(), match.group(1).lower()))
-
     for start, tag in reversed(candidates):
         end = _matching_element_end(source, start, tag)
         if end is None or not (start < marker_at < end):
@@ -103,8 +100,46 @@ def _strip_login_programme_promo(source: str) -> str:
         if 'name="identity"' in block_lower or 'name="password"' in block_lower or "<form" in block_lower:
             continue
         return source[:start] + source[end:]
-
     return source
+
+
+def _transform_student_base(source: str) -> str:
+    old_nav = '''{% if learner_ui_global %}
+        <a class="{{'active' if student_nav_section_global=='dashboard' else ''}}" href="{{url_for('student_dashboard')}}">Home</a>
+        <a class="{{'active' if student_nav_section_global=='learn' else ''}}" href="{{url_for('subject_browser')}}">Learn</a>
+        <a class="{{'active' if student_nav_section_global=='plan' else ''}}" href="{{url_for('study_plan_page')}}">My Plan</a>
+        <a class="{{'active' if student_nav_section_global=='tests' else ''}}" href="{{url_for('test_setup')}}">Practice</a>
+        <a class="{{'active' if student_nav_section_global=='exams' else ''}}" href="{{url_for('exam_centre')}}">Exams</a>
+        <a class="{{'active' if student_nav_section_global=='progress' else ''}}" href="{{url_for('student_analytics_page')}}">Progress</a>'''
+    new_nav = '''{% if learner_ui_global %}
+        <a class="{{'active' if student_nav_section_global=='dashboard' else ''}}" href="{{url_for('student_dashboard')}}">Home</a>
+        <a class="{{'active' if student_nav_section_global=='learn' else ''}}" href="{{url_for('subject_browser')}}">Learn</a>
+        <a class="{{'active' if student_nav_section_global=='tests' and request.endpoint not in ['weak_areas_page','mastery_page'] else ''}}" href="{{url_for('test_setup')}}">Practice</a>
+        <a class="{{'active' if request.endpoint=='weak_areas_page' else ''}}" href="{{url_for('weak_areas_page')}}">Weak Areas</a>
+        <a class="{{'active' if request.endpoint=='mastery_page' else ''}}" href="{{url_for('mastery_page')}}">Mastery</a>
+        <a class="{{'active' if student_nav_section_global=='plan' else ''}}" href="{{url_for('study_plan_page')}}">My Plan</a>
+        <a class="{{'active' if student_nav_section_global=='exams' else ''}}" href="{{url_for('exam_centre')}}">Exams</a>
+        <a class="{{'active' if student_nav_section_global=='progress' else ''}}" href="{{url_for('student_analytics_page')}}">Progress</a>'''
+    if old_nav not in source:
+        raise RuntimeError("UX_STUDENT_PRIMARY_NAV_MARKER_MISSING")
+    source = source.replace(old_nav, new_nav, 1)
+
+    start_marker = "{% if learner_ui_global and request.endpoint not in ['take_test_v4','assessment_review_v4','qa_synthetic_session'] %}"
+    start = source.find(start_marker)
+    main = source.find('<main id="mainContent"', start)
+    if start < 0 or main < 0:
+        raise RuntimeError("UX_STUDENT_CONTEXT_MARKER_MISSING")
+    subject_only = '''{% if learner_ui_global and show_subject_nav_global and request.endpoint not in ['take_test_v4','assessment_review_v4','qa_synthetic_session'] %}
+<div class="student-context-stack subject-only-context" aria-label="Subjects">
+  <nav class="subject-quick-strip" aria-label="Subject selector">
+    {% for s in subject_nav_global %}
+      <a class="{{'active' if (active_subject_global|lower)==(s.subject|lower) else ''}} state-{{s.access_state|lower}}" href="{{url_for('access_account',locked_subject=s.subject) if s.access_state=='LOCKED' else url_for('subject_detail',subject=s.subject)}}">{{s.subject}}{% if s.access_state=='LOCKED' %}<small>Upgrade</small>{% elif s.availability=='COMING_SOON' %}<small>Soon</small>{% elif s.answered %}<small>{{s.accuracy|round(0)|int}}%</small>{% endif %}</a>
+    {% endfor %}
+  </nav>
+</div>
+{% endif %}
+'''
+    return source[:start] + subject_only + source[main:]
 
 
 def _validate_clean_login(source: str) -> None:
@@ -113,7 +148,7 @@ def _validate_clean_login(source: str) -> None:
             raise RuntimeError("UX_LOGIN_AUTH_CONTROL_MISSING:" + required)
 
 
-class _UxLoginCleanLoader(BaseLoader):
+class _UxStagingLoader(BaseLoader):
     def __init__(self, base_loader):
         self.base_loader = base_loader
 
@@ -122,16 +157,20 @@ class _UxLoginCleanLoader(BaseLoader):
         if template == "login.html":
             source = _strip_login_programme_promo(source)
             _validate_clean_login(source)
+        elif template == "base.html":
+            source = _transform_student_base(source)
         return source, filename, uptodate
+
+
+def _is_fsc_level(level: str) -> bool:
+    value = (level or "").casefold()
+    return "fsc" in value and ("part 1" in value or "part 2" in value or "year 1" in value or "year 2" in value or value.strip() in {"fsc 1", "fsc 2"})
 
 
 def _install_staging_page_guards(app) -> None:
     if getattr(app, "_ux_staging_page_guards_installed", False):
         return
 
-    # Keep staging browser sessions valid across deploys. Render's start command
-    # still creates an ephemeral SCOREMAX_SECRET, but UX staging deliberately
-    # overrides it here with a separate stable staging-only secret.
     stable_secret = os.environ.get("SCOREMAX_STAGING_SESSION_SECRET", "").strip()
     if not stable_secret:
         raise RuntimeError("UX_STAGING_SESSION_SECRET_MISSING")
@@ -140,86 +179,39 @@ def _install_staging_page_guards(app) -> None:
 
     base_loader = app.jinja_loader
     if base_loader is None:
-        raise RuntimeError("UX_LOGIN_BASE_TEMPLATE_LOADER_MISSING")
-    cleaner = _UxLoginCleanLoader(base_loader)
-    cleaner.get_source(app.jinja_env, "login.html")
-    app.jinja_loader = cleaner
+        raise RuntimeError("UX_BASE_TEMPLATE_LOADER_MISSING")
+    loader = _UxStagingLoader(base_loader)
+    loader.get_source(app.jinja_env, "login.html")
+    loader.get_source(app.jinja_env, "base.html")
+    app.jinja_loader = loader
     app.jinja_env.cache.clear()
+
+    @app.before_request
+    def _ux_staging_subject_defaults():
+        if session.get("role") != "student" or not session.get("user_id"):
+            return None
+        conn = _connect()
+        try:
+            row = conn.execute("SELECT academic_level,COALESCE(subjects,'') subjects FROM users WHERE id=?", (session["user_id"],)).fetchone()
+            if row and _is_fsc_level(row["academic_level"] or "") and not (row["subjects"] or "").strip():
+                conn.execute("UPDATE users SET subjects=? WHERE id=?", (",".join(_PREMED_DEFAULT_SUBJECTS), session["user_id"]))
+                conn.commit()
+        finally:
+            conn.close()
+        return None
 
     @app.after_request
     def _ux_staging_final_render_guards(response):
-        if not response.is_sequence:
+        if not response.is_sequence or "text/html" not in (response.content_type or "").lower():
             return response
-        content_type = (response.content_type or "").lower()
-        if "text/html" not in content_type:
-            return response
-
         html = response.get_data(as_text=True)
-
-        if request.endpoint == "login" and "ux-login-final-guard" not in html:
-            login_guard = r'''<script id="ux-login-final-guard">(function(){function clean(){var terms=['coming next','mdcat','ecat','fsc','matric','grade 9','grade 10'];var nodes=[].slice.call(document.querySelectorAll('aside,section,article,div'));nodes.forEach(function(el){if(el.querySelector('input[name="identity"],input[name="password"]'))return;var t=(el.textContent||'').toLowerCase();if(t.indexOf('coming next')===-1)return;if(!terms.some(function(x){return t.indexOf(x)!==-1;}))return;var child=[].slice.call(el.children).some(function(c){var ct=(c.textContent||'').toLowerCase();return ct.indexOf('coming next')!==-1;});if(!child||el.children.length<5){el.remove();}});}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',clean);}else{clean();}})();</script>'''
-            html = html.replace("</body>", login_guard + "</body>", 1) if "</body>" in html else html + login_guard
-
         endpoint = request.endpoint or ""
-        learner_page = (
-            "student-context-stack" in html
-            or "student-home-v2" in html
-            or endpoint == "dashboard"
-            or endpoint.startswith("student_")
-        )
+        learner_page = "student-context-stack" in html or "student-home-v2" in html or endpoint == "dashboard" or endpoint.startswith("student_")
         if learner_page and "ux-staging-disable-legacy-tour" not in html:
-            tour_guard = r'''<script id="ux-staging-disable-legacy-tour">(function(){
-var marker=/(?:part\s*)?[123]\s+of\s+3/i;
-function text(el){return ((el&&el.textContent)||'').replace(/\s+/g,' ').trim();}
-function isMarker(el){var t=text(el);return t.length>0&&t.length<1400&&marker.test(t);}
-function removeLegacyTour(){
-  var all=[].slice.call(document.querySelectorAll('body *'));
-  var markers=all.filter(isMarker);
-  if(!markers.length)return false;
-  markers.sort(function(a,b){return text(a).length-text(b).length;});
-  markers.slice(0,10).forEach(function(el){
-    var n=el,victim=null;
-    while(n&&n!==document.body){
-      var cs=getComputedStyle(n),r=n.getBoundingClientRect(),z=parseInt(cs.zIndex||'0',10);
-      var named=((n.id||'')+' '+(n.className||'')).toLowerCase();
-      if((cs.position==='fixed'||cs.position==='absolute')&&r.width>220&&r.height>70&&(z>=30||/tour|onboard|walkthrough|coach.?mark/.test(named)))victim=n;
-      n=n.parentElement;
-    }
-    (victim||el).remove();
-  });
-  all=[].slice.call(document.querySelectorAll('body *'));
-  all.forEach(function(el){
-    var cs=getComputedStyle(el),r=el.getBoundingClientRect(),z=parseInt(cs.zIndex||'0',10);
-    var named=((el.id||'')+' '+(el.className||'')).toLowerCase();
-    if((/tour|onboard|walkthrough|coach.?mark/.test(named))&&(cs.position==='fixed'||cs.position==='absolute')){el.remove();return;}
-    if(cs.position==='fixed'&&z>=30&&r.width>=window.innerWidth*.88&&r.height>=window.innerHeight*.82){
-      var bg=cs.backgroundColor||'';
-      if(bg!=='rgba(0, 0, 0, 0)'&&parseFloat(cs.opacity||'1')>.05){el.remove();return;}
-    }
-    if(/tour|onboard|walkthrough|coach.?mark/.test(named)){
-      [].slice.call(el.classList||[]).forEach(function(c){if(/tour|onboard|walkthrough|coach.?mark/i.test(c))el.classList.remove(c);});
-    }
-    var outline=parseFloat(cs.outlineWidth||'0');
-    var visual=(cs.outlineColor||'')+' '+(cs.boxShadow||'');
-    if(outline>=2&&/37,\s*99,\s*235|49,\s*94,\s*251|47,\s*98,\s*204|0,\s*102,\s*255/.test(visual))el.style.setProperty('outline','none','important');
-    if((el.classList.contains('today-focus-card')||el.classList.contains('home-progress-card'))&&/37,\s*99,\s*235|49,\s*94,\s*251|0,\s*102,\s*255/.test(cs.boxShadow||''))el.style.setProperty('box-shadow','0 10px 30px rgba(15,23,42,.045)','important');
-  });
-  [].slice.call(document.body.classList||[]).forEach(function(c){if(/tour|onboard|walkthrough/i.test(c))document.body.classList.remove(c);});
-  document.body.style.overflow='';document.documentElement.style.overflow='';
-  return true;
-}
-function start(){
-  removeLegacyTour();
-  var count=0,obs=new MutationObserver(function(){removeLegacyTour();if(++count>120)obs.disconnect();});
-  obs.observe(document.body,{childList:true,subtree:true,attributes:true});
-  setTimeout(function(){obs.disconnect();removeLegacyTour();},12000);
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
-})();</script>'''
+            tour_guard = r'''<script id="ux-staging-disable-legacy-tour">(function(){function clean(){var all=[].slice.call(document.querySelectorAll('body *'));all.forEach(function(el){var t=((el.textContent||'').replace(/\s+/g,' ').trim());var n=((el.id||'')+' '+(el.className||'')).toLowerCase();if(/(?:part\s*)?[123]\s+of\s+3/i.test(t)&&t.length<1400){var p=el;while(p&&p!==document.body){var s=getComputedStyle(p),r=p.getBoundingClientRect();if((s.position==='fixed'||s.position==='absolute')&&r.width>220&&r.height>70){p.remove();break;}p=p.parentElement;}}if(/tour|walkthrough|coach.?mark/.test(n)&&(getComputedStyle(el).position==='fixed'||getComputedStyle(el).position==='absolute'))el.remove();});document.body.style.overflow='';document.documentElement.style.overflow='';}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean);else clean();})();</script>'''
             html = html.replace("</body>", tour_guard + "</body>", 1) if "</body>" in html else html + tour_guard
-
-        response.set_data(html)
-        response.content_length = len(response.get_data())
+            response.set_data(html)
+            response.content_length = len(response.get_data())
         return response
 
     app._ux_staging_page_guards_installed = True
@@ -227,7 +219,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 def install_ux_staging_routes(app) -> None:
     _install_staging_page_guards(app)
-
     if "ux_register_interest" in app.view_functions:
         return
 
@@ -255,14 +246,7 @@ def install_ux_staging_routes(app) -> None:
                 conn = _connect()
                 try:
                     _ensure_schema(conn)
-                    conn.execute(
-                        """INSERT INTO ux_interest_registrations(programme,full_name,email,mobile,role,school,city,note)
-                           VALUES(?,?,?,?,?,?,?,?)""",
-                        (
-                            values["programme"], values["full_name"], values["email"], values["mobile"],
-                            values["role"], values["school"], values["city"], values["note"],
-                        ),
-                    )
+                    conn.execute("""INSERT INTO ux_interest_registrations(programme,full_name,email,mobile,role,school,city,note) VALUES(?,?,?,?,?,?,?,?)""", (values["programme"], values["full_name"], values["email"], values["mobile"], values["role"], values["school"], values["city"], values["note"]))
                     conn.commit()
                     success = True
                 finally:
@@ -293,14 +277,7 @@ def install_ux_staging_routes(app) -> None:
                 conn = _connect()
                 try:
                     _ensure_schema(conn)
-                    conn.execute(
-                        """INSERT INTO ux_school_nominations(nominator_name,email,role,school_name,city,relationship,reason)
-                           VALUES(?,?,?,?,?,?,?)""",
-                        (
-                            values["nominator_name"], values["email"], values["role"], values["school_name"],
-                            values["city"], values["relationship"], values["reason"],
-                        ),
-                    )
+                    conn.execute("""INSERT INTO ux_school_nominations(nominator_name,email,role,school_name,city,relationship,reason) VALUES(?,?,?,?,?,?,?)""", (values["nominator_name"], values["email"], values["role"], values["school_name"], values["city"], values["relationship"], values["reason"]))
                     conn.commit()
                     success = True
                 finally:
