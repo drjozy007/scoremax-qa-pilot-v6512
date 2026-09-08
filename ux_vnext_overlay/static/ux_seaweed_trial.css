@@ -7,6 +7,8 @@
   --ux-seaweed-dark:#236765;
   --ux-seaweed-soft:#E8F6F5;
   --ux-seaweed-line:#B9E1DF;
+  --brand:#3FA6A3;
+  --brand2:#2F7F7D;
 }
 
 /* Brand */
@@ -38,12 +40,34 @@
 .ux-tool-spark summary:after{color:#2F7F7D!important}
 .ux-tool-card:hover{border-color:#B9E1DF!important}
 
-/* Progress/programme accents */
+/* Landing progress/programme accents */
 .level-2{border-top-color:#74C4C1!important}.level-3{border-top-color:#3FA6A3!important}.level-4{border-top-color:#2F7F7D!important}
 .ux-programme-card.is-active{border-color:#9ED6D3!important;box-shadow:0 16px 40px rgba(63,166,163,.13)!important}
 .ux-current{background:#E8F6F5!important;color:#236765!important}
 .ux-how-grid article>span{color:#2F7F7D!important}
 .ux-spark{background:linear-gradient(120deg,#EDF8F7,#F7FCFB)!important}
+
+/* Authenticated student navigation and study context. */
+.site-header .desktop-nav a.active{color:#236765!important}
+.programme-tab:hover{background:#E8F6F5!important;color:#236765!important}
+.programme-tab.active,.mobile-programme-grid button.active,.workspace-tabs button.active,.app-tab-list button.active{background:#2F7F7D!important;color:#fff!important;border-color:#2F7F7D!important}
+.subject-quick-strip a.active{background:#E8F6F5!important;color:#236765!important}
+.mobile-bottom-nav a:hover,.mobile-bottom-nav a:focus-visible,.mobile-bottom-nav button:hover,.mobile-bottom-nav button:focus-visible{color:#236765!important}
+
+/* Primary product actions. Keep semantic danger/success/warning colours untouched. */
+.btn:not(.alt):not(.danger),.coach-toggle{background:linear-gradient(135deg,#3FA6A3,#2F7F7D)!important;color:#fff!important;border-color:#2F7F7D!important;box-shadow:0 7px 18px rgba(63,166,163,.16)!important}
+.btn:not(.alt):not(.danger):hover,.coach-toggle:hover{background:linear-gradient(135deg,#378F8C,#236765)!important}
+
+/* Student dashboard, plan, AI Coach and active workspace cues. */
+.command-focus-card,.plan-next-card{border-top-color:#3FA6A3!important}
+.command-coach-card{background:linear-gradient(145deg,#F2FBFA,#fff)!important;border-top-color:#2F7F7D!important}
+.pathway-explorer-card.selected{border-color:#3FA6A3!important}
+.context-card{border-left-color:#3FA6A3!important}
+.dashboard-quick-actions a:hover,.compact-route-grid .route-card:hover,.workspace-block:hover{border-color:#B9E1DF!important}
+.action-list>div>span{background:#2F7F7D!important}
+
+/* Accessible focus treatment in the new brand family. */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline-color:#3FA6A3!important}
 
 /* Impact and footer */
 .ux-impact{background:linear-gradient(135deg,#F3FAF9 0%,#F8FCFC 100%)!important}
@@ -52,7 +76,7 @@
 .ux-footer-col a:hover,.ux-footer-col a:focus-visible,.ux-footer-bottom-links a:hover{color:#2F7F7D!important}
 .ux-footer-col .ux-footer-primary{color:#236765!important}
 
-/* Standalone login trial branding */
+/* Account-entry branding */
 .ux-login-mark{background:linear-gradient(145deg,#3FA6A3,#2F7F7D)!important}
-.ux-login-clean a{color:#2F7F7D}
-.ux-login-clean .btn:not(.alt){background:linear-gradient(135deg,#3FA6A3,#2F7F7D)!important;border-color:#2F7F7D!important;color:#fff!important}
+.ux-login-clean a,.ux-register-clean a{color:#2F7F7D}
+.ux-login-clean .btn:not(.alt),.ux-register-clean .btn:not(.alt){background:linear-gradient(135deg,#3FA6A3,#2F7F7D)!important;border-color:#2F7F7D!important;color:#fff!important}
