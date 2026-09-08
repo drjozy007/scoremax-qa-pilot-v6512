@@ -119,6 +119,7 @@ def _transform_student_base(source: str) -> str:
         <a class="{{'active' if request.endpoint=='mastery_page' else ''}}" href="{{url_for('mastery_page')}}">Mastery</a>
         <a class="{{'active' if student_nav_section_global=='plan' else ''}}" href="{{url_for('study_plan_page')}}">My Plan</a>
         <a class="{{'active' if student_nav_section_global=='exams' else ''}}" href="{{url_for('exam_centre')}}">Exams</a>
+        <a class="{{'active' if request.endpoint=='ux_calculators' else ''}}" href="{{url_for('ux_calculators')}}">Calculators</a>
         <a class="{{'active' if student_nav_section_global=='progress' else ''}}" href="{{url_for('student_analytics_page')}}">Progress</a>'''
     if old_nav not in source:
         raise RuntimeError("UX_STUDENT_PRIMARY_NAV_MARKER_MISSING")
@@ -129,7 +130,7 @@ def _transform_student_base(source: str) -> str:
     main = source.find('<main id="mainContent"', start)
     if start < 0 or main < 0:
         raise RuntimeError("UX_STUDENT_CONTEXT_MARKER_MISSING")
-    subject_only = '''{% if learner_ui_global and show_subject_nav_global and request.endpoint not in ['take_test_v4','assessment_review_v4','qa_synthetic_session'] %}
+    subject_only = '''{% if learner_ui_global and show_subject_nav_global and request.endpoint not in ['take_test_v4','assessment_review_v4','qa_synthetic_session','ux_calculators'] %}
 <div class="student-context-stack subject-only-context" aria-label="Subjects">
   <nav class="subject-quick-strip" aria-label="Subject selector">
     {% for s in subject_nav_global %}
@@ -221,6 +222,12 @@ def install_ux_staging_routes(app) -> None:
     _install_staging_page_guards(app)
     if "ux_register_interest" in app.view_functions:
         return
+
+    @app.route("/student/calculators", methods=["GET"], endpoint="ux_calculators")
+    def ux_calculators():
+        if session.get("role") != "student":
+            return render_template("ux_target_score.html")
+        return render_template("ux_target_score.html")
 
     @app.route("/register-interest", methods=["GET", "POST"], endpoint="ux_register_interest")
     def ux_register_interest():
