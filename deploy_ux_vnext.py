@@ -61,6 +61,7 @@ def main() -> None:
         "ux_content_reviewer.py",
         "ux_reviewer_accounts.py",
         "ux_email_verification.py",
+        "ux_student_mastery_strip.py",
     ):
         copy_overlay(rel)
 
@@ -129,7 +130,7 @@ def main() -> None:
     app_text = app_text[:public_match.start()] + "public_endpoints={" + body + "}" + app_text[public_match.end():]
 
     installer_marker = "\nif __name__=='__main__':\n"
-    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\nfrom ux_reviewer_accounts import ensure_reviewer_accounts\nensure_reviewer_accounts()\nfrom ux_email_verification import install_email_verification\ninstall_email_verification(app, send_transactional_email)\n"
+    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_student_mastery_strip import install_student_mastery_strip\ninstall_student_mastery_strip(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\nfrom ux_reviewer_accounts import ensure_reviewer_accounts\nensure_reviewer_accounts()\nfrom ux_email_verification import install_email_verification\ninstall_email_verification(app, send_transactional_email)\n"
     if installer_marker not in app_text:
         raise SystemExit("UX_VNEXT_ROUTE_INSTALL_MARKER_MISSING")
     app_text = app_text.replace(installer_marker, installer + installer_marker, 1)
@@ -169,7 +170,7 @@ def main() -> None:
     for rel in (
         "templates/ux_student_learn.html","templates/ux_subject_chapters.html","templates/ux_progress.html","ux_student_batch.py",
         "templates/ux_content_review.html","templates/ux_content_review_question.html","ux_content_reviewer.py","ux_reviewer_accounts.py",
-        "templates/ux_verify_email_pending.html","ux_email_verification.py"
+        "templates/ux_verify_email_pending.html","ux_email_verification.py","ux_student_mastery_strip.py"
     ):
         if not (OUT/rel).is_file():
             raise SystemExit("UX_VNEXT_STUDENT_BATCH_MISSING:"+rel)
@@ -189,7 +190,12 @@ def main() -> None:
         if required not in verify_text:
             raise SystemExit("UX_VNEXT_EMAIL_VERIFICATION_CONTROL_MISSING:"+required)
 
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true content_reviewer=true reviewer_accounts=5 email_verification=true subjects_chapters_progress=true science_corner=true interest_routes=true")
+    mastery_text=(OUT/"ux_student_mastery_strip.py").read_text(encoding="utf-8")
+    for required in ("uxStudentMasteryStrip","student-context-stack","mastery-hero-card","Foundation","Exam Ready","Elite","ux-mastery-current"):
+        if required not in mastery_text:
+            raise SystemExit("UX_VNEXT_STUDENT_MASTERY_STRIP_CONTROL_MISSING:"+required)
+
+    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true student_mastery_strip=true content_reviewer=true reviewer_accounts=5 email_verification=true subjects_chapters_progress=true science_corner=true interest_routes=true")
 
 
 if __name__ == "__main__":
