@@ -22,8 +22,36 @@ def _mastery_strip_patch() -> str:
 .ux-student-mastery-strip .ux-level.ux-mastery-current{border-color:#3FA6A3!important;box-shadow:0 0 0 3px rgba(63,166,163,.14),0 15px 34px rgba(47,127,125,.13)!important;transform:translateY(-2px)!important}.ux-student-mastery-strip .ux-level.ux-mastery-current:after{content:'YOU';position:absolute;right:9px;top:9px;padding:3px 6px;border-radius:999px;background:#2F7F7D;color:#fff;font-size:.52rem;font-weight:950;letter-spacing:.08em}.ux-student-mastery-strip .ux-level.ux-mastery-current strong{color:#236765!important;padding-right:28px}
 /* The retired legacy mastery hero must never coexist with the landing-style strip. */
 body.ux-mastery-strip-active .mastery-hero-card{display:none!important}
+
+/* The retired mastery card leaves a deliberate second column beside the learner greeting. Put Daily Spark there. */
+body.ux-mastery-strip-active .home-identity-hero{grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)!important;align-items:stretch!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark,
+body.ux-mastery-strip-active .home-identity-hero .ux-daily-spark-placeholder{margin:0!important;min-width:0!important;padding:20px 22px!important;border:1px solid #c7e7e4!important;border-radius:23px!important;background:linear-gradient(145deg,#f2fbfa 0%,#fff 72%)!important;box-shadow:0 10px 30px rgba(47,127,125,.065)!important;overflow:hidden!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .section-heading-row{align-items:flex-start!important;gap:10px!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .section-heading-row h2,
+body.ux-mastery-strip-active .home-identity-hero .ux-daily-spark-placeholder h2{font-size:clamp(1.02rem,1.6vw,1.2rem)!important;line-height:1.2!important;margin:.1rem 0 .25rem!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .section-heading-row .muted{display:none!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-date{font-size:.65rem!important;color:#728181!important;white-space:nowrap!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-tabs{margin:9px 0 7px!important;gap:5px!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-tabs button{min-height:30px!important;padding:5px 9px!important;font-size:.69rem!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-context{gap:5px!important;margin-bottom:5px!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-context span{font-size:.62rem!important;padding:3px 6px!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-panel h3{font-size:.92rem!important;line-height:1.35!important;margin:.32rem 0 .55rem!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-options{display:grid!important;grid-template-columns:1fr 1fr!important;gap:5px!important;margin:6px 0!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-options label{margin:0!important;font-size:.72rem!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-options label span{padding:7px 8px!important;line-height:1.25!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .btn.small{padding:7px 10px!important;font-size:.72rem!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .word-spark-word h3{font-size:1.35rem!important;margin:.1rem 0!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .word-reveal{font-size:.78rem!important}
+body.ux-mastery-strip-active .home-identity-hero .ux-daily-spark-placeholder p:last-of-type{margin:.25rem 0 .7rem!important;color:#617080!important;font-size:.8rem!important}
+body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .section-heading-row .eyebrow:before,
+body.ux-mastery-strip-active .home-identity-hero .ux-daily-spark-placeholder>.eyebrow:before{content:'✦';display:inline-block;margin-right:6px;color:#3FA6A3;transform-origin:center;animation:uxSparkPulse 4.2s ease-in-out infinite}
+@keyframes uxSparkPulse{0%,78%,100%{transform:scale(1);text-shadow:0 0 0 rgba(63,166,163,0)}86%{transform:scale(1.16);text-shadow:0 0 12px rgba(63,166,163,.55)}92%{transform:scale(1.03);text-shadow:0 0 6px rgba(63,166,163,.25)}}
+
+@media(max-width:1000px){body.ux-mastery-strip-active .home-identity-hero{grid-template-columns:1fr!important}}
 @media(max-width:980px){.ux-student-mastery-strip .ux-levels{grid-template-columns:repeat(3,1fr)!important}}
-@media(max-width:640px){.ux-student-mastery-strip{padding:20px 18px 24px!important}.ux-student-mastery-strip .ux-section-head{align-items:flex-start!important;flex-direction:column!important;gap:10px!important}.ux-student-mastery-strip .ux-levels{grid-template-columns:1fr 1fr!important;gap:10px!important}.ux-student-mastery-strip .ux-level{min-height:102px!important}}
+@media(max-width:640px){.ux-student-mastery-strip{padding:20px 18px 24px!important}.ux-student-mastery-strip .ux-section-head{align-items:flex-start!important;flex-direction:column!important;gap:10px!important}.ux-student-mastery-strip .ux-levels{grid-template-columns:1fr 1fr!important;gap:10px!important}.ux-student-mastery-strip .ux-level{min-height:102px!important}body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .spark-options{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){body.ux-mastery-strip-active .home-identity-hero .home-daily-spark .section-heading-row .eyebrow:before,body.ux-mastery-strip-active .home-identity-hero .ux-daily-spark-placeholder>.eyebrow:before{animation:none!important;text-shadow:none!important}}
 </style>
 <script id="ux-student-mastery-strip-script">(function(){
 const levels=[
@@ -36,8 +64,9 @@ function makeLevel(item,i,currentIndex){const a=document.createElement('article'
 function render(stage){let section=document.getElementById('uxStudentMasteryStrip');const idx=levels.findIndex(x=>x[0]===stage);if(!section){section=document.createElement('section');section.id='uxStudentMasteryStrip';section.className='ux-progress-section ux-student-mastery-strip';section.setAttribute('aria-labelledby','uxStudentMasteryTitle');const context=document.querySelector('.student-context-stack');if(context)context.insertAdjacentElement('afterend',section);else{const main=document.querySelector('main,.student-home-v2');if(main)main.insertBefore(section,main.firstChild);else document.body.prepend(section);}}
 section.innerHTML='';const head=document.createElement('div');head.className='ux-section-head';const left=document.createElement('div');left.innerHTML='<p class="ux-kicker">YOUR MASTERY</p><h2 id="uxStudentMasteryTitle">'+(idx>=0?'Current stage: <span>'+levels[idx][0]+'</span>':'Mastery not yet established')+'</h2><p class="ux-mastery-context">'+(idx>=0?'Your current position is highlighted below. Keep building evidence to move forward.':'Complete a short diagnostic so ScoreMax can establish your starting stage.')+'</p>';const status=document.createElement('span');status.className='ux-student-mastery-status';status.textContent=idx>=0?levels[idx][0]+' · current':'Diagnostic needed';head.append(left,status);const grid=document.createElement('div');grid.className='ux-levels';grid.setAttribute('aria-label','Six ScoreMax mastery stages');levels.forEach((item,i)=>grid.appendChild(makeLevel(item,i,idx)));section.append(head,grid);document.body.classList.add('ux-mastery-strip-active');}
 function cleanLegacy(old){if(!old)return;const parent=old.parentElement;old.remove();if(parent&&parent.classList.contains('home-priority-grid')){parent.classList.add('ux-single-priority');if(!parent.querySelector(':scope > *'))parent.remove();}}
-function apply(){const old=document.querySelector('.mastery-hero-card');if(!old){return !!document.getElementById('uxStudentMasteryStrip');}const stage=authoritativeStage(old);render(stage);cleanLegacy(old);return true;}
-function boot(){apply();[80,250,700,1400].forEach(ms=>setTimeout(apply,ms));const obs=new MutationObserver(function(){const old=document.querySelector('.mastery-hero-card');if(old){const stage=authoritativeStage(old);render(stage);cleanLegacy(old);}});obs.observe(document.body,{childList:true,subtree:true});setTimeout(()=>obs.disconnect(),5000);}
+function placeDailySpark(){const hero=document.querySelector('.home-identity-hero');if(!hero)return false;const spark=document.querySelector('#daily-spark')||document.querySelector('.ux-daily-spark-placeholder');if(!spark)return false;if(spark.parentElement!==hero)hero.appendChild(spark);spark.classList.add('ux-spark-in-hero');return true;}
+function apply(){const old=document.querySelector('.mastery-hero-card');if(!old){placeDailySpark();return !!document.getElementById('uxStudentMasteryStrip');}const stage=authoritativeStage(old);render(stage);cleanLegacy(old);placeDailySpark();return true;}
+function boot(){apply();[0,80,250,700,1400].forEach(ms=>setTimeout(function(){apply();placeDailySpark();},ms));const obs=new MutationObserver(function(){const old=document.querySelector('.mastery-hero-card');if(old){const stage=authoritativeStage(old);render(stage);cleanLegacy(old);}placeDailySpark();});obs.observe(document.body,{childList:true,subtree:true});setTimeout(()=>obs.disconnect(),5000);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();</script>'''
 
