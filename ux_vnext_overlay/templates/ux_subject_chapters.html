@@ -24,8 +24,7 @@
 
       <div class="ux-practice-strip"><div><strong>{{ch.accuracy ~ '%' if ch.answered else '—'}}</strong><span>practice accuracy</span></div><div><strong>{{ch.answered}}</strong><span>answers</span></div><div><strong>{{ch.evidence_strength}}</strong><span>evidence</span></div></div>
 
-      <div class="ux-chapter-insight"><strong>{{ch.next_action}}</strong><span>{{ch.next_reason}}</span></div>
-      {% if ch.available %}<div class="ux-chapter-actions"><a class="btn small" href="{{ch.url}}">Open chapter</a><a class="text-link" href="{{url_for('test_setup',scope='chapter',subject=subject,chapter=ch.name,mode='practice')}}">Practise →</a></div>{% endif %}
+      {% if ch.available %}<div class="ux-chapter-insight"><strong>{{ch.next_action}}</strong><span>{{ch.next_reason}}</span></div><div class="ux-chapter-actions"><a class="btn small" href="{{ch.url}}">Open chapter</a><a class="text-link" href="{{url_for('test_setup',scope='chapter',subject=subject,chapter=ch.name,mode='practice')}}">Practise →</a></div>{% endif %}
     </article>
     {% else %}<section class="ux-empty"><h2>Chapter list is not populated yet.</h2><p>ScoreMax will show the full governed chapter catalogue here as soon as it is available.</p></section>{% endfor %}
   </div>
