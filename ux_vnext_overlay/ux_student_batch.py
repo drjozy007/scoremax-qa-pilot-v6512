@@ -129,19 +129,52 @@ def _subject_snapshot(conn, student_id: int, subject: str) -> dict:
 
 
 def _chapter_snapshots(conn, student_id: int, subject: str) -> list[dict]:
+    # Reuse the governed mastery-opportunity model already built in the core
+    # runtime. Practice accuracy is deliberately kept separate from formal mastery.
+    import app as runtime
+
     chapters=_catalogue_for_student(conn,student_id,subject)
     out=[]
     for idx,chapter in enumerate(chapters,1):
         ans=conn.execute("SELECT COUNT(*) n,COALESCE(AVG(CASE WHEN aa.is_correct=1 THEN 100.0 ELSE 0 END),0) acc FROM attempt_answers aa JOIN attempts a ON a.id=aa.attempt_id JOIN questions q ON q.id=aa.question_db_id WHERE a.student_id=? AND lower(q.subject)=lower(?) AND lower(COALESCE(q.chapter,''))=lower(?)",(student_id,subject,chapter)).fetchone()
-        total=int(conn.execute("SELECT COUNT(*) n FROM questions WHERE lower(subject)=lower(?) AND lower(COALESCE(chapter,''))=lower(?)",(subject,chapter)).fetchone()['n'] or 0)
         answered=int(ans['n'] or 0); acc=round(float(ans['acc'] or 0))
-        mastery=conn.execute("SELECT mastery_level FROM mastery_records WHERE student_id=? AND lower(subject)=lower(?) AND lower(COALESCE(chapter,''))=lower(?) ORDER BY id DESC LIMIT 1",(student_id,subject,chapter)).fetchone()
-        progress=min(100,round((answered/max(total,1))*100)) if total else 0
+        mastery=runtime.chapter_mastery_opportunity(conn,student_id,subject,chapter)
+        total=int(mastery.get('production_questions') or 0)
         available=total>0
+        evidence='No evidence yet' if answered==0 else runtime.evidence_strength(answered)
+        performance='No practice evidence yet' if answered==0 else runtime.performance_status(acc,answered)
+
+        if not available:
+            next_action='Practice bank coming soon'
+            next_reason='This chapter stays visible while its governed practice bank is prepared.'
+        elif mastery.get('existing_status')=='Verification Due':
+            next_action='Reconfirm mastery'
+            next_reason='Your previous mastery needs fresh independent evidence.'
+        elif answered==0:
+            next_action='Find your starting point'
+            next_reason='Start with practice, then prove what you can do independently.'
+        elif answered<3:
+            next_action='Build more evidence'
+            next_reason='A few more answers will make the recommendation more reliable.'
+        elif acc<60:
+            next_action='Strengthen this chapter'
+            next_reason='Your recent practice shows this chapter is costing you marks.'
+        elif not mastery.get('has_formal_mastery'):
+            next_action='Prove your mastery'
+            next_reason='Practice is going well; formal mastery still needs independent evidence.'
+        elif int(mastery.get('opportunity_pct') or 0)>0:
+            next_action=f"Build toward {mastery.get('potential_level') or 'the next stage'}"
+            next_reason='Your current bank can support a higher verified chapter stage.'
+        else:
+            next_action='Keep it strong'
+            next_reason='Maintain this chapter with spaced practice and reconfirmation.'
+
         out.append({
-            'number':idx,'name':chapter,'answered':answered,'accuracy':acc,'progress_pct':progress,
-            'mastery_level':mastery['mastery_level'] if mastery else ('Foundation' if answered else 'Not started'),
-            'question_count':total,'available':available,
+            'number':idx,'name':chapter,'answered':answered,'accuracy':acc,
+            'mastery_level':mastery.get('existing_level') or 'Not verified',
+            'mastery':mastery,'question_count':total,'available':available,
+            'evidence_strength':evidence,'performance_status':performance,
+            'next_action':next_action,'next_reason':next_reason,
             'url':url_for('chapter_page',subject=subject,chapter=chapter) if available else '',
         })
     return out
