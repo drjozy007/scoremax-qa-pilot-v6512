@@ -12,6 +12,58 @@ TEST_STUDENT_EMAIL='ux-premed-student@scoremax.test'
 TEST_STUDENT_ID='STU-900001'
 TEST_STUDENT_USERNAME='ux-premed-student'
 
+# Staging catalogue for the current Punjab FSc Part 1 learner route.  Catalogue
+# visibility is separate from question availability: every governed textbook
+# chapter can be shown before its question bank is imported.
+FSC1_PUNJAB_CHAPTERS={
+    'biology':[
+        'Biodiversity and Classification',
+        'Bacteria and Viruses',
+        'Cells and Subcellular Organelles',
+        'Molecular Biology',
+        'Enzymes',
+        'Bioenergetics',
+        'Structural and Computational Biology',
+        'Plant Physiology',
+        'Human Digestive System',
+        'Human Respiratory System',
+        'Human Circulatory System',
+        'Human Skeletal and Muscular Systems',
+    ],
+    'chemistry':[
+        'Periodic Table and Periodic Properties',
+        'Atomic Structure',
+        'Chemical Bonding',
+        'Stoichiometry',
+        'States and Phases of Matter',
+        'Chemical Energetics',
+        'Reaction Kinetics',
+        'Chemical Equilibrium',
+        'Acid-Base Chemistry',
+        'Electrochemistry',
+        'Hydrocarbons',
+        'Nitrogen and Sulfur',
+        'Halogens',
+        'Atmosphere',
+        'Basic Separation Techniques',
+        'Lab Safety and Practical Skills',
+    ],
+    'physics':[
+        'Measurements',
+        'Force and Motion',
+        'Circular and Rotational Motion',
+        'Work, Energy and Power',
+        'Solids and Fluid Dynamics',
+        'Heat and Thermodynamics',
+        'Waves and Vibrations',
+        'Physical Optics and Gravitational Waves',
+        'Electrostatics and Current Electricity',
+        'Electromagnetism',
+        'Special Theory of Relativity',
+        'Nuclear and Particle Physics',
+    ],
+}
+
 
 def _db_path() -> Path:
     return Path(os.environ.get("SCOREMAX_DB", "/tmp/scoremax-ux-vnext/state/scoremax.db"))
@@ -24,6 +76,23 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
+def _is_fsc1(level: str) -> bool:
+    value=(level or '').strip().casefold()
+    return 'fsc' in value and ('part 1' in value or 'year 1' in value or value in {'fsc 1','fsc1'})
+
+
+def _catalogue_for_student(conn: sqlite3.Connection, student_id: int, subject: str) -> list[str]:
+    row=conn.execute("SELECT COALESCE(province,'') province,COALESCE(academic_level,'') academic_level FROM users WHERE id=?",(student_id,)).fetchone()
+    if row and _is_fsc1(row['academic_level']) and (not (row['province'] or '').strip() or (row['province'] or '').strip().casefold()=='punjab'):
+        governed=FSC1_PUNJAB_CHAPTERS.get((subject or '').strip().casefold())
+        if governed:
+            return list(governed)
+    return [r['chapter'] for r in conn.execute(
+        "SELECT chapter,MIN(id) first_id FROM questions WHERE lower(subject)=lower(?) AND COALESCE(chapter,'')<>'' GROUP BY chapter ORDER BY first_id",
+        (subject,),
+    ).fetchall()]
+
+
 def _ensure_fixed_test_student() -> None:
     password=os.environ.get('SCOREMAX_STAGING_TEST_STUDENT_PASSWORD','').strip()
     if not password:
@@ -34,7 +103,7 @@ def _ensure_fixed_test_student() -> None:
         password_hash=generate_password_hash(password)
         if row:
             conn.execute("""UPDATE users SET system_user_id=?,username=?,full_name=?,password_hash=?,role='student',
-              academic_level='FSc Part 1',subjects='Biology,Chemistry,Physics',account_status='active',active_programme='FSc Part 1'
+              province='Punjab',board='Punjab Board',academic_level='FSc Part 1',subjects='Biology,Chemistry,Physics',account_status='active',active_programme='FSc Part 1'
               WHERE id=?""",(TEST_STUDENT_ID,TEST_STUDENT_USERNAME,'ScoreMax UX Pre-Medical Student',password_hash,row['id']))
         else:
             conn.execute("""INSERT INTO users(system_user_id,role,full_name,email,username,password_hash,province,board,academic_level,subjects,account_status,active_programme,login_provider)
@@ -52,23 +121,29 @@ def _subjects_for_student(conn, student_id: int) -> list[str]:
 
 
 def _subject_snapshot(conn, student_id: int, subject: str) -> dict:
-    chapters = [r['chapter'] for r in conn.execute("SELECT DISTINCT COALESCE(chapter,'') chapter FROM questions WHERE lower(subject)=lower(?) AND COALESCE(chapter,'')<>'' ORDER BY id", (subject,)).fetchall()]
+    chapters=_catalogue_for_student(conn,student_id,subject)
     answered = conn.execute("SELECT COUNT(*) n,COALESCE(AVG(CASE WHEN aa.is_correct=1 THEN 100.0 ELSE 0 END),0) acc FROM attempt_answers aa JOIN attempts a ON a.id=aa.attempt_id JOIN questions q ON q.id=aa.question_db_id WHERE a.student_id=? AND lower(q.subject)=lower(?)", (student_id,subject)).fetchone()
     started = conn.execute("SELECT COUNT(DISTINCT q.chapter) n FROM attempt_answers aa JOIN attempts a ON a.id=aa.attempt_id JOIN questions q ON q.id=aa.question_db_id WHERE a.student_id=? AND lower(q.subject)=lower(?) AND COALESCE(q.chapter,'')<>''", (student_id,subject)).fetchone()
-    return {'chapter_count':len(chapters),'started_chapters':int(started['n'] or 0),'answered':int(answered['n'] or 0),'avg_accuracy':round(float(answered['acc'] or 0)),'progress_pct':round((int(started['n'] or 0)/len(chapters))*100) if chapters else 0}
+    started_count=min(int(started['n'] or 0),len(chapters)) if chapters else 0
+    return {'chapter_count':len(chapters),'started_chapters':started_count,'answered':int(answered['n'] or 0),'avg_accuracy':round(float(answered['acc'] or 0)),'progress_pct':round((started_count/len(chapters))*100) if chapters else 0}
 
 
 def _chapter_snapshots(conn, student_id: int, subject: str) -> list[dict]:
-    rows=conn.execute("SELECT chapter,MIN(id) first_id FROM questions WHERE lower(subject)=lower(?) AND COALESCE(chapter,'')<>'' GROUP BY chapter ORDER BY first_id",(subject,)).fetchall()
+    chapters=_catalogue_for_student(conn,student_id,subject)
     out=[]
-    for idx,row in enumerate(rows,1):
-        chapter=row['chapter']
-        ans=conn.execute("SELECT COUNT(*) n,COALESCE(AVG(CASE WHEN aa.is_correct=1 THEN 100.0 ELSE 0 END),0) acc FROM attempt_answers aa JOIN attempts a ON a.id=aa.attempt_id JOIN questions q ON q.id=aa.question_db_id WHERE a.student_id=? AND lower(q.subject)=lower(?) AND q.chapter=?",(student_id,subject,chapter)).fetchone()
-        total=conn.execute("SELECT COUNT(*) n FROM questions WHERE lower(subject)=lower(?) AND chapter=?",(subject,chapter)).fetchone()['n']
+    for idx,chapter in enumerate(chapters,1):
+        ans=conn.execute("SELECT COUNT(*) n,COALESCE(AVG(CASE WHEN aa.is_correct=1 THEN 100.0 ELSE 0 END),0) acc FROM attempt_answers aa JOIN attempts a ON a.id=aa.attempt_id JOIN questions q ON q.id=aa.question_db_id WHERE a.student_id=? AND lower(q.subject)=lower(?) AND lower(COALESCE(q.chapter,''))=lower(?)",(student_id,subject,chapter)).fetchone()
+        total=int(conn.execute("SELECT COUNT(*) n FROM questions WHERE lower(subject)=lower(?) AND lower(COALESCE(chapter,''))=lower(?)",(subject,chapter)).fetchone()['n'] or 0)
         answered=int(ans['n'] or 0); acc=round(float(ans['acc'] or 0))
-        mastery=conn.execute("SELECT mastery_level FROM mastery_records WHERE student_id=? AND lower(subject)=lower(?) AND chapter=? ORDER BY id DESC LIMIT 1",(student_id,subject,chapter)).fetchone()
-        progress=min(100,round((answered/max(int(total or 1),1))*100))
-        out.append({'number':idx,'name':chapter,'answered':answered,'accuracy':acc,'progress_pct':progress,'mastery_level':mastery['mastery_level'] if mastery else ('Foundation' if answered else 'Not started'),'url':url_for('chapter_page',subject=subject,chapter=chapter)})
+        mastery=conn.execute("SELECT mastery_level FROM mastery_records WHERE student_id=? AND lower(subject)=lower(?) AND lower(COALESCE(chapter,''))=lower(?) ORDER BY id DESC LIMIT 1",(student_id,subject,chapter)).fetchone()
+        progress=min(100,round((answered/max(total,1))*100)) if total else 0
+        available=total>0
+        out.append({
+            'number':idx,'name':chapter,'answered':answered,'accuracy':acc,'progress_pct':progress,
+            'mastery_level':mastery['mastery_level'] if mastery else ('Foundation' if answered else 'Not started'),
+            'question_count':total,'available':available,
+            'url':url_for('chapter_page',subject=subject,chapter=chapter) if available else '',
+        })
     return out
 
 
@@ -104,10 +179,6 @@ def _science_corner_markup() -> str:
 
 
 def _student_shell_patch() -> str:
-    # The Science Corner HTML contains its own closing script tag.  Escape that
-    # closing sequence while embedding the markup inside the outer student-shell
-    # JavaScript string, otherwise the browser HTML parser terminates the outer
-    # script early and renders the remaining JavaScript as visible page text.
     science_json = json.dumps(_science_corner_markup()).replace('</script>', r'<\/script>')
     return r'''<style id="ux-batch-student-style">
 .ux-science-corner{display:flex;justify-content:space-between;gap:18px;align-items:center;margin:12px 0 0;padding:15px 17px;border-radius:15px;background:linear-gradient(135deg,#102f35,#214d51);color:#fff}.ux-science-corner .eyebrow{color:#9fe0dc}.ux-science-corner h3{margin:.1rem 0 .25rem;font-size:1rem}.ux-science-corner p{margin:0;font-size:.8rem;line-height:1.45;color:#d7e8e7}.ux-science-corner>span{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,.1);font-size:.63rem;font-weight:900;white-space:nowrap}
