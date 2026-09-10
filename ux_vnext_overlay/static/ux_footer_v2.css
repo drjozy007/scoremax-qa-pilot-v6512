@@ -124,3 +124,22 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc1']) .programme-tab:after,.student-context-stack .programme-switch-form:has(input[name='programme_code'][value='fsc2']) .programme-tab:after{font-size:.78rem!important}
   .student-context-stack .subject-quick-strip{padding-left:9px!important;margin-left:3px!important}
 }
+
+/* Home dashboard simplification: subjects are already permanently available in the subject strip and Learn tab. */
+.student-home-v2 > .home-section{display:none!important}
+
+/* Make the three access options a stronger home-page decision surface. */
+.student-home-v2 .ux-home-plans{margin:22px 0 20px!important}
+.student-home-v2 .ux-home-plans-head{margin-bottom:11px!important}
+.student-home-v2 .ux-home-plans-head h2{font-size:1.4rem!important;letter-spacing:-.02em!important}
+.student-home-v2 .ux-home-plan-grid{gap:12px!important}
+.student-home-v2 .ux-home-plan{min-height:145px!important;padding:20px 20px 17px!important;border-radius:17px!important;border-width:1.5px!important;box-shadow:0 10px 26px rgba(15,23,42,.055)!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease!important}
+.student-home-v2 .ux-home-plan:before{height:7px!important}
+.student-home-v2 .ux-home-plan:hover{transform:translateY(-3px)!important;box-shadow:0 16px 34px rgba(15,23,42,.09)!important}
+.student-home-v2 .ux-home-plan strong{font-size:1.2rem!important;line-height:1.1!important}
+.student-home-v2 .ux-home-plan span{margin-top:8px!important;font-size:.75rem!important;line-height:1.4!important;max-width:290px!important}
+.student-home-v2 .ux-home-plan b{margin-top:12px!important;font-size:.72rem!important}
+.student-home-v2 .ux-home-plan.silver{background:linear-gradient(145deg,#fff,#f7f9fa)!important}
+.student-home-v2 .ux-home-plan.gold{background:linear-gradient(145deg,#fffdf6,#fff)!important;border-color:#ead9a5!important}
+.student-home-v2 .ux-home-plan.platinum{background:linear-gradient(145deg,#f8fbfb,#fff)!important;border-color:#ccd7d8!important}
+@media(max-width:640px){.student-home-v2 .ux-home-plan{min-height:auto!important;padding:17px 16px!important}}
