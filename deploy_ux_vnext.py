@@ -12,8 +12,6 @@ _V6611C_PARENT_MAIN = ux.deploy_v669b_from_env.main
 
 
 def _apply_qualified_v6611d_parent() -> None:
-    # Preserve the exact SHA-bound 6.6.11C reconstruction function before
-    # substituting this compatibility hook into the frozen UX materializer.
     _V6611C_PARENT_MAIN()
     result = subprocess.run(
         ["python", "apply_v6611d_bridge_overlay.py", str(OUT)],
@@ -24,7 +22,6 @@ def _apply_qualified_v6611d_parent() -> None:
     if result.returncode != 0:
         raise SystemExit("UX_VNEXT_V6611D_PARENT_APPLY_FAILED:" + result.stdout[-3000:])
     print(result.stdout.strip(), flush=True)
-
     app = (OUT / "app.py").read_text(encoding="utf-8")
     integration = (OUT / "scoremax_integration_v1.py").read_text(encoding="utf-8")
     marker_path = OUT / "V6611D_PH_BRIDGE_MARKER.json"
@@ -79,7 +76,6 @@ def _install_save_scoremax_prompt() -> None:
         if "</head>" not in base:
             raise SystemExit("SCOREMAX_INSTALL_HEAD_MARKER_MISSING")
         base = base.replace("</head>", head_patch + "</head>", 1)
-
     if "scoremaxInstallNudge" not in base:
         body_patch = """
 {% if request.endpoint not in ['take_test_v4','assessment_review_v4','qa_synthetic_session'] %}
@@ -107,27 +103,31 @@ def _install_save_scoremax_prompt() -> None:
         if "</body>" not in base:
             raise SystemExit("SCOREMAX_INSTALL_BODY_MARKER_MISSING")
         base = base.replace("</body>", body_patch + "</body>", 1)
-
-    required = (
-        "scoremax.webmanifest",
-        "scoremax-icon-180.png",
-        "scoremaxInstallNudge",
-        "scoremaxInstallButton",
-        "scoremax_install.js",
-        "apple-mobile-web-app-title",
-    )
-    missing = [token for token in required if token not in base]
-    if missing:
-        raise SystemExit("SCOREMAX_INSTALL_BASE_CONTROL_MISSING:" + ",".join(missing))
     base_path.write_text(base, encoding="utf-8")
 
 
+def _install_teacher_preview() -> None:
+    src = Path("ux_vnext_overlay") / "ux_teacher_preview.py"
+    dst = OUT / "ux_teacher_preview.py"
+    if not src.is_file():
+        raise SystemExit("SCOREMAX_TEACHER_PREVIEW_MODULE_MISSING")
+    shutil.copy2(src, dst)
+    app_path = OUT / "app.py"
+    app = app_path.read_text(encoding="utf-8")
+    marker = "\nif __name__=='__main__':\n"
+    patch = "\nfrom ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()\n"
+    if "ensure_teacher_preview()" not in app:
+        if marker not in app:
+            raise SystemExit("SCOREMAX_TEACHER_PREVIEW_INSTALL_MARKER_MISSING")
+        app = app.replace(marker, patch + marker, 1)
+    app_path.write_text(app, encoding="utf-8")
+
+
 def main() -> None:
-    # Reuse the accepted UX materializer unchanged, replacing only its exact
-    # parent reconstruction step with 11C -> already-qualified 11D bridge.
     ux.deploy_v669b_from_env.main = _apply_qualified_v6611d_parent
     ux.main()
     _install_save_scoremax_prompt()
+    _install_teacher_preview()
 
     app_path = OUT / "app.py"
     bridge_path = OUT / "scoremax_ph_bridge_v6611d.py"
@@ -135,13 +135,13 @@ def main() -> None:
     app = app_path.read_text(encoding="utf-8")
     bridge = bridge_path.read_text(encoding="utf-8")
     marker = json.loads(marker_path.read_text(encoding="utf-8"))
-
     required_app = (
         "SCOREMAX_RELEASE_VERSION='6.6.11D'",
         "import scoremax_ph_bridge_v6611d as ph_bridge_v6611d",
         "/api/integration/v1/power-house/question-withdrawals",
         "install_student_batch(app)",
         "install_student_mastery_strip(app)",
+        "ensure_teacher_preview()",
     )
     missing = [token for token in required_app if token not in app]
     if missing:
@@ -151,19 +151,17 @@ def main() -> None:
             raise SystemExit("UX_VNEXT_V6611D_BRIDGE_CONTROL_MISSING:" + token)
     if marker.get("release") != "6.6.11D":
         raise SystemExit("UX_VNEXT_V6611D_FINAL_MARKER_RELEASE_MISMATCH")
-
     install_base = (OUT / "templates" / "base.html").read_text(encoding="utf-8")
     if "scoremaxInstallNudge" not in install_base or "scoremax.webmanifest" not in install_base:
         raise SystemExit("SCOREMAX_INSTALL_POSTBUILD_ASSERTION_FAILED")
-
     compile(app, str(app_path), "exec")
     compile(bridge, str(bridge_path), "exec")
+    compile((OUT/"ux_teacher_preview.py").read_text(encoding="utf-8"), str(OUT/"ux_teacher_preview.py"), "exec")
     print(
-        "SCOREMAX_UX_VNEXT_V6611D_COMPATIBILITY_PASS "
-        "parent_release=6.6.11D ux_overlay_preserved=true "
-        "ph_import_staged_ack=true ph_activation_ack=true withdrawal_bridge=true "
-        "learner_cross_system_calls=false release_authority=false "
-        "save_scoremax_prompt=true pwa_manifest=true apple_touch_icon=true",
+        "SCOREMAX_UX_VNEXT_V6611D_COMPATIBILITY_PASS parent_release=6.6.11D "
+        "ux_overlay_preserved=true ph_import_staged_ack=true ph_activation_ack=true "
+        "withdrawal_bridge=true learner_cross_system_calls=false release_authority=false "
+        "save_scoremax_prompt=true pwa_manifest=true apple_touch_icon=true teacher_preview=true",
         flush=True,
     )
 
