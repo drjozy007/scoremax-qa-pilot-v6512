@@ -1,201 +1,85 @@
 from __future__ import annotations
 
-import re
-import shutil
+import json
+import subprocess
 from pathlib import Path
 
-import deploy_v669b_from_env
+import deploy_ux_vnext_c as ux
 
 OUT = Path("scoremax_runtime_v669b")
-OVERLAY = Path("ux_vnext_overlay")
+_V6611C_PARENT_MAIN = ux.deploy_v669b_from_env.main
 
 
-def replace_public_nav_pair(text: str, desktop_replacement: str, mobile_replacement: str) -> str:
-    pattern = re.compile(
-        r'<a href="\{\{url_for\(\'how_it_works\'\)\}\}">How It Works</a>'
-        r'.*?'
-        r'<a(?: class="(?:nav-cta|btn)")? href="\{\{url_for\(\'register\',role=\'student\'\)\}\}">Start Free</a>',
-        re.S,
+def _apply_qualified_v6611d_parent() -> None:
+    # Preserve the exact SHA-bound 6.6.11C reconstruction function before
+    # substituting this compatibility hook into the frozen UX materializer.
+    _V6611C_PARENT_MAIN()
+    result = subprocess.run(
+        ["python", "apply_v6611d_bridge_overlay.py", str(OUT)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
     )
-    matches = list(pattern.finditer(text))
-    if len(matches) != 2:
-        raise SystemExit(f"UX_VNEXT_PUBLIC_NAV_PAIR_MISMATCH matches={len(matches)}")
-    for match, replacement in ((matches[1], mobile_replacement), (matches[0], desktop_replacement)):
-        text = text[:match.start()] + replacement + text[match.end():]
-    return text
+    if result.returncode != 0:
+        raise SystemExit("UX_VNEXT_V6611D_PARENT_APPLY_FAILED:" + result.stdout[-3000:])
+    print(result.stdout.strip(), flush=True)
 
-
-def copy_overlay(rel: str) -> None:
-    src = OVERLAY / rel
-    dst = OUT / rel
-    if not src.is_file():
-        raise SystemExit(f"UX_VNEXT_OVERLAY_MISSING:{rel}")
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)
+    app = (OUT / "app.py").read_text(encoding="utf-8")
+    integration = (OUT / "scoremax_integration_v1.py").read_text(encoding="utf-8")
+    marker_path = OUT / "V6611D_PH_BRIDGE_MARKER.json"
+    if "SCOREMAX_RELEASE_VERSION='6.6.11D'" not in app:
+        raise SystemExit("UX_VNEXT_V6611D_APP_RELEASE_IDENTITY_MISSING")
+    if "SCOREMAX_INTEGRATION_RELEASE='6.6.11D'" not in integration:
+        raise SystemExit("UX_VNEXT_V6611D_INTEGRATION_RELEASE_IDENTITY_MISSING")
+    if not marker_path.is_file():
+        raise SystemExit("UX_VNEXT_V6611D_MARKER_MISSING")
+    marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    if marker.get("marker") != "SM-PH-BRIDGE-V6611D-1":
+        raise SystemExit("UX_VNEXT_V6611D_MARKER_INVALID")
+    if marker.get("release_authority_changed") is not False:
+        raise SystemExit("UX_VNEXT_V6611D_RELEASE_AUTHORITY_CHANGED")
+    if marker.get("cross_system_calls_on_learner_request") is not False:
+        raise SystemExit("UX_VNEXT_V6611D_LEARNER_REQUEST_BOUNDARY_CHANGED")
 
 
 def main() -> None:
-    deploy_v669b_from_env.main()
+    # Reuse the accepted UX materializer unchanged, replacing only its exact
+    # parent reconstruction step with 11C -> already-qualified 11D bridge.
+    ux.deploy_v669b_from_env.main = _apply_qualified_v6611d_parent
+    ux.main()
 
-    for rel in (
-        "templates/index.html",
-        "templates/login.html",
-        "templates/register.html",
-        "templates/ux_register_interest.html",
-        "templates/ux_nominate_school.html",
-        "templates/ux_target_score.html",
-        "templates/ux_student_learn.html",
-        "templates/ux_subject_chapters.html",
-        "templates/ux_progress.html",
-        "templates/ux_content_review.html",
-        "templates/ux_content_review_question.html",
-        "templates/ux_verify_email_pending.html",
-        "static/ux_vnext.css",
-        "static/ux_header_fix.css",
-        "static/ux_structure_v2.css",
-        "static/ux_footer_v2.css",
-        "static/ux_text_editor.js",
-        "static/ux_login_clean.js",
-        "ux_staging_routes.py",
-        "ux_student_batch.py",
-        "ux_content_reviewer.py",
-        "ux_reviewer_accounts.py",
-        "ux_email_verification.py",
-        "ux_student_mastery_strip.py",
-    ):
-        copy_overlay(rel)
+    app_path = OUT / "app.py"
+    bridge_path = OUT / "scoremax_ph_bridge_v6611d.py"
+    marker_path = OUT / "V6611D_PH_BRIDGE_MARKER.json"
+    app = app_path.read_text(encoding="utf-8")
+    bridge = bridge_path.read_text(encoding="utf-8")
+    marker = json.loads(marker_path.read_text(encoding="utf-8"))
 
-    base = OUT / "templates/base.html"
-    text = base.read_text(encoding="utf-8")
-
-    marker = '<link rel="stylesheet" href="{{url_for(\'static\',filename=\'styles.css\')}}">'
-    inject = (
-        marker
-        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_vnext.css\')}}">'
-        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_header_fix.css\')}}">'
-        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_structure_v2.css\')}}">'
-        + '\n<link rel="stylesheet" href="{{url_for(\'static\',filename=\'ux_footer_v2.css\')}}">'
+    required_app = (
+        "SCOREMAX_RELEASE_VERSION='6.6.11D'",
+        "import scoremax_ph_bridge_v6611d as ph_bridge_v6611d",
+        "/api/integration/v1/power-house/question-withdrawals",
+        "install_student_batch(app)",
+        "install_student_mastery_strip(app)",
     )
-    if marker not in text:
-        raise SystemExit("UX_VNEXT_BASE_STYLESHEET_MARKER_MISSING")
-    text = text.replace(marker, inject, 1)
-
-    old_brand = '<a class="brand" href="{{url_for(\'index\')}}">ScoreMax</a>'
-    new_brand = '''<a class="brand ux-brand" href="{{url_for('index')}}" aria-label="ScoreMax home"><span class="ux-brand-mark" aria-hidden="true"><i class="ux-brand-bar"></i><i class="ux-brand-bar"></i><i class="ux-brand-bar"></i></span><span class="ux-brand-name"><span class="ux-brand-score">Score</span><span class="ux-brand-max">Max</span></span></a>'''
-    if old_brand not in text:
-        raise SystemExit("UX_VNEXT_BRAND_MARKER_MISSING")
-    text = text.replace(old_brand, new_brand, 1)
-
-    science_interest = "{{url_for('ux_register_interest',programme='Science Genius of the Year')}}"
-    desktop_nav = f'''<a href="{{{{url_for('about_page')}}}}">About Us</a><a href="{{{{url_for('how_it_works')}}}}">How It Works</a><a href="{{{{url_for('index')}}}}#programmes">Programmes</a><a href="{science_interest}">Science Genius of the Year</a><a href="{{{{url_for('teacher_of_year_page')}}}}">Teacher of the Year</a><details class="ux-nav-dropdown"><summary>Get Involved</summary><div class="ux-nav-menu"><a href="{science_interest}">Science Genius of the Year</a><a href="{{{{url_for('teacher_of_year_page')}}}}">Teacher of the Year</a><a href="{{{{url_for('ux_register_interest',programme='Student Council')}}}}">Student Council</a></div></details><a href="{{{{url_for('index')}}}}#impact">Impact</a><a href="{{{{url_for('knowledge_home')}}}}">Knowledge Hub</a><a href="{{{{url_for('faq_page')}}}}">Help</a><a href="{{{{url_for('login')}}}}">Login</a><a class="nav-cta" href="{{{{url_for('register',role='student')}}}}">Start Free</a>'''
-    mobile_nav = f'''<a href="{{{{url_for('about_page')}}}}">About Us</a><a href="{{{{url_for('how_it_works')}}}}">How It Works</a><a href="{{{{url_for('index')}}}}#programmes">Programmes</a><a href="{science_interest}">Science Genius of the Year</a><a href="{{{{url_for('teacher_of_year_page')}}}}">Teacher of the Year</a><p class="mobile-menu-label">Get Involved</p><a href="{{{{url_for('ux_register_interest',programme='Student Council')}}}}">Student Council</a><p class="mobile-menu-label">Impact</p><a href="{{{{url_for('index')}}}}#impact">ScoreMax Impact</a><a href="{{{{url_for('ux_nominate_school')}}}}">Nominate a School</a><a href="{{{{url_for('ux_register_interest',programme='Education Impact supporter')}}}}">Support Education</a><p class="mobile-menu-label">Explore</p><a href="{{{{url_for('knowledge_home')}}}}">Knowledge Hub</a><a href="{{{{url_for('faq_page')}}}}">Help</a><a href="{{{{url_for('login')}}}}">Login</a><a class="btn" href="{{{{url_for('register',role='student')}}}}">Start Free</a>'''
-
-    text = replace_public_nav_pair(text, desktop_nav, mobile_nav)
-
-    desktop_segment = text[text.find('<nav class="desktop-nav"'):text.find('</nav>', text.find('<nav class="desktop-nav"'))]
-    if desktop_segment.count('>About Us</a>') != 1:
-        raise SystemExit("UX_VNEXT_DESKTOP_ABOUT_DUPLICATE")
-    for required_nav in ("Science Genius of the Year", "Teacher of the Year", "Get Involved", "Impact"):
-        if required_nav not in desktop_segment:
-            raise SystemExit("UX_VNEXT_REQUIRED_TOP_NAV_MISSING:" + required_nav)
-
-    script_marker = '<button id="backTop" class="back-top" aria-label="Back to top" title="Back to top">↑</button>'
-    footer = '''{% if not session.get('user_id') and request.endpoint == 'index' %}
-<section class="ux-public-sitemap" aria-label="ScoreMax site links"><div class="ux-public-sitemap-inner">
-  <div class="ux-footer-brand"><a class="ux-footer-brand-lockup" href="{{url_for('index')}}"><span class="ux-footer-mini-mark" aria-hidden="true"></span><span>ScoreMax</span></a><p>Smarter practice, clearer progress and a better route to exam readiness.</p></div>
-  <nav class="ux-footer-col" aria-label="Explore"><h3>Explore</h3><a href="{{url_for('about_page')}}">About Us</a><a href="{{url_for('how_it_works')}}">How It Works</a><a href="{{url_for('index')}}#programmes">Programmes</a></nav>
-  <nav class="ux-footer-col" aria-label="Programmes"><h3>Programmes</h3><a href="{{url_for('ux_register_interest',programme='MDCAT')}}">MDCAT</a><a href="{{url_for('ux_register_interest',programme='ECAT')}}">ECAT</a><a href="{{url_for('ux_register_interest',programme='FSc')}}">FSc</a><a href="{{url_for('ux_register_interest',programme='Matric')}}">Matric</a></nav>
-  <nav class="ux-footer-col" aria-label="Community"><h3>Community</h3><a href="{{url_for('ux_register_interest',programme='Science Genius of the Year')}}">Science Genius</a><a href="{{url_for('ux_register_interest',programme='Student Council')}}">Student Council</a><a href="{{url_for('teacher_of_year_page')}}">Teacher of the Year</a></nav>
-  <nav class="ux-footer-col" aria-label="Impact"><h3>Impact</h3><a href="{{url_for('index')}}#impact">ScoreMax Impact</a><a href="{{url_for('ux_nominate_school')}}">Nominate a School</a><a href="{{url_for('ux_register_interest',programme='Education Impact supporter')}}">Support Education</a></nav>
-  <nav class="ux-footer-col" aria-label="Resources"><h3>Resources</h3><a href="{{url_for('knowledge_home')}}">Knowledge Hub</a><a href="{{url_for('faq_page')}}">Help</a></nav>
-  <nav class="ux-footer-col" aria-label="Account"><h3>Account</h3><a href="{{url_for('login')}}">Login</a><a class="ux-footer-primary" href="{{url_for('register',role='student')}}">Start Free</a></nav>
-</div><div class="ux-footer-bottom"><span>© ScoreMax</span><div class="ux-footer-bottom-links"><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('about_page')}}">About</a></div></div></section>
-{% endif %}'''
-    script_inject = footer + '\n' + script_marker + '\n{% if not session.get(\'user_id\') and request.endpoint == \'index\' %}<script src="{{url_for(\'static\',filename=\'ux_text_editor.js\')}}"></script>{% endif %}'
-    if script_marker not in text:
-        raise SystemExit("UX_VNEXT_TEXT_EDITOR_SCRIPT_MARKER_MISSING")
-    text = text.replace(script_marker, script_inject, 1)
-    base.write_text(text, encoding="utf-8")
-
-    app_py = OUT / "app.py"
-    app_text = app_py.read_text(encoding="utf-8")
-    public_pattern = re.compile(r"public_endpoints\s*=\s*\{(?P<body>[^}]*)\}")
-    public_match = public_pattern.search(app_text)
-    if not public_match:
-        raise SystemExit("UX_VNEXT_PUBLIC_ENDPOINT_SET_MISSING")
-    body = public_match.group("body")
-    for endpoint in ("ux_register_interest", "ux_nominate_school", "ux_verify_email", "ux_verification_pending", "ux_resend_verification"):
-        if f"'{endpoint}'" not in body:
-            body = body.rstrip() + f",'{endpoint}'"
-    app_text = app_text[:public_match.start()] + "public_endpoints={" + body + "}" + app_text[public_match.end():]
-
-    installer_marker = "\nif __name__=='__main__':\n"
-    installer = "\n# Staging UX installers need the idempotent schema present before they seed fixed test identities.\ninit()\nfrom ux_staging_routes import install_ux_staging_routes\ninstall_ux_staging_routes(app)\nfrom ux_student_batch import install_student_batch\ninstall_student_batch(app)\nfrom ux_student_mastery_strip import install_student_mastery_strip\ninstall_student_mastery_strip(app)\nfrom ux_content_reviewer import install_content_reviewer\ninstall_content_reviewer(app)\nfrom ux_reviewer_accounts import ensure_reviewer_accounts\nensure_reviewer_accounts()\nfrom ux_email_verification import install_email_verification\ninstall_email_verification(app, send_transactional_email)\n"
-    if installer_marker not in app_text:
-        raise SystemExit("UX_VNEXT_ROUTE_INSTALL_MARKER_MISSING")
-    app_text = app_text.replace(installer_marker, installer + installer_marker, 1)
-    app_py.write_text(app_text, encoding="utf-8")
-
-    landing = (OUT / "templates/index.html").read_text(encoding="utf-8")
-    forbidden = ("Power House", "Growth Engine", "qualification", "runtime", "release_id", "build_id")
-    leaked = [term for term in forbidden if term.lower() in landing.lower()]
-    if leaked:
-        raise SystemExit("UX_VNEXT_PUBLIC_LEAKAGE:" + ",".join(leaked))
-
-    required_landing = (
-        "PREPARING FOR", "MDCAT", "ECAT", "FSc", "Matric",
-        "Foundation", "Exam Ready", "Advanced", "Distinction", "Expert", "Elite",
-        "Mastery", "Weak Areas", "Practice", "Past Papers", "Mock Exams", "Study Plan", "Progress", "Exam Centre", "Daily Spark",
-        "GET INVOLVED", "Science Genius", "Student Council", "Teacher of the Year",
-        "SCOREMAX IMPACT", "Nominate a school", "Register interest",
-    )
-    missing = [term for term in required_landing if term not in landing]
+    missing = [token for token in required_app if token not in app]
     if missing:
-        raise SystemExit("UX_VNEXT_REQUIRED_PUBLIC_CONTENT_MISSING:" + ",".join(missing))
+        raise SystemExit("UX_VNEXT_V6611D_FINAL_APP_CONTROL_MISSING:" + ",".join(missing))
+    for token in ("IMPORTED_STAGED", "ACTIVATED_LEARNER_LIVE", "historical_attempts_preserved"):
+        if token not in bridge:
+            raise SystemExit("UX_VNEXT_V6611D_BRIDGE_CONTROL_MISSING:" + token)
+    if marker.get("release") != "6.6.11D":
+        raise SystemExit("UX_VNEXT_V6611D_FINAL_MARKER_RELEASE_MISMATCH")
 
-    login = (OUT / "templates/login.html").read_text(encoding="utf-8")
-    for forbidden_login in ("coming next", "mdcat", "ecat", "fsc", "matric", "grade 9", "grade 10"):
-        if forbidden_login in login.lower():
-            raise SystemExit("UX_VNEXT_LOGIN_PROMO_STILL_PRESENT:" + forbidden_login)
-
-    register = (OUT / "templates/register.html").read_text(encoding="utf-8")
-    if "coming next" in register.lower() or "coming soon" in register.lower():
-        raise SystemExit("UX_VNEXT_REGISTER_PROMO_STILL_PRESENT")
-
-    calculators = (OUT / "templates/ux_target_score.html").read_text(encoding="utf-8")
-    for required_calc in ("AGGREGATE CALCULATOR", "REVERSE CALCULATOR", "10 · 40 · 50", "aggregateResult", "requiredMdcat"):
-        if required_calc not in calculators:
-            raise SystemExit("UX_VNEXT_CALCULATOR_CONTROL_MISSING:" + required_calc)
-
-    for rel in (
-        "templates/ux_student_learn.html","templates/ux_subject_chapters.html","templates/ux_progress.html","ux_student_batch.py",
-        "templates/ux_content_review.html","templates/ux_content_review_question.html","ux_content_reviewer.py","ux_reviewer_accounts.py",
-        "templates/ux_verify_email_pending.html","ux_email_verification.py","ux_student_mastery_strip.py"
-    ):
-        if not (OUT/rel).is_file():
-            raise SystemExit("UX_VNEXT_STUDENT_BATCH_MISSING:"+rel)
-
-    reviewer_text=(OUT/"ux_content_reviewer.py").read_text(encoding="utf-8")
-    for required in ("content_reviewer_enabled","reviewer_can_withdraw':False","routing_target","Power House","ux_content_review_flag"):
-        if required not in reviewer_text:
-            raise SystemExit("UX_VNEXT_REVIEWER_CONTROL_MISSING:"+required)
-
-    accounts_text=(OUT/"ux_reviewer_accounts.py").read_text(encoding="utf-8")
-    for required in ("REVIEWER-01","REVIEWER-05","SCOREMAX_STAGING_REVIEWER_01_PASSWORD","SCOREMAX_STAGING_REVIEWER_05_PASSWORD"):
-        if required not in accounts_text:
-            raise SystemExit("UX_VNEXT_REVIEWER_ACCOUNT_CONTROL_MISSING:"+required)
-
-    verify_text=(OUT/"ux_email_verification.py").read_text(encoding="utf-8")
-    for required in ("email_verified","pending_email_verification","ux_resend_verification","SCOREMAX_REQUIRE_EMAIL_VERIFICATION","STU-900001","REVIEWER-05"):
-        if required not in verify_text:
-            raise SystemExit("UX_VNEXT_EMAIL_VERIFICATION_CONTROL_MISSING:"+required)
-
-    mastery_text=(OUT/"ux_student_mastery_strip.py").read_text(encoding="utf-8")
-    for required in ("uxStudentMasteryStrip","student-context-stack","mastery-hero-card","Foundation","Exam Ready","Elite","ux-mastery-current"):
-        if required not in mastery_text:
-            raise SystemExit("UX_VNEXT_STUDENT_MASTERY_STRIP_CONTROL_MISSING:"+required)
-
-    print("SCOREMAX_UX_VNEXT_STAGING_MATERIALIZED base_release=6.6.11C staging_routes=true student_batch=true student_mastery_strip=true content_reviewer=true reviewer_accounts=5 email_verification=true subjects_chapters_progress=true science_corner=true interest_routes=true")
+    compile(app, str(app_path), "exec")
+    compile(bridge, str(bridge_path), "exec")
+    print(
+        "SCOREMAX_UX_VNEXT_V6611D_COMPATIBILITY_PASS "
+        "parent_release=6.6.11D ux_overlay_preserved=true "
+        "ph_import_staged_ack=true ph_activation_ack=true withdrawal_bridge=true "
+        "learner_cross_system_calls=false release_authority=false",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
