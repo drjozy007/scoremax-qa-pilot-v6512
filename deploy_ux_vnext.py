@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import shutil
-import struct
-import zlib
-from collections import deque
+import subprocess
+import sys
 from pathlib import Path
 
 import deploy_ux_vnext_teacher_base as base
@@ -11,189 +10,84 @@ from ux_vnext_overlay.ux_teacher_workspace_compat import apply_teacher_workspace
 from ux_vnext_overlay.ux_student_account_patch import apply_student_account_patch
 
 ICON_NAME = 'scoremax-icon-student-summit-v3.png'
-HEADER_ICON_NAME = 'scoremax-header-summit-tight-v5.png'
-PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
+HEADER_ICON_NAME = 'scoremax-header-summit-tight-v6.png'
 
 
-def _paeth(a: int, b: int, c: int) -> int:
-    p = a + b - c
-    pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
-    if pa <= pb and pa <= pc:
-        return a
-    if pb <= pc:
-        return b
-    return c
-
-
-def _read_rgba_png(path: Path):
-    data = path.read_bytes()
-    if not data.startswith(PNG_SIGNATURE):
-        raise SystemExit('SCOREMAX_HEADER_ICON_SOURCE_NOT_PNG')
-    pos = len(PNG_SIGNATURE)
-    width = height = None
-    idat = bytearray()
-    while pos + 12 <= len(data):
-        length = struct.unpack('>I', data[pos:pos + 4])[0]
-        kind = data[pos + 4:pos + 8]
-        payload = data[pos + 8:pos + 8 + length]
-        pos += 12 + length
-        if kind == b'IHDR':
-            width, height, bit_depth, colour_type, compression, filter_method, interlace = struct.unpack('>IIBBBBB', payload)
-            if (bit_depth, colour_type, compression, filter_method, interlace) != (8, 6, 0, 0, 0):
-                raise SystemExit('SCOREMAX_HEADER_ICON_SOURCE_FORMAT_UNSUPPORTED')
-        elif kind == b'IDAT':
-            idat.extend(payload)
-        elif kind == b'IEND':
-            break
-    if not width or not height or not idat:
-        raise SystemExit('SCOREMAX_HEADER_ICON_SOURCE_STRUCTURE_INVALID')
-
-    decoded = zlib.decompress(bytes(idat))
-    bpp = 4
-    stride = width * bpp
-    expected = height * (stride + 1)
-    if len(decoded) != expected:
-        raise SystemExit(f'SCOREMAX_HEADER_ICON_DECODE_LENGTH_INVALID expected={expected} actual={len(decoded)}')
-
-    rows = []
-    prev = bytearray(stride)
-    offset = 0
-    for _ in range(height):
-        f = decoded[offset]
-        offset += 1
-        scan = decoded[offset:offset + stride]
-        offset += stride
-        recon = bytearray(stride)
-        for i, value in enumerate(scan):
-            left = recon[i - bpp] if i >= bpp else 0
-            up = prev[i]
-            up_left = prev[i - bpp] if i >= bpp else 0
-            if f == 0:
-                result = value
-            elif f == 1:
-                result = (value + left) & 255
-            elif f == 2:
-                result = (value + up) & 255
-            elif f == 3:
-                result = (value + ((left + up) // 2)) & 255
-            elif f == 4:
-                result = (value + _paeth(left, up, up_left)) & 255
-            else:
-                raise SystemExit(f'SCOREMAX_HEADER_ICON_FILTER_UNSUPPORTED:{f}')
-            recon[i] = result
-        rows.append(recon)
-        prev = recon
-    return width, height, rows
-
-
-def _png_chunk(kind: bytes, payload: bytes) -> bytes:
-    crc = zlib.crc32(kind)
-    crc = zlib.crc32(payload, crc) & 0xFFFFFFFF
-    return struct.pack('>I', len(payload)) + kind + payload + struct.pack('>I', crc)
-
-
-def _write_rgba_png(path: Path, width: int, height: int, rows) -> None:
-    raw = b''.join(b'\x00' + bytes(row) for row in rows)
-    ihdr = struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)
-    png = PNG_SIGNATURE + _png_chunk(b'IHDR', ihdr) + _png_chunk(b'IDAT', zlib.compress(raw, 9)) + _png_chunk(b'IEND', b'')
-    path.write_bytes(png)
-
-
-def _pixel(row, x: int):
-    i = x * 4
-    return tuple(row[i:i + 4])
-
-
-def _median4(values):
-    ordered = sorted(values)
-    return (ordered[1] + ordered[2]) // 2
+def _load_pillow():
+    try:
+        from PIL import Image, ImageChops, ImageDraw
+        return Image, ImageChops, ImageDraw
+    except ImportError:
+        subprocess.run(
+            [sys.executable, '-m', 'pip', 'install', 'Pillow==11.3.0'],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        from PIL import Image, ImageChops, ImageDraw
+        return Image, ImageChops, ImageDraw
 
 
 def _derive_tight_header_asset(source: Path, target: Path) -> tuple[int, int, int]:
-    width, height, rows = _read_rgba_png(source)
+    Image, ImageChops, ImageDraw = _load_pillow()
+    im = Image.open(source).convert('RGBA')
+    width, height = im.size
     corners = [
-        _pixel(rows[0], 0),
-        _pixel(rows[0], width - 1),
-        _pixel(rows[height - 1], 0),
-        _pixel(rows[height - 1], width - 1),
+        im.getpixel((0, 0)),
+        im.getpixel((width - 1, 0)),
+        im.getpixel((0, height - 1)),
+        im.getpixel((width - 1, height - 1)),
     ]
-    bg = tuple(_median4([p[c] for p in corners]) for c in range(4))
-    mostly_transparent_bg = sum(1 for p in corners if p[3] < 32) >= 3
+    # Median-like stable corner background estimate, robust to one non-background corner.
+    bg = tuple(sorted(p[i] for p in corners)[1:3][0] for i in range(4))
+    if sum(1 for p in corners if p[3] <= 16) >= 3:
+        alpha = im.getchannel('A')
+        mask = alpha.point(lambda p: 255 if p > 16 else 0)
+    else:
+        bg_img = Image.new('RGBA', im.size, bg)
+        diff = ImageChops.difference(im, bg_img).convert('RGB')
+        # Use maximum channel difference so light anti-aliasing does not define the crop.
+        mask = Image.new('L', im.size, 0)
+        src = diff.load(); dst = mask.load()
+        for y in range(height):
+            for x in range(width):
+                px = src[x, y]
+                dst[x, y] = 255 if max(px) > 18 else 0
 
-    def is_background(px) -> bool:
-        if px[3] <= 8:
-            return True
-        if mostly_transparent_bg:
-            return False
-        rgb_distance = abs(px[0] - bg[0]) + abs(px[1] - bg[1]) + abs(px[2] - bg[2])
-        return rgb_distance <= 45 and abs(px[3] - bg[3]) <= 40
-
-    foreground = []
-    for y, row in enumerate(rows):
-        for x in range(width):
-            if not is_background(_pixel(row, x)):
-                foreground.append((x, y))
-    if not foreground:
+    bbox = mask.getbbox()
+    if not bbox:
         raise SystemExit('SCOREMAX_HEADER_ICON_NO_VISIBLE_ARTWORK_DETECTED')
-
-    min_x = min(x for x, _ in foreground)
-    max_x = max(x for x, _ in foreground)
-    min_y = min(y for _, y in foreground)
-    max_y = max(y for _, y in foreground)
-    pad = 1
-    x0, x1 = max(0, min_x - pad), min(width - 1, max_x + pad)
-    y0, y1 = max(0, min_y - pad), min(height - 1, max_y + pad)
-    crop_w, crop_h = x1 - x0 + 1, y1 - y0 + 1
+    x0, y0, x1, y1 = bbox
+    pad = 2
+    x0, y0 = max(0, x0 - pad), max(0, y0 - pad)
+    x1, y1 = min(width, x1 + pad), min(height, y1 + pad)
+    crop = im.crop((x0, y0, x1, y1))
+    crop_w, crop_h = crop.size
     if crop_w < 8 or crop_h < 8:
         raise SystemExit(f'SCOREMAX_HEADER_ICON_ARTWORK_BOUNDS_TOO_SMALL:{crop_w}x{crop_h}')
 
-    cropped = []
-    for y in range(y0, y1 + 1):
-        start = x0 * 4
-        end = (x1 + 1) * 4
-        cropped.append(bytearray(rows[y][start:end]))
+    # Remove only the connected outer background; internal white/gold artwork is preserved.
+    if not (sum(1 for p in corners if p[3] <= 16) >= 3):
+        for seed in ((0, 0), (crop_w - 1, 0), (0, crop_h - 1), (crop_w - 1, crop_h - 1)):
+            ImageDraw.floodfill(crop, seed, (0, 0, 0, 0), thresh=42)
 
-    # Remove only blank/background pixels connected to the crop edge. Internal light
-    # details remain untouched, so this is a framing correction rather than a redraw.
-    visited = set()
-    queue = deque()
-    for x in range(crop_w):
-        queue.append((x, 0))
-        queue.append((x, crop_h - 1))
-    for y in range(crop_h):
-        queue.append((0, y))
-        queue.append((crop_w - 1, y))
-    while queue:
-        x, y = queue.popleft()
-        if (x, y) in visited or x < 0 or y < 0 or x >= crop_w or y >= crop_h:
-            continue
-        visited.add((x, y))
-        px = _pixel(cropped[y], x)
-        if not is_background(px):
-            continue
-        i = x * 4
-        cropped[y][i + 3] = 0
-        queue.extend(((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)))
-
-    visible = 0
-    vis_x, vis_y = [], []
-    for y, row in enumerate(cropped):
-        for x in range(crop_w):
-            if _pixel(row, x)[3] > 16:
-                visible += 1
-                vis_x.append(x)
-                vis_y.append(y)
+    alpha = crop.getchannel('A')
+    visible_mask = alpha.point(lambda p: 255 if p > 16 else 0)
+    visible_bbox = visible_mask.getbbox()
+    if not visible_bbox:
+        raise SystemExit('SCOREMAX_HEADER_ICON_NO_VISIBLE_PIXELS_AFTER_BACKGROUND_REMOVAL')
+    visible_pixels = sum(1 for p in alpha.getdata() if p > 16)
     min_visible = max(40, int(crop_w * crop_h * 0.03))
-    if visible < min_visible:
-        raise SystemExit(f'SCOREMAX_HEADER_ICON_VISIBLE_PIXEL_COUNT_TOO_LOW:{visible}')
-    span_w = max(vis_x) - min(vis_x) + 1
-    span_h = max(vis_y) - min(vis_y) + 1
-    if span_w < max(8, int(crop_w * 0.45)) or span_h < max(8, int(crop_h * 0.45)):
-        raise SystemExit(f'SCOREMAX_HEADER_ICON_VISIBLE_SPAN_TOO_SMALL:{span_w}x{span_h}')
+    if visible_pixels < min_visible:
+        raise SystemExit(f'SCOREMAX_HEADER_ICON_VISIBLE_PIXEL_COUNT_TOO_LOW:{visible_pixels}')
+    vx0, vy0, vx1, vy1 = visible_bbox
+    if (vx1 - vx0) < max(8, int(crop_w * 0.45)) or (vy1 - vy0) < max(8, int(crop_h * 0.45)):
+        raise SystemExit(f'SCOREMAX_HEADER_ICON_VISIBLE_SPAN_TOO_SMALL:{vx1-vx0}x{vy1-vy0}')
 
     target.parent.mkdir(parents=True, exist_ok=True)
-    _write_rgba_png(target, crop_w, crop_h, cropped)
-    return crop_w, crop_h, visible
+    crop.save(target, format='PNG', optimize=True)
+    return crop_w, crop_h, visible_pixels
 
 
 def _install_agreed_scoremax_icon(root: Path) -> None:
@@ -215,7 +109,7 @@ def _install_agreed_scoremax_icon(root: Path) -> None:
     base_path = root / 'templates' / 'base.html'
     text = base_path.read_text(encoding='utf-8')
     new_ref = "{{url_for('static',filename='scoremax-icon-student-summit-v3.png')}}?v=3"
-    header_ref = "{{url_for('static',filename='scoremax-header-summit-tight-v5.png')}}?v=5"
+    header_ref = "{{url_for('static',filename='scoremax-header-summit-tight-v6.png')}}?v=6"
     for old in (
         "{{url_for('static',filename='scoremax-icon-32.png')}}",
         "{{url_for('static',filename='scoremax-icon-180.png')}}",
@@ -241,15 +135,15 @@ def _install_agreed_scoremax_icon(root: Path) -> None:
     if text.count(wordmark) != 1:
         raise SystemExit('SCOREMAX_HEADER_WORDMARK_CHANGED_DURING_ICON_RECTIFICATION')
 
-    style = '''\n<style id="scoremax-agreed-icon-v5-style">
+    style = '''\n<style id="scoremax-agreed-icon-v6-style">
 .scoremax-install-art{width:46px;height:46px;flex:0 0 46px;object-fit:cover;border-radius:12px;display:block;box-shadow:0 3px 10px rgba(15,23,42,.14)}
 .scoremax-install-help-card .scoremax-install-art{width:68px;height:68px;flex-basis:68px;border-radius:16px;margin:0 auto 8px}
-.ux-brand-art{width:36px;height:36px;flex:0 0 36px;object-fit:contain;object-position:center;display:block;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important}
-@media(max-width:420px){.ux-brand-art{width:33px;height:33px;flex-basis:33px}}
+.ux-brand-art{width:38px;height:38px;flex:0 0 38px;object-fit:contain;object-position:center;display:block;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important}
+@media(max-width:420px){.ux-brand-art{width:34px;height:34px;flex-basis:34px}}
 </style>\n'''
-    if 'scoremax-agreed-icon-v5-style' not in text:
+    if 'scoremax-agreed-icon-v6-style' not in text:
         if '</head>' not in text:
-            raise SystemExit('SCOREMAX_V5_HEAD_MARKER_MISSING')
+            raise SystemExit('SCOREMAX_V6_HEAD_MARKER_MISSING')
         text = text.replace('</head>', style + '</head>', 1)
 
     manifest = manifest_target.read_text(encoding='utf-8')
@@ -258,18 +152,18 @@ def _install_agreed_scoremax_icon(root: Path) -> None:
     if 'scoremax-icon-summit-v2.png' in manifest:
         raise SystemExit('SCOREMAX_V3_MANIFEST_OLD_ICON_STILL_AUTHORITATIVE')
     if HEADER_ICON_NAME not in text or not header_target.is_file():
-        raise SystemExit('SCOREMAX_V5_TIGHT_HEADER_ASSET_MISSING')
+        raise SystemExit('SCOREMAX_V6_TIGHT_HEADER_ASSET_MISSING')
     if 'class="ux-brand-bar"' in text:
         raise SystemExit('SCOREMAX_V3_OLD_THREE_BAR_HEADER_MARK_SURVIVED')
     if text.count(wordmark) != 1:
-        raise SystemExit('SCOREMAX_V5_WORDMARK_POSTBUILD_MISMATCH')
+        raise SystemExit('SCOREMAX_V6_WORDMARK_POSTBUILD_MISMATCH')
 
     base_path.write_text(text, encoding='utf-8')
     print(
-        'SCOREMAX_INSTALL_AGREED_ICON_V5_ACTIVE '
+        'SCOREMAX_INSTALL_AGREED_ICON_V6_ACTIVE '
         f'source={ICON_NAME} header_asset={HEADER_ICON_NAME} crop={crop_w}x{crop_h} visible_pixels={visible_pixels} '
         'artwork=student_climbing_mountain_steps_gold_star derived_from_approved_source=true '
-        'edge_background_removed=true css_crop=false blank_header_tile=false '
+        'pillow_asset_pipeline=true edge_background_removed=true css_crop=false blank_header_tile=false '
         'wordmark_unchanged=true install_prompt_exact_artwork=true old_three_bar_header_markup=false '
         'served_image_visual_acceptance_required=true',
         flush=True,
@@ -291,10 +185,10 @@ def main() -> None:
     if 'ux-brand-crop' in rendered_base:
         raise SystemExit('SCOREMAX_POSTBUILD_CSS_CROP_WRAPPER_SURVIVED')
     print(
-        'SCOREMAX_UX_ACCOUNT_ICON_RECTIFICATION_V6_PASS '
+        'SCOREMAX_UX_ACCOUNT_ICON_RECTIFICATION_V7_PASS '
         'student_logout_visible=true landing_install_art=true header_brand_art=true '
-        'derived_header_asset=true css_crop=false blank_header_tile=false wordmark_unchanged=true '
-        'old_three_bar_header=false teacher_workspace_preserved=true',
+        'derived_header_asset=true pillow_asset_pipeline=true css_crop=false blank_header_tile=false '
+        'wordmark_unchanged=true old_three_bar_header=false teacher_workspace_preserved=true',
         flush=True,
     )
 
