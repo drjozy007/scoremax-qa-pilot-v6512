@@ -13,13 +13,13 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/static/scoremax-icon-summit-v2.png?v=2",
+      "src": "/static/scoremax-icon-student-summit-v3.png?v=3",
       "sizes": "any",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/static/scoremax-icon-summit-v2.png?v=2",
+      "src": "/static/scoremax-icon-student-summit-v3.png?v=3",
       "sizes": "any",
       "type": "image/png",
       "purpose": "maskable"
