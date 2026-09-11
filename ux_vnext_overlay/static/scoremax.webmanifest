@@ -1,0 +1,50 @@
+{
+  "id": "/",
+  "name": "ScoreMax",
+  "short_name": "ScoreMax",
+  "description": "Smarter practice, mastery, progress and exam preparation with ScoreMax.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/static/scoremax-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/scoremax-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/scoremax-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log in",
+      "short_name": "Login",
+      "url": "/login"
+    },
+    {
+      "name": "Practice",
+      "short_name": "Practice",
+      "url": "/test/setup"
+    }
+  ]
+}
