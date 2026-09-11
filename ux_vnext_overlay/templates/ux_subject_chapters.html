@@ -2,11 +2,11 @@
 <style>
 .ux-chapters{max-width:1220px;margin:0 auto;padding:18px 20px 40px}.ux-chapter-head{display:flex;justify-content:space-between;gap:16px;align-items:end;margin-bottom:10px}.ux-chapter-head h1{margin:.05rem 0 .2rem;font-size:clamp(1.8rem,3.2vw,2.5rem);letter-spacing:-.035em;color:#3FA6A3}.ux-chapter-head .muted{margin:0;max-width:680px}.ux-chapter-summary{display:flex;gap:6px;flex-wrap:wrap}.ux-chapter-summary span{padding:5px 8px;border-radius:999px;background:#f1f6f5;color:#31413f;font-size:.66rem;font-weight:850}
 .ux-mastery-key{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:12px 0 8px;padding:8px 10px;border:1px solid #e2e9e8;border-radius:11px;background:#fafcfc;color:#697874;font-size:.57rem;font-weight:760}.ux-mastery-key span{text-align:center}.ux-mastery-key span:first-child{text-align:left}.ux-mastery-key span:last-child{text-align:right}
-.ux-chapter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.ux-chapter-card{display:flex;flex-direction:column;min-width:0;padding:11px 12px 10px;border:1px solid #dce7e6;border-top:4px solid #3FA6A3;border-radius:14px;background:#fff;box-shadow:0 5px 15px rgba(15,23,42,.035);transition:.15s ease;color:#111827}.ux-chapter-card:hover{transform:translateY(-1px);border-color:#c7dcda;border-top-color:#2F7F7D;box-shadow:0 8px 20px rgba(15,23,42,.065)}.ux-chapter-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.ux-chapter-title{display:flex;align-items:baseline;gap:5px;min-width:0}.ux-chapter-number{flex:0 0 auto;font-size:.67rem;font-weight:900;letter-spacing:.02em;color:#62706d}.ux-chapter-card h2{font-size:1rem;margin:0;line-height:1.17;color:#3FA6A3;font-weight:900;min-width:0}.ux-chapter-status{flex:0 0 auto;padding:3px 7px;border-radius:999px;background:#eef6f5;color:#2F7F7D;font-size:.57rem;font-weight:900;white-space:nowrap}.ux-chapter-card.is-unverified .ux-chapter-status{background:#f8eaea;color:#a54848}
-.ux-stage-track{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:10px}.ux-stage-track i{display:block;height:6px;border-radius:999px;background:#e7edec}.ux-stage-track i.reached{background:#3FA6A3}.ux-chapter-card.is-unverified .ux-stage-track i:first-child{background:#d96a6a}.ux-chapter-card.is-unverified .ux-stage-track i:not(:first-child){background:#f0dede}
-.ux-chapter-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding-top:8px;border-top:1px solid #edf1f1}.ux-evidence-line{min-width:0;color:#66746f;font-size:.68rem;line-height:1.25}.ux-evidence-line strong{color:#1f2a27;font-weight:900}.ux-evidence-line .dot{margin:0 4px;color:#a3aeab}.ux-chapter-open{flex:0 0 auto;color:#236765;text-decoration:none;font-size:.67rem;font-weight:900;white-space:nowrap}.ux-chapter-open:hover{text-decoration:underline}.ux-empty{padding:22px;border:1px dashed #cad8d7;border-radius:14px;background:#fafcfc}
+.ux-chapter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.ux-chapter-card{display:flex;flex-direction:column;min-width:0;padding:11px 12px 10px;border:1px solid #dce7e6;border-top:4px solid #3FA6A3;border-radius:14px;background:#fff;box-shadow:0 5px 15px rgba(15,23,42,.035);transition:.15s ease;color:#111827}.ux-chapter-card:hover{transform:translateY(-1px);border-color:#c7dcda;border-top-color:#2F7F7D;box-shadow:0 8px 20px rgba(15,23,42,.065)}.ux-chapter-title{display:flex;align-items:baseline;gap:5px;min-width:0}.ux-chapter-number{flex:0 0 auto;font-size:.67rem;font-weight:900;letter-spacing:.02em;color:#62706d}.ux-chapter-card h2{font-size:1rem;margin:0;line-height:1.17;color:#3FA6A3;font-weight:900;min-width:0}
+.ux-stage-track{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:10px}.ux-stage-track i{display:block;height:6px;border-radius:999px;background:#e7edec}.ux-stage-track i.reached{background:#3FA6A3}.ux-chapter-card.is-unverified .ux-stage-track i{background:#f0dede}.ux-chapter-card.is-unverified.has-practice .ux-stage-track i{background:#ecd7d7}
+.ux-chapter-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding-top:8px;border-top:1px solid #edf1f1}.ux-evidence-line{min-width:0;color:#66746f;font-size:.66rem;line-height:1.3}.ux-evidence-line strong{color:#1f2a27;font-weight:900}.ux-evidence-line .state{color:#236765;font-weight:900}.ux-chapter-card.is-unverified .ux-evidence-line .state{color:#a54848}.ux-evidence-line .dot{margin:0 4px;color:#a3aeab}.ux-chapter-open{flex:0 0 auto;color:#236765;text-decoration:none;font-size:.67rem;font-weight:900;white-space:nowrap}.ux-chapter-open:hover{text-decoration:underline}.ux-empty{padding:22px;border:1px dashed #cad8d7;border-radius:14px;background:#fafcfc}
 @media(max-width:980px){.ux-chapter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:620px){.ux-chapters{padding:16px 12px 38px}.ux-chapter-grid{grid-template-columns:1fr}.ux-chapter-head{align-items:flex-start;flex-direction:column}.ux-chapter-summary{margin-top:2px}.ux-mastery-key{font-size:.48rem;padding:7px 6px}.ux-chapter-card h2{font-size:.98rem}}
+@media(max-width:620px){.ux-chapters{padding:16px 12px 38px}.ux-chapter-grid{grid-template-columns:1fr}.ux-chapter-head{align-items:flex-start;flex-direction:column}.ux-chapter-summary{margin-top:2px}.ux-mastery-key{font-size:.48rem;padding:7px 6px}.ux-chapter-card h2{font-size:.98rem}.ux-chapter-bottom{align-items:flex-end}}
 </style>
 <section class="ux-chapters">
   <div class="ux-chapter-head"><div><a class="back-link" href="{{learn_url}}">← Learn</a><p class="eyebrow">{{subject|upper}}</p><h1>{{subject}} chapters</h1><p class="muted">See your current chapter position at a glance, then open a chapter when you are ready to work.</p></div><div class="ux-chapter-summary"><span>{{chapter_count}} chapters</span><span>{{started_chapters}} started</span><span>{{avg_accuracy ~ '%' if answered else 'No evidence'}}</span></div></div>
@@ -19,25 +19,24 @@
       {% set unverified=(not m.has_formal_mastery) or ((m.existing_level or '')|lower in ['not verified','not started']) %}
       {% set level=(m.existing_level or '')|lower %}
       {% if 'elite' in level %}{% set stage=6 %}{% elif 'expert' in level %}{% set stage=5 %}{% elif 'distinction' in level %}{% set stage=4 %}{% elif 'advanced' in level %}{% set stage=3 %}{% elif 'exam ready' in level %}{% set stage=2 %}{% elif 'foundation' in level %}{% set stage=1 %}{% else %}{% set stage=0 %}{% endif %}
-      <article class="ux-chapter-card {{'is-unverified' if unverified else ''}}">
-        <div class="ux-chapter-card-top">
-          <div class="ux-chapter-title"><span class="ux-chapter-number">{{ch.number or loop.index}}-</span><h2>{{ch.name}}</h2></div>
-          <span class="ux-chapter-status">{{'Not verified' if unverified else m.existing_level}}</span>
-        </div>
+      <article class="ux-chapter-card {{'is-unverified' if unverified else ''}} {{'has-practice' if ch.answered else ''}}">
+        <div class="ux-chapter-title"><span class="ux-chapter-number">{{ch.number or loop.index}}-</span><h2>{{ch.name}}</h2></div>
 
         <div class="ux-stage-track" aria-label="{{'Mastery not verified' if unverified else 'Mastery stage ' ~ m.existing_level}}">
-          {% for n in range(1,7) %}<i class="{{'reached' if n<=stage else ''}}"></i>{% endfor %}
+          {% for n in range(1,7) %}<i class="{{'reached' if (not unverified and n<=stage) else ''}}"></i>{% endfor %}
         </div>
 
         <div class="ux-chapter-bottom">
           <div class="ux-evidence-line">
             {% if not ch.answered %}
-              <strong>0 answers</strong><span class="dot">·</span>No evidence
+              <span class="state">Not started</span><span class="dot">·</span><strong>0 answers</strong><span class="dot">·</span>No evidence
+            {% elif unverified %}
+              <span class="state">Not verified</span><span class="dot">·</span><strong>{{ch.accuracy}}%</strong><span class="dot">·</span>{{ch.answered}} answers<span class="dot">·</span>{{ch.evidence_strength}}
             {% else %}
-              <strong>{{ch.accuracy}}% accuracy</strong><span class="dot">·</span>{{ch.answered}} answers<span class="dot">·</span>{{ch.evidence_strength}}
+              <span class="state">{{m.existing_level}}</span><span class="dot">·</span><strong>{{ch.accuracy}}%</strong><span class="dot">·</span>{{ch.answered}} answers<span class="dot">·</span>{{ch.evidence_strength}}
             {% endif %}
           </div>
-          {% if ch.available %}<a class="ux-chapter-open" href="{{ch.url}}">Open chapter →</a>{% endif %}
+          {% if ch.available %}<a class="ux-chapter-open" href="{{ch.url}}">Open →</a>{% endif %}
         </div>
       </article>
     {% else %}
