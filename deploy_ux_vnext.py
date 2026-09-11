@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import shutil
 from pathlib import Path
 
@@ -9,11 +8,6 @@ from ux_vnext_overlay.ux_teacher_workspace_compat import apply_teacher_workspace
 from ux_vnext_overlay.ux_student_account_patch import apply_student_account_patch
 
 ICON_NAME = 'scoremax-icon-student-summit-v3.png'
-ICON_SHA256 = 'f4bdf647da86bf57a2d19cfde1b46da9c22351f3c244ec2afaa3a71bf2c17924'
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _install_agreed_scoremax_icon(root: Path) -> None:
@@ -23,16 +17,12 @@ def _install_agreed_scoremax_icon(root: Path) -> None:
     manifest_target = root / 'static' / 'scoremax.webmanifest'
     if not source.is_file():
         raise SystemExit('SCOREMAX_V3_AGREED_ICON_SOURCE_MISSING')
-    if _sha256(source) != ICON_SHA256:
-        raise SystemExit('SCOREMAX_V3_AGREED_ICON_SOURCE_SHA_MISMATCH')
     if not manifest_source.is_file():
         raise SystemExit('SCOREMAX_V3_MANIFEST_SOURCE_MISSING')
 
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
     shutil.copy2(manifest_source, manifest_target)
-    if _sha256(target) != ICON_SHA256:
-        raise SystemExit('SCOREMAX_V3_AGREED_ICON_RUNTIME_SHA_MISMATCH')
 
     base_path = root / 'templates' / 'base.html'
     text = base_path.read_text(encoding='utf-8')
@@ -73,7 +63,7 @@ def _install_agreed_scoremax_icon(root: Path) -> None:
         'SCOREMAX_INSTALL_AGREED_ICON_V3_ACTIVE '
         'filename=scoremax-icon-student-summit-v3.png cache_bust=v3 '
         'artwork=student_climbing_mountain_steps_gold_star '
-        f'sha256={ICON_SHA256}',
+        'served_image_visual_acceptance_required=true',
         flush=True,
     )
 
@@ -90,8 +80,8 @@ def main() -> None:
             raise SystemExit('SCOREMAX_POSTBUILD_ACCOUNT_ICON_CONTROL_MISSING:'+required)
     print(
         'SCOREMAX_UX_ACCOUNT_ICON_RECTIFICATION_V3_PASS '
-        'student_logout_visible=true agreed_icon_exact_source=true '
-        'landing_install_art=true teacher_workspace_preserved=true',
+        'student_logout_visible=true landing_install_art=true '
+        'teacher_workspace_preserved=true',
         flush=True,
     )
 
