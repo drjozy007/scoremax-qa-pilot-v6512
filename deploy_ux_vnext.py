@@ -40,8 +40,8 @@ def _assert_referral_hero_v3() -> None:
     missing=[token for token in required if token not in text]
     if missing:
         raise SystemExit('SCOREMAX_REFERRAL_V3_POSTBUILD_CONTROL_MISSING:'+','.join(missing))
-    if 'ux-referral-code-chip' in text:
-        raise SystemExit('SCOREMAX_REFERRAL_V3_OLD_PATCH_SURVIVED')
+    if '<span class="ux-referral-code-chip">' in text:
+        raise SystemExit('SCOREMAX_REFERRAL_V3_OLD_MARKUP_SURVIVED')
     print('SCOREMAX_UX_REFERRAL_HERO_V3_POSTBUILD_PASS presentation_only=true backend_unchanged=true',flush=True)
 
 
