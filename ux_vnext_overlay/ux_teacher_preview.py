@@ -8,6 +8,9 @@ TEACHER_EMAIL='ux-teacher@scoremax.test'
 TEACHER_USERNAME='ux-teacher'
 TEACHER_SYSTEM_ID='TCH-900001'
 TEACHER_PREVIEW_PASSWORD_HASH='pbkdf2:sha256:1000000$UOgOHDs3iDJFLDMJ$dec7ff77a321e0cc78508a14190e5f26f184ebfa010a86bd85532cdac61ed4a3'
+ADMIN_EMAIL='ux-admin@scoremax.test'
+ADMIN_USERNAME='ux-admin'
+ADMIN_SYSTEM_ID='ADM-900001'
 
 
 def _db_path() -> Path:
@@ -63,6 +66,29 @@ def _ensure_teacher(conn: sqlite3.Connection) -> int:
     return _insert_dynamic(conn,'users',values)
 
 
+def _ensure_admin_preview(conn: sqlite3.Connection, teacher_id: int) -> int:
+    teacher=conn.execute('SELECT password_hash FROM users WHERE id=?',(teacher_id,)).fetchone()
+    if not teacher or not teacher['password_hash']:
+        raise RuntimeError('Teacher preview credential unavailable for admin preview')
+    row=conn.execute("SELECT id FROM users WHERE lower(COALESCE(email,''))=?",(ADMIN_EMAIL,)).fetchone()
+    values={
+        'system_user_id':ADMIN_SYSTEM_ID,
+        'role':'admin',
+        'full_name':'ScoreMax Admin Preview',
+        'email':ADMIN_EMAIL,
+        'username':ADMIN_USERNAME,
+        'password_hash':teacher['password_hash'],
+        'account_status':'active',
+        'login_provider':'password',
+        'session_version':0,
+    }
+    if row:
+        admin_id=int(row['id'])
+        _update_dynamic(conn,'users',admin_id,values)
+        return admin_id
+    return _insert_dynamic(conn,'users',values)
+
+
 def _ensure_preview_student(conn: sqlite3.Connection, suffix: int, full_name: str) -> int:
     email=f'ux-teacher-student-{suffix}@scoremax.test'
     row=conn.execute("SELECT id FROM users WHERE lower(COALESCE(email,''))=?",(email,)).fetchone()
@@ -100,11 +126,11 @@ def ensure_teacher_preview() -> None:
     conn=sqlite3.connect(path); conn.row_factory=sqlite3.Row
     conn.execute('PRAGMA foreign_keys=ON'); conn.execute('PRAGMA busy_timeout=5000')
     try:
-        # Safe on a genuinely fresh hosted database. scoremax_production calls this again after init().
         if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='users'").fetchone():
             print('SCOREMAX_UX_TEACHER_PREVIEW_DEFERRED schema_ready=false',flush=True)
             return
         teacher_id=_ensure_teacher(conn)
+        _ensure_admin_preview(conn,teacher_id)
         biology=_ensure_class(conn,teacher_id,'FSc Biology A','Biology','UXBIO26')
         chemistry=_ensure_class(conn,teacher_id,'FSc Chemistry A','Chemistry','UXCHEM26')
         students=[_ensure_preview_student(conn,1,'Ayesha Khan'),_ensure_preview_student(conn,2,'Hamza Ali'),_ensure_preview_student(conn,3,'Mariam Noor'),_ensure_preview_student(conn,4,'Usman Raza'),_ensure_preview_student(conn,5,'Zainab Ahmed'),_ensure_preview_student(conn,6,'Bilal Hussain')]
@@ -112,6 +138,6 @@ def ensure_teacher_preview() -> None:
             for idx,sid in enumerate(members,1):
                 conn.execute('INSERT OR IGNORE INTO classroom_students(classroom_id,student_id,roll_no) VALUES(?,?,?)',(cid,sid,f'UX-{idx:02d}'))
         conn.commit()
-        print('SCOREMAX_UX_TEACHER_PREVIEW_READY teacher=TCH-900001 classes=2 representative_students=6 staging_only=true',flush=True)
+        print('SCOREMAX_UX_TEACHER_PREVIEW_READY teacher=TCH-900001 admin=ADM-900001 classes=2 representative_students=6 staging_only=true shared_preview_credential=true',flush=True)
     finally:
         conn.close()
