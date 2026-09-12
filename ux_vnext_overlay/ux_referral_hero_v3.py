@@ -30,6 +30,10 @@ STYLE = r'''<style id="ux-referral-hero-v3-style">
 .ux-referral-share-link{border:1px solid #bcdedb;background:#edf8f7;color:#236765!important}.ux-referral-share-link:hover{background:#dff2f0;border-color:#9ecfcb;transform:translateY(-1px)}
 .ux-referral-action-note,.ux-referral-copy-status{margin:0;color:#71807d;font-size:.67rem;line-height:1.45;text-align:center}
 .ux-referral-copy-status{min-height:1em;color:#2f7f7d;font-weight:800}
+/* Keep referral KPI labels and values visually separate on every viewport. */
+.ux-teacher-referrals-brand .grid4 .metric{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;min-height:92px;padding:14px 16px;overflow:hidden}
+.ux-teacher-referrals-brand .grid4 .metric>span{display:block;margin:0;color:#536966;font-size:.78rem;line-height:1.25}
+.ux-teacher-referrals-brand .grid4 .metric>strong{display:block;margin:0;font-size:1.65rem;line-height:1;font-weight:900;color:#173f3d}
 @media(max-width:880px){
   .ux-teacher-referrals-brand .referral-hero{grid-template-columns:1fr;gap:18px;padding:26px}
   .ux-teacher-referrals-brand .referral-hero>*:not(.ux-referral-hero-actions){grid-column:1}
@@ -39,6 +43,7 @@ STYLE = r'''<style id="ux-referral-hero-v3-style">
   .ux-teacher-referrals-brand .referral-hero{padding:21px 18px;border-radius:18px}
   .ux-teacher-referrals-brand .referral-hero h1.ux-referral-hero-title{font-size:clamp(1.85rem,10vw,2.5rem)}
   .ux-teacher-referrals-brand .ux-referral-hero-actions{padding:17px;border-radius:15px}
+  .ux-teacher-referrals-brand .grid4 .metric{min-height:84px;padding:13px 14px}
 }
 </style>'''
 
@@ -125,6 +130,7 @@ def apply_referral_hero_v3(root: Path) -> None:
         'id="uxReferralCopyStatus"',
         '>Share now</a>',
         'id="ux-referral-links"',
+        '.ux-teacher-referrals-brand .grid4 .metric>strong',
         'eligible cleared payments',
         'Registration alone never creates commission.',
     )
@@ -135,4 +141,4 @@ def apply_referral_hero_v3(root: Path) -> None:
         raise SystemExit('UX_REFERRAL_V3_OLD_MARKUP_SURVIVED')
 
     path.write_text(text, encoding='utf-8')
-    print('SCOREMAX_UX_REFERRAL_HERO_V3_PASS layout=two_zone copy_code=true share_links_reused=true economics_unchanged=true backend_unchanged=true', flush=True)
+    print('SCOREMAX_UX_REFERRAL_HERO_V3_PASS layout=two_zone copy_code=true metric_cards_separated=true share_links_reused=true economics_unchanged=true backend_unchanged=true', flush=True)
