@@ -7,6 +7,7 @@ on:
       - '.github/workflows/admin-interest-demand-audit-v1.yml'
       - 'deploy_ux_vnext.py'
       - 'ux_vnext_overlay/ux_interest_admin.py'
+      - 'ux_vnext_overlay/ux_interest_admin_builder.py'
       - 'ux_vnext_overlay/ux_admin_workspace.py'
       - 'ux_vnext_overlay/ux_staging_routes.py'
 
@@ -29,6 +30,7 @@ jobs:
       - name: Fresh database Interest and Demand qualification
         env:
           SCOREMAX_ENV: local
+          SCOREMAX_STAGING_SESSION_SECRET: interest-demand-v1-audit-only
           SCOREMAX_DB: /tmp/scoremax_interest_v1.db
           SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_interest_v1
           SCOREMAX_BACKUP_DIR: /tmp/scoremax_interest_v1/backup
@@ -56,7 +58,6 @@ jobs:
           teacher=add_user('teacher','interest-teacher-v1','INTEREST-TEACHER-001')
           c.commit(); c.close()
 
-          # Public capture: no authentication required.
           public=sm.app.test_client()
           r=public.get('/register-interest?programme=MDCAT')
           assert r.status_code==200,r.status_code
@@ -78,7 +79,6 @@ jobs:
           target=c.execute("SELECT id FROM ux_interest_registrations WHERE email='ayesha-interest@example.com'").fetchone()['id']
           c.close()
 
-          # Admin view and filtering.
           client=sm.app.test_client()
           with client.session_transaction() as s:
               s['user_id']=admin['id']; s['role']='admin'; s['full_name']='Interest Admin'; s['session_version']=int(admin['session_version'])
@@ -93,7 +93,6 @@ jobs:
           fb=filtered.get_data(as_text=True)
           assert filtered.status_code==200 and 'Ayesha Test' in fb and 'Hamza Test' not in fb
 
-          # Status lifecycle.
           with client.session_transaction() as s:
               csrf=s.get('_csrf_token')
           rr=client.post(f'/admin/interests/{target}/status',data={'_csrf_token':csrf,'status':'CONTACTED','admin_note':'Called family','return_to':'/admin/interests'},follow_redirects=False)
@@ -101,13 +100,11 @@ jobs:
           c=sm.db(); updated=c.execute('SELECT status,admin_note,status_updated_by FROM ux_interest_registrations WHERE id=?',(target,)).fetchone(); c.close()
           assert updated['status']=='CONTACTED' and updated['admin_note']=='Called family' and int(updated['status_updated_by'])==int(admin['id'])
 
-          # Export respects filter and contains no hidden data beyond governed interest fields.
           export=client.get('/admin/interests/export.csv?programme=MDCAT')
           assert export.status_code==200 and 'text/csv' in export.content_type
           data=list(csv.DictReader(io.StringIO(export.get_data(as_text=True))))
           assert len(data)==1 and data[0]['programme']=='MDCAT' and data[0]['status']=='CONTACTED'
 
-          # Role isolation.
           isolation={}
           for role,row in [('student',student),('teacher',teacher)]:
               cc=sm.app.test_client()
@@ -117,7 +114,7 @@ jobs:
               isolation[role]={'status':x.status_code,'location':x.headers.get('Location',''),'has_interest_data':'Ayesha Test' in x.get_data(as_text=True)}
               assert x.status_code==302 and '/login' in x.headers.get('Location','') and not isolation[role]['has_interest_data']
 
-          schema=sm.db().execute('PRAGMA table_info(ux_interest_registrations)').fetchall()
+          c=sm.db(); schema=c.execute('PRAGMA table_info(ux_interest_registrations)').fetchall(); c.close()
           schema_cols={r['name'] for r in schema}
           assert {'status','admin_note','status_updated_at','status_updated_by'}.issubset(schema_cols)
           report={'public_capture':'PASSED','same_database':'PASSED','schema_upgrade':'PASSED','admin_view':'PASSED','filters':'PASSED','status_lifecycle':'PASSED','csv_export':'PASSED','role_isolation':'PASSED','captured_records':2,'isolation':isolation}
