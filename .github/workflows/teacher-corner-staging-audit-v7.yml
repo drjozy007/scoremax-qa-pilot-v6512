@@ -24,6 +24,7 @@ jobs:
       - name: Fresh database teacher qualification
         env:
           SCOREMAX_ENV: local
+          SCOREMAX_STAGING_SESSION_SECRET: teacher-v7-audit-only
           SCOREMAX_DB: /tmp/scoremax_teacher_v7.db
           SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_teacher_v7
           SCOREMAX_BACKUP_DIR: /tmp/scoremax_teacher_v7/backup
