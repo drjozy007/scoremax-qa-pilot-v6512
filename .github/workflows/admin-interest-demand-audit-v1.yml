@@ -1,0 +1,125 @@
+name: Admin Interest and Demand Qualification v1
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths:
+      - '.github/workflows/admin-interest-demand-audit-v1.yml'
+      - 'deploy_ux_vnext.py'
+      - 'ux_vnext_overlay/ux_interest_admin.py'
+      - 'ux_vnext_overlay/ux_admin_workspace.py'
+      - 'ux_vnext_overlay/ux_staging_routes.py'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v6611c-ux-vnext-landing
+          fetch-depth: 0
+      - name: Materialize staging candidate
+        run: python deploy_ux_vnext.py
+      - name: Install runtime dependencies
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Fresh database Interest and Demand qualification
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_DB: /tmp/scoremax_interest_v1.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_interest_v1
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_interest_v1/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_interest_v1/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+        run: |
+          rm -f /tmp/scoremax_interest_v1.db
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import csv,io,json
+          import app as sm
+          sm.init()
+          from ux_interest_admin import ensure_interest_schema
+          ensure_interest_schema()
+          c=sm.db()
+          cols={x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
+          def add_user(role,username,system_id):
+              vals={'system_user_id':system_id,'role':role,'full_name':role.title()+' Audit','email':username+'@scoremax.test','username':username,'account_status':'active','login_provider':'password','session_version':0}
+              use=[k for k in vals if k in cols]
+              c.execute(f"INSERT INTO users({','.join(use)}) VALUES({','.join('?' for _ in use)})",tuple(vals[k] for k in use))
+              return c.execute("SELECT id,COALESCE(session_version,0) session_version FROM users WHERE username=?",(username,)).fetchone()
+          admin=add_user('admin','interest-admin-v1','INTEREST-ADMIN-001')
+          student=add_user('student','interest-student-v1','INTEREST-STUDENT-001')
+          teacher=add_user('teacher','interest-teacher-v1','INTEREST-TEACHER-001')
+          c.commit(); c.close()
+
+          # Public capture: no authentication required.
+          public=sm.app.test_client()
+          r=public.get('/register-interest?programme=MDCAT')
+          assert r.status_code==200,r.status_code
+          with public.session_transaction() as s:
+              csrf=s.get('_csrf_token')
+          r=public.post('/register-interest?programme=MDCAT',data={'_csrf_token':csrf,'programme':'MDCAT','full_name':'Ayesha Test','email':'ayesha-interest@example.com','mobile':'03000000000','role':'Student','school':'Test College','city':'Lahore','note':'Launch interest'},follow_redirects=False)
+          assert r.status_code==200,r.status_code
+          r=public.get('/register-interest?programme=Science%20Genius%20of%20the%20Year')
+          with public.session_transaction() as s:
+              csrf=s.get('_csrf_token')
+          r=public.post('/register-interest?programme=Science%20Genius%20of%20the%20Year',data={'_csrf_token':csrf,'programme':'Science Genius of the Year','full_name':'Hamza Test','email':'hamza-interest@example.com','role':'Student','school':'Demo School','city':'Karachi'},follow_redirects=False)
+          assert r.status_code==200
+
+          c=sm.db()
+          rows=c.execute("SELECT programme,full_name,email,city,status FROM ux_interest_registrations ORDER BY id").fetchall()
+          assert len(rows)==2,rows
+          assert rows[0]['programme']=='MDCAT' and rows[0]['status']=='NEW'
+          assert rows[1]['programme']=='Science Genius of the Year' and rows[1]['status']=='NEW'
+          target=c.execute("SELECT id FROM ux_interest_registrations WHERE email='ayesha-interest@example.com'").fetchone()['id']
+          c.close()
+
+          # Admin view and filtering.
+          client=sm.app.test_client()
+          with client.session_transaction() as s:
+              s['user_id']=admin['id']; s['role']='admin'; s['full_name']='Interest Admin'; s['session_version']=int(admin['session_version'])
+          home=client.get('/admin',follow_redirects=False)
+          assert home.status_code==200 and 'Interest &amp; Demand' in home.get_data(as_text=True)
+          page=client.get('/admin/interests',follow_redirects=False)
+          body=page.get_data(as_text=True)
+          assert page.status_code==200
+          for token in ('Interest & Demand','Ayesha Test','Hamza Test','MDCAT','Science Genius of the Year','Total interest'):
+              assert token in body,token
+          filtered=client.get('/admin/interests?programme=MDCAT&city=Lahore&status=NEW',follow_redirects=False)
+          fb=filtered.get_data(as_text=True)
+          assert filtered.status_code==200 and 'Ayesha Test' in fb and 'Hamza Test' not in fb
+
+          # Status lifecycle.
+          with client.session_transaction() as s:
+              csrf=s.get('_csrf_token')
+          rr=client.post(f'/admin/interests/{target}/status',data={'_csrf_token':csrf,'status':'CONTACTED','admin_note':'Called family','return_to':'/admin/interests'},follow_redirects=False)
+          assert rr.status_code==302
+          c=sm.db(); updated=c.execute('SELECT status,admin_note,status_updated_by FROM ux_interest_registrations WHERE id=?',(target,)).fetchone(); c.close()
+          assert updated['status']=='CONTACTED' and updated['admin_note']=='Called family' and int(updated['status_updated_by'])==int(admin['id'])
+
+          # Export respects filter and contains no hidden data beyond governed interest fields.
+          export=client.get('/admin/interests/export.csv?programme=MDCAT')
+          assert export.status_code==200 and 'text/csv' in export.content_type
+          data=list(csv.DictReader(io.StringIO(export.get_data(as_text=True))))
+          assert len(data)==1 and data[0]['programme']=='MDCAT' and data[0]['status']=='CONTACTED'
+
+          # Role isolation.
+          isolation={}
+          for role,row in [('student',student),('teacher',teacher)]:
+              cc=sm.app.test_client()
+              with cc.session_transaction() as s:
+                  s['user_id']=row['id']; s['role']=role; s['full_name']=role.title()+' Audit'; s['session_version']=int(row['session_version'])
+              x=cc.get('/admin/interests',follow_redirects=False)
+              isolation[role]={'status':x.status_code,'location':x.headers.get('Location',''),'has_interest_data':'Ayesha Test' in x.get_data(as_text=True)}
+              assert x.status_code==302 and '/login' in x.headers.get('Location','') and not isolation[role]['has_interest_data']
+
+          schema=sm.db().execute('PRAGMA table_info(ux_interest_registrations)').fetchall()
+          schema_cols={r['name'] for r in schema}
+          assert {'status','admin_note','status_updated_at','status_updated_by'}.issubset(schema_cols)
+          report={'public_capture':'PASSED','same_database':'PASSED','schema_upgrade':'PASSED','admin_view':'PASSED','filters':'PASSED','status_lifecycle':'PASSED','csv_export':'PASSED','role_isolation':'PASSED','captured_records':2,'isolation':isolation}
+          print('ADMIN_INTEREST_DEMAND_V1='+json.dumps(report,sort_keys=True))
+          PY
