@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 import deploy_ux_vnext_teacher_base as base
-from ux_vnext_overlay.ux_teacher_workspace_compat import apply_teacher_workspace
+from ux_vnext_overlay.ux_teacher_workspace_v2 import apply_teacher_workspace
 from ux_vnext_overlay.ux_student_account_patch import apply_student_account_patch
 
 ICON_NAME = 'scoremax-icon-student-summit-v3.png'
@@ -83,12 +83,14 @@ def main() -> None:
     _install_agreed_scoremax_icon(base.OUT)
 
     rendered_base = (base.OUT / 'templates' / 'base.html').read_text(encoding='utf-8')
-    for required in ('ux-student-logout-link','ux-student-mobile-logout','scoremax-icon-student-summit-v3.png','scoremax-install-art','ux-brand-crop','ux-brand-art','ux-brand-name'):
+    for required in ('ux-student-logout-link','ux-student-mobile-logout','scoremax-icon-student-summit-v3.png','scoremax-install-art','ux-brand-crop','ux-brand-art','ux-brand-name','>Referrals</a>','>Logout</a>'):
         if required not in rendered_base:
             raise SystemExit('SCOREMAX_POSTBUILD_ACCOUNT_ICON_CONTROL_MISSING:'+required)
     if 'class="ux-brand-bar"' in rendered_base:
         raise SystemExit('SCOREMAX_POSTBUILD_THREE_BAR_HEADER_MARK_SURVIVED')
-    print('SCOREMAX_UX_ACCOUNT_ICON_RECTIFICATION_V5_PASS teacher_workspace_preserved=true', flush=True)
+    if '<details class="ux-teacher-nav-menu">' in rendered_base:
+        raise SystemExit('SCOREMAX_POSTBUILD_TEACHER_DROPDOWN_SURVIVED')
+    print('SCOREMAX_UX_ACCOUNT_ICON_RECTIFICATION_V5_PASS teacher_workspace_v2=true', flush=True)
 
 
 if __name__ == '__main__':
