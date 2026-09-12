@@ -3,7 +3,7 @@ from pathlib import Path
 from deploy_ux_vnext_recovery import main as recovery_main
 from ux_vnext_overlay.ux_referral_hero_v3 import apply_referral_hero_v3
 from ux_vnext_overlay.ux_admin_workspace import apply_admin_workspace
-from ux_vnext_overlay.ux_interest_admin import apply_interest_admin
+from ux_vnext_overlay.ux_interest_admin_builder import apply_interest_admin
 
 ROOT=Path('scoremax_runtime_v669b')
 
