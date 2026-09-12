@@ -1,0 +1,76 @@
+name: Teacher Corner Staging Qualification v7
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths: ['.github/workflows/teacher-corner-staging-audit-v7.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v6611c-ux-vnext-landing
+          fetch-depth: 0
+      - name: Materialize Teacher Workspace v2
+        run: python deploy_ux_vnext.py
+      - name: Install runtime dependencies
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Fresh database teacher qualification
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_DB: /tmp/scoremax_teacher_v7.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_teacher_v7
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_teacher_v7/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_teacher_v7/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+        run: |
+          rm -f /tmp/scoremax_teacher_v7.db
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          import app as sm
+          sm.init()
+          from ux_teacher_preview import ensure_teacher_preview
+          ensure_teacher_preview()
+          c=sm.db()
+          teacher=c.execute("SELECT id,role,COALESCE(session_version,0) session_version FROM users WHERE username='ux-teacher'").fetchone()
+          classes=c.execute("SELECT id,name,subject FROM classrooms WHERE teacher_id=? ORDER BY id",(teacher['id'],)).fetchall()
+          students=c.execute("SELECT COUNT(DISTINCT cs.student_id) n FROM classroom_students cs JOIN classrooms cl ON cl.id=cs.classroom_id WHERE cl.teacher_id=?",(teacher['id'],)).fetchone()['n']
+          c.close()
+          assert teacher and teacher['role']=='teacher'
+          assert len(classes)==2 and students==6
+          client=sm.app.test_client()
+          with client.session_transaction() as s:
+              s['user_id']=teacher['id']; s['role']='teacher'; s['full_name']='ScoreMax Teacher Preview'; s['session_version']=int(teacher['session_version'])
+          probes={}
+          for path in ('/teacher','/referrals','/teacher/corner'):
+              r=client.get(path,follow_redirects=False); probes[path]=r.status_code; assert r.status_code<500
+          classroom_path=f"/teacher/class/{classes[0]['id']}"
+          r=client.get(classroom_path,follow_redirects=False); probes[classroom_path]=r.status_code; assert r.status_code==200
+          html=r.get_data(as_text=True)
+          assert 'Issue a quiz' in html and 'Issue quiz to class' in html
+          base=Path('templates/base.html').read_text(encoding='utf-8')
+          referrals=Path('templates/referrals.html').read_text(encoding='utf-8')
+          teacher_html=Path('templates/teacher.html').read_text(encoding='utf-8')
+          assert '<details class="ux-teacher-nav-menu">' not in base
+          for token in ('>Home</a>','>Classes</a>','>Teacher Corner</a>','>Referrals</a>','>Messages</a>','>Resources</a>','>Institution</a>','>Settings</a>','>Logout</a>'):
+              assert token in base, token
+          assert 'Manage class / issue quiz' in teacher_html
+          assert 'ux-teacher-referrals-brand' in referrals and 'ux-referral-code-chip' in referrals
+          refs=set()
+          for p in (Path('templates/teacher.html'),Path('templates/classroom.html'),Path('templates/referrals.html')):
+              refs.update(re.findall(r"url_for\(['\"]([^'\"]+)",p.read_text(encoding='utf-8')))
+          endpoints={r.endpoint for r in sm.app.url_map.iter_rules()}
+          broken=sorted(refs-endpoints)
+          assert not broken, broken
+          report={'fresh_db':'PASSED','teacher_preview':'PASSED','classes':len(classes),'representative_students':students,'flat_desktop_nav':'PASSED','quick_quiz':'PASSED','referral_branding':'PASSED','template_routes':'PASSED','render_probes':probes}
+          print('TEACHER_CORNER_V7='+json.dumps(report,sort_keys=True))
+          PY
