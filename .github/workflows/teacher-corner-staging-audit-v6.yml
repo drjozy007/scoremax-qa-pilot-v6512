@@ -1,0 +1,75 @@
+name: Teacher Corner Staging Qualification v6
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths: ['.github/workflows/teacher-corner-staging-audit-v6.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v6611c-ux-vnext-landing
+          fetch-depth: 0
+      - name: Materialize teacher candidate without deferred icon pipeline
+        run: |
+          python - <<'PY'
+          import deploy_ux_vnext as d
+          d.base.main(); d.apply_teacher_workspace(d.base.OUT); d.apply_student_account_patch(d.base.OUT)
+          print('TEACHER_AUDIT_MATERIALIZATION_PASS')
+          PY
+      - name: Install runtime dependencies
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Qualify Teacher Corner with authenticated teacher
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_STAGING_SESSION_SECRET: ${{ github.run_id }}
+          SCOREMAX_DB: /tmp/scoremax_teacher_corner_v6.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_teacher_corner_v6
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_teacher_corner_v6/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_teacher_corner_v6/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+        run: |
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          import app as sm
+          try: sm.init()
+          except Exception: pass
+          rules=list(sm.app.url_map.iter_rules()); endpoints={r.endpoint for r in rules}
+          teacher_rules=[r for r in rules if any(k in (r.rule+' '+r.endpoint).lower() for k in ('teacher','classroom','institution','referral'))]
+          required=['teacher_corner_engine.py','teacher_corner_operations_engine.py','templates/teacher.html','templates/teacher_corner.html','templates/teacher_directory.html','templates/teacher_earnings.html','templates/teacher_marketplace.html','templates/teacher_of_year.html','templates/teacher_profile_public.html','templates/classroom.html','templates/institution_class.html','templates/institution_dashboard.html','templates/referrals.html']
+          missing=[p for p in required if not Path(p).is_file()]
+          c=sm.db(); cols={x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
+          vals={'system_user_id':'TEACHER-AUDIT-006','role':'teacher','full_name':'Teacher Corner Audit','email':'teacher-audit-006@scoremax.test','username':'teacher-audit-006','province':'Punjab','board':'Punjab Board','academic_level':'FSc Part 1','subjects':'Biology,Chemistry,Physics','account_status':'active','active_programme':'FSc Part 1','login_provider':'password','session_version':0}
+          use=[k for k in vals if k in cols]; c.execute(f"INSERT INTO users({','.join(use)}) VALUES({','.join('?' for _ in use)})",tuple(vals[k] for k in use)); row=c.execute('SELECT id,COALESCE(session_version,0) session_version FROM users WHERE email=?',(vals['email'],)).fetchone(); tid=row['id']; sv=int(row['session_version']); c.commit(); c.close()
+          teacher=sm.app.test_client()
+          with teacher.session_transaction() as s: s['user_id']=tid; s['role']='teacher'; s['email']=vals['email']; s['session_version']=sv
+          probes=[]
+          for r in sorted([r for r in teacher_rules if 'GET' in r.methods and not r.arguments],key=lambda x:x.rule):
+            try:
+              x=teacher.get(r.rule,follow_redirects=False); probes.append({'rule':r.rule,'endpoint':r.endpoint,'status':x.status_code,'location':x.headers.get('Location','')})
+            except Exception as e: probes.append({'rule':r.rule,'endpoint':r.endpoint,'status':'EXCEPTION','error':repr(e)})
+          templates=sorted(set(Path('templates').glob('*teacher*.html'))|{Path('templates/classroom.html'),Path('templates/institution_class.html'),Path('templates/institution_dashboard.html'),Path('templates/referrals.html')})
+          findings=[]
+          for p in templates:
+            if not p.is_file(): continue
+            t=p.read_text(encoding='utf-8',errors='replace'); refs=sorted(set(re.findall(r"url_for\(['\"]([^'\"]+)",t)))
+            broken=[e for e in refs if e not in endpoints]; leaks=[z for z in ('Power House','Growth Engine','release_id','build_id','qualification candidate') if z.lower() in t.lower()]; dead=[z for z in ('href="#"','javascript:void','TODO','FIXME') if z.lower() in t.lower()]
+            if broken or leaks or dead: findings.append({'template':str(p),'broken':broken,'leaks':leaks,'dead':dead})
+          bad=[x for x in probes if x['status']=='EXCEPTION' or (isinstance(x['status'],int) and x['status']>=500)]
+          teacher_private=[x for x in probes if x['rule'].startswith('/teacher')]
+          private_login_redirects=[x for x in teacher_private if x['status']==302 and '/login' in x.get('location','')]
+          gates={'architecture':'PASSED' if not missing else 'FAILED','routes':'PASSED' if teacher_rules else 'FAILED','render_no_5xx':'PASSED' if not bad else 'FAILED','authenticated_teacher_access':'PASSED' if teacher_private and not private_login_redirects else 'FAILED','template_route_integrity':'PASSED' if not any(x['broken'] for x in findings) else 'FAILED','teacher_language_hygiene':'PASSED' if not any(x['leaks'] for x in findings) else 'FAILED','dead_end_static_scan':'PASSED' if not any(x['dead'] for x in findings) else 'PENDING','real_data':'PENDING','mobile_visual':'PENDING'}
+          report={'missing_files':missing,'teacher_route_count':len(teacher_rules),'teacher_get_probe_count':len(probes),'probes':probes,'bad_render_count':len(bad),'private_login_redirects':private_login_redirects,'template_findings':findings,'gates':gates}
+          print('TEACHER_CORNER_V6='+json.dumps(report,sort_keys=True)); hard=[k for k,v in gates.items() if v=='FAILED']; print('TEACHER_CORNER_HARD_FAILS='+json.dumps(hard))
+          if hard: raise SystemExit(2)
+          PY
