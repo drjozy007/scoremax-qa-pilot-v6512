@@ -1,0 +1,112 @@
+name: Admin Corner Staging Qualification v2
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths:
+      - '.github/workflows/admin-corner-staging-audit-v2.yml'
+      - 'deploy_ux_vnext.py'
+      - 'ux_vnext_overlay/ux_admin_workspace.py'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v6611c-ux-vnext-landing
+          fetch-depth: 0
+      - name: Materialize current staging candidate
+        run: python deploy_ux_vnext.py
+      - name: Install runtime dependencies
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Fresh database Admin Corner qualification
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_STAGING_SESSION_SECRET: admin-v2-audit-only
+          SCOREMAX_DB: /tmp/scoremax_admin_v2.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_admin_v2
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_admin_v2/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_admin_v2/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+        run: |
+          rm -f /tmp/scoremax_admin_v2.db
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          import app as sm
+          sm.init()
+          c=sm.db(); cols={x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
+          def add_user(role,username,system_id):
+              vals={'system_user_id':system_id,'role':role,'full_name':role.title()+' Audit','email':username+'@scoremax.test','username':username,'account_status':'active','login_provider':'password','session_version':0}
+              use=[k for k in vals if k in cols]
+              c.execute(f"INSERT INTO users({','.join(use)}) VALUES({','.join('?' for _ in use)})",tuple(vals[k] for k in use))
+              return c.execute("SELECT id,COALESCE(session_version,0) session_version FROM users WHERE username=?",(username,)).fetchone()
+          admin=add_user('admin','admin-audit-v2','ADMIN-AUDIT-002')
+          teacher=add_user('teacher','teacher-audit-v2','TEACHER-AUDIT-002')
+          student=add_user('student','student-audit-v2','STUDENT-AUDIT-002')
+          c.commit(); c.close()
+
+          client=sm.app.test_client()
+          with client.session_transaction() as s:
+              s['user_id']=admin['id']; s['role']='admin'; s['full_name']='Admin Audit'; s['session_version']=int(admin['session_version'])
+          home=client.get('/admin',follow_redirects=False)
+          assert home.status_code==200,home.status_code
+          html=home.get_data(as_text=True)
+          for token in ('SCOREMAX ADMIN','Platform operations','System boundary','Academic question review and academic release authority remain in Power House.','Open integration health','Payments & referrals','Exams & challenges'):
+              assert token in html,token
+
+          nav_match=re.search(r'<nav class="desktop-nav"[^>]*>(.*?)</nav>',html,re.S)
+          assert nav_match,'desktop nav missing'
+          nav=nav_match.group(1)
+          labels=[re.sub(r'<[^>]+>','',x).strip() for x in re.findall(r'<a[^>]*>(.*?)</a>',nav,re.S)]
+          labels=[x for x in labels if x]
+          expected=['Home','Users','Analytics','Payments','Referrals','Integration','Exams','Logout']
+          assert labels==expected,(labels,expected)
+          assert '<details' not in nav
+          for forbidden in ('Reviewer Workspace','Question Families','Governance Audit','Direct Intake','Power House Bridge','Prompt Bridge'):
+              assert forbidden not in nav,forbidden
+
+          # Mobile admin navigation exists separately from generic authenticated navigation.
+          base=Path('templates/base.html').read_text(encoding='utf-8')
+          assert "session.get('role')=='admin'" in base
+          for token in ('>Admin Home</a>','>Challenges</a>','>Daily Spark</a>','>Community</a>'):
+              assert token in base,token
+
+          # Core operational routes must render for admin without 5xx.
+          core=['/admin','/admin/users','/admin/analytics','/admin/payments','/admin/referrals','/admin/integration-health','/admin/exams','/admin/challenges','/admin/daily-spark']
+          probes={}
+          for path in core:
+              r=client.get(path,follow_redirects=False); probes[path]={'status':r.status_code,'location':r.headers.get('Location','')}
+              assert r.status_code<500,(path,r.status_code)
+              assert not (r.status_code==302 and '/login' in r.headers.get('Location','')),(path,r.headers.get('Location',''))
+
+          # Teacher/student must not receive admin home content.
+          isolation={}
+          for role,row in [('teacher',teacher),('student',student)]:
+              cc=sm.app.test_client()
+              with cc.session_transaction() as s:
+                  s['user_id']=row['id']; s['role']=role; s['full_name']=role.title()+' Audit'; s['session_version']=int(row['session_version'])
+              r=cc.get('/admin',follow_redirects=False)
+              body=r.get_data(as_text=True)
+              isolation[role]={'status':r.status_code,'location':r.headers.get('Location',''),'has_admin_home':'SCOREMAX ADMIN' in body}
+              assert r.status_code!=200 or 'SCOREMAX ADMIN' not in body,isolation[role]
+
+          # Static route integrity for the new admin home and shared base.
+          endpoints={r.endpoint for r in sm.app.url_map.iter_rules()}
+          broken={}
+          for p in (Path('templates/base.html'),Path('templates/admin.html')):
+              refs=sorted(set(re.findall(r"url_for\(['\"]([^'\"]+)",p.read_text(encoding='utf-8'))))
+              miss=[e for e in refs if e not in endpoints]
+              if miss: broken[str(p)]=miss
+          assert not broken,broken
+
+          report={'fresh_db':'PASSED','admin_home':'PASSED','flat_desktop_nav':'PASSED','desktop_nav_labels':labels,'mobile_admin_nav':'PASSED','power_house_boundary':'PASSED','historical_reviewer_hidden':'PASSED','core_route_probes':probes,'role_isolation':isolation,'template_route_integrity':'PASSED','production_untouched':True}
+          print('ADMIN_CORNER_V2='+json.dumps(report,sort_keys=True))
+          PY
