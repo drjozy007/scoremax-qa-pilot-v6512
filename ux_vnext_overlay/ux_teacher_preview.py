@@ -4,11 +4,10 @@ import os
 import sqlite3
 from pathlib import Path
 
-from werkzeug.security import generate_password_hash
-
 TEACHER_EMAIL='ux-teacher@scoremax.test'
 TEACHER_USERNAME='ux-teacher'
 TEACHER_SYSTEM_ID='TCH-900001'
+TEACHER_PREVIEW_PASSWORD_HASH='pbkdf2:sha256:1000000$UOgOHDs3iDJFLDMJ$dec7ff77a321e0cc78508a14190e5f26f184ebfa010a86bd85532cdac61ed4a3'
 
 
 def _db_path() -> Path:
@@ -37,7 +36,7 @@ def _update_dynamic(conn: sqlite3.Connection, table: str, row_id: int, values: d
     conn.execute(f'UPDATE {table} SET {clause} WHERE id=?',tuple(payload.values())+(row_id,))
 
 
-def _ensure_teacher(conn: sqlite3.Connection, password: str) -> int:
+def _ensure_teacher(conn: sqlite3.Connection) -> int:
     row=conn.execute("SELECT id FROM users WHERE lower(COALESCE(email,''))=?",(TEACHER_EMAIL,)).fetchone()
     values={
         'system_user_id':TEACHER_SYSTEM_ID,
@@ -45,7 +44,7 @@ def _ensure_teacher(conn: sqlite3.Connection, password: str) -> int:
         'full_name':'ScoreMax Teacher Preview',
         'email':TEACHER_EMAIL,
         'username':TEACHER_USERNAME,
-        'password_hash':generate_password_hash(password),
+        'password_hash':TEACHER_PREVIEW_PASSWORD_HASH,
         'province':'Punjab',
         'district':'Lahore',
         'board':'Punjab Board',
@@ -73,7 +72,6 @@ def _ensure_preview_student(conn: sqlite3.Connection, suffix: int, full_name: st
         'full_name':full_name,
         'email':email,
         'username':f'ux-teacher-student-{suffix}',
-        'password_hash':generate_password_hash(os.urandom(18).hex()),
         'province':'Punjab',
         'board':'Punjab Board',
         'academic_level':'FSc Part 1',
@@ -107,9 +105,6 @@ def _ensure_class(conn: sqlite3.Connection, teacher_id: int, name: str, subject:
 
 
 def ensure_teacher_preview() -> None:
-    password=os.environ.get('SCOREMAX_STAGING_TEST_TEACHER_PASSWORD','').strip()
-    if not password:
-        return
     path=_db_path()
     path.parent.mkdir(parents=True,exist_ok=True)
     conn=sqlite3.connect(path)
@@ -117,7 +112,7 @@ def ensure_teacher_preview() -> None:
     conn.execute('PRAGMA foreign_keys=ON')
     conn.execute('PRAGMA busy_timeout=5000')
     try:
-        teacher_id=_ensure_teacher(conn,password)
+        teacher_id=_ensure_teacher(conn)
         biology=_ensure_class(conn,teacher_id,'FSc Biology A','Biology','UXBIO26')
         chemistry=_ensure_class(conn,teacher_id,'FSc Chemistry A','Chemistry','UXCHEM26')
         students=[
@@ -132,6 +127,6 @@ def ensure_teacher_preview() -> None:
             for idx,sid in enumerate(members,1):
                 conn.execute('INSERT OR IGNORE INTO classroom_students(classroom_id,student_id,roll_no) VALUES(?,?,?)',(cid,sid,f'UX-{idx:02d}'))
         conn.commit()
-        print('SCOREMAX_UX_TEACHER_PREVIEW_READY teacher=TCH-900001 classes=2 representative_students=6',flush=True)
+        print('SCOREMAX_UX_TEACHER_PREVIEW_READY teacher=TCH-900001 classes=2 representative_students=6 staging_only=true',flush=True)
     finally:
         conn.close()
