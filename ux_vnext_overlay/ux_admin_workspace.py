@@ -22,19 +22,19 @@ def _replace_once(text: str, pattern: str, replacement, label: str) -> str:
 def _simplify_admin_navigation(path: Path) -> None:
     text=path.read_text(encoding='utf-8')
     desktop='''{% elif session.get('role')=='admin' %}
-        <a href="{{url_for('admin_dashboard')}}">Home</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('logout')}}">Logout</a>
+        <a href="{{url_for('admin_dashboard')}}">Home</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_interests')}}">Interest</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('logout')}}">Logout</a>
       {% else %}'''
     text=_replace_once(text,r"\{% elif session\.get\('role'\)=='admin' %\}.*?\{% else %\}",desktop,'DESKTOP_NAV')
 
     mobile='''{% elif session.get('user_id') and session.get('role')=='admin' %}
-    <a href="{{url_for('admin_dashboard')}}">Admin Home</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('admin_challenges')}}">Challenges</a><a href="{{url_for('admin_daily_spark')}}">Daily Spark</a><a href="{{url_for('admin_community')}}">Community</a><a href="{{url_for('logout')}}">Logout</a>
+    <a href="{{url_for('admin_dashboard')}}">Admin Home</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_interests')}}">Interest & Demand</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('admin_challenges')}}">Challenges</a><a href="{{url_for('admin_daily_spark')}}">Daily Spark</a><a href="{{url_for('admin_community')}}">Community</a><a href="{{url_for('logout')}}">Logout</a>
   {% elif session.get('user_id') %}'''
     text=_replace_once(text,r"\{% elif session\.get\('user_id'\) and session\.get\('role'\)=='parent' %\}(.*?)\{% elif session\.get\('user_id'\) %\}",lambda m: "{% elif session.get('user_id') and session.get('role')=='parent' %}"+m.group(1)+mobile,'MOBILE_NAV')
 
     if 'ux-admin-workspace-v1-style' not in text:
         if '</head>' not in text: raise SystemExit('UX_ADMIN_HEAD_MISSING')
         text=text.replace('</head>',ADMIN_STYLE+'\n</head>',1)
-    for token in ("url_for('admin_dashboard')","url_for('admin_users')","url_for('admin_integration_health')",'>Logout</a>'):
+    for token in ("url_for('admin_dashboard')","url_for('admin_users')","url_for('admin_interests')","url_for('admin_integration_health')",'>Logout</a>'):
         if token not in text: raise SystemExit('UX_ADMIN_NAV_POSTCHECK_MISSING:'+token)
     admin_start=text.find("session.get('role')=='admin'")
     admin_end=text.find("{% else %}",admin_start)
@@ -50,7 +50,7 @@ def _replace_admin_home(path: Path) -> None:
         raise SystemExit('UX_ADMIN_HOME_BASELINE_MISSING')
     replacement='''{% extends 'base.html' %}{% block title %}Admin · ScoreMax{% endblock %}{% block content %}
 <section class="ux-admin-home">
-  <section class="card ux-admin-hero"><p class="eyebrow">SCOREMAX ADMIN</p><h1>Platform operations</h1><p>Manage accounts, access, payments, product operations and system integration. Academic question review and academic release authority remain in Power House.</p></section>
+  <section class="card ux-admin-hero"><p class="eyebrow">SCOREMAX ADMIN</p><h1>Platform operations</h1><p>Manage accounts, demand, access, payments, product operations and system integration. Academic question review and academic release authority remain in Power House.</p></section>
   <section class="card ux-admin-boundary"><strong>System boundary</strong><p>ScoreMax controls learner/product operations and activates exact Power House releases after governed admission. Academic review, rectification and approval are not performed here.</p><a class="btn small" href="{{url_for('admin_integration_health')}}">Open integration health</a></section>
   <section class="ux-admin-kpis">
     <div class="card metric"><span>Students</span><strong>{{m.students}}</strong></div>
@@ -59,7 +59,7 @@ def _replace_admin_home(path: Path) -> None:
     <div class="card metric"><span>Active subscriptions</span><strong>{{m.active_subscriptions}}</strong></div>
   </section>
   <section class="ux-admin-sections">
-    <article class="card ux-admin-section"><p class="eyebrow">PEOPLE & ACCESS</p><h2>Accounts</h2><p>Manage user status, pilot access and institutions.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_users')}}">Users</a><a class="btn alt" href="{{url_for('institutions')}}">Institutions</a></div></article>
+    <article class="card ux-admin-section"><p class="eyebrow">PEOPLE & DEMAND</p><h2>Accounts & interest</h2><p>Manage users and see demand for programmes, events and community opportunities.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_users')}}">Users</a><a class="btn alt" href="{{url_for('admin_interests')}}">Interest & Demand</a><a class="btn alt" href="{{url_for('institutions')}}">Institutions</a></div></article>
     <article class="card ux-admin-section"><p class="eyebrow">COMMERCIAL</p><h2>Payments & referrals</h2><p>Manage subscriptions, payments, access packages and referral rewards.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_payments')}}">Payments</a><a class="btn alt" href="{{url_for('admin_referrals')}}">Referrals</a></div></article>
     <article class="card ux-admin-section"><p class="eyebrow">OPERATIONS</p><h2>Analytics & integration</h2><p>Monitor platform activity and operational exceptions across connected systems.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_analytics')}}">Analytics</a><a class="btn alt" href="{{url_for('admin_integration_health')}}">Integration health</a></div></article>
     <article class="card ux-admin-section"><p class="eyebrow">ASSESSMENT DELIVERY</p><h2>Exams & challenges</h2><p>Operate learner-facing exam simulations and voluntary competitions.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_exams')}}">Exam Centre</a><a class="btn alt" href="{{url_for('admin_challenges')}}">Challenges</a></div></article>
@@ -79,6 +79,6 @@ def apply_admin_workspace(root: Path) -> None:
     _simplify_admin_navigation(base)
     _replace_admin_home(home)
     home_text=home.read_text(encoding='utf-8')
-    for token in ('SCOREMAX ADMIN','System boundary','Academic question review and academic release authority remain in Power House.',"url_for('admin_integration_health')"):
+    for token in ('SCOREMAX ADMIN','System boundary','Academic question review and academic release authority remain in Power House.',"url_for('admin_interests')","url_for('admin_integration_health')"):
         if token not in home_text: raise SystemExit('UX_ADMIN_HOME_POSTCHECK_MISSING:'+token)
-    print('SCOREMAX_UX_ADMIN_WORKSPACE_V1_PASS nav=flat mobile_admin=true power_house_boundary=true legacy_routes_preserved=true',flush=True)
+    print('SCOREMAX_UX_ADMIN_WORKSPACE_V1_PASS nav=flat interest_demand=true mobile_admin=true power_house_boundary=true legacy_routes_preserved=true',flush=True)
