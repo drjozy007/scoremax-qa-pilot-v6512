@@ -3,7 +3,13 @@ name: Teacher Corner Staging Qualification v7
 on:
   push:
     branches: [feature/v6611c-ux-vnext-landing]
-    paths: ['.github/workflows/teacher-corner-staging-audit-v7.yml']
+    paths:
+      - '.github/workflows/teacher-corner-staging-audit-v7.yml'
+      - 'deploy_ux_vnext.py'
+      - 'deploy_ux_vnext_recovery.py'
+      - 'ux_vnext_overlay/ux_teacher_workspace_v2.py'
+      - 'ux_vnext_overlay/ux_referral_hero_v3.py'
+      - 'ux_vnext_overlay/ux_teacher_preview.py'
 
 permissions:
   contents: read
@@ -17,7 +23,7 @@ jobs:
         with:
           ref: feature/v6611c-ux-vnext-landing
           fetch-depth: 0
-      - name: Materialize Teacher Workspace v2
+      - name: Materialize Teacher Workspace v2 plus Referral Hero v3
         run: python deploy_ux_vnext.py
       - name: Install runtime dependencies
         run: pip install -r scoremax_runtime_v669b/requirements.txt
@@ -52,8 +58,14 @@ jobs:
           with client.session_transaction() as s:
               s['user_id']=teacher['id']; s['role']='teacher'; s['full_name']='ScoreMax Teacher Preview'; s['session_version']=int(teacher['session_version'])
           probes={}
+          bodies={}
           for path in ('/teacher','/referrals','/teacher/corner'):
-              r=client.get(path,follow_redirects=False); probes[path]=r.status_code; assert r.status_code<500
+              r=client.get(path,follow_redirects=False); probes[path]=r.status_code; bodies[path]=r.get_data(as_text=True); assert r.status_code<500
+          assert probes['/referrals']==200
+          referral_render=bodies['/referrals']
+          for token in ('ux-referral-hero-v3-style','ux-referral-hero-title','ux-referral-code-value','id="uxReferralCopyCode"','>Copy code</button>','>Share now</a>','id="ux-referral-links"','eligible cleared payments','Registration alone never creates commission.'):
+              assert token in referral_render, token
+          assert 'ux-referral-code-chip' not in referral_render
           classroom_path=f"/teacher/class/{classes[0]['id']}"
           r=client.get(classroom_path,follow_redirects=False); probes[classroom_path]=r.status_code; assert r.status_code==200
           html=r.get_data(as_text=True)
@@ -65,13 +77,14 @@ jobs:
           for token in ('>Home</a>','>Classes</a>','>Teacher Corner</a>','>Referrals</a>','>Messages</a>','>Resources</a>','>Institution</a>','>Settings</a>','>Logout</a>'):
               assert token in base, token
           assert 'Manage class / issue quiz' in teacher_html
-          assert 'ux-teacher-referrals-brand' in referrals and 'ux-referral-code-chip' in referrals
+          for token in ('ux-teacher-referrals-brand','ux-referral-hero-v3-style','ux-referral-code-value','id="ux-referral-links"'):
+              assert token in referrals, token
           refs=set()
           for p in (Path('templates/teacher.html'),Path('templates/classroom.html'),Path('templates/referrals.html')):
               refs.update(re.findall(r"url_for\(['\"]([^'\"]+)",p.read_text(encoding='utf-8')))
           endpoints={r.endpoint for r in sm.app.url_map.iter_rules()}
           broken=sorted(refs-endpoints)
           assert not broken, broken
-          report={'fresh_db':'PASSED','teacher_preview':'PASSED','classes':len(classes),'representative_students':students,'flat_desktop_nav':'PASSED','quick_quiz':'PASSED','referral_branding':'PASSED','template_routes':'PASSED','render_probes':probes}
+          report={'fresh_db':'PASSED','teacher_preview':'PASSED','classes':len(classes),'representative_students':students,'flat_desktop_nav':'PASSED','quick_quiz':'PASSED','referral_hero_v3':'PASSED','referral_economics_preserved':'PASSED','template_routes':'PASSED','render_probes':probes}
           print('TEACHER_CORNER_V7='+json.dumps(report,sort_keys=True))
           PY
