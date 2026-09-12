@@ -1,10 +1,13 @@
 from pathlib import Path
 
 from deploy_ux_vnext_recovery import main as recovery_main
+from ux_vnext_overlay.ux_referral_hero_v3 import apply_referral_hero_v3
+
+ROOT=Path('scoremax_runtime_v669b')
 
 
 def _install_post_init_teacher_preview() -> None:
-    path=Path('scoremax_runtime_v669b')/'scoremax_production.py'
+    path=ROOT/'scoremax_production.py'
     text=path.read_text(encoding='utf-8')
     old='scoremax.init()\napplication=scoremax.app'
     new="scoremax.init()\nfrom ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()\napplication=scoremax.app"
@@ -18,8 +21,34 @@ def _install_post_init_teacher_preview() -> None:
     print('SCOREMAX_UX_TEACHER_PREVIEW_STARTUP_ORDER_PASS after_database_init=true',flush=True)
 
 
+def _assert_referral_hero_v3() -> None:
+    path=ROOT/'templates'/'referrals.html'
+    if not path.is_file():
+        raise SystemExit('SCOREMAX_REFERRAL_V3_RENDERED_TEMPLATE_MISSING')
+    text=path.read_text(encoding='utf-8')
+    required=(
+        'ux-referral-hero-v3-style',
+        'ux-referral-hero-title',
+        'ux-referral-code-value',
+        'id="uxReferralCopyCode"',
+        'id="uxReferralCopyStatus"',
+        '>Share now</a>',
+        'id="ux-referral-links"',
+        'eligible cleared payments',
+        'Registration alone never creates commission.',
+    )
+    missing=[token for token in required if token not in text]
+    if missing:
+        raise SystemExit('SCOREMAX_REFERRAL_V3_POSTBUILD_CONTROL_MISSING:'+','.join(missing))
+    if 'ux-referral-code-chip' in text:
+        raise SystemExit('SCOREMAX_REFERRAL_V3_OLD_PATCH_SURVIVED')
+    print('SCOREMAX_UX_REFERRAL_HERO_V3_POSTBUILD_PASS presentation_only=true backend_unchanged=true',flush=True)
+
+
 def main() -> None:
     recovery_main()
+    apply_referral_hero_v3(ROOT)
+    _assert_referral_hero_v3()
     _install_post_init_teacher_preview()
 
 
