@@ -1,0 +1,126 @@
+name: Admin Corner Staging Qualification v1
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths:
+      - '.github/workflows/admin-corner-staging-audit-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v6611c-ux-vnext-landing
+          fetch-depth: 0
+      - name: Materialize current staging candidate
+        run: python deploy_ux_vnext.py
+      - name: Install runtime dependencies
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Fresh database Admin Corner qualification
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_STAGING_SESSION_SECRET: admin-v1-audit-only
+          SCOREMAX_DB: /tmp/scoremax_admin_v1.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_admin_v1
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_admin_v1/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_admin_v1/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+        run: |
+          rm -f /tmp/scoremax_admin_v1.db
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          import app as sm
+          sm.init()
+          c=sm.db()
+          cols={x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
+          vals={'system_user_id':'ADMIN-AUDIT-001','role':'admin','full_name':'Admin Corner Audit','email':'admin-audit-001@scoremax.test','username':'admin-audit-001','account_status':'active','login_provider':'password','session_version':0}
+          use=[k for k in vals if k in cols]
+          c.execute(f"INSERT INTO users({','.join(use)}) VALUES({','.join('?' for _ in use)})",tuple(vals[k] for k in use))
+          admin=c.execute("SELECT id,COALESCE(session_version,0) session_version FROM users WHERE username=?",(vals['username'],)).fetchone()
+          # Two non-admin identities for role-isolation probes.
+          identities=[]
+          for role,n in [('teacher',2),('student',3)]:
+              v={'system_user_id':f'ROLE-AUDIT-{n:03d}','role':role,'full_name':f'{role.title()} Audit','email':f'{role}-audit-admin-v1@scoremax.test','username':f'{role}-audit-admin-v1','account_status':'active','login_provider':'password','session_version':0}
+              uu=[k for k in v if k in cols]
+              c.execute(f"INSERT INTO users({','.join(uu)}) VALUES({','.join('?' for _ in uu)})",tuple(v[k] for k in uu))
+              row=c.execute("SELECT id,COALESCE(session_version,0) session_version FROM users WHERE username=?",(v['username'],)).fetchone()
+              identities.append((role,row['id'],int(row['session_version'])))
+          c.commit(); c.close()
+
+          rules=list(sm.app.url_map.iter_rules())
+          endpoints={r.endpoint for r in rules}
+          admin_rules=[r for r in rules if (r.rule.startswith('/admin') or r.endpoint.startswith('admin_'))]
+          admin_get=[r for r in admin_rules if 'GET' in r.methods and not r.arguments]
+          client=sm.app.test_client()
+          with client.session_transaction() as s:
+              s['user_id']=admin['id']; s['role']='admin'; s['full_name']='Admin Corner Audit'; s['session_version']=int(admin['session_version'])
+          probes=[]
+          bodies={}
+          for r in sorted(admin_get,key=lambda x:x.rule):
+              try:
+                  x=client.get(r.rule,follow_redirects=False)
+                  probes.append({'rule':r.rule,'endpoint':r.endpoint,'status':x.status_code,'location':x.headers.get('Location','')})
+                  if x.status_code==200: bodies[r.rule]=x.get_data(as_text=True)
+              except Exception as e:
+                  probes.append({'rule':r.rule,'endpoint':r.endpoint,'status':'EXCEPTION','error':repr(e)})
+          bad=[x for x in probes if x['status']=='EXCEPTION' or (isinstance(x['status'],int) and x['status']>=500)]
+          login_redirects=[x for x in probes if x['status']==302 and '/login' in x.get('location','')]
+
+          # Normal admin-nav evidence from an actually rendered admin page.
+          home=client.get('/admin/pilot-readiness',follow_redirects=False)
+          home_html=home.get_data(as_text=True)
+          nav_match=re.search(r'<nav class="desktop-nav"[^>]*>(.*?)</nav>',home_html,re.S)
+          nav_html=nav_match.group(1) if nav_match else ''
+          nav_labels=[re.sub(r'<[^>]+>','',x).strip() for x in re.findall(r'<a[^>]*>(.*?)</a>',nav_html,re.S)]
+          nav_labels=[x for x in nav_labels if x]
+          reviewer_visible='Reviewer Workspace' in nav_labels
+          operational_links={'Pilot Readiness','Referrals','Pilot Issues','Analytics','Knowledge','Daily Spark','Sustainability','Social Links','Users','Blueprints','Written Response','Community','Audit','Logout'}
+          legacy_or_special=[x for x in nav_labels if x not in operational_links]
+
+          # Non-admin roles must not receive admin content.
+          isolation={}
+          for role,uid,sv in identities:
+              cc=sm.app.test_client()
+              with cc.session_transaction() as s:
+                  s['user_id']=uid; s['role']=role; s['full_name']=role.title()+' Audit'; s['session_version']=sv
+              rr=cc.get('/admin/pilot-readiness',follow_redirects=False)
+              isolation[role]={'status':rr.status_code,'location':rr.headers.get('Location',''),'body_has_admin_heading':'Pilot Readiness & Content Intake' in rr.get_data(as_text=True)}
+
+          # Static admin-template route integrity and dead-end scan.
+          templates=sorted(Path('templates').glob('admin*.html'))
+          findings=[]
+          for p in templates:
+              t=p.read_text(encoding='utf-8',errors='replace')
+              refs=sorted(set(re.findall(r"url_for\(['\"]([^'\"]+)",t)))
+              broken=[e for e in refs if e not in endpoints]
+              dead=[z for z in ('href="#"','javascript:void','TODO','FIXME') if z.lower() in t.lower()]
+              if broken or dead: findings.append({'template':str(p),'broken':broken,'dead':dead})
+          broken_total=sum(len(x['broken']) for x in findings)
+          dead_total=sum(len(x['dead']) for x in findings)
+          role_isolation=all(v['status']!=200 and not v['body_has_admin_heading'] for v in isolation.values())
+          gates={
+              'architecture':'PASSED' if admin_rules else 'FAILED',
+              'authenticated_admin_access':'PASSED' if home.status_code==200 and not login_redirects else 'FAILED',
+              'render_no_5xx':'PASSED' if not bad else 'FAILED',
+              'template_route_integrity':'PASSED' if broken_total==0 else 'FAILED',
+              'role_isolation':'PASSED' if role_isolation else 'FAILED',
+              'historical_reviewer_hidden':'PASSED' if not reviewer_visible else 'FAILED',
+              'dead_end_static_scan':'PASSED' if dead_total==0 else 'PENDING',
+              'admin_nav_simplification':'PENDING' if len(nav_labels)>10 or legacy_or_special else 'PASSED',
+              'mobile_visual':'PENDING'
+          }
+          report={'admin_route_count':len(admin_rules),'admin_get_probe_count':len(probes),'bad_render_count':len(bad),'login_redirect_count':len(login_redirects),'nav_labels':nav_labels,'nav_link_count':len(nav_labels),'legacy_or_special_nav':legacy_or_special,'reviewer_workspace_visible':reviewer_visible,'role_isolation':isolation,'template_findings':findings,'gates':gates,'sample_probes':probes[:25]}
+          print('ADMIN_CORNER_V1='+json.dumps(report,sort_keys=True))
+          hard=[k for k,v in gates.items() if v=='FAILED']
+          print('ADMIN_CORNER_HARD_FAILS='+json.dumps(hard))
+          if hard: raise SystemExit(2)
+          PY
