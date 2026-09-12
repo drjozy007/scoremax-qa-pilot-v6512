@@ -83,7 +83,7 @@ jobs:
           with client.session_transaction() as s:
               s['user_id']=admin['id']; s['role']='admin'; s['full_name']='Interest Admin'; s['session_version']=int(admin['session_version'])
           home=client.get('/admin',follow_redirects=False)
-          assert home.status_code==200 and 'Interest &amp; Demand' in home.get_data(as_text=True)
+          assert home.status_code==200 and 'Interest & Demand' in home.get_data(as_text=True)
           page=client.get('/admin/interests',follow_redirects=False)
           body=page.get_data(as_text=True)
           assert page.status_code==200
