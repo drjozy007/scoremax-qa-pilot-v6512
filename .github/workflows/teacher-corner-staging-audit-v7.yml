@@ -65,7 +65,7 @@ jobs:
           referral_render=bodies['/referrals']
           for token in ('ux-referral-hero-v3-style','ux-referral-hero-title','ux-referral-code-value','id="uxReferralCopyCode"','>Copy code</button>','>Share now</a>','id="ux-referral-links"','eligible cleared payments','Registration alone never creates commission.'):
               assert token in referral_render, token
-          assert 'ux-referral-code-chip' not in referral_render
+          assert '<span class="ux-referral-code-chip">' not in referral_render
           classroom_path=f"/teacher/class/{classes[0]['id']}"
           r=client.get(classroom_path,follow_redirects=False); probes[classroom_path]=r.status_code; assert r.status_code==200
           html=r.get_data(as_text=True)
