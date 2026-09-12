@@ -89,40 +89,25 @@ def _ensure_preview_student(conn: sqlite3.Connection, suffix: int, full_name: st
 
 def _ensure_class(conn: sqlite3.Connection, teacher_id: int, name: str, subject: str, join_code: str) -> int:
     row=conn.execute("SELECT id FROM classrooms WHERE teacher_id=? AND join_code=?",(teacher_id,join_code)).fetchone()
-    values={
-        'teacher_id':teacher_id,
-        'institution_id':None,
-        'name':name,
-        'level':'FSc Part 1',
-        'subject':subject,
-        'join_code':join_code,
-    }
+    values={'teacher_id':teacher_id,'institution_id':None,'name':name,'level':'FSc Part 1','subject':subject,'join_code':join_code}
     if row:
-        cid=int(row['id'])
-        _update_dynamic(conn,'classrooms',cid,values)
-        return cid
+        cid=int(row['id']); _update_dynamic(conn,'classrooms',cid,values); return cid
     return _insert_dynamic(conn,'classrooms',values)
 
 
 def ensure_teacher_preview() -> None:
-    path=_db_path()
-    path.parent.mkdir(parents=True,exist_ok=True)
-    conn=sqlite3.connect(path)
-    conn.row_factory=sqlite3.Row
-    conn.execute('PRAGMA foreign_keys=ON')
-    conn.execute('PRAGMA busy_timeout=5000')
+    path=_db_path(); path.parent.mkdir(parents=True,exist_ok=True)
+    conn=sqlite3.connect(path); conn.row_factory=sqlite3.Row
+    conn.execute('PRAGMA foreign_keys=ON'); conn.execute('PRAGMA busy_timeout=5000')
     try:
+        # Safe on a genuinely fresh hosted database. scoremax_production calls this again after init().
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='users'").fetchone():
+            print('SCOREMAX_UX_TEACHER_PREVIEW_DEFERRED schema_ready=false',flush=True)
+            return
         teacher_id=_ensure_teacher(conn)
         biology=_ensure_class(conn,teacher_id,'FSc Biology A','Biology','UXBIO26')
         chemistry=_ensure_class(conn,teacher_id,'FSc Chemistry A','Chemistry','UXCHEM26')
-        students=[
-            _ensure_preview_student(conn,1,'Ayesha Khan'),
-            _ensure_preview_student(conn,2,'Hamza Ali'),
-            _ensure_preview_student(conn,3,'Mariam Noor'),
-            _ensure_preview_student(conn,4,'Usman Raza'),
-            _ensure_preview_student(conn,5,'Zainab Ahmed'),
-            _ensure_preview_student(conn,6,'Bilal Hussain'),
-        ]
+        students=[_ensure_preview_student(conn,1,'Ayesha Khan'),_ensure_preview_student(conn,2,'Hamza Ali'),_ensure_preview_student(conn,3,'Mariam Noor'),_ensure_preview_student(conn,4,'Usman Raza'),_ensure_preview_student(conn,5,'Zainab Ahmed'),_ensure_preview_student(conn,6,'Bilal Hussain')]
         for cid,members in ((biology,students[:4]),(chemistry,students[2:])):
             for idx,sid in enumerate(members,1):
                 conn.execute('INSERT OR IGNORE INTO classroom_students(classroom_id,student_id,roll_no) VALUES(?,?,?)',(cid,sid,f'UX-{idx:02d}'))
