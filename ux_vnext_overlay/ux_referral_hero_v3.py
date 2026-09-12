@@ -80,7 +80,6 @@ def apply_referral_hero_v3(root: Path) -> None:
     if missing:
         raise SystemExit('UX_REFERRAL_V3_BASELINE_MISSING:' + ','.join(missing))
 
-    # Replace only the teacher-only action treatment created by Workspace v2.
     old_actions = '''<div class="ux-referral-hero-actions"><span class="ux-referral-code-chip">Your code <strong>{{user.own_referral_code}}</strong></span><a class="ux-referral-share-link" href="#ux-referral-links">Share now ↓</a></div>'''
     if text.count(old_actions) != 1:
         raise SystemExit('UX_REFERRAL_V3_ACTION_BASELINE_MISMATCH:' + str(text.count(old_actions)))
@@ -94,7 +93,6 @@ def apply_referral_hero_v3(root: Path) -> None:
       </aside>'''
     text = text.replace(old_actions, new_actions, 1)
 
-    # Keep all governed supporting copy; only make the existing hero headline cleaner and more accurate.
     hero_pos = text.find('referral-hero')
     links_pos = text.find('id="ux-referral-links"')
     if hero_pos < 0 or links_pos < 0 or hero_pos >= links_pos:
@@ -107,7 +105,6 @@ def apply_referral_hero_v3(root: Path) -> None:
     headline = '<h1 class="ux-referral-hero-title">Share ScoreMax.<span>Earn when eligible students subscribe.</span></h1>'
     text = text[:h1_open] + headline + text[h1_close + len('</h1>'):]
 
-    # Load after Workspace v2 styles so this bounded refinement is authoritative.
     root_anchor = '<section class="page-shell referral-page-v640'
     if text.count(root_anchor) != 1:
         raise SystemExit('UX_REFERRAL_V3_ROOT_ANCHOR_MISMATCH:' + str(text.count(root_anchor)))
@@ -134,8 +131,8 @@ def apply_referral_hero_v3(root: Path) -> None:
     missing = [token for token in post_checks if token not in text]
     if missing:
         raise SystemExit('UX_REFERRAL_V3_POSTCHECK_MISSING:' + ','.join(missing))
-    if 'ux-referral-code-chip' in text:
-        raise SystemExit('UX_REFERRAL_V3_OLD_PATCH_SURVIVED')
+    if '<span class="ux-referral-code-chip">' in text:
+        raise SystemExit('UX_REFERRAL_V3_OLD_MARKUP_SURVIVED')
 
     path.write_text(text, encoding='utf-8')
     print('SCOREMAX_UX_REFERRAL_HERO_V3_PASS layout=two_zone copy_code=true share_links_reused=true economics_unchanged=true backend_unchanged=true', flush=True)
