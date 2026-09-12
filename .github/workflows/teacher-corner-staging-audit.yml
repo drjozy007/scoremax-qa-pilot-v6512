@@ -1,0 +1,202 @@
+name: Teacher Corner Staging Qualification
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths: ['.github/workflows/teacher-corner-staging-audit.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  teacher-corner-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v6611c-ux-vnext-landing
+          fetch-depth: 0
+
+      - name: Materialize exact UX staging runtime
+        run: python deploy_ux_vnext.py
+
+      - name: Install runtime dependencies
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+
+      - name: Audit Teacher Corner architecture and runtime
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_SECRET: teacher-corner-audit-secret-only
+          SCOREMAX_DB: /tmp/scoremax_teacher_corner_audit.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_teacher_corner_audit
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_teacher_corner_audit/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_teacher_corner_audit/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+        run: |
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          from __future__ import annotations
+          import inspect, json, re, sqlite3, traceback
+          from pathlib import Path
+          from werkzeug.security import generate_password_hash
+
+          report={
+            'scope':'TEACHER_CORNER_STAGING_ONLY',
+            'production_mutated':False,
+            'student_ux_mutated':False,
+            'gates':{},
+            'files':{},
+            'routes':[],
+            'render_tests':[],
+            'role_tests':[],
+            'template_findings':[],
+            'engine_inventory':{},
+            'notes':[],
+          }
+
+          required_files=[
+            'teacher_corner_engine.py','teacher_corner_operations_engine.py',
+            'templates/teacher.html','templates/teacher_corner.html',
+            'templates/teacher_directory.html','templates/teacher_earnings.html',
+            'templates/teacher_marketplace.html','templates/teacher_of_year.html',
+            'templates/teacher_profile_public.html','templates/classroom.html',
+            'templates/institution_class.html','templates/institution_dashboard.html',
+            'templates/referrals.html'
+          ]
+          for rel in required_files:
+            p=Path(rel); report['files'][rel]={'exists':p.is_file(),'size':p.stat().st_size if p.is_file() else 0}
+          missing=[p for p,v in report['files'].items() if not v['exists']]
+          report['gates']['architecture_files']='PASSED' if not missing else 'FAILED'
+          if missing: report['notes'].append('Missing required Teacher Corner runtime files: '+', '.join(missing))
+
+          try:
+            import teacher_corner_engine as tce
+            import teacher_corner_operations_engine as tco
+            for name,mod in [('teacher_corner_engine',tce),('teacher_corner_operations_engine',tco)]:
+              funcs=[n for n,o in inspect.getmembers(mod,inspect.isfunction) if not n.startswith('_')]
+              report['engine_inventory'][name]={'public_functions':funcs,'count':len(funcs)}
+          except Exception as exc:
+            report['notes'].append('Teacher engine import failed: '+repr(exc))
+
+          app_import_error=''
+          try:
+            import app as sm
+            try: sm.init()
+            except Exception: pass
+            rules=list(sm.app.url_map.iter_rules())
+            endpoints={r.endpoint for r in rules}
+            for r in sorted(rules,key=lambda x:(x.rule,x.endpoint)):
+              hay=(r.rule+' '+r.endpoint).lower()
+              if any(k in hay for k in ('teacher','classroom','institution','referral')):
+                report['routes'].append({'rule':r.rule,'endpoint':r.endpoint,'methods':sorted(m for m in r.methods if m not in {'HEAD','OPTIONS'}),'arguments':sorted(r.arguments)})
+
+            # Seed a disposable teacher only in this audit database.
+            c=sm.db()
+            cols={x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
+            values={
+              'system_user_id':'TEACHER-AUDIT-001','role':'teacher','full_name':'Teacher Corner Audit',
+              'email':'teacher-corner-audit@scoremax.test','username':'teacher-corner-audit',
+              'password_hash':generate_password_hash('AuditOnly-NotARealCredential'),
+              'province':'Punjab','board':'Punjab Board','academic_level':'FSc Part 1',
+              'subjects':'Biology,Chemistry,Physics','account_status':'active','active_programme':'FSc Part 1',
+              'login_provider':'password'
+            }
+            use=[k for k in values if k in cols]
+            marks=','.join('?' for _ in use)
+            c.execute(f"INSERT INTO users({','.join(use)}) VALUES({marks})",tuple(values[k] for k in use))
+            teacher_id=c.execute("SELECT id FROM users WHERE email='teacher-corner-audit@scoremax.test'").fetchone()['id']
+            c.commit(); c.close()
+
+            client=sm.app.test_client()
+            with client.session_transaction() as sess:
+              sess['user_id']=teacher_id; sess['role']='teacher'; sess['email']='teacher-corner-audit@scoremax.test'
+
+            candidate_rules=[r for r in rules if 'GET' in r.methods and not r.arguments and any(k in (r.rule+' '+r.endpoint).lower() for k in ('teacher','classroom','institution','referral'))]
+            for r in sorted(candidate_rules,key=lambda x:x.rule):
+              try:
+                res=client.get(r.rule,follow_redirects=False)
+                report['render_tests'].append({'rule':r.rule,'endpoint':r.endpoint,'status':res.status_code,'location':res.headers.get('Location','')[:200]})
+              except Exception as exc:
+                report['render_tests'].append({'rule':r.rule,'endpoint':r.endpoint,'status':'EXCEPTION','error':repr(exc)})
+
+            # Role isolation probe for obviously private teacher routes only.
+            private=[]
+            for r in candidate_rules:
+              tag=(r.rule+' '+r.endpoint).lower()
+              if any(x in tag for x in ('teacher_corner','teacher_dashboard','teacher_earnings','teacher_marketplace')) or r.rule.rstrip('/') in {'/teacher','/teacher-corner'}:
+                private.append(r)
+            student=sm.app.test_client()
+            with student.session_transaction() as sess:
+              sess['user_id']=teacher_id; sess['role']='student'; sess['email']='teacher-corner-audit@scoremax.test'
+            anon=sm.app.test_client()
+            for r in sorted(private,key=lambda x:x.rule):
+              for who,cli in [('student',student),('anonymous',anon)]:
+                try:
+                  res=cli.get(r.rule,follow_redirects=False)
+                  report['role_tests'].append({'rule':r.rule,'endpoint':r.endpoint,'actor':who,'status':res.status_code,'location':res.headers.get('Location','')[:200]})
+                except Exception as exc:
+                  report['role_tests'].append({'rule':r.rule,'endpoint':r.endpoint,'actor':who,'status':'EXCEPTION','error':repr(exc)})
+
+            # Template route integrity + learner/teacher-facing hygiene.
+            teacher_templates=sorted(Path('templates').glob('*teacher*.html'))+[Path('templates/classroom.html'),Path('templates/institution_class.html'),Path('templates/institution_dashboard.html'),Path('templates/referrals.html')]
+            forbidden=('Power House','Growth Engine','runtime','release_id','build_id','qualification candidate')
+            for p in teacher_templates:
+              if not p.is_file(): continue
+              text=p.read_text(encoding='utf-8',errors='replace')
+              refs=sorted(set(re.findall(r"url_for\(['\"]([^'\"]+)",text)))
+              missing_refs=[x for x in refs if x not in endpoints]
+              dead=[]
+              for token in ('href="#"','javascript:void','TODO','FIXME'):
+                if token.lower() in text.lower(): dead.append(token)
+              leaks=[x for x in forbidden if x.lower() in text.lower()]
+              if missing_refs or dead or leaks:
+                report['template_findings'].append({'template':p.as_posix(),'missing_endpoints':missing_refs,'dead_end_markers':dead,'internal_language':leaks})
+
+          except Exception as exc:
+            app_import_error=repr(exc)
+            report['notes'].append('Runtime import/audit failed: '+repr(exc))
+            report['notes'].append(traceback.format_exc()[-4000:])
+
+          five_xx=[x for x in report['render_tests'] if isinstance(x.get('status'),int) and x['status']>=500]
+          exceptions=[x for x in report['render_tests'] if x.get('status')=='EXCEPTION']
+          broken_refs=[x for x in report['template_findings'] if x.get('missing_endpoints')]
+          leaks=[x for x in report['template_findings'] if x.get('internal_language')]
+          dead=[x for x in report['template_findings'] if x.get('dead_end_markers')]
+          role_exposure=[x for x in report['role_tests'] if x.get('status')==200]
+
+          report['gates']['runtime_import']='PASSED' if not app_import_error else 'FAILED'
+          report['gates']['teacher_routes_present']='PASSED' if report['routes'] else 'FAILED'
+          report['gates']['teacher_render_no_5xx']='PASSED' if not five_xx and not exceptions else 'FAILED'
+          report['gates']['template_route_integrity']='PASSED' if not broken_refs else 'FAILED'
+          report['gates']['teacher_facing_hygiene']='PASSED' if not leaks else 'FAILED'
+          report['gates']['no_static_dead_end_markers']='PASSED' if not dead else 'PENDING'
+          report['gates']['role_isolation_probe']='PASSED' if report['role_tests'] and not role_exposure else ('FAILED' if role_exposure else 'PENDING')
+          report['gates']['real_teacher_data']='PENDING'
+          report['gates']['mobile_visual_acceptance']='PENDING'
+          report['gates']['production_persistence']='N/A_STAGING_AUDIT'
+
+          hard_fail=any(report['gates'].get(k)=='FAILED' for k in ('architecture_files','runtime_import','teacher_routes_present','teacher_render_no_5xx','template_route_integrity','teacher_facing_hygiene','role_isolation_probe'))
+          report['candidate_status']='NOT_READY' if hard_fail else 'READY_FOR_TARGETED_VISUAL_AND_REAL_DATA_ACCEPTANCE'
+
+          out=Path('../qualification/TEACHER_CORNER_STAGING_AUDIT_20260912.json')
+          out.write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          md=Path('../qualification/TEACHER_CORNER_STAGING_AUDIT_20260912.md')
+          lines=['# Teacher Corner Staging Audit — 2026-09-12','',f"**Candidate status:** {report['candidate_status']}",'','## Gates']
+          for k,v in report['gates'].items(): lines.append(f'- **{k}:** {v}')
+          lines += ['','## Runtime inventory',f"- Teacher-related routes found: {len(report['routes'])}",f"- GET render probes: {len(report['render_tests'])}",f"- 5xx/exception render probes: {len(five_xx)+len(exceptions)}",f"- Role-isolation probes: {len(report['role_tests'])}",f"- Template findings: {len(report['template_findings'])}",'','## Notes']
+          lines += [f'- {n}' for n in report['notes']] or ['- None.']
+          md.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          print('TEACHER_CORNER_AUDIT_JSON='+json.dumps(report,sort_keys=True))
+          print('TEACHER_CORNER_AUDIT_STATUS='+report['candidate_status'])
+          PY
+
+      - name: Commit qualification evidence
+        run: |
+          git config user.name 'ScoreMax Qualification Bot'
+          git config user.email 'scoremax-qualification@users.noreply.github.com'
+          git add qualification/TEACHER_CORNER_STAGING_AUDIT_20260912.json qualification/TEACHER_CORNER_STAGING_AUDIT_20260912.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Record Teacher Corner staging qualification evidence'
+          git push origin HEAD:feature/v6611c-ux-vnext-landing
