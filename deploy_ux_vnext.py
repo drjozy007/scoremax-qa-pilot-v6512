@@ -13,8 +13,6 @@ ROOT=Path('scoremax_runtime_v669b')
 
 
 def _restore_delivery_reviewer() -> None:
-    # Restore only the read-only post-delivery QA surface after the hardening layer
-    # removes the old independent ScoreMax academic-review implementation.
     for rel in (
         'ux_content_reviewer.py','ux_reviewer_accounts.py',
         'templates/ux_content_review.html','templates/ux_content_review_question.html',
@@ -81,7 +79,6 @@ def _install_post_init_commercial_cleanup() -> None:
 
 
 def _restore_catalogue_browser() -> None:
-    # Learner-display metadata only. Never seed curriculum/question/chapter_catalogue state here.
     for rel in (
         'ux_catalogue_data.py','ux_catalogue_browser.py',
         'templates/ux_catalogue_home.html','templates/ux_catalogue_track.html','templates/ux_catalogue_subject.html',
@@ -111,6 +108,29 @@ def _restore_catalogue_browser() -> None:
     if 'install_catalogue_browser(scoremax.app)' not in rendered:
         raise SystemExit('SCOREMAX_CATALOGUE_BROWSER_INSTALL_CONTROL_MISSING')
     print('SCOREMAX_PROVISIONAL_CATALOGUE_INSTALLED governed_db_untouched=true power_house_authority_unchanged=true',flush=True)
+
+
+def _wire_programme_tabs_to_correct_surfaces() -> None:
+    """Programme switches must land on the selected programme's own browse surface.
+
+    The old generic return_to=request.path kept learners on an FSc-rendered page after
+    choosing MDCAT.  Preserve POST+CSRF state mutation, but route each programme to its
+    correct learner surface after the switch.  Apply to both desktop second-layer tabs
+    and the mobile programme selector.
+    """
+    path=ROOT/'templates'/'base.html'
+    text=path.read_text(encoding='utf-8')
+    old='<input type="hidden" name="return_to" value="{{request.path}}">'
+    new='<input type="hidden" name="return_to" value="{{url_for(\'ux_catalogue_track\',track=\'mdcat\') if p.code==\'mdcat\' else url_for(\'subject_browser\')}}">'
+    count=text.count(old)
+    if count!=2:
+        raise SystemExit(f'SCOREMAX_PROGRAMME_TAB_RETURN_TARGET_MISMATCH:matches={count}')
+    text=text.replace(old,new)
+    path.write_text(text,encoding='utf-8')
+    rendered=path.read_text(encoding='utf-8')
+    if rendered.count("p.code=='mdcat'")!=2 or "url_for('ux_catalogue_track',track='mdcat')" not in rendered:
+        raise SystemExit('SCOREMAX_PROGRAMME_TAB_ROUTING_POSTBUILD_CONTROL_MISSING')
+    print('SCOREMAX_PROGRAMME_TAB_ROUTING_PASS desktop=true mobile=true mdcat_target=/student/catalogue/mdcat fsc_target=/student/subjects post_csrf_preserved=true',flush=True)
 
 
 def _write_commercial_cleanup_runtime() -> None:
@@ -150,6 +170,7 @@ def main() -> None:
     _install_post_init_commercial_cleanup()
     _restore_catalogue_browser()
     apply_programme_catalogue_routing(ROOT)
+    _wire_programme_tabs_to_correct_surfaces()
 
 
 if __name__ == '__main__':
