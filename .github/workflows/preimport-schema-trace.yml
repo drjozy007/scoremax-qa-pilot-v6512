@@ -1,0 +1,23 @@
+name: Pre-Import Schema Trace
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths: ['.github/workflows/preimport-schema-trace.yml']
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v6611c-ux-vnext-landing
+      - name: Materialize runtime and trace schema
+        run: |
+          python deploy_ux_vnext.py
+          echo '=== STUDENT MOCK FORM DDL/REFERENCES ==='
+          grep -R -n -E 'student_mock_forms|def _mock_state' scoremax_runtime_v669b/app.py scoremax_runtime_v669b/digital_coach_engine.py | head -80 || true
+          echo '=== DIGITAL COACH MOCK STATE ==='
+          sed -n '90,130p' scoremax_runtime_v669b/digital_coach_engine.py || true
+          echo '=== MOCK FORM CREATE TABLE CONTEXT ==='
+          grep -n -B4 -A20 'CREATE TABLE IF NOT EXISTS student_mock_forms' scoremax_runtime_v669b/app.py || true
