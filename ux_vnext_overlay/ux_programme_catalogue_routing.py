@@ -115,9 +115,9 @@ _RUNTIME_LEARN_CONTEXT_BLOCK = r'''def _learn_context(conn, student_id: int):
         snap=_subject_snapshot(conn,student_id,name); snap.update({'name':name,'url':url_for('subject_detail',subject=name)}); subjects.append(snap)
     track=_programme_track(_active_programme_for_student(conn,student_id))
     future=[] if track=='mdcat' else [
-      {'name':'MDCAT','badge':'Route','copy':'Medical admission preparation alongside your FSc journey.','url':url_for('ux_student_learn')+'#mdcat-route'},
-      {'name':'Logical Reasoning','badge':'MDCAT','copy':'Reasoning practice for your MDCAT route.','url':url_for('ux_student_learn')+'#mdcat-route'},
-      {'name':'English','badge':'MDCAT','copy':'English preparation for your MDCAT route.','url':url_for('ux_student_learn')+'#mdcat-route'},
+      {'name':'MDCAT','badge':'Route','copy':'Medical admission preparation alongside your FSc journey.','url':url_for('ux_catalogue_track',track='mdcat')},
+      {'name':'Logical Reasoning','badge':'MDCAT','copy':'Reasoning practice for your MDCAT route.','url':url_for('ux_catalogue_subject',track='mdcat',subject='Logical Reasoning')},
+      {'name':'English','badge':'MDCAT','copy':'English preparation for your MDCAT route.','url':url_for('ux_catalogue_subject',track='mdcat',subject='English')},
     ]
     return subjects,future
 '''
@@ -194,6 +194,9 @@ def apply_programme_catalogue_routing(root: Path) -> None:
         "return list(CATALOGUES['mdcat']['subjects'].keys())",
         "programme_label=_programme_label_for_student(conn,session['user_id'])",
         "lower(COALESCE(programme,''))=lower(?)",
+        "url_for('ux_catalogue_track',track='mdcat')",
+        "url_for('ux_catalogue_subject',track='mdcat',subject='Logical Reasoning')",
+        "url_for('ux_catalogue_subject',track='mdcat',subject='English')",
     )
     missing = [token for token in required if token not in text]
     if missing:
@@ -206,6 +209,7 @@ def apply_programme_catalogue_routing(root: Path) -> None:
     print(
         'SCOREMAX_PROGRAMME_CATALOGUE_ROUTING_PASS '
         'year11_biology=12 mdcat_biology=16 mdcat_chemistry=20 mdcat_physics=16 '
-        'active_programme_authoritative=true cross_programme_fallback=false fail_closed=true',
+        'active_programme_authoritative=true cross_programme_fallback=false fail_closed=true '
+        'mdcat_route_dedicated=true',
         flush=True,
     )
