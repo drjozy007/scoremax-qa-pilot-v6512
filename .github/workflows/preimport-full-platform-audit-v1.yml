@@ -23,14 +23,14 @@ jobs:
           fetch-depth: 0
       - name: Materialize exact staging candidate
         run: python deploy_ux_vnext.py
-      - name: Trace pre-import synthetic content sources
+      - name: Trace pre-import residual sources
         run: |
-          echo '=== DEMO CHAPTER SOURCE ==='
-          grep -R -n --exclude='*.pyc' --exclude='*.db' --exclude='*.sqlite*' -E 'Demo Chapter|Foundation workflow|BIO001|demo_seed_allowed' scoremax_runtime_v669b || true
+          echo '=== SYNTHETIC CONTENT SOURCE ==='
+          grep -R -n --exclude='*.pyc' --exclude='*.db' --exclude='*.sqlite*' -E 'Demo Chapter|Foundation workflow|BIO001|demo_seed_allowed|synthetic qualification population disabled' scoremax_runtime_v669b || true
           echo '=== LOGIN ASSET REFERENCES ==='
           grep -R -n 'ux_seaweed_trial.css' scoremax_runtime_v669b ux_vnext_overlay || true
-          echo '=== READYZ SOURCE ==='
-          grep -R -n "def readyz\|@app.route('/readyz\|@app.route(\"/readyz" scoremax_runtime_v669b || true
+          echo '=== READYZ IMPLEMENTATION ==='
+          sed -n '7015,7065p' scoremax_runtime_v669b/app.py || true
       - name: Install runtime dependencies
         run: pip install -r scoremax_runtime_v669b/requirements.txt
       - name: Run exhaustive pre-import audit
