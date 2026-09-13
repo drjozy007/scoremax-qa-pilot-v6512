@@ -5,6 +5,7 @@ from ux_vnext_overlay.ux_referral_hero_v3 import apply_referral_hero_v3
 from ux_vnext_overlay.ux_admin_workspace import apply_admin_workspace
 from ux_vnext_overlay.ux_interest_admin_builder import apply_interest_admin
 from ux_vnext_overlay.ux_commercial_reset import apply_commercial_reset
+from ux_vnext_overlay.ux_preimport_hardening import apply_preimport_hardening
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -42,7 +43,7 @@ def _install_post_init_commercial_cleanup() -> None:
 
 def _write_commercial_cleanup_runtime() -> None:
     path=ROOT/'scoremax_commercial_cleanup.py'
-    path.write_text('''from __future__ import annotations\nimport os,sqlite3\nfrom pathlib import Path\n\nDEFAULT_PACKAGE_CODES=(\n    "fsc1_biology","fsc1_two_subjects","fsc1_science_bundle","fsc1_full",\n    "grade9_full","grade10_full","fsc2_full","mdcat_full",\n)\n\ndef clear_default_catalogue():\n    db=Path(os.environ.get("SCOREMAX_DB","/tmp/scoremax-ux-vnext/state/scoremax.db"))\n    if not db.exists(): return\n    conn=sqlite3.connect(db)\n    try:\n        exists=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='coverage_packages'").fetchone()\n        if not exists: return\n        marks=','.join('?' for _ in DEFAULT_PACKAGE_CODES)\n        # Fresh staging databases have no legitimate assignments yet. Do not delete a package if a governed entitlement or checkout already references it.\n        conn.execute(f"DELETE FROM coverage_packages WHERE code IN ({marks}) AND id NOT IN (SELECT coverage_package_id FROM student_package_entitlements UNION SELECT coverage_package_id FROM checkout_requests UNION SELECT COALESCE(coverage_package_id,-1) FROM subscriptions)",DEFAULT_PACKAGE_CODES)\n        conn.commit()\n        print("SCOREMAX_DEFAULT_COMMERCIAL_CATALOGUE_CLEARED protected_referenced_rows=true",flush=True)\n    finally:\n        conn.close()\n''',encoding='utf-8')
+    path.write_text('''from __future__ import annotations\nimport os,sqlite3\nfrom pathlib import Path\n\nDEFAULT_PACKAGE_CODES=(\n    "fsc1_biology","fsc1_two_subjects","fsc1_science_bundle","fsc1_full",\n    "grade9_full","grade10_full","fsc2_full","mdcat_full",\n)\n\ndef clear_default_catalogue():\n    db=Path(os.environ.get("SCOREMAX_DB","/tmp/scoremax-ux-vnext/state/scoremax.db"))\n    if not db.exists(): return\n    conn=sqlite3.connect(db)\n    try:\n        exists=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='coverage_packages'").fetchone()\n        if not exists: return\n        marks=','.join('?' for _ in DEFAULT_PACKAGE_CODES)\n        conn.execute(f"DELETE FROM coverage_packages WHERE code IN ({marks}) AND id NOT IN (SELECT coverage_package_id FROM student_package_entitlements UNION SELECT coverage_package_id FROM checkout_requests UNION SELECT COALESCE(coverage_package_id,-1) FROM subscriptions)",DEFAULT_PACKAGE_CODES)\n        conn.commit()\n        print("SCOREMAX_DEFAULT_COMMERCIAL_CATALOGUE_CLEARED protected_referenced_rows=true",flush=True)\n    finally:\n        conn.close()\n''',encoding='utf-8')
 
 
 def _assert_referral_hero_v3() -> None:
@@ -65,6 +66,7 @@ def _assert_referral_hero_v3() -> None:
 
 def main() -> None:
     recovery_main()
+    apply_preimport_hardening(ROOT)
     apply_referral_hero_v3(ROOT)
     _assert_referral_hero_v3()
     apply_interest_admin(ROOT)
