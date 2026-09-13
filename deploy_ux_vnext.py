@@ -8,6 +8,7 @@ from ux_vnext_overlay.ux_interest_admin_builder import apply_interest_admin
 from ux_vnext_overlay.ux_commercial_reset import apply_commercial_reset
 from ux_vnext_overlay.ux_preimport_hardening import apply_preimport_hardening
 from ux_vnext_overlay.ux_programme_catalogue_routing import apply_programme_catalogue_routing
+from ux_vnext_overlay.ux_restore_access_cards import apply_restore_access_cards
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -164,6 +165,7 @@ def main() -> None:
     _install_post_init_commercial_cleanup()
     _restore_catalogue_browser()
     apply_programme_catalogue_routing(ROOT)
+    apply_restore_access_cards(ROOT)
     _wire_programme_tabs_to_correct_surfaces()
 
 
