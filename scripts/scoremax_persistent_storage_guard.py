@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import tempfile
 import uuid
 from pathlib import Path
 
@@ -14,6 +15,7 @@ INTAKE=Path(os.environ.get('SCOREMAX_CONTENT_INTAKE_DIR',str(ROOT/'intake'))).re
 MOUNT=Path(os.environ.get('SCOREMAX_EXPECTED_PERSISTENT_MOUNT','/data')).resolve()
 SENTINEL=MOUNT/'.scoremax_persistent_storage_identity.json'
 PROBE_DB=ROOT/'state'/'storage_durability_probe.sqlite3'
+BASELINE_BACKUP=BACKUP/'scoremax_preimport_empty_baseline.sqlite3'
 
 
 def fail(msg: str) -> None:
@@ -69,6 +71,81 @@ def durability_probe() -> int:
     return runs
 
 
+def _table(c: sqlite3.Connection, name: str) -> bool:
+    return bool(c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone())
+
+
+def _count(c: sqlite3.Connection, name: str) -> int:
+    return int(c.execute(f'SELECT COUNT(*) FROM {name}').fetchone()[0]) if _table(c,name) else 0
+
+
+def _preimport_counts(c: sqlite3.Connection) -> dict[str,int]:
+    names=('questions','curriculum','question_families','chapter_catalogue','coverage_packages')
+    return {name:_count(c,name) for name in names}
+
+
+def qualify_preimport_database() -> dict[str,object]:
+    if not DB.exists():
+        return {'state':'absent'}
+    c=sqlite3.connect(DB,timeout=30)
+    try:
+        integrity=c.execute('PRAGMA integrity_check').fetchone()[0]
+        fk=len(c.execute('PRAGMA foreign_key_check').fetchall())
+        counts=_preimport_counts(c)
+        priced_plans=0
+        if _table(c,'plans'):
+            priced_plans=int(c.execute('SELECT COUNT(*) FROM plans WHERE COALESCE(price_minor,0)>0').fetchone()[0])
+        reviewers=0
+        if _table(c,'users'):
+            reviewers=int(c.execute("SELECT COUNT(*) FROM users WHERE lower(COALESCE(username,'')) LIKE '%reviewer%' OR lower(COALESCE(email,'')) LIKE '%reviewer%' OR COALESCE(system_user_id,'') LIKE 'REVIEWER-%' OR COALESCE(system_user_id,'')='CRV-900001'").fetchone()[0])
+        if integrity!='ok' or fk: fail(f'preimport_db_integrity_failed integrity={integrity} fk={fk}')
+        governed={k:counts[k] for k in ('questions','curriculum','question_families','chapter_catalogue')}
+        if any(governed.values()): fail('preimport_governed_substrate_not_empty='+json.dumps(governed,sort_keys=True))
+        if counts['coverage_packages']!=0: fail(f'preimport_commercial_catalogue_not_empty count={counts["coverage_packages"]}')
+        if priced_plans!=0: fail(f'preimport_seeded_plan_prices_present count={priced_plans}')
+        if reviewers!=0: fail(f'preimport_scoremax_reviewers_present count={reviewers}')
+
+        tmp=BASELINE_BACKUP.with_suffix('.tmp')
+        if tmp.exists(): tmp.unlink()
+        dest=sqlite3.connect(tmp)
+        try:
+            c.backup(dest)
+            dest.commit()
+        finally:
+            dest.close()
+        os.replace(tmp,BASELINE_BACKUP)
+    finally:
+        c.close()
+
+    backup_integrity,backup_fk=check_sqlite(BASELINE_BACKUP)
+    with tempfile.TemporaryDirectory(prefix='scoremax-preimport-restore-') as td:
+        restored=Path(td)/'restored.sqlite3'
+        src=sqlite3.connect(BASELINE_BACKUP,timeout=30)
+        dst=sqlite3.connect(restored,timeout=30)
+        try:
+            src.backup(dst); dst.commit()
+        finally:
+            dst.close(); src.close()
+        restore_integrity,restore_fk=check_sqlite(restored)
+        rc=sqlite3.connect(restored,timeout=30)
+        try:
+            restored_counts=_preimport_counts(rc)
+            restored_priced=int(rc.execute('SELECT COUNT(*) FROM plans WHERE COALESCE(price_minor,0)>0').fetchone()[0]) if _table(rc,'plans') else 0
+        finally:
+            rc.close()
+        if restored_counts!=counts or restored_priced!=priced_plans:
+            fail('preimport_restore_semantic_mismatch')
+
+    digest=hashlib.sha256(BASELINE_BACKUP.read_bytes()).hexdigest()
+    return {
+        'state':'qualified','integrity':integrity,'fk':fk,'counts':counts,
+        'priced_plans':priced_plans,'reviewers':reviewers,
+        'backup':str(BASELINE_BACKUP),'backup_sha256':digest,
+        'backup_integrity':backup_integrity,'backup_fk':backup_fk,
+        'restore_integrity':restore_integrity,'restore_fk':restore_fk,
+    }
+
+
 def main() -> None:
     if not MOUNT.exists() or not MOUNT.is_dir(): fail(f'mount_missing={MOUNT}')
     if not is_mount(MOUNT): fail(f'not_a_real_mount={MOUNT}')
@@ -100,15 +177,12 @@ def main() -> None:
     if probe.read_text(encoding='utf-8').strip()!=digest: fail('write_read_probe_failed')
 
     probe_runs=durability_probe()
-    db_state='absent'
-    db_integrity='n/a'
-    db_fk='n/a'
+    db_state='absent';db_integrity='n/a';db_fk='n/a'
     if DB.exists():
         integ,fk=check_sqlite(DB)
-        db_state='existing'
-        db_integrity=integ
-        db_fk=str(fk)
+        db_state='existing';db_integrity=integ;db_fk=str(fk)
 
+    qualification=qualify_preimport_database()
     print(
         f'SCOREMAX_PERSISTENT_STORAGE_PASS mount={MOUNT} state={state} '
         f'storage_id_sha256={digest} probe_runs={probe_runs} '
@@ -116,5 +190,6 @@ def main() -> None:
         f'db={DB} backup={BACKUP} intake={INTAKE}',
         flush=True,
     )
+    print('SCOREMAX_PERSISTENT_PREIMPORT_QUALIFICATION='+json.dumps(qualification,sort_keys=True),flush=True)
 
 if __name__=='__main__': main()
