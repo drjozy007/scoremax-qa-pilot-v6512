@@ -1,5 +1,6 @@
 name: Pre-Import Hosted Staging Smoke v1
 
+# Replay target: hosted runtime commit 35d1603256bd6809ebc9086073200dd11172abd2
 on:
   push:
     branches: [feature/v6611c-ux-vnext-landing]
