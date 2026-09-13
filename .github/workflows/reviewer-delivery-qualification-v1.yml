@@ -16,6 +16,9 @@ jobs:
     env:
       SCOREMAX_DB: /tmp/scoremax-reviewer-qualification.db
       SCOREMAX_ENV: production
+      SCOREMAX_SECRET: reviewer-ci-production-secret-at-least-32-characters
+      SCOREMAX_SMTP_HOST: localhost
+      SCOREMAX_SMTP_FROM: reviewer-ci@scoremax.test
       SCOREMAX_STAGING_SESSION_SECRET: reviewer-ci-stable-session-secret-2026
       SCOREMAX_STAGING_REVIEWER_01_PASSWORD: reviewer-ci-password-01-long
       SCOREMAX_STAGING_REVIEWER_02_PASSWORD: reviewer-ci-password-02-long
