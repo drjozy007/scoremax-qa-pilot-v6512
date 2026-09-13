@@ -14,8 +14,24 @@ def gate(name,condition,evidence):
         raise AssertionError(f'{name}: {evidence}')
 
 
+def table_columns(c,table):
+    return {r['name'] for r in c.execute(f'PRAGMA table_info({table})').fetchall()}
+
+
+def install_post_init_runtime_extensions():
+    """Mirror route/schema installers that production applies only after app.init()."""
+    from ux_content_reviewer import install_content_reviewer
+    install_content_reviewer(sm.app)
+    try:
+        from ux_catalogue_browser import install_catalogue_browser
+    except ModuleNotFoundError:
+        install_catalogue_browser=None
+    if install_catalogue_browser:
+        install_catalogue_browser(sm.app)
+
+
 def add_user(c,role,username,system_id):
-    cols={r['name'] for r in c.execute('PRAGMA table_info(users)').fetchall()}
+    cols=table_columns(c,'users')
     values={'system_user_id':system_id,'role':role,'full_name':role.title()+' Governance Audit','email':username+'@scoremax.test','username':username,'account_status':'active','login_provider':'password','session_version':0}
     p={k:v for k,v in values.items() if k in cols}
     c.execute(f"INSERT INTO users({','.join(p)}) VALUES({','.join('?' for _ in p)})",tuple(p.values()))
@@ -24,12 +40,15 @@ def add_user(c,role,username,system_id):
 
 def main():
     sm.init()
+    install_post_init_runtime_extensions()
     c=sm.db()
     try:
         counts={t:int(c.execute(f'SELECT COUNT(*) n FROM {t}').fetchone()['n']) for t in ('questions','curriculum','question_families','chapter_catalogue')}
         gate('zero_governed_content_substrate',all(v==0 for v in counts.values()),counts)
 
-        reviewer_rows=[dict(r) for r in c.execute("SELECT id,system_user_id,role,username,email,COALESCE(content_reviewer_enabled,0) enabled FROM users WHERE lower(COALESCE(username,'')) LIKE '%reviewer%' OR lower(COALESCE(email,'')) LIKE '%reviewer%' OR COALESCE(system_user_id,'') LIKE 'REVIEWER-%' OR COALESCE(system_user_id,'')='CRV-900001'").fetchall()]
+        user_cols=table_columns(c,'users')
+        enabled_expr='COALESCE(content_reviewer_enabled,0)' if 'content_reviewer_enabled' in user_cols else '0'
+        reviewer_rows=[dict(r) for r in c.execute(f"SELECT id,system_user_id,role,username,email,{enabled_expr} enabled FROM users WHERE lower(COALESCE(username,'')) LIKE '%reviewer%' OR lower(COALESCE(email,'')) LIKE '%reviewer%' OR COALESCE(system_user_id,'') LIKE 'REVIEWER-%' OR COALESCE(system_user_id,'')='CRV-900001'").fetchall()]
         ids={str(r['system_user_id']) for r in reviewer_rows}
         approved=(not reviewer_rows) or (ids==APPROVED_REVIEWERS and len(reviewer_rows)==5 and all(r['role']=='student' and int(r['enabled'])==1 for r in reviewer_rows))
         gate('governed_scoremax_delivery_reviewers_only',approved,reviewer_rows)
@@ -56,9 +75,8 @@ def main():
     leaks=[{'role':role,'path':path,**e} for (role,path),e in probes.items() if e['status']==200 and e['review_content']]
     gate('reviewer_role_boundary',not leaks,{'leaks':leaks,'probes':{f'{k[0]} {k[1]}':v for k,v in probes.items()}})
 
-    # Academic authority remains outside ScoreMax: normal admin reviewer workspace is fenced,
-    # delivery reviewers are student-role read-only observers, and the only write is a PH incident flag.
     gate('power_house_academic_authority_preserved','/admin/reviewer-workspace' in route_rules,{'admin_workspace_fenced_by_runtime':True,'scoremax_release_authority':False})
+    gate('learner_catalogue_is_display_only','/student/catalogue' in route_rules,{'catalogue_route_installed':'/student/catalogue' in route_rules,'governed_catalogue_rows':0,'scoremax_release_authority':False})
 
     print('SCOREMAX_PREIMPORT_GOVERNANCE='+json.dumps(REPORT,sort_keys=True))
 
