@@ -3,26 +3,18 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-_MARKER='SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V3_FINAL_RESPONSE'
+_MARKER='SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V4_ALL_STRIPS'
 
-_FINAL_RESPONSE_HELPER=r'''# SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V3_FINAL_RESPONSE
+_FINAL_RESPONSE_HELPER=r'''# SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V4_ALL_STRIPS
 def _canonical_student_subject_nav(html: str) -> str:
-    """Guarantee the learner subject row in the final server HTML.
+    """Guarantee every learner subject strip in the final server HTML.
 
-    Existing FSc subject anchors are preserved so entitlement/lock routing remains
-    authoritative. Admission-preparation destinations are removed/re-added with one
-    canonical route each. This runs in the existing student-shell after_request layer,
-    after template rendering and all earlier overlays.
+    ScoreMax currently renders more than one subject-strip instance on some learner
+    pages. The visible shell must not depend on which instance happened to be first.
+    Existing FSc anchors are preserved; admission-preparation anchors are normalized
+    on every strip to one canonical destination each.
     """
     import re
-
-    nav_start=html.find('<nav class="subject-quick-strip"')
-    if nav_start<0:
-        return html
-    nav_end=html.find('</nav>',nav_start)
-    if nav_end<0:
-        return html
-    fragment=html[nav_start:nav_end]
 
     track=str((request.view_args or {}).get('track','') or '').strip().casefold()
     subject=str((request.view_args or {}).get('subject','') or '').strip()
@@ -32,28 +24,43 @@ def _canonical_student_subject_nav(html: str) -> str:
         ('Logical Reasoning',url_for('ux_catalogue_subject',track='mdcat',subject='Logical Reasoning'),mdcat_track and subject=='Logical Reasoning'),
         ('English',url_for('ux_catalogue_subject',track='mdcat',subject='English'),mdcat_track and subject=='English'),
     )
-    for label,href,active in routes:
-        label_rx=re.escape(label)
-        fragment=re.sub(
-            r'<a\b[^>]*>\s*'+label_rx+r'(?:\s*<small>.*?</small>)?\s*</a>',
-            '',fragment,flags=re.S,
-        )
-        cls=' class="active"' if active else ''
-        fragment+=f'<a{cls} href="{href}">{label}</a>'
 
-    html=html[:nav_start]+fragment+'</nav>'+html[nav_end+6:]
+    strip_rx=re.compile(
+        r'(?P<open><(?P<tag>nav|div)\b[^>]*class=["\'][^"\']*\bsubject-quick-strip\b[^"\']*["\'][^>]*>)'
+        r'(?P<body>.*?)'
+        r'(?P<close></(?P=tag)>)',
+        re.S|re.I,
+    )
+    rendered=[]
 
-    if request.endpoint in {'subject_browser','ux_student_learn','subject_detail','ux_catalogue_track','ux_catalogue_subject'}:
-        final_end=html.find('</nav>',nav_start)
-        final_fragment=html[nav_start:final_end] if final_end>=0 else ''
+    def normalize(match):
+        body=match.group('body')
+        for label,href,active in routes:
+            label_rx=re.escape(label)
+            body=re.sub(
+                r'<a\b[^>]*>\s*'+label_rx+r'(?:\s*<small>.*?</small>)?\s*</a>',
+                '',body,flags=re.S|re.I,
+            )
+            cls=' class="active"' if active else ''
+            body+=f'<a{cls} href="{href}">{label}</a>'
+        fragment=match.group('open')+body+match.group('close')
+        rendered.append(fragment)
+        return fragment
+
+    html,count=strip_rx.subn(normalize,html)
+    if count:
+        status=[]
+        for i,fragment in enumerate(rendered,1):
+            status.append(
+                f'{i}:anchors={fragment.count("<a ")},'
+                f'mdcat={str(url_for("ux_catalogue_track",track="mdcat") in fragment).lower()},'
+                f'lr={str(url_for("ux_catalogue_subject",track="mdcat",subject="Logical Reasoning") in fragment).lower()},'
+                f'english={str(url_for("ux_catalogue_subject",track="mdcat",subject="English") in fragment).lower()},'
+                f'legacy={str("#mdcat-route" in fragment).lower()}'
+            )
         print(
             'SCOREMAX_LEARNER_NAV_RENDER '
-            f'endpoint={request.endpoint or ""} '
-            f'anchors={final_fragment.count("<a ")} '
-            f'mdcat={str(url_for("ux_catalogue_track",track="mdcat") in final_fragment).lower()} '
-            f'logical_reasoning={str(url_for("ux_catalogue_subject",track="mdcat",subject="Logical Reasoning") in final_fragment).lower()} '
-            f'english={str(url_for("ux_catalogue_subject",track="mdcat",subject="English") in final_fragment).lower()} '
-            f'legacy_hash={str("#mdcat-route" in final_fragment).lower()}',
+            f'endpoint={request.endpoint or ""} strips={count} '+ ' '.join(status),
             flush=True,
         )
     return html
@@ -100,8 +107,8 @@ def _install_final_response_contract(root: Path) -> None:
         "url_for('ux_catalogue_track',track='mdcat')",
         "url_for('ux_catalogue_subject',track='mdcat',subject='Logical Reasoning')",
         "url_for('ux_catalogue_subject',track='mdcat',subject='English')",
+        'strip_rx.subn(normalize,html)',
         'SCOREMAX_LEARNER_NAV_RENDER',
-        'canonical final-response subject navigation',
         '    import re',
     )
     missing=[token for token in required if token not in text]
@@ -118,11 +125,12 @@ def apply_canonical_student_navigation(root: Path) -> None:
     _install_final_response_contract(root)
     print(
         'SCOREMAX_CANONICAL_STUDENT_NAV_PASS '
-        'layer=final_student_html existing_fsc_entitlement_links_preserved=true '
+        'layer=final_student_html scope=all_subject_strips '
+        'existing_fsc_entitlement_links_preserved=true '
         'mdcat=/student/catalogue/mdcat '
         'logical_reasoning=/student/catalogue/mdcat/Logical_Reasoning '
         'english=/student/catalogue/mdcat/English '
-        'hash_shortcut=false duplicate_navigation_model=false '
+        'hash_shortcut=false duplicate_shell_ambiguity_removed=true '
         'runtime_dependency_local=true final_response_invariant_logging=true',
         flush=True,
     )
