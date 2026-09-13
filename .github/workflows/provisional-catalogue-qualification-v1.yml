@@ -1,0 +1,85 @@
+name: Provisional Catalogue Qualification v1
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths:
+      - '.github/workflows/provisional-catalogue-qualification-v1.yml'
+      - 'deploy_ux_vnext.py'
+      - 'ux_vnext_overlay/ux_catalogue_*'
+      - 'ux_vnext_overlay/templates/ux_catalogue_*'
+      - 'ux_vnext_overlay/templates/ux_student_learn.html'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize exact candidate
+        run: python deploy_ux_vnext.py
+      - name: Install dependencies
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Verify catalogue counts, learner routes and governed-state isolation
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_STAGING_SESSION_SECRET: catalogue-qualification-session-secret
+          SCOREMAX_SECRET: catalogue-qualification-app-secret
+          SCOREMAX_DB: /tmp/scoremax_catalogue_qualification/state/scoremax.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_catalogue_qualification
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_catalogue_qualification/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_catalogue_qualification/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+          SCOREMAX_ENFORCE_PAYWALL: '0'
+        run: |
+          rm -rf /tmp/scoremax_catalogue_qualification
+          mkdir -p /tmp/scoremax_catalogue_qualification/state /tmp/scoremax_catalogue_qualification/backup /tmp/scoremax_catalogue_qualification/intake
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import os, sqlite3
+          from ux_catalogue_data import CATALOGUES
+          expected={
+            'year11': {'Biology':12,'Chemistry':16,'Physics':12,'Mathematics':14},
+            'year12': {'Biology':13,'Chemistry':17,'Physics':9,'Mathematics':11},
+            'mdcat': {'Biology':16,'Chemistry':20,'Physics':16,'English':3,'Logical Reasoning':6},
+          }
+          actual={k:{s:len(items) for s,items in CATALOGUES[k]['subjects'].items()} for k in expected}
+          assert actual==expected,(actual,expected)
+
+          import scoremax_production
+          app=scoremax_production.application
+          db=os.environ['SCOREMAX_DB']
+          def counts():
+              c=sqlite3.connect(db)
+              try:
+                  return {t:c.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0] for t in ('questions','curriculum','chapter_catalogue')}
+              finally: c.close()
+          before=counts(); assert before=={'questions':0,'curriculum':0,'chapter_catalogue':0},before
+
+          client=app.test_client()
+          assert client.get('/student/catalogue').status_code in (302,403)
+          with client.session_transaction() as s:
+              s['role']='student'; s['user_id']=999999; s['username']='catalogue-qa'
+          r=client.get('/student/catalogue'); assert r.status_code==200
+          body=r.get_data(as_text=True)
+          for token in ('Year 11','Year 12','MDCAT','Biology','Chemistry','Physics','Mathematics'):
+              assert token in body,token
+          assert 'Power House' not in body
+
+          for track, subjects in expected.items():
+              r=client.get('/student/catalogue/'+track); assert r.status_code==200,(track,r.status_code)
+              body=r.get_data(as_text=True)
+              assert 'Power House' not in body
+              for subject,count in subjects.items():
+                  assert subject in body,(track,subject)
+                  rr=client.get('/student/catalogue/'+track+'/'+subject.replace(' ','%20'))
+                  assert rr.status_code==200,(track,subject,rr.status_code)
+                  text=rr.get_data(as_text=True)
+                  assert 'Power House' not in text
+          after=counts(); assert after==before,(before,after)
+          print('SCOREMAX_CATALOGUE_QUALIFICATION_PASS counts='+repr(actual)+' governed_state='+repr(after))
+          PY
