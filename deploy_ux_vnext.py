@@ -7,6 +7,7 @@ from ux_vnext_overlay.ux_admin_workspace import apply_admin_workspace
 from ux_vnext_overlay.ux_interest_admin_builder import apply_interest_admin
 from ux_vnext_overlay.ux_commercial_reset import apply_commercial_reset
 from ux_vnext_overlay.ux_preimport_hardening import apply_preimport_hardening
+from ux_vnext_overlay.ux_programme_catalogue_routing import apply_programme_catalogue_routing
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -148,6 +149,7 @@ def main() -> None:
     _install_post_init_teacher_preview()
     _install_post_init_commercial_cleanup()
     _restore_catalogue_browser()
+    apply_programme_catalogue_routing(ROOT)
 
 
 if __name__ == '__main__':
