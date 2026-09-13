@@ -1,0 +1,49 @@
+name: Pre-Import Hosted Staging Smoke v1
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths:
+      - '.github/workflows/preimport-hosted-smoke-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify hosted ScoreMax staging surfaces
+        env:
+          BASE: https://scoremax-ux-vnext-staging.onrender.com
+        run: |
+          python - <<'PY'
+          import urllib.request, urllib.error, json
+          import os
+          base=os.environ['BASE']
+          checks=[]
+          def hit(path, expected, location_contains=None, body_contains=None):
+              req=urllib.request.Request(base+path,headers={'User-Agent':'ScoreMax-Hosted-PreImport/1.0'})
+              try:
+                  opener=urllib.request.build_opener(urllib.request.HTTPHandler)
+                  resp=opener.open(req,timeout=30)
+                  status=resp.status; location=resp.headers.get('Location',''); body=resp.read(200000).decode('utf-8','replace')
+              except urllib.error.HTTPError as e:
+                  status=e.code; location=e.headers.get('Location',''); body=e.read(200000).decode('utf-8','replace')
+              ok=status in expected
+              if location_contains is not None: ok=ok and location_contains in location
+              if body_contains is not None: ok=ok and body_contains in body
+              checks.append({'path':path,'status':status,'location':location,'ok':ok})
+              assert ok,(path,status,location,body[:300])
+          hit('/',{200},body_contains='ScoreMax')
+          hit('/healthz',{200})
+          hit('/readyz',{200})
+          hit('/login',{200},body_contains='Log in to ScoreMax')
+          hit('/register-interest?programme=MDCAT',{200},body_contains='MDCAT')
+          hit('/admin',{302},location_contains='/login')
+          hit('/admin/interests',{302},location_contains='/login')
+          hit('/student/content-review',{404})
+          hit('/admin/reviewer-workspace',{302},location_contains='/login')
+          print('SCOREMAX_HOSTED_PREIMPORT_SMOKE='+json.dumps(checks,sort_keys=True))
+          PY
