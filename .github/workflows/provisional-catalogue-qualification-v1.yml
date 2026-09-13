@@ -17,6 +17,23 @@ jobs:
   qualify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      SCOREMAX_ENV: production
+      SCOREMAX_SECRET: catalogue-qualification-app-secret-at-least-32-characters
+      SCOREMAX_SMTP_HOST: localhost
+      SCOREMAX_SMTP_FROM: catalogue-ci@scoremax.test
+      SCOREMAX_STAGING_SESSION_SECRET: catalogue-qualification-session-secret-2026
+      SCOREMAX_DB: /tmp/scoremax_catalogue_qualification/state/scoremax.db
+      SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_catalogue_qualification
+      SCOREMAX_BACKUP_DIR: /tmp/scoremax_catalogue_qualification/backup
+      SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_catalogue_qualification/intake
+      SCOREMAX_INSTANCE_COUNT: 1
+      WEB_CONCURRENCY: 1
+      SCOREMAX_PUBLIC_BASE_URL: https://scoremax-catalogue-qualification.invalid
+      SCOREMAX_BOOTSTRAP_ADMIN_EMAIL: catalogue-ci-admin@scoremax.test
+      SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD: catalogue-ci-admin-password-at-least-24-chars
+      SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+      SCOREMAX_ENFORCE_PAYWALL: '0'
     steps:
       - uses: actions/checkout@v4
       - name: Materialize exact candidate
@@ -24,22 +41,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r scoremax_runtime_v669b/requirements.txt
       - name: Verify catalogue counts, learner routes and governed-state isolation
-        env:
-          SCOREMAX_ENV: local
-          SCOREMAX_STAGING_SESSION_SECRET: catalogue-qualification-session-secret
-          SCOREMAX_SECRET: catalogue-qualification-app-secret
-          SCOREMAX_DB: /tmp/scoremax_catalogue_qualification/state/scoremax.db
-          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_catalogue_qualification
-          SCOREMAX_BACKUP_DIR: /tmp/scoremax_catalogue_qualification/backup
-          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_catalogue_qualification/intake
-          SCOREMAX_PUBLIC_BASE_URL: http://localhost
-          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
-          SCOREMAX_ENFORCE_PAYWALL: '0'
         run: |
           rm -rf /tmp/scoremax_catalogue_qualification
           mkdir -p /tmp/scoremax_catalogue_qualification/state /tmp/scoremax_catalogue_qualification/backup /tmp/scoremax_catalogue_qualification/intake
           cd scoremax_runtime_v669b
-          python - <<'PY'
+          PYTHONPATH=. python - <<'PY'
           import os, sqlite3
           from ux_catalogue_data import CATALOGUES
           expected={
