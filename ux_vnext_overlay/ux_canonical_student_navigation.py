@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-_MARKER='SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V5_BASE_TEMPLATE'
+_MARKER='SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V6_VISIBLE_FALLBACK'
 
 _CANONICAL_NAV=r'''  <nav class="subject-quick-strip" aria-label="Subject selector">
-    <!-- SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V5_BASE_TEMPLATE -->
+    <!-- SCOREMAX_CANONICAL_STUDENT_SUBJECT_NAV_V6_VISIBLE_FALLBACK -->
     <a class="subject-all {{'active' if not active_subject_global else ''}}" href="{{url_for('subject_browser')}}">All subjects</a>
     {% for s in subject_nav_global %}
       {% if s.subject not in ['English','Logical Reasoning','MDCAT'] %}
@@ -22,6 +22,23 @@ _CANONICAL_NAV=r'''  <nav class="subject-quick-strip" aria-label="Subject select
     <a class="{{'active' if mdcat_track and mdcat_subject=='English' else ''}}" href="{{url_for('ux_catalogue_subject',track='mdcat',subject='English')}}">English</a>
   </nav>'''
 
+_CANONICAL_JS="""function addPremedTabs(){
+  const strip=document.querySelector('.student-context-stack .subject-quick-strip');
+  if(!strip)return;
+  const routes=[
+    ['MDCAT','/student/catalogue/mdcat'],
+    ['Logical Reasoning','/student/catalogue/mdcat/Logical%20Reasoning'],
+    ['English','/student/catalogue/mdcat/English']
+  ];
+  routes.forEach(([name,href])=>{
+    let a=[...strip.querySelectorAll('a')].find(x=>(x.textContent||'').trim()===name);
+    if(!a){a=document.createElement('a');a.textContent=name;strip.appendChild(a);}
+    a.href=href;
+    a.style.display='flex';
+  });
+}
+function addOverall()"""
+
 
 def _patch_base_template(root: Path) -> None:
     path=Path(root)/'templates'/'base.html'
@@ -35,27 +52,26 @@ def _patch_base_template(root: Path) -> None:
     path.write_text(text,encoding='utf-8')
 
 
-def _disable_legacy_js(root: Path) -> None:
+def _patch_visible_js_fallback(root: Path) -> None:
     path=Path(root)/'ux_student_batch.py'
     if not path.is_file():
         raise SystemExit('SCOREMAX_STUDENT_BATCH_RUNTIME_MISSING')
     text=path.read_text(encoding='utf-8')
     rx=re.compile(r"function addPremedTabs\(\)\{.*?\}\nfunction addOverall\(\)",re.S)
-    replacement="function addPremedTabs(){/* canonical navigation is server-rendered in base.html */}\nfunction addOverall()"
-    text,count=rx.subn(replacement,text,count=1)
+    text,count=rx.subn(_CANONICAL_JS,text,count=1)
     if count!=1:
-        raise SystemExit(f'SCOREMAX_LEGACY_PREMED_TAB_SCRIPT_MISMATCH:matches={count}')
+        raise SystemExit(f'SCOREMAX_PREMED_TAB_SCRIPT_MISMATCH:matches={count}')
     path.write_text(text,encoding='utf-8')
 
 
 def apply_canonical_student_navigation(root: Path) -> None:
     _patch_base_template(root)
-    _disable_legacy_js(root)
+    _patch_visible_js_fallback(root)
 
     base=(Path(root)/'templates'/'base.html').read_text(encoding='utf-8')
     batch=(Path(root)/'ux_student_batch.py').read_text(encoding='utf-8')
 
-    required=(
+    required_base=(
         _MARKER,
         "url_for('ux_catalogue_track',track='mdcat')",
         "url_for('ux_catalogue_subject',track='mdcat',subject='Logical Reasoning')",
@@ -63,11 +79,20 @@ def apply_canonical_student_navigation(root: Path) -> None:
         '>MDCAT</a>',
         '>Logical Reasoning</a>',
         '>English</a>',
-        "s.subject not in ['English','Logical Reasoning','MDCAT']",
     )
-    missing=[token for token in required if token not in base]
+    missing=[token for token in required_base if token not in base]
     if missing:
         raise SystemExit('SCOREMAX_BASE_NAV_CONTROL_MISSING:'+','.join(missing))
+
+    required_js=(
+        "['MDCAT','/student/catalogue/mdcat']",
+        "['Logical Reasoning','/student/catalogue/mdcat/Logical%20Reasoning']",
+        "['English','/student/catalogue/mdcat/English']",
+        "a.style.display='flex'",
+    )
+    missing_js=[token for token in required_js if token not in batch]
+    if missing_js:
+        raise SystemExit('SCOREMAX_VISIBLE_NAV_FALLBACK_MISSING:'+','.join(missing_js))
 
     forbidden=(
         "LEARN+'#'+hash",
@@ -81,10 +106,10 @@ def apply_canonical_student_navigation(root: Path) -> None:
 
     print(
         'SCOREMAX_CANONICAL_STUDENT_NAV_PASS '
-        'layer=base_template single_source=true '
-        'biology_chemistry_physics=dynamic_fsc mdcat=always_visible '
-        'logical_reasoning=always_visible english=always_visible '
-        'mdcat_route=/student/catalogue/mdcat '
-        'legacy_hash=false final_response_mutation=false',
+        'server_base=true visible_js_fallback=true idempotent=true '
+        'mdcat=/student/catalogue/mdcat '
+        'logical_reasoning=/student/catalogue/mdcat/Logical_Reasoning '
+        'english=/student/catalogue/mdcat/English '
+        'legacy_hash=false direct_routes=true',
         flush=True,
     )
