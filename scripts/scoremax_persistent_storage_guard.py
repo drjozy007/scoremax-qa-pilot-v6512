@@ -92,16 +92,18 @@ def _preimport_counts(c: sqlite3.Connection) -> dict[str,int]:
 def _reviewer_state(c: sqlite3.Connection) -> dict[str,object]:
     if not _table(c,'users'):
         return {'count':0,'ids':[],'approved':True}
-    rows=c.execute("""SELECT COALESCE(system_user_id,'') system_user_id,COALESCE(role,'') role,
-        COALESCE(username,'') username,COALESCE(content_reviewer_enabled,0) enabled
+    cols=_cols(c,'users')
+    enabled_expr="COALESCE(content_reviewer_enabled,0)" if 'content_reviewer_enabled' in cols else '0'
+    email_clause="lower(COALESCE(email,'')) LIKE '%reviewer%' OR " if 'email' in cols else ''
+    rows=c.execute(f"""SELECT COALESCE(system_user_id,'') system_user_id,COALESCE(role,'') role,
+        COALESCE(username,'') username,{enabled_expr} enabled
         FROM users WHERE lower(COALESCE(username,'')) LIKE '%reviewer%'
-        OR lower(COALESCE(email,'')) LIKE '%reviewer%'
-        OR COALESCE(system_user_id,'') LIKE 'REVIEWER-%'
+        OR {email_clause}COALESCE(system_user_id,'') LIKE 'REVIEWER-%'
         OR COALESCE(system_user_id,'')='CRV-900001' ORDER BY system_user_id""").fetchall()
     ids=[str(r[0]) for r in rows]
     if not rows:
         return {'count':0,'ids':[],'approved':True}
-    approved=(set(ids)==APPROVED_REVIEWERS and len(rows)==5 and all(str(r[1])=='student' and int(r[3] or 0)==1 for r in rows))
+    approved=(set(ids)==APPROVED_REVIEWERS and len(rows)==5 and 'content_reviewer_enabled' in cols and all(str(r[1])=='student' and int(r[3] or 0)==1 for r in rows))
     return {'count':len(rows),'ids':ids,'approved':approved}
 
 
