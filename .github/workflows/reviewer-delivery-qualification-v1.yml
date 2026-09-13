@@ -14,11 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SCOREMAX_DB: /tmp/scoremax-reviewer-qualification.db
       SCOREMAX_ENV: production
       SCOREMAX_SECRET: reviewer-ci-production-secret-at-least-32-characters
       SCOREMAX_SMTP_HOST: localhost
       SCOREMAX_SMTP_FROM: reviewer-ci@scoremax.test
+      SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax-reviewer-qualification
+      SCOREMAX_DB: /tmp/scoremax-reviewer-qualification/state/scoremax.db
+      SCOREMAX_BACKUP_DIR: /tmp/scoremax-reviewer-qualification/backup
+      SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax-reviewer-qualification/intake
+      SCOREMAX_INSTANCE_COUNT: 1
+      WEB_CONCURRENCY: 1
+      SCOREMAX_PUBLIC_BASE_URL: https://scoremax-reviewer-qualification.invalid
       SCOREMAX_STAGING_SESSION_SECRET: reviewer-ci-stable-session-secret-2026
       SCOREMAX_STAGING_REVIEWER_01_PASSWORD: reviewer-ci-password-01-long
       SCOREMAX_STAGING_REVIEWER_02_PASSWORD: reviewer-ci-password-02-long
@@ -31,12 +37,13 @@ jobs:
       - run: pip install -r scoremax_runtime_v669b/requirements.txt
       - name: Qualify read-only reviewer boundary
         run: |
+          mkdir -p "$SCOREMAX_PERSISTENT_ROOT/state" "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
           cd scoremax_runtime_v669b
           PYTHONPATH=. python - <<'PY'
-          import sqlite3
+          import os, sqlite3
           import scoremax_production as prod
           app=prod.application
-          db_path='/tmp/scoremax-reviewer-qualification.db'
+          db_path=os.environ['SCOREMAX_DB']
           c=sqlite3.connect(db_path); c.row_factory=sqlite3.Row
           rows=c.execute("SELECT id,system_user_id,role,username,COALESCE(content_reviewer_enabled,0) enabled FROM users WHERE system_user_id LIKE 'REVIEWER-%' ORDER BY system_user_id").fetchall()
           assert [r['system_user_id'] for r in rows]==[f'REVIEWER-{i:02d}' for i in range(1,6)], rows
