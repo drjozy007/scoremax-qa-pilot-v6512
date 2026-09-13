@@ -25,6 +25,8 @@ jobs:
       SCOREMAX_INSTANCE_COUNT: 1
       WEB_CONCURRENCY: 1
       SCOREMAX_PUBLIC_BASE_URL: https://scoremax-reviewer-qualification.invalid
+      SCOREMAX_BOOTSTRAP_ADMIN_EMAIL: reviewer-ci-admin@scoremax.test
+      SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD: reviewer-ci-admin-password-at-least-24-chars
       SCOREMAX_STAGING_SESSION_SECRET: reviewer-ci-stable-session-secret-2026
       SCOREMAX_STAGING_REVIEWER_01_PASSWORD: reviewer-ci-password-01-long
       SCOREMAX_STAGING_REVIEWER_02_PASSWORD: reviewer-ci-password-02-long
