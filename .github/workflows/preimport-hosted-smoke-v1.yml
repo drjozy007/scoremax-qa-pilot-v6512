@@ -19,14 +19,14 @@ jobs:
           BASE: https://scoremax-ux-vnext-staging.onrender.com
         run: |
           python - <<'PY'
-          import urllib.request, urllib.error, json
-          import os
-          base=os.environ['BASE']
-          checks=[]
+          import urllib.request, urllib.error, json, os
+          base=os.environ['BASE']; checks=[]
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,newurl): return None
+          opener=urllib.request.build_opener(urllib.request.HTTPHandler,NoRedirect)
           def hit(path, expected, location_contains=None, body_contains=None):
               req=urllib.request.Request(base+path,headers={'User-Agent':'ScoreMax-Hosted-PreImport/1.0'})
               try:
-                  opener=urllib.request.build_opener(urllib.request.HTTPHandler)
                   resp=opener.open(req,timeout=30)
                   status=resp.status; location=resp.headers.get('Location',''); body=resp.read(200000).decode('utf-8','replace')
               except urllib.error.HTTPError as e:
