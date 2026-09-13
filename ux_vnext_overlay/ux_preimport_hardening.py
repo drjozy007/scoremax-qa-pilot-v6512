@@ -24,11 +24,16 @@ def _disable_demo_seed(text: str) -> str:
 
 
 def _disable_staging_academic_reviewer_overlay(text: str) -> str:
-    # Power House is the academic-review system of record. Preserve source modules for rollback,
-    # but do not install the staging ScoreMax reviewer overlay or seed reviewer accounts.
     text=text.replace("install_content_reviewer(app)","# PRE-IMPORT HARDENING: ScoreMax academic reviewer overlay disabled; Power House is authoritative")
     text=text.replace("ensure_reviewer_accounts()","# PRE-IMPORT HARDENING: staging reviewer accounts disabled")
     return text
+
+
+def _remove_inactive_reviewer_runtime_templates(root: Path) -> None:
+    for name in ('ux_content_review.html','ux_content_review_question.html'):
+        path=root/'templates'/name
+        if path.exists():
+            path.unlink()
 
 
 def _scrub_credential_logging(text: str) -> str:
@@ -50,6 +55,7 @@ def apply_preimport_hardening(root: Path) -> None:
     text=_disable_staging_academic_reviewer_overlay(text)
     text=_scrub_credential_logging(text)
     app_path.write_text(text,encoding='utf-8')
+    _remove_inactive_reviewer_runtime_templates(root)
 
     rendered=app_path.read_text(encoding='utf-8')
     if PRIMARY_SEED_CONDITION in rendered:
@@ -65,7 +71,10 @@ def apply_preimport_hardening(root: Path) -> None:
             raise SystemExit('PREIMPORT_SYNTHETIC_POPULATION_DISABLE_CONTROL_MISSING')
     if 'install_content_reviewer(app)' in rendered or 'ensure_reviewer_accounts()' in rendered:
         raise SystemExit('PREIMPORT_STAGING_REVIEWER_INSTALLER_SURVIVED')
+    for name in ('ux_content_review.html','ux_content_review_question.html'):
+        if (root/'templates'/name).exists():
+            raise SystemExit('PREIMPORT_INACTIVE_REVIEWER_TEMPLATE_SURVIVED:'+name)
     for forbidden in ('One-time bootstrap admin created: admin /','New one-time local password: admin /'):
         if forbidden in rendered:
             raise SystemExit('PREIMPORT_CREDENTIAL_LOGGING_SURVIVED:'+forbidden)
-    print('SCOREMAX_PREIMPORT_HARDENING_PASS zero_question_seed_disabled=true synthetic_population_disabled=true staging_reviewer_overlay_disabled=true credential_log_hygiene=true governed_import_only=true',flush=True)
+    print('SCOREMAX_PREIMPORT_HARDENING_PASS zero_question_seed_disabled=true synthetic_population_disabled=true staging_reviewer_overlay_disabled=true inactive_reviewer_templates_removed=true credential_log_hygiene=true governed_import_only=true',flush=True)
