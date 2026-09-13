@@ -63,22 +63,6 @@ def _install_post_init_teacher_preview() -> None:
     print('SCOREMAX_UX_TEACHER_PREVIEW_STARTUP_ORDER_PASS after_database_init=true',flush=True)
 
 
-def _install_post_init_commercial_cleanup() -> None:
-    path=ROOT/'scoremax_production.py'
-    text=path.read_text(encoding='utf-8')
-    anchor='ensure_teacher_preview()\napplication=scoremax.app'
-    replacement="ensure_teacher_preview()\nimport scoremax_commercial_cleanup\nscoremax_commercial_cleanup.clear_default_catalogue()\napplication=scoremax.app"
-    if 'scoremax_commercial_cleanup.clear_default_catalogue()' not in text:
-        if anchor not in text:
-            raise SystemExit('SCOREMAX_COMMERCIAL_CLEANUP_POST_INIT_ANCHOR_MISSING')
-        text=text.replace(anchor,replacement,1)
-        path.write_text(text,encoding='utf-8')
-    rendered=path.read_text(encoding='utf-8')
-    if 'scoremax_commercial_cleanup.clear_default_catalogue()' not in rendered:
-        raise SystemExit('SCOREMAX_COMMERCIAL_CLEANUP_POST_INIT_CONTROL_MISSING')
-    print('SCOREMAX_UX_COMMERCIAL_CLEANUP_STARTUP_PASS after_database_init=true',flush=True)
-
-
 def _restore_catalogue_browser() -> None:
     for rel in (
         'ux_catalogue_data.py','ux_catalogue_browser.py',
@@ -93,9 +77,9 @@ def _restore_catalogue_browser() -> None:
 
     path=ROOT/'scoremax_production.py'
     text=path.read_text(encoding='utf-8')
-    anchor='scoremax_commercial_cleanup.clear_default_catalogue()\napplication=scoremax.app'
+    anchor='ensure_teacher_preview()\napplication=scoremax.app'
     replacement=(
-        "scoremax_commercial_cleanup.clear_default_catalogue()\n"
+        "ensure_teacher_preview()\n"
         "from ux_catalogue_browser import install_catalogue_browser\n"
         "install_catalogue_browser(scoremax.app)\n"
         "application=scoremax.app"
@@ -108,6 +92,8 @@ def _restore_catalogue_browser() -> None:
     rendered=path.read_text(encoding='utf-8')
     if 'install_catalogue_browser(scoremax.app)' not in rendered:
         raise SystemExit('SCOREMAX_CATALOGUE_BROWSER_INSTALL_CONTROL_MISSING')
+    if 'scoremax_commercial_cleanup.clear_default_catalogue()' in rendered:
+        raise SystemExit('SCOREMAX_OBSOLETE_COMMERCIAL_CLEANUP_SURVIVED')
     print('SCOREMAX_PROVISIONAL_CATALOGUE_INSTALLED governed_db_untouched=true power_house_authority_unchanged=true',flush=True)
 
 
@@ -126,11 +112,6 @@ def _wire_programme_tabs_to_correct_surfaces() -> None:
     if rendered.count("url_for('ux_student_learn')")<2:
         raise SystemExit('SCOREMAX_PROGRAMME_TAB_ROUTING_POSTBUILD_CONTROL_MISSING')
     print('SCOREMAX_PROGRAMME_TAB_ROUTING_PASS desktop=true mobile=true target=/student/learn-vnext programme_context_authoritative=true post_csrf_preserved=true',flush=True)
-
-
-def _write_commercial_cleanup_runtime() -> None:
-    path=ROOT/'scoremax_commercial_cleanup.py'
-    path.write_text('''from __future__ import annotations\nimport os,sqlite3\nfrom pathlib import Path\n\nDEFAULT_PACKAGE_CODES=(\n    "fsc1_biology","fsc1_two_subjects","fsc1_science_bundle","fsc1_full",\n    "grade9_full","grade10_full","fsc2_full","mdcat_full",\n)\n\ndef clear_default_catalogue():\n    db=Path(os.environ.get("SCOREMAX_DB","/tmp/scoremax-ux-vnext/state/scoremax.db"))\n    if not db.exists(): return\n    conn=sqlite3.connect(db)\n    try:\n        exists=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='coverage_packages'").fetchone()\n        if not exists: return\n        marks=','.join('?' for _ in DEFAULT_PACKAGE_CODES)\n        conn.execute(f"DELETE FROM coverage_packages WHERE code IN ({marks}) AND id NOT IN (SELECT coverage_package_id FROM student_package_entitlements UNION SELECT coverage_package_id FROM checkout_requests UNION SELECT COALESCE(coverage_package_id,-1) FROM subscriptions)",DEFAULT_PACKAGE_CODES)\n        conn.commit()\n        print("SCOREMAX_DEFAULT_COMMERCIAL_CATALOGUE_CLEARED protected_referenced_rows=true",flush=True)\n    finally:\n        conn.close()\n''',encoding='utf-8')
 
 
 def _assert_referral_hero_v3() -> None:
@@ -160,9 +141,7 @@ def main() -> None:
     apply_interest_admin(ROOT)
     apply_commercial_reset(ROOT)
     apply_admin_workspace(ROOT)
-    _write_commercial_cleanup_runtime()
     _install_post_init_teacher_preview()
-    _install_post_init_commercial_cleanup()
     _restore_catalogue_browser()
     apply_programme_catalogue_routing(ROOT)
     apply_restore_access_cards(ROOT)
