@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 from deploy_ux_vnext_recovery import main as recovery_main
 from ux_vnext_overlay.ux_referral_hero_v3 import apply_referral_hero_v3
@@ -10,17 +11,54 @@ from ux_vnext_overlay.ux_preimport_hardening import apply_preimport_hardening
 ROOT=Path('scoremax_runtime_v669b')
 
 
+def _restore_delivery_reviewer() -> None:
+    # Restore only the read-only post-delivery QA surface after the hardening layer
+    # removes the old independent ScoreMax academic-review implementation.
+    for rel in (
+        'ux_content_reviewer.py','ux_reviewer_accounts.py',
+        'templates/ux_content_review.html','templates/ux_content_review_question.html',
+    ):
+        src=Path('ux_vnext_overlay')/rel
+        dst=ROOT/rel
+        if not src.is_file():
+            raise SystemExit('SCOREMAX_DELIVERY_REVIEWER_SOURCE_MISSING:'+rel)
+        dst.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(src,dst)
+
+    path=ROOT/'scoremax_production.py'
+    text=path.read_text(encoding='utf-8')
+    anchor='scoremax.init()\napplication=scoremax.app'
+    replacement=(
+        "scoremax.init()\n"
+        "from ux_content_reviewer import install_content_reviewer\n"
+        "install_content_reviewer(scoremax.app)\n"
+        "from ux_reviewer_accounts import ensure_reviewer_accounts\n"
+        "ensure_reviewer_accounts()\n"
+        "application=scoremax.app"
+    )
+    if 'install_content_reviewer(scoremax.app)' not in text:
+        if anchor not in text:
+            raise SystemExit('SCOREMAX_DELIVERY_REVIEWER_POST_INIT_ANCHOR_MISSING')
+        text=text.replace(anchor,replacement,1)
+        path.write_text(text,encoding='utf-8')
+    rendered=path.read_text(encoding='utf-8')
+    for token in ('install_content_reviewer(scoremax.app)','ensure_reviewer_accounts()'):
+        if token not in rendered:
+            raise SystemExit('SCOREMAX_DELIVERY_REVIEWER_INSTALL_CONTROL_MISSING:'+token)
+    print('SCOREMAX_DELIVERY_REVIEWER_RESTORED read_only=true accounts=5 edits=false release_authority=false power_house_incident_bridge=true',flush=True)
+
+
 def _install_post_init_teacher_preview() -> None:
     path=ROOT/'scoremax_production.py'
     text=path.read_text(encoding='utf-8')
-    old='scoremax.init()\napplication=scoremax.app'
-    new="scoremax.init()\nfrom ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()\napplication=scoremax.app"
+    old='ensure_reviewer_accounts()\napplication=scoremax.app'
+    new="ensure_reviewer_accounts()\nfrom ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()\napplication=scoremax.app"
     if 'ensure_teacher_preview()' not in text:
         if old not in text:
             raise SystemExit('SCOREMAX_TEACHER_PREVIEW_POST_INIT_ANCHOR_MISSING')
         text=text.replace(old,new,1)
     path.write_text(text,encoding='utf-8')
-    if 'scoremax.init()\nfrom ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()' not in text:
+    if 'from ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()' not in text:
         raise SystemExit('SCOREMAX_TEACHER_PREVIEW_POST_INIT_CONTROL_MISSING')
     print('SCOREMAX_UX_TEACHER_PREVIEW_STARTUP_ORDER_PASS after_database_init=true',flush=True)
 
@@ -67,6 +105,7 @@ def _assert_referral_hero_v3() -> None:
 def main() -> None:
     recovery_main()
     apply_preimport_hardening(ROOT)
+    _restore_delivery_reviewer()
     apply_referral_hero_v3(ROOT)
     _assert_referral_hero_v3()
     apply_interest_admin(ROOT)
