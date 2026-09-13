@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/preimport-critical-mutations-v1.yml'
       - 'scripts/preimport_mutation_*.py'
+      - 'scripts/preimport_route_edge_audit.py'
       - 'deploy_ux_vnext.py'
       - 'ux_vnext_overlay/**'
 
@@ -70,3 +71,18 @@ jobs:
           rm -rf /tmp/scoremax_mut_intake && mkdir -p /tmp/scoremax_mut_intake/backup /tmp/scoremax_mut_intake/intake
           cp scripts/preimport_mutation_intake.py scoremax_runtime_v669b/preimport_mutation_intake.py
           cd scoremax_runtime_v669b && python preimport_mutation_intake.py
+      - name: Parameterized routes and malformed mutation edges
+        env:
+          SCOREMAX_ENV: local
+          SCOREMAX_STAGING_SESSION_SECRET: route-edge-v1
+          SCOREMAX_DB: /tmp/scoremax_route_edge.db
+          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_route_edge
+          SCOREMAX_BACKUP_DIR: /tmp/scoremax_route_edge/backup
+          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_route_edge/intake
+          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
+          SCOREMAX_ENFORCE_PAYWALL: '0'
+        run: |
+          rm -rf /tmp/scoremax_route_edge && mkdir -p /tmp/scoremax_route_edge/backup /tmp/scoremax_route_edge/intake
+          cp scripts/preimport_route_edge_audit.py scoremax_runtime_v669b/preimport_route_edge_audit.py
+          cd scoremax_runtime_v669b && python preimport_route_edge_audit.py
