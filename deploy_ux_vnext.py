@@ -9,6 +9,7 @@ from ux_vnext_overlay.ux_commercial_reset import apply_commercial_reset
 from ux_vnext_overlay.ux_preimport_hardening import apply_preimport_hardening
 from ux_vnext_overlay.ux_programme_catalogue_routing import apply_programme_catalogue_routing
 from ux_vnext_overlay.ux_main_subject_fsc_fence import apply_main_subject_fsc_fence
+from ux_vnext_overlay.ux_canonical_student_navigation import apply_canonical_student_navigation
 from ux_vnext_overlay.ux_restore_access_cards import apply_restore_access_cards
 
 ROOT=Path('scoremax_runtime_v669b')
@@ -146,6 +147,7 @@ def main() -> None:
     _restore_catalogue_browser()
     apply_programme_catalogue_routing(ROOT)
     apply_main_subject_fsc_fence(ROOT)
+    apply_canonical_student_navigation(ROOT)
     apply_restore_access_cards(ROOT)
     _wire_programme_tabs_to_correct_surfaces()
 
