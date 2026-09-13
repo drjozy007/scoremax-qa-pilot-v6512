@@ -79,6 +79,39 @@ def _install_post_init_commercial_cleanup() -> None:
     print('SCOREMAX_UX_COMMERCIAL_CLEANUP_STARTUP_PASS after_database_init=true',flush=True)
 
 
+def _restore_catalogue_browser() -> None:
+    # Learner-display metadata only. Never seed curriculum/question/chapter_catalogue state here.
+    for rel in (
+        'ux_catalogue_data.py','ux_catalogue_browser.py',
+        'templates/ux_catalogue_home.html','templates/ux_catalogue_track.html','templates/ux_catalogue_subject.html',
+    ):
+        src=Path('ux_vnext_overlay')/rel
+        dst=ROOT/rel
+        if not src.is_file():
+            raise SystemExit('SCOREMAX_CATALOGUE_BROWSER_SOURCE_MISSING:'+rel)
+        dst.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(src,dst)
+
+    path=ROOT/'scoremax_production.py'
+    text=path.read_text(encoding='utf-8')
+    anchor='scoremax_commercial_cleanup.clear_default_catalogue()\napplication=scoremax.app'
+    replacement=(
+        "scoremax_commercial_cleanup.clear_default_catalogue()\n"
+        "from ux_catalogue_browser import install_catalogue_browser\n"
+        "install_catalogue_browser(scoremax.app)\n"
+        "application=scoremax.app"
+    )
+    if 'install_catalogue_browser(scoremax.app)' not in text:
+        if anchor not in text:
+            raise SystemExit('SCOREMAX_CATALOGUE_BROWSER_POST_INIT_ANCHOR_MISSING')
+        text=text.replace(anchor,replacement,1)
+        path.write_text(text,encoding='utf-8')
+    rendered=path.read_text(encoding='utf-8')
+    if 'install_catalogue_browser(scoremax.app)' not in rendered:
+        raise SystemExit('SCOREMAX_CATALOGUE_BROWSER_INSTALL_CONTROL_MISSING')
+    print('SCOREMAX_PROVISIONAL_CATALOGUE_INSTALLED governed_db_untouched=true power_house_authority_unchanged=true',flush=True)
+
+
 def _write_commercial_cleanup_runtime() -> None:
     path=ROOT/'scoremax_commercial_cleanup.py'
     path.write_text('''from __future__ import annotations\nimport os,sqlite3\nfrom pathlib import Path\n\nDEFAULT_PACKAGE_CODES=(\n    "fsc1_biology","fsc1_two_subjects","fsc1_science_bundle","fsc1_full",\n    "grade9_full","grade10_full","fsc2_full","mdcat_full",\n)\n\ndef clear_default_catalogue():\n    db=Path(os.environ.get("SCOREMAX_DB","/tmp/scoremax-ux-vnext/state/scoremax.db"))\n    if not db.exists(): return\n    conn=sqlite3.connect(db)\n    try:\n        exists=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='coverage_packages'").fetchone()\n        if not exists: return\n        marks=','.join('?' for _ in DEFAULT_PACKAGE_CODES)\n        conn.execute(f"DELETE FROM coverage_packages WHERE code IN ({marks}) AND id NOT IN (SELECT coverage_package_id FROM student_package_entitlements UNION SELECT coverage_package_id FROM checkout_requests UNION SELECT COALESCE(coverage_package_id,-1) FROM subscriptions)",DEFAULT_PACKAGE_CODES)\n        conn.commit()\n        print("SCOREMAX_DEFAULT_COMMERCIAL_CATALOGUE_CLEARED protected_referenced_rows=true",flush=True)\n    finally:\n        conn.close()\n''',encoding='utf-8')
@@ -114,6 +147,7 @@ def main() -> None:
     _write_commercial_cleanup_runtime()
     _install_post_init_teacher_preview()
     _install_post_init_commercial_cleanup()
+    _restore_catalogue_browser()
 
 
 if __name__ == '__main__':
