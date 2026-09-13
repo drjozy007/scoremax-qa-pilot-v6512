@@ -10,9 +10,6 @@ SYNTHETIC_POPULATION_CONDITION="if content_seed_policy.demo_seed_allowed(SCOREMA
 def _disable_demo_seed(text: str) -> str:
     if PRIMARY_SEED_CONDITION in text:
         text=text.replace(PRIMARY_SEED_CONDITION,"if False:  # PRE-IMPORT HARDENING: governed question bank starts empty",1)
-
-    # A second historical qualification population creates 90 synthetic questions/families/curriculum rows.
-    # Anchor specifically on its built-in demo ID declaration so unrelated demo-only guards remain intact.
     anchor="built_in_demo_ids=('BIO001','BIO002','BIO003','BIO004','BIO005')"
     pos=text.find(anchor)
     if pos>=0:
@@ -20,10 +17,17 @@ def _disable_demo_seed(text: str) -> str:
         if cond<0 or cond-pos>3000:
             raise SystemExit('PREIMPORT_SYNTHETIC_POPULATION_CONDITION_MISSING')
         text=text[:cond]+"if False:  # PRE-IMPORT HARDENING: synthetic qualification population disabled"+text[cond+len(SYNTHETIC_POPULATION_CONDITION):]
-
     historical=re.compile(r"if c\.execute\('SELECT COUNT\(\*\) n FROM questions'\)\.fetchone\(\)\['n'\]==0:")
     if PRIMARY_SEED_CONDITION not in text and 'PRE-IMPORT HARDENING: governed question bank starts empty' not in text and historical.search(text):
         text=historical.sub("if False:  # PRE-IMPORT HARDENING: governed question bank starts empty",text,count=1)
+    return text
+
+
+def _disable_staging_academic_reviewer_overlay(text: str) -> str:
+    # Power House is the academic-review system of record. Preserve source modules for rollback,
+    # but do not install the staging ScoreMax reviewer overlay or seed reviewer accounts.
+    text=text.replace("install_content_reviewer(app)","# PRE-IMPORT HARDENING: ScoreMax academic reviewer overlay disabled; Power House is authoritative")
+    text=text.replace("ensure_reviewer_accounts()","# PRE-IMPORT HARDENING: staging reviewer accounts disabled")
     return text
 
 
@@ -43,6 +47,7 @@ def apply_preimport_hardening(root: Path) -> None:
     app_path=root/'app.py'
     text=app_path.read_text(encoding='utf-8')
     text=_disable_demo_seed(text)
+    text=_disable_staging_academic_reviewer_overlay(text)
     text=_scrub_credential_logging(text)
     app_path.write_text(text,encoding='utf-8')
 
@@ -51,14 +56,16 @@ def apply_preimport_hardening(root: Path) -> None:
         raise SystemExit('PREIMPORT_DEMO_SEED_EXECUTABLE_CONDITION_SURVIVED')
     if 'PRE-IMPORT HARDENING: governed question bank starts empty' not in rendered:
         raise SystemExit('PREIMPORT_DEMO_SEED_DISABLE_CONTROL_MISSING')
-    if anchor_survives := ("built_in_demo_ids=('BIO001','BIO002','BIO003','BIO004','BIO005')" in rendered):
-        pos=rendered.find("built_in_demo_ids=('BIO001','BIO002','BIO003','BIO004','BIO005')")
-        nearby=rendered[pos:pos+3500]
+    anchor="built_in_demo_ids=('BIO001','BIO002','BIO003','BIO004','BIO005')"
+    if anchor in rendered:
+        pos=rendered.find(anchor); nearby=rendered[pos:pos+3500]
         if SYNTHETIC_POPULATION_CONDITION in nearby:
             raise SystemExit('PREIMPORT_SYNTHETIC_POPULATION_EXECUTABLE_CONDITION_SURVIVED')
         if 'synthetic qualification population disabled' not in nearby:
             raise SystemExit('PREIMPORT_SYNTHETIC_POPULATION_DISABLE_CONTROL_MISSING')
+    if 'install_content_reviewer(app)' in rendered or 'ensure_reviewer_accounts()' in rendered:
+        raise SystemExit('PREIMPORT_STAGING_REVIEWER_INSTALLER_SURVIVED')
     for forbidden in ('One-time bootstrap admin created: admin /','New one-time local password: admin /'):
         if forbidden in rendered:
             raise SystemExit('PREIMPORT_CREDENTIAL_LOGGING_SURVIVED:'+forbidden)
-    print('SCOREMAX_PREIMPORT_HARDENING_PASS zero_question_seed_disabled=true synthetic_population_disabled=true credential_log_hygiene=true governed_import_only=true',flush=True)
+    print('SCOREMAX_PREIMPORT_HARDENING_PASS zero_question_seed_disabled=true synthetic_population_disabled=true staging_reviewer_overlay_disabled=true credential_log_hygiene=true governed_import_only=true',flush=True)
