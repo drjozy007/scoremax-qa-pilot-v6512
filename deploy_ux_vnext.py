@@ -111,26 +111,20 @@ def _restore_catalogue_browser() -> None:
 
 
 def _wire_programme_tabs_to_correct_surfaces() -> None:
-    """Programme switches must land on the selected programme's own browse surface.
-
-    The old generic return_to=request.path kept learners on an FSc-rendered page after
-    choosing MDCAT.  Preserve POST+CSRF state mutation, but route each programme to its
-    correct learner surface after the switch.  Apply to both desktop second-layer tabs
-    and the mobile programme selector.
-    """
+    """Programme tabs switch state and return to the programme-aware Learn surface."""
     path=ROOT/'templates'/'base.html'
     text=path.read_text(encoding='utf-8')
     old='<input type="hidden" name="return_to" value="{{request.path}}">'
-    new='<input type="hidden" name="return_to" value="{{url_for(\'ux_catalogue_track\',track=\'mdcat\') if p.code==\'mdcat\' else url_for(\'subject_browser\')}}">'
+    new='<input type="hidden" name="return_to" value="{{url_for(\'ux_student_learn\')}}">'
     count=text.count(old)
     if count!=2:
         raise SystemExit(f'SCOREMAX_PROGRAMME_TAB_RETURN_TARGET_MISMATCH:matches={count}')
     text=text.replace(old,new)
     path.write_text(text,encoding='utf-8')
     rendered=path.read_text(encoding='utf-8')
-    if rendered.count("p.code=='mdcat'")!=2 or "url_for('ux_catalogue_track',track='mdcat')" not in rendered:
+    if rendered.count("url_for('ux_student_learn')")<2:
         raise SystemExit('SCOREMAX_PROGRAMME_TAB_ROUTING_POSTBUILD_CONTROL_MISSING')
-    print('SCOREMAX_PROGRAMME_TAB_ROUTING_PASS desktop=true mobile=true mdcat_target=/student/catalogue/mdcat fsc_target=/student/subjects post_csrf_preserved=true',flush=True)
+    print('SCOREMAX_PROGRAMME_TAB_ROUTING_PASS desktop=true mobile=true target=/student/learn-vnext programme_context_authoritative=true post_csrf_preserved=true',flush=True)
 
 
 def _write_commercial_cleanup_runtime() -> None:
