@@ -1,6 +1,6 @@
 name: Pre-Import Persistent Hosted Smoke v1
 
-# Replay target: persistent durability-qualified runtime commit 645a58233fa5f820bca2e66828c46d9d96ff258d
+# Reviewer route is intentionally installed as read-only post-delivery QA; unauthenticated access must be fenced.
 on:
   push:
     branches: [feature/v6611c-ux-vnext-landing]
@@ -44,7 +44,7 @@ jobs:
           hit('/register-interest?programme=MDCAT',{200},body_contains='MDCAT')
           hit('/admin',{302},location_contains='/login')
           hit('/admin/interests',{302},location_contains='/login')
-          hit('/student/content-review',{404})
+          hit('/student/content-review',{403})
           hit('/admin/reviewer-workspace',{302},location_contains='/login')
           print('SCOREMAX_PERSISTENT_HOSTED_PREIMPORT_SMOKE='+json.dumps(checks,sort_keys=True))
           PY
