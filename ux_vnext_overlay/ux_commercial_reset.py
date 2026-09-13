@@ -41,6 +41,28 @@ def _preserve_approved_coverage_packages(root: Path) -> None:
         if f"('{code}'" not in text:
             raise SystemExit('SCOREMAX_APPROVED_COMMERCIAL_PACKAGE_MISSING:'+code)
 
+    # Existing referenced package rows may have survived the earlier cleanup. The restored
+    # governed baseline must therefore refresh price/currency/cadence as well as labels.
+    old=(
+        "description=excluded.description,coverage_type=excluded.coverage_type,subjects_json=excluded.subjects_json,\n"
+        "          status=excluded.status,sort_order=excluded.sort_order''',"
+    )
+    new=(
+        "description=excluded.description,coverage_type=excluded.coverage_type,subjects_json=excluded.subjects_json,\n"
+        "          price_minor=excluded.price_minor,currency=excluded.currency,billing_period=excluded.billing_period,\n"
+        "          status=excluded.status,sort_order=excluded.sort_order,updated_at=CURRENT_TIMESTAMP''',"
+    )
+    if old not in text:
+        if new not in text:
+            raise SystemExit('SCOREMAX_APPROVED_COMMERCIAL_UPSERT_ANCHOR_MISSING')
+    else:
+        text=text.replace(old,new,1)
+        path.write_text(text,encoding='utf-8')
+    rendered=path.read_text(encoding='utf-8')
+    for token in ('price_minor=excluded.price_minor','currency=excluded.currency','billing_period=excluded.billing_period'):
+        if token not in rendered:
+            raise SystemExit('SCOREMAX_APPROVED_COMMERCIAL_UPSERT_CONTROL_MISSING:'+token)
+
 
 def _remove_legacy_plan_pricing_from_admin(root: Path) -> None:
     path=root/'templates'/'admin_payments.html'
@@ -60,7 +82,6 @@ def _restore_public_access_cards(root: Path) -> None:
     path=root/'templates'/'access.html'
     text=path.read_text(encoding='utf-8')
 
-    # Current access summary should never leak technical Level 1/2/Full names.
     old="<div><span>Access level</span><strong>{{access.name}}</strong></div>"
     new="<div><span>Access level</span><strong>{{ {'free_access':'Free','level_1_access':'Silver','level_2_access':'Gold','full_access':'Platinum'}.get(access.plan_code,access.name) }}</strong></div>"
     if old not in text:
@@ -110,6 +131,6 @@ def apply_commercial_reset(root: Path) -> None:
         'SCOREMAX_COMMERCIAL_CATALOGUE_RESTORED '
         'coverage_packages=8 active_priced=4 coming_soon_unpriced=4 '
         'fsc1_prices_pkr=799,1299,1699,1999 public_access=Free,Silver,Gold,Platinum '
-        'backend_plan_codes_unchanged=true payment_gateway_unchanged=true',
+        'backend_plan_codes_unchanged=true payment_gateway_unchanged=true authoritative_price_upsert=true',
         flush=True,
     )
