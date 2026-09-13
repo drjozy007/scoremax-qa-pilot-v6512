@@ -78,6 +78,25 @@ def setup_fixtures():
         c.close()
 
 
+def install_post_init_runtime_extensions():
+    """Mirror post-init route installers used by scoremax_production.py.
+
+    The exhaustive audit imports app.py directly so it can run against disposable local
+    storage.  Reviewer delivery QA and the learner catalogue are intentionally installed
+    after app.init() by the production entrypoint.  Install their route layers here too
+    before route/template integrity checks so the audit evaluates the deployable app,
+    rather than whitelisting endpoint names.
+    """
+    from ux_content_reviewer import install_content_reviewer
+    install_content_reviewer(sm.app)
+    try:
+        from ux_catalogue_browser import install_catalogue_browser
+    except ModuleNotFoundError:
+        install_catalogue_browser=None
+    if install_catalogue_browser:
+        install_catalogue_browser(sm.app)
+
+
 def audit_database(roles):
     c=sm.db()
     try:
@@ -88,14 +107,12 @@ def audit_database(roles):
         REPORT["inventory"]["tables"]={t:count(c,t) for t in tables}
         REPORT["metrics"]["table_count"]=len(tables)
 
-        # A governed bank must be genuinely empty immediately before content import.
         qn=count(c,"questions") or 0
         gate("zero_question_bank",qn==0,{"question_count":qn})
         cn=count(c,"curriculum") or 0
         if cn and qn==0:
             finding("P1","ORPHAN_CURRICULUM_PREIMPORT","Curriculum rows exist while the governed question bank is empty.",{"curriculum_rows":cn})
 
-        # No default commercial catalogue or hidden prices.
         packages=[]
         if table_exists(c,"coverage_packages"):
             packages=[dict(r) for r in c.execute("SELECT code,name,programme,price_minor,status FROM coverage_packages ORDER BY id").fetchall()]
@@ -104,7 +121,6 @@ def audit_database(roles):
             priced=[dict(r) for r in c.execute("SELECT code,name,audience,price_minor,active FROM plans WHERE COALESCE(price_minor,0)>0 ORDER BY code").fetchall()]
             gate("no_seeded_plan_prices",len(priced)==0,{"priced_plans":priced})
 
-        # Identity uniqueness and required opaque IDs.
         dup=[]
         for col in ("email","username","system_user_id"):
             if col in columns(c,"users"):
@@ -112,7 +128,6 @@ def audit_database(roles):
                 dup.extend({"field":col,"value":r["value"],"count":r["n"]} for r in rows)
         gate("identity_uniqueness",not dup,{"duplicates":dup})
 
-        # Manual orphan checks for tables whose historical schemas do not always declare FK constraints.
         relationships=[
             ("classrooms","teacher_id","users","id"),("classroom_students","classroom_id","classrooms","id"),("classroom_students","student_id","users","id"),
             ("attempts","student_id","users","id"),("attempt_answers","attempt_id","attempts","id"),("attempt_answers","question_db_id","questions","id"),
@@ -128,7 +143,6 @@ def audit_database(roles):
                 if n: orphans.append({"child":child,"column":child_col,"parent":parent,"count":n})
         gate("relationship_orphans",not orphans,{"orphans":orphans})
 
-        # Hierarchy and catalogue consistency for whatever content physically exists now.
         hierarchy={}
         if table_exists(c,"questions"):
             qc=columns(c,"questions")
@@ -147,7 +161,6 @@ def audit_database(roles):
                 hierarchy["curriculum_combinations"]=[list(r) for r in c.execute("SELECT DISTINCT "+','.join(dims)+" FROM curriculum ORDER BY "+','.join(dims)).fetchall()[:5000]]
         REPORT["inventory"]["hierarchy"]=hierarchy
 
-        # Programme constants must not duplicate or contain empty labels/codes.
         choices=getattr(sm,"STUDENT_PROGRAMME_CHOICES",[])
         dup_codes=[x[0] for x in __import__('collections').Counter(str(p.get('code','')).lower() for p in choices).items() if x[1]>1]
         dup_labels=[x[0] for x in __import__('collections').Counter(str(p.get('label','')).lower() for p in choices).items() if x[1]>1]
@@ -185,7 +198,6 @@ def audit_templates():
     REPORT["metrics"]["templates_scanned"]=scanned
     gate("template_endpoint_integrity",not broken,{"broken":broken})
     gate("static_asset_integrity",not missing_static,{"missing":missing_static})
-    # '#' can be deliberate anchors; retain as evidence rather than hard failure.
     if dead: finding("P2","STATIC_DEAD_END_MARKERS","Templates contain placeholder/TODO-like markers requiring later UX review.",dead[:100])
 
 
@@ -209,11 +221,8 @@ def audit_routes(roles):
     REPORT["inventory"]["route_statuses"]={k:dict(v) for k,v in statuses.items()}
     gate("parameterless_route_runtime",not failures,{"failures":failures,"probed":len(parameterless)*len(roles_to_probe)})
 
-    # Hard role fences.
     checks=[]
-    protected={
-        "admin":["/admin","/admin/users","/admin/interests","/admin/payments","/admin/integration-health"],
-    }
+    protected={"admin":["/admin","/admin/users","/admin/interests","/admin/payments","/admin/integration-health"]}
     for owner,paths in protected.items():
         for role in ("student","teacher","parent"):
             client=make_client(role,roles)
@@ -223,7 +232,6 @@ def audit_routes(roles):
                 checks.append({"owner":owner,"role":role,"path":path,"status":resp.status_code,"leak":leak})
     gate("role_isolation",not any(x["leak"] for x in checks),checks)
 
-    # Crawl every internal href rendered from parameterless pages for each role.
     crawl_fail=[]; crawl_metrics={}; ignored_prefixes=("mailto:","tel:","javascript:","#")
     for role in roles_to_probe:
         client=make_client(role,roles)
@@ -239,27 +247,24 @@ def audit_routes(roles):
             checked+=1
             if resp.status_code>=500:
                 crawl_fail.append({"role":role,"path":path,"status":resp.status_code}); continue
-            if resp.status_code!=200 or "text/html" not in (resp.content_type or ""): continue
-            html=resp.get_data(as_text=True)
-            for href in re.findall(r"href\s*=\s*['\"]([^'\"]+)",html,re.I):
-                href=href.strip()
+            if "text/html" not in (resp.content_type or "").lower(): continue
+            body=resp.get_data(as_text=True)
+            for href in re.findall(r'href=["\']([^"\']+)',body,re.I):
                 if not href or href.startswith(ignored_prefixes): continue
                 parts=urlsplit(href)
                 if parts.scheme or parts.netloc: continue
-                target=parts.path or '/'
-                if target.startswith('/static/'): continue
-                full=target+(("?"+parts.query) if parts.query else "")
-                if full not in seen: queue.append(full)
+                internal=parts.path or '/'
+                if parts.query: internal += '?'+parts.query
+                if '<' not in internal and internal not in seen: queue.append(internal)
         crawl_metrics[role]={"pages_checked":checked,"unique_paths":len(seen)}
     REPORT["inventory"]["crawl_metrics"]=crawl_metrics
-    gate("rendered_internal_link_runtime",not crawl_fail,{"failures":crawl_fail[:200],"total_failures":len(crawl_fail)})
+    gate("rendered_internal_link_runtime",not crawl_fail,{"failures":crawl_fail[:100],"total_failures":len(crawl_fail)})
 
 
 def audit_security_source():
-    app_text=Path(__file__).resolve().parents[1].joinpath("scoremax_runtime_v669b","app.py").read_text(encoding="utf-8",errors="replace")
+    app_text=(Path(__file__).resolve().parents[1]/"scoremax_runtime_v669b"/"app.py").read_text(encoding="utf-8",errors="replace")
     forbidden=("One-time bootstrap admin created: admin /","New one-time local password: admin /")
     gate("credential_log_hygiene",not any(x in app_text for x in forbidden),{"forbidden_found":[x for x in forbidden if x in app_text]})
-    # Academic review must stay outside normal ScoreMax admin navigation.
     base=Path(__file__).resolve().parents[1].joinpath("scoremax_runtime_v669b","templates","base.html").read_text(encoding="utf-8",errors="replace")
     admin_start=base.find("session.get('role')=='admin'")
     admin_end=base.find("{% else %}",admin_start)
@@ -270,6 +275,7 @@ def audit_security_source():
 
 def main():
     roles=setup_fixtures()
+    install_post_init_runtime_extensions()
     audit_database(roles)
     audit_templates()
     audit_routes(roles)
