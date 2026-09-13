@@ -1,0 +1,65 @@
+name: ScoreMax Delivery Reviewer Qualification v1
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths:
+      - '.github/workflows/reviewer-delivery-qualification-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  reviewer-qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SCOREMAX_DB: /tmp/scoremax-reviewer-qualification.db
+      SCOREMAX_ENV: production
+      SCOREMAX_STAGING_SESSION_SECRET: reviewer-ci-stable-session-secret-2026
+      SCOREMAX_STAGING_REVIEWER_01_PASSWORD: reviewer-ci-password-01-long
+      SCOREMAX_STAGING_REVIEWER_02_PASSWORD: reviewer-ci-password-02-long
+      SCOREMAX_STAGING_REVIEWER_03_PASSWORD: reviewer-ci-password-03-long
+      SCOREMAX_STAGING_REVIEWER_04_PASSWORD: reviewer-ci-password-04-long
+      SCOREMAX_STAGING_REVIEWER_05_PASSWORD: reviewer-ci-password-05-long
+    steps:
+      - uses: actions/checkout@v4
+      - run: python deploy_ux_vnext.py
+      - run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Qualify read-only reviewer boundary
+        run: |
+          cd scoremax_runtime_v669b
+          PYTHONPATH=. python - <<'PY'
+          import sqlite3
+          import scoremax_production as prod
+          app=prod.application
+          db_path='/tmp/scoremax-reviewer-qualification.db'
+          c=sqlite3.connect(db_path); c.row_factory=sqlite3.Row
+          rows=c.execute("SELECT id,system_user_id,role,username,COALESCE(content_reviewer_enabled,0) enabled FROM users WHERE system_user_id LIKE 'REVIEWER-%' ORDER BY system_user_id").fetchall()
+          assert [r['system_user_id'] for r in rows]==[f'REVIEWER-{i:02d}' for i in range(1,6)], rows
+          assert all(r['role']=='student' and int(r['enabled'])==1 for r in rows)
+          assert c.execute('SELECT COUNT(*) FROM questions').fetchone()[0]==0
+          cols={r['name'] for r in c.execute('PRAGMA table_info(users)').fetchall()}
+          vals={'system_user_id':'AUD-STU-001','role':'student','full_name':'Non Reviewer','email':'nonreviewer@scoremax.test','username':'nonreviewer','account_status':'active','login_provider':'password','session_version':0}
+          p={k:v for k,v in vals.items() if k in cols}
+          c.execute(f"INSERT INTO users({','.join(p)}) VALUES({','.join('?' for _ in p)})",tuple(p.values())); c.commit()
+          normal=c.execute("SELECT id,COALESCE(session_version,0) session_version FROM users WHERE system_user_id='AUD-STU-001'").fetchone()
+          reviewer=rows[0]
+          c.close()
+          client=app.test_client()
+          with client.session_transaction() as s:
+              s['user_id']=normal['id'];s['role']='student';s['full_name']='Non Reviewer';s['session_version']=int(normal['session_version'])
+          r=client.get('/student/content-review',follow_redirects=False); assert r.status_code==403,r.status_code
+          client=app.test_client()
+          with client.session_transaction() as s:
+              s['user_id']=reviewer['id'];s['role']='student';s['full_name']='Reviewer 01';s['session_version']=0
+          r=client.get('/student/content-review',follow_redirects=False); assert r.status_code==200,r.status_code
+          assert 'Review questions as learners see them.' in r.get_data(as_text=True)
+          routes={rule.endpoint:(rule.rule,sorted(rule.methods)) for rule in app.url_map.iter_rules() if rule.endpoint.startswith('ux_content_review')}
+          assert set(routes)=={'ux_content_review','ux_content_review_question','ux_content_review_flag'},routes
+          source=open('ux_content_reviewer.py',encoding='utf-8').read()
+          assert 'queue_reported_question_incident' in source and 'dispatch_due' in source
+          assert "'reviewer_can_withdraw':False" in source and "'reviewer_can_edit':False" in source
+          assert 'UPDATE questions SET' not in source and 'DELETE FROM questions' not in source
+          print('SCOREMAX_DELIVERY_REVIEWER_QUALIFICATION_PASS accounts=5 nonreviewer_fenced=true reviewer_queue=true question_edits=false release_authority=false ph_incident_bridge=true')
+          PY
