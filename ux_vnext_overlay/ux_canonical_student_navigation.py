@@ -14,6 +14,8 @@ def _canonical_student_subject_nav(html: str) -> str:
     canonical route each. This runs in the existing student-shell after_request layer,
     after template rendering and all earlier overlays.
     """
+    import re
+
     nav_start=html.find('<nav class="subject-quick-strip"')
     if nav_start<0:
         return html
@@ -31,7 +33,6 @@ def _canonical_student_subject_nav(html: str) -> str:
         ('English',url_for('ux_catalogue_subject',track='mdcat',subject='English'),mdcat_track and subject=='English'),
     )
     for label,href,active in routes:
-        # Remove any stale/legacy copy of this visible tab, regardless of its old href.
         label_rx=re.escape(label)
         fragment=re.sub(
             r'<a\b[^>]*>\s*'+label_rx+r'(?:\s*<small>.*?</small>)?\s*</a>',
@@ -101,6 +102,7 @@ def _install_final_response_contract(root: Path) -> None:
         "url_for('ux_catalogue_subject',track='mdcat',subject='English')",
         'SCOREMAX_LEARNER_NAV_RENDER',
         'canonical final-response subject navigation',
+        '    import re',
     )
     missing=[token for token in required if token not in text]
     if missing:
@@ -121,6 +123,6 @@ def apply_canonical_student_navigation(root: Path) -> None:
         'logical_reasoning=/student/catalogue/mdcat/Logical_Reasoning '
         'english=/student/catalogue/mdcat/English '
         'hash_shortcut=false duplicate_navigation_model=false '
-        'final_response_invariant_logging=true',
+        'runtime_dependency_local=true final_response_invariant_logging=true',
         flush=True,
     )
