@@ -1,8 +1,8 @@
 name: Pre-Import Persistent Hosted Smoke v1
 
-# Reviewer route is intentionally installed as read-only post-delivery QA.
-# Unauthenticated access is intercepted by the global login fence; authenticated non-reviewers are 403 in regression qualification.
-# Replay target: persistent reviewer candidate 4e1ce56f247e71aca13cb1d5c36fd5b597418dc0
+# Reviewer route is read-only post-delivery QA; catalogue is learner-display metadata only.
+# Unauthenticated access is intercepted by the global login fence.
+# Replay target: persistent catalogue candidate b6d4aa7205f6b3aaa3952427c8e59c97b3b344cf
 on:
   push:
     branches: [feature/v6611c-ux-vnext-landing]
@@ -47,6 +47,7 @@ jobs:
           hit('/admin',{302},location_contains='/login')
           hit('/admin/interests',{302},location_contains='/login')
           hit('/student/content-review',{302},location_contains='/login')
+          hit('/student/catalogue',{302},location_contains='/login')
           hit('/admin/reviewer-workspace',{302},location_contains='/login')
           print('SCOREMAX_PERSISTENT_HOSTED_PREIMPORT_SMOKE='+json.dumps(checks,sort_keys=True))
           PY
