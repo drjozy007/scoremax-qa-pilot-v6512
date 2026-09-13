@@ -15,7 +15,7 @@
     {% endfor %}
   </div>
   <section class="ux-route" id="mdcat-route"><div class="ux-route-head"><p class="eyebrow">YOUR MDCAT ROUTE</p><h2>MDCAT, Logical Reasoning and English.</h2><p class="muted">Keep your FSc study and admission preparation connected in one place.</p></div><div class="ux-route-grid">
-    {% for x in future_options %}<a class="ux-route-card" href="{{x.url}}"><h3>{{x.name}}</h3><p>{% if x.name=='MDCAT' %}Medical admission preparation alongside your FSc journey.{% elif x.name=='Logical Reasoning' %}Reasoning practice for your MDCAT route.{% else %}English preparation for your MDCAT route.{% endif %}</p><span class="ux-route-link">Open →</span></a>{% endfor %}
+    {% for x in future_options %}<a class="ux-route-card" href="{% if x.name=='MDCAT' %}{{url_for('ux_catalogue_track',track='mdcat')}}{% elif x.name=='Logical Reasoning' %}{{url_for('ux_catalogue_subject',track='mdcat',subject='Logical Reasoning')}}{% elif x.name=='English' %}{{url_for('ux_catalogue_subject',track='mdcat',subject='English')}}{% else %}{{x.url}}{% endif %}"><h3>{{x.name}}</h3><p>{% if x.name=='MDCAT' %}Medical admission preparation alongside your FSc journey.{% elif x.name=='Logical Reasoning' %}Reasoning practice for your MDCAT route.{% else %}English preparation for your MDCAT route.{% endif %}</p><span class="ux-route-link">Open →</span></a>{% endfor %}
   </div></section>
 </section>
 {% endblock %}
