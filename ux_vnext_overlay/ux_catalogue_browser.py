@@ -60,8 +60,8 @@ def install_catalogue_browser(app):
                 'number': item['number'],
                 'name': item['name'],
                 'available': False,
-                'status': 'Catalogue ready',
-                'note': 'Questions will appear here when cleared Power House content is projected to ScoreMax.',
+                'status': 'Ready to browse',
+                'note': 'Questions will appear here as they become available.',
             })
         return render_template('ux_catalogue_subject.html', track_key=track, catalogue=cat, subject=subject,
                                item_label=label, cards=cards, track_url=url_for('ux_catalogue_track',track=track),
