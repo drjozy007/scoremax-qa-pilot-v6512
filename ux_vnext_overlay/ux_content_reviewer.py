@@ -50,6 +50,8 @@ def _ensure_col(conn,table,name,definition):
 
 
 def _ensure_reviewer_schema_and_account() -> None:
+    # Legacy single-account hook is retained only for compatibility. The governed
+    # five-account seed lives in ux_reviewer_accounts and is driven by explicit envs.
     conn=_connect()
     try:
         _ensure_col(conn,'users','content_reviewer_enabled','INTEGER DEFAULT 0')
@@ -108,6 +110,11 @@ def _question_dict(row):
     return d
 
 
+def _has_exact_ph_lineage(q: dict) -> bool:
+    required=('ph_question_id','ph_question_version_id','ph_question_checksum_sha256','ph_release_id','ph_release_version','ph_release_checksum_sha256')
+    return str(q.get('ph_projection_owner') or '')=='POWER_HOUSE' and all(str(q.get(k) or '').strip() for k in required)
+
+
 def _reviewer_nav_patch() -> str:
     return r'''<style id="ux-content-reviewer-nav-style">.ux-review-nav{background:#fff7e6!important;color:#6f4a00!important;border-radius:9px!important;font-weight:900!important}.ux-reviewer-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:999px;background:#fff7e6;color:#6f4a00;font-size:.62rem;font-weight:900}</style><script id="ux-content-reviewer-nav">(function(){function add(){const nav=document.querySelector('.site-header .desktop-nav');const account=nav&&nav.querySelector('.student-account-menu');if(nav&&account&&!nav.querySelector('.ux-review-nav')){const a=document.createElement('a');a.className='ux-review-nav'+(location.pathname.startsWith('/student/content-review')?' active':'');a.href='/student/content-review';a.textContent='Review';nav.insertBefore(a,account);}const menu=document.querySelector('.student-account-dropdown');if(menu&&!menu.querySelector('.ux-review-menu')){const a=document.createElement('a');a.className='ux-review-menu';a.href='/student/content-review';a.textContent='Review Questions';menu.insertBefore(a,menu.firstElementChild?.nextSibling||null);}}function later(){setTimeout(add,30);setTimeout(add,180);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',later);else later();})();</script>'''
 
@@ -140,7 +147,7 @@ def install_content_reviewer(app) -> None:
                 clauses.append("(lower(COALESCE(q.question_id,'')) LIKE ? OR lower(COALESCE(q.question,'')) LIKE ?)")
                 token='%'+search.lower()+'%'; params.extend([token,token])
             where=' AND '.join(clauses) if clauses else '1=1'
-            rows=conn.execute(f"SELECT q.* FROM questions q WHERE {where} ORDER BY q.id DESC LIMIT 120",params).fetchall()
+            rows=conn.execute(f"SELECT q.* FROM questions q WHERE {where} ORDER BY q.id ASC LIMIT 120",params).fetchall()
             questions=[_question_dict(r) for r in rows]
             subjects=[r['subject'] for r in conn.execute("SELECT DISTINCT subject FROM questions WHERE COALESCE(subject,'')<>'' ORDER BY subject").fetchall()]
             chapters=[r['chapter'] for r in conn.execute("SELECT DISTINCT chapter FROM questions WHERE COALESCE(chapter,'')<>'' ORDER BY chapter").fetchall()]
@@ -183,23 +190,43 @@ def install_content_reviewer(app) -> None:
             qrow=conn.execute('SELECT * FROM questions WHERE id=?',(question_id,)).fetchone()
             if not qrow: abort(404)
             q=_question_dict(qrow)
+            if not _has_exact_ph_lineage(q):
+                flash('This question does not have complete Power House lineage, so no flag was created.','error')
+                return redirect(url_for('ux_content_review_question',question_id=question_id,view='reviewer'))
             label,severity=FLAG_REASONS[reason]
             code='CRF-'+datetime.now().strftime('%Y%m%d%H%M%S')+'-'+secrets.token_hex(2).upper()
+            page=f'/student/content-review/question/{question_id}'
             context={
-              'source':'SCOREMAX_CONTENT_REVIEWER','reason_code':reason,'reason_label':label,'question_db_id':question_id,
+              'source':'SCOREMAX_DELIVERY_REVIEWER','reason_code':reason,'reason_label':label,'question_db_id':question_id,
               'question_id':q.get('question_id'),'subject':q.get('subject'),'chapter':q.get('chapter'),'question_version':q.get('question_version'),
               'ph_question_id':q.get('ph_question_id'),'ph_question_version_id':q.get('ph_question_version_id'),
               'ph_release_id':q.get('ph_release_id'),'ph_release_version':q.get('ph_release_version'),
-              'ph_question_checksum_sha256':q.get('ph_question_checksum_sha256'),'requested_action':'ACADEMIC_REVIEW',
-              'withdrawal_authority':'POWER_HOUSE','reviewer_can_withdraw':False,
+              'ph_question_checksum_sha256':q.get('ph_question_checksum_sha256'),'requested_action':'POWER_HOUSE_EXCEPTION',
+              'withdrawal_authority':'POWER_HOUSE','reviewer_can_withdraw':False,'reviewer_can_edit':False,'page':page,
             }
             description=(f'{label}. '+notes).strip()
+            import scoremax_ph_bridge_v6611d as ph_bridge_v6611d
+            import scoremax_integration_v1 as integration_v1
+            outbox_message_id=ph_bridge_v6611d.queue_reported_question_incident(conn,q,code,reason,severity,description,context)
+            if not outbox_message_id:
+                conn.rollback()
+                flash('Power House incident handoff could not be queued. Nothing was changed.','error')
+                return redirect(url_for('ux_content_review_question',question_id=question_id,view='reviewer'))
             conn.execute("""INSERT INTO pilot_feedback(feedback_code,reporter_user_id,category,severity,description,question_id,routing_target,status,context_json,page_path)
-              VALUES(?,?,?,?,?,?,'Power House','OPEN',?,?)""",
-              (code,session['user_id'],'ACADEMIC_CONTENT',severity,description,question_id,json.dumps(context,sort_keys=True),f'/student/content-review/question/{question_id}'))
+              VALUES(?,?,?,?,?,?,'Power House','QUEUED',?,?)""",
+              (code,session['user_id'],'ACADEMIC_CONTENT',severity,description,question_id,json.dumps(context,sort_keys=True),page))
             conn.commit()
+            dispatch=integration_v1.dispatch_due(conn,limit=20,timeout=8)
+            row=conn.execute("SELECT status,last_error_code FROM integration_outbox WHERE message_id=?",(outbox_message_id,)).fetchone()
+            delivery=str(row['status'] if row else 'UNKNOWN')
+            error=str(row['last_error_code'] if row else '')
+            local_status='DELIVERED_TO_POWER_HOUSE' if delivery=='DELIVERED' else ('QUEUED' if delivery in {'PENDING','RETRY','IN_FLIGHT'} else delivery)
+            conn.execute("UPDATE pilot_feedback SET status=? WHERE feedback_code=?",(local_status,code)); conn.commit()
         finally: conn.close()
-        flash(f'Flag {code} recorded and routed to Power House for academic review. The reviewer cannot withdraw the question.','success')
+        if delivery=='DELIVERED':
+            flash(f'Flag {code} delivered to Power House. ScoreMax made no academic change.','success')
+        else:
+            flash(f'Flag {code} is safely queued for Power House ({delivery}{": "+error if error else ""}). ScoreMax made no academic change.','warning')
         return redirect(url_for('ux_content_review_question',question_id=question_id,view='reviewer'))
 
     @app.after_request
