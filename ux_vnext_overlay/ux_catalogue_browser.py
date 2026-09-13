@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import abort, render_template, session, url_for
+from flask import abort, render_template, request, session, url_for
 
 from ux_catalogue_data import CATALOGUES, TRACK_ORDER, get_catalogue, subject_items
 
@@ -10,6 +10,7 @@ _TRACK_PROGRAMMES={
     'year12':'FSc Part 2',
     'mdcat':'MDCAT',
 }
+_MAIN_FSC_SUBJECTS={'biology','chemistry','physics'}
 
 
 def install_catalogue_browser(app):
@@ -21,21 +22,68 @@ def install_catalogue_browser(app):
         if session.get('role') != 'student' or not session.get('user_id'):
             abort(403)
 
-    def _sync_active_programme(track: str) -> None:
-        programme=_TRACK_PROGRAMMES.get(track)
-        if not programme:
+    def _set_active_programme(programme: str) -> None:
+        if not programme or not session.get('user_id'):
             return
-        # UI programme preference only. Governed curriculum/question state is untouched.
+        # UI programme preference only. Governed curriculum/question/release state is untouched.
         from app import db
         conn=db()
         try:
-            row=conn.execute("SELECT COALESCE(active_programme,'') active_programme FROM users WHERE id=?",(session['user_id'],)).fetchone()
+            row=conn.execute(
+                "SELECT COALESCE(active_programme,'') active_programme FROM users WHERE id=?",
+                (session['user_id'],),
+            ).fetchone()
             current=(row['active_programme'] if row else '') or ''
             if current.strip()!=programme:
-                conn.execute("UPDATE users SET active_programme=? WHERE id=?",(programme,session['user_id']))
+                conn.execute(
+                    "UPDATE users SET active_programme=? WHERE id=?",
+                    (programme,session['user_id']),
+                )
                 conn.commit()
         finally:
             conn.close()
+
+    def _sync_active_programme(track: str) -> None:
+        programme=_TRACK_PROGRAMMES.get(track)
+        if programme:
+            _set_active_programme(programme)
+
+    def _sync_main_fsc_subject_context() -> None:
+        """Keep the permanent Biology/Chemistry/Physics tabs on the learner's FSc year.
+
+        MDCAT is a separate catalogue surface. Visiting it may set active_programme=MDCAT,
+        but a later click on a main science subject must not inherit MDCAT units.
+        The learner's academic_level is the stable source for which FSc year the main
+        science tabs represent.
+        """
+        if session.get('role')!='student' or not session.get('user_id'):
+            return
+        if request.endpoint!='subject_detail':
+            return
+        subject=(request.view_args or {}).get('subject','')
+        if str(subject).strip().casefold() not in _MAIN_FSC_SUBJECTS:
+            return
+        from app import db
+        conn=db()
+        try:
+            row=conn.execute(
+                "SELECT COALESCE(academic_level,'') academic_level FROM users WHERE id=?",
+                (session['user_id'],),
+            ).fetchone()
+            level=((row['academic_level'] if row else '') or '').strip().casefold()
+        finally:
+            conn.close()
+        if 'fsc' not in level:
+            return
+        if 'part 2' in level or 'year 2' in level or level in {'fsc 2','fsc2'}:
+            _set_active_programme('FSc Part 2')
+        else:
+            _set_active_programme('FSc Part 1')
+
+    @app.before_request
+    def _scoremax_main_subject_context_guard():
+        _sync_main_fsc_subject_context()
+        return None
 
     @app.route('/student/catalogue', endpoint='ux_catalogue_home')
     def catalogue_home():
@@ -92,4 +140,9 @@ def install_catalogue_browser(app):
                                item_label=label, cards=cards, track_url=url_for('ux_catalogue_track',track=track),
                                home_url=url_for('ux_catalogue_home'))
 
-    print('SCOREMAX_PROVISIONAL_CATALOGUE_BROWSER_PASS tracks=3 programme_context_sync=true governed_db_untouched=true release_authority=false',flush=True)
+    print(
+        'SCOREMAX_PROVISIONAL_CATALOGUE_BROWSER_PASS '
+        'tracks=3 programme_context_sync=true main_science_tabs_fsc_fenced=true '
+        'mdcat_isolated=true governed_db_untouched=true release_authority=false',
+        flush=True,
+    )
