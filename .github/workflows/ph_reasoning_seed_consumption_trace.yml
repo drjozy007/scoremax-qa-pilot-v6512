@@ -15,9 +15,13 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/sm && mkdir /tmp/sm
           unzip -q SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip -d /tmp/sm
-          echo '=== reasoning_seed_id / family / mastery references ==='
-          grep -RniE --include='*.py' --include='*.sql' --include='*.json' 'reasoning_seed_id|common_cr|independent_mastery_weight|independent_mastery_eligible|dependency_group_id|evidence_role|family_id|claim_family_id' /tmp/sm | head -6000 || true
-          echo '=== Power House approved-content intake references ==='
-          grep -RniE --include='*.py' --include='*.sql' 'PH_SM_APPROVED_CONTENT|approved_content|PUBLISH_SNAPSHOT|package_download_url|release_operation' /tmp/sm | head -3000 || true
-          echo '=== tables/columns around question architecture ==='
-          grep -RniE --include='*.sql' --include='*.py' 'CREATE TABLE.*question|ALTER TABLE.*question|reasoning_seed|dependency_group|evidence_role' /tmp/sm | head -5000 || true
+          cd /tmp/sm
+          echo '=== PH SEED METADATA CONSUMERS ==='
+          grep -RniE --include='*.py' 'ph_reasoning_seed_id|ph_claim_family_id' . | head -2500 || true
+          echo '=== UNIVERSAL UPSERT/MAPPING CALLS OUTSIDE TESTS ==='
+          grep -RniE --include='*.py' 'upsert_reasoning_seed|upsert_question_architecture|universal_question_seed_map|universal_reasoning_seeds' . | grep -vE 'smoke_tests|simulator|historical_acceptance|legacy_test|frozen_' | head -3000 || true
+          echo '=== INTEGRATION ADMISSION PROJECTION ==='
+          sed -n '720,790p' scoremax_integration_v1.py
+          sed -n '1080,1160p' scoremax_integration_v1.py
+          echo '=== APP UNIVERSAL SHADOW FEED REFERENCES ==='
+          grep -nE 'universal_mastery|shadow|architecture_question|ph_reasoning_seed|seed_mappings' app.py | head -2500 || true
