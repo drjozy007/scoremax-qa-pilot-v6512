@@ -1,0 +1,23 @@
+name: PH Reasoning Seed Consumption Trace
+on:
+  push:
+    branches: [ops/ph-reasoning-seed-consumption-trace-20260914]
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect packaged ScoreMax runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/sm && mkdir /tmp/sm
+          unzip -q SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip -d /tmp/sm
+          echo '=== reasoning_seed_id / family / mastery references ==='
+          grep -RniE --include='*.py' --include='*.sql' --include='*.json' 'reasoning_seed_id|common_cr|independent_mastery_weight|independent_mastery_eligible|dependency_group_id|evidence_role|family_id|claim_family_id' /tmp/sm | head -6000 || true
+          echo '=== Power House approved-content intake references ==='
+          grep -RniE --include='*.py' --include='*.sql' 'PH_SM_APPROVED_CONTENT|approved_content|PUBLISH_SNAPSHOT|package_download_url|release_operation' /tmp/sm | head -3000 || true
+          echo '=== tables/columns around question architecture ==='
+          grep -RniE --include='*.sql' --include='*.py' 'CREATE TABLE.*question|ALTER TABLE.*question|reasoning_seed|dependency_group|evidence_role' /tmp/sm | head -5000 || true
