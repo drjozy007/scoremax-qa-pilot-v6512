@@ -99,8 +99,34 @@ def _restore_catalogue_browser() -> None:
     print('SCOREMAX_PROVISIONAL_CATALOGUE_INSTALLED governed_db_untouched=true power_house_authority_unchanged=true',flush=True)
 
 
+def _install_one_time_bio13_intake() -> None:
+    src=Path('ux_vnext_overlay')/'ux_one_time_bio13_intake.py'
+    dst=ROOT/'ux_one_time_bio13_intake.py'
+    if not src.is_file():
+        raise SystemExit('BIO13_ONE_TIME_INTAKE_SOURCE_MISSING')
+    shutil.copy2(src,dst)
+    path=ROOT/'scoremax_production.py'
+    text=path.read_text(encoding='utf-8')
+    anchor='install_catalogue_browser(scoremax.app)\napplication=scoremax.app'
+    replacement=(
+        "install_catalogue_browser(scoremax.app)\n"
+        "from ux_one_time_bio13_intake import run_one_time_bio13_intake\n"
+        "run_one_time_bio13_intake(scoremax)\n"
+        "application=scoremax.app"
+    )
+    if 'run_one_time_bio13_intake(scoremax)' not in text:
+        if anchor not in text:
+            raise SystemExit('BIO13_ONE_TIME_INTAKE_POST_INIT_ANCHOR_MISSING')
+        text=text.replace(anchor,replacement,1)
+        path.write_text(text,encoding='utf-8')
+    rendered=path.read_text(encoding='utf-8')
+    required=('from ux_one_time_bio13_intake import run_one_time_bio13_intake','run_one_time_bio13_intake(scoremax)')
+    if any(token not in rendered for token in required):
+        raise SystemExit('BIO13_ONE_TIME_INTAKE_POSTBUILD_CONTROL_MISSING')
+    print('BIO13_ONE_TIME_INTAKE_WIRED payload_env=SCOREMAX_ONE_TIME_BIO13_GZ_B64 no_payload_noop=true',flush=True)
+
+
 def _wire_programme_tabs_to_correct_surfaces() -> None:
-    """Programme tabs switch state and return to the programme-aware Learn surface."""
     path=ROOT/'templates'/'base.html'
     text=path.read_text(encoding='utf-8')
     old='<input type="hidden" name="return_to" value="{{request.path}}">'
@@ -145,6 +171,7 @@ def main() -> None:
     apply_admin_workspace(ROOT)
     _install_post_init_teacher_preview()
     _restore_catalogue_browser()
+    _install_one_time_bio13_intake()
     apply_programme_catalogue_routing(ROOT)
     apply_main_subject_fsc_fence(ROOT)
     apply_canonical_student_navigation(ROOT)
