@@ -30,6 +30,10 @@ os.environ.update({
     'SCOREMAX_SECRET':secrets.token_hex(32),
     'SCOREMAX_STAGING_SESSION_SECRET':secrets.token_hex(32),
 })
+shutil.rmtree(ROOT,ignore_errors=True)
+ROOT.joinpath('state').mkdir(parents=True)
+BACKUP.mkdir()
+INTAKE.mkdir()
 sys.path.insert(0,str(RUNTIME))
 import app as sm
 
@@ -67,7 +71,6 @@ def mutate(sql:str):
 
 
 def main():
-    shutil.rmtree(ROOT,ignore_errors=True); ROOT.joinpath('state').mkdir(parents=True); BACKUP.mkdir(); INTAKE.mkdir()
     sm.init(); c=sm.db(); assert c.execute('PRAGMA quick_check').fetchone()[0]=='ok'; assert not c.execute('PRAGMA foreign_key_check').fetchall(); c.close()
     pre=run_guard('preimport'); assert 'preimport_qualified' in pre
 
