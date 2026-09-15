@@ -8,7 +8,7 @@ import tempfile
 import uuid
 from pathlib import Path
 
-POLICY='SCOREMAX-PERSISTENT-GUARD-V3-COMMERCIAL-CATALOGUE-20260913'
+POLICY='SCOREMAX-PERSISTENT-GUARD-V4-GOVERNED-EMERGENCY-DIRECT-20260915'
 ROOT=Path(os.environ.get('SCOREMAX_PERSISTENT_ROOT','/data/scoremax')).resolve()
 DB=Path(os.environ.get('SCOREMAX_DB',str(ROOT/'state'/'scoremax.db'))).resolve()
 BACKUP=Path(os.environ.get('SCOREMAX_BACKUP_DIR',str(ROOT/'backup'))).resolve()
@@ -29,6 +29,7 @@ APPROVED_COVERAGE_PACKAGES={
     'fsc2_full': ('FSc Part 2','COMING_SOON',None,'PKR','monthly'),
     'mdcat_full': ('MDCAT','COMING_SOON',None,'PKR','monthly'),
 }
+EMERGENCY_RIGHTS={'scoremax original','licensed','permitted','public domain','approved'}
 
 
 def fail(msg: str) -> None:
@@ -89,12 +90,8 @@ def _commercial_catalogue_state(c):
     if not _table(c,'coverage_packages'):
         return {'approved':False,'reason':'table_missing','rows':[]}
     rows=c.execute("SELECT code,programme,status,price_minor,currency,billing_period FROM coverage_packages ORDER BY code").fetchall()
-    actual={
-        str(r[0]): (str(r[1] or ''),str(r[2] or ''),r[3],str(r[4] or ''),str(r[5] or ''))
-        for r in rows
-    }
-    approved=(actual==APPROVED_COVERAGE_PACKAGES)
-    return {'approved':approved,'count':len(rows),'codes':sorted(actual),'rows':actual}
+    actual={str(r[0]):(str(r[1] or ''),str(r[2] or ''),r[3],str(r[4] or ''),str(r[5] or '')) for r in rows}
+    return {'approved':actual==APPROVED_COVERAGE_PACKAGES,'count':len(rows),'codes':sorted(actual),'rows':actual}
 
 
 def _reviewer_state(c):
@@ -128,43 +125,140 @@ def _restore_semantic_check(source: Path, expected_counts: dict, expected_review
         if got!=expected_counts or reviewers!=expected_reviewers: fail('restore_semantic_mismatch')
 
 
+def _hex64(value) -> bool:
+    v=str(value or '').strip().lower()
+    return len(v)==64 and all(ch in '0123456789abcdef' for ch in v)
+
+
+def _safe_json(value,default):
+    try: return json.loads(value or '')
+    except Exception: return default
+
+
+def _verify_backup_row(row,kind: str) -> None:
+    if not row: fail(f'emergency_{kind}_backup_missing')
+    if str(row['integrity_status'] or '').upper()!='OK': fail(f'emergency_{kind}_backup_not_ok')
+    path=Path(str(row['file_path'] or '')).resolve()
+    if not path.is_file(): fail(f'emergency_{kind}_backup_file_missing')
+    if BACKUP not in path.parents: fail(f'emergency_{kind}_backup_outside_protected_storage')
+    raw=path.read_bytes()
+    if hashlib.sha256(raw).hexdigest()!=str(row['file_sha256'] or '').lower(): fail(f'emergency_{kind}_backup_checksum_mismatch')
+    if len(raw)!=int(row['file_size_bytes'] or 0): fail(f'emergency_{kind}_backup_size_mismatch')
+    check_sqlite(path)
+
+
+def _emergency_governance_text(payload: dict) -> tuple[bool,bool,bool]:
+    ready=str(payload.get('ScoreMax Ready','') or '').strip().lower() in {'1','yes','true'}
+    rights=str(payload.get('Rights Status','') or '').strip().lower() in EMERGENCY_RIGHTS
+    governance=' '.join(str(payload.get(k,'') or '') for k in ('Status','Review Status','R2 Status','Readiness','Release Status','Review Requirement','Dual Review Status')).casefold()
+    r2=any(str(payload.get(k,'') or '').strip().casefold() in {'1','yes','true','required','y','dual_review_required','r2_required'} for k in ('Reviewer 2 Required','Reviewer2 Required','Dual Review Required'))
+    if 'dual_review_required' in str(payload.get('Review Requirement','') or '').strip().casefold(): r2=True
+    blocked=r2 or any(term in governance for term in ('hold','blocked','r2_required','dual_review_required','human_review_required','source_check_required'))
+    return ready,rights,blocked
+
+
+def _qualify_emergency_batches(c) -> dict:
+    non_ph=c.execute("SELECT * FROM questions WHERE COALESCE(ph_projection_owner,'')<>'POWER_HOUSE' ORDER BY id").fetchall()
+    if not non_ph: return {'questions':0,'batches':0,'released':0,'candidate':0,'batch_codes':[]}
+    for t in ('content_import_batches','content_import_batch_rows','pilot_backups'):
+        if not _table(c,t): fail('emergency_evidence_table_missing='+t)
+    qcols=_cols(c,'questions')
+    for col in ('source_import_batch_id','content_environment','scoremax_ready','status','review_status','active'):
+        if col not in qcols: fail('emergency_question_column_missing='+col)
+    batch_ids=sorted({int(q['source_import_batch_id'] or 0) for q in non_ph})
+    if not batch_ids or 0 in batch_ids: fail('postimport_unbound_non_power_house_questions')
+    result={'questions':len(non_ph),'batches':0,'released':0,'candidate':0,'batch_codes':[]}
+    for bid in batch_ids:
+        b=c.execute('SELECT * FROM content_import_batches WHERE id=?',(bid,)).fetchone()
+        if not b: fail(f'emergency_batch_missing id={bid}')
+        code=str(b['batch_code'] or '')
+        if str(b['intake_mode'] or '').upper()!='EMERGENCY_DIRECT': fail(f'emergency_wrong_intake_mode batch={code}')
+        if str(b['source_system'] or '').upper()!='POWER_HOUSE_GOVERNED': fail(f'emergency_wrong_source_system batch={code}')
+        if str(b['status'] or '').upper()!='IMPORTED': fail(f'emergency_batch_not_imported batch={code}')
+        if not str(b['source_prompt_pack_id'] or '').strip(): fail(f'emergency_prompt_pack_id_missing batch={code}')
+        if not _hex64(b['source_prompt_pack_version']): fail(f'emergency_prompt_pack_version_not_sha256 batch={code}')
+        if not _hex64(b['payload_checksum']): fail(f'emergency_payload_checksum_invalid batch={code}')
+        row_count=int(b['row_count'] or 0); valid=int(b['valid_count'] or 0); errors=int(b['error_count'] or 0); warnings=int(b['warning_count'] or 0)
+        if row_count<1 or valid!=row_count or errors!=0 or warnings!=0: fail(f'emergency_validation_not_clean batch={code} rows={row_count} valid={valid} errors={errors} warnings={warnings}')
+        source=Path(str(b['source_file_path'] or '')).resolve()
+        if not source.is_file() or INTAKE not in source.parents: fail(f'emergency_source_file_not_protected batch={code}')
+        if hashlib.sha256(source.read_bytes()).hexdigest()!=str(b['payload_checksum']).lower(): fail(f'emergency_source_checksum_mismatch batch={code}')
+        stored=c.execute('SELECT * FROM content_import_batch_rows WHERE batch_id=? ORDER BY id',(bid,)).fetchall()
+        if len(stored)!=row_count: fail(f'emergency_row_evidence_count_mismatch batch={code}')
+        qrows=c.execute('SELECT * FROM questions WHERE source_import_batch_id=? ORDER BY id',(bid,)).fetchall()
+        if len(qrows)!=row_count: fail(f'emergency_question_count_mismatch batch={code}')
+        by_db={int(q['id']):q for q in qrows}
+        for r in stored:
+            if str(r['import_status'] or '').upper()!='IMPORTED' or not r['question_db_id']: fail(f'emergency_row_not_imported batch={code}')
+            if _safe_json(r['errors_json'],['invalid'])!=[] or _safe_json(r['warnings_json'],['invalid'])!=[]: fail(f'emergency_row_validation_evidence_not_clean batch={code}')
+            q=by_db.get(int(r['question_db_id']))
+            if not q or str(q['question_id'] or '')!=str(r['question_id'] or ''): fail(f'emergency_row_question_binding_mismatch batch={code}')
+            payload=_safe_json(r['row_json'],{})
+            ready,rights,blocked=_emergency_governance_text(payload)
+            if not ready or not rights or blocked: fail(f'emergency_row_release_governance_invalid batch={code} question={r["question_id"]}')
+        pre=c.execute('SELECT * FROM pilot_backups WHERE id=?',(b['backup_record_id'],)).fetchone() if b['backup_record_id'] else None
+        _verify_backup_row(pre,'preimport')
+        release_status=str(b['release_status'] or '').upper()
+        released_count=int(b['released_count'] or 0)
+        active=sum(int(q['active'] or 0)==1 for q in qrows)
+        if release_status=='NOT_RELEASED':
+            if released_count!=0 or active!=0: fail(f'emergency_candidate_release_state_mismatch batch={code}')
+            if any(str(q['status'] or '')!='Draft' or str(q['review_status'] or '')!='Draft' or str(q['content_environment'] or '')!='CANDIDATE' for q in qrows): fail(f'emergency_candidate_question_state_mismatch batch={code}')
+            result['candidate']+=row_count
+        elif release_status=='RELEASED_ELIGIBLE':
+            if not str(b['release_attested_at'] or '').strip() or not b['release_attested_by'] or not str(b['released_at'] or '').strip(): fail(f'emergency_release_attestation_missing batch={code}')
+            if released_count<1 or released_count>row_count or active!=released_count: fail(f'emergency_released_count_mismatch batch={code}')
+            release_backup=c.execute('SELECT * FROM pilot_backups WHERE reason=? ORDER BY id DESC LIMIT 1',(f'Automatic backup before emergency release {code}',)).fetchone()
+            _verify_backup_row(release_backup,'prerelease')
+            for q in qrows:
+                if int(q['active'] or 0)==1:
+                    if str(q['status'] or '')!='Approved' or str(q['review_status'] or '')!='Approved' or str(q['content_environment'] or '')!='PRODUCTION' or int(q['scoremax_ready'] or 0)!=1: fail(f'emergency_released_question_state_invalid batch={code}')
+                elif str(q['content_environment'] or '')!='CANDIDATE': fail(f'emergency_excluded_question_environment_invalid batch={code}')
+            result['released']+=released_count; result['candidate']+=row_count-released_count
+        else:
+            fail(f'emergency_release_status_invalid batch={code} status={release_status}')
+        result['batches']+=1; result['batch_codes'].append(code)
+    return result
+
+
 def qualify_database():
     if not DB.exists(): return {'state':'absent','policy':POLICY}
-    c=sqlite3.connect(DB,timeout=30)
+    c=sqlite3.connect(DB,timeout=30); c.row_factory=sqlite3.Row
     try:
         integrity=c.execute('PRAGMA integrity_check').fetchone()[0]; fk=len(c.execute('PRAGMA foreign_key_check').fetchall()); counts=_counts(c); reviewers=_reviewer_state(c)
         if integrity!='ok' or fk: fail(f'db_integrity_failed integrity={integrity} fk={fk}')
         if not reviewers['approved']: fail('unapproved_reviewer_state='+json.dumps(reviewers,sort_keys=True))
         commercial=_commercial_catalogue_state(c)
-        if not commercial['approved']:
-            fail('commercial_catalogue_mismatch='+json.dumps(commercial,sort_keys=True,default=str))
+        if not commercial['approved']: fail('commercial_catalogue_mismatch='+json.dumps(commercial,sort_keys=True,default=str))
         priced=int(c.execute('SELECT COUNT(*) FROM plans WHERE COALESCE(price_minor,0)>0').fetchone()[0]) if _table(c,'plans') else 0
         if priced!=0: fail(f'seeded_plan_prices_present count={priced}')
-
         if counts['questions']==0:
             governed={k:counts[k] for k in ('questions','curriculum','question_families','chapter_catalogue')}
             if any(governed.values()): fail('preimport_governed_substrate_not_empty='+json.dumps(governed,sort_keys=True))
             sha,bi,bfk=_backup_and_verify(c,BASELINE_BACKUP); _restore_semantic_check(BASELINE_BACKUP,counts,reviewers)
             return {'state':'preimport_qualified','policy':POLICY,'integrity':integrity,'fk':fk,'counts':counts,'priced_plans':priced,'commercial_catalogue':{'approved':True,'count':commercial['count'],'codes':commercial['codes']},'reviewer_state':reviewers,'backup':str(BASELINE_BACKUP),'backup_sha256':sha,'backup_integrity':bi,'backup_fk':bfk}
-
         qcols=_cols(c,'questions')
         required={'ph_projection_owner','ph_question_id','ph_question_version_id','ph_question_checksum_sha256','ph_release_id','ph_release_version','ph_release_checksum_sha256','active'}
         missing=sorted(required-qcols)
         if missing: fail('postimport_lineage_columns_missing='+','.join(missing))
-        non_ph=int(c.execute("SELECT COUNT(*) FROM questions WHERE COALESCE(ph_projection_owner,'')<>'POWER_HOUSE'").fetchone()[0])
-        if non_ph: fail(f'postimport_non_power_house_questions count={non_ph}')
-        incomplete=int(c.execute("SELECT COUNT(*) FROM questions WHERE ph_projection_owner='POWER_HOUSE' AND (COALESCE(ph_question_id,'')='' OR COALESCE(ph_question_version_id,'')='' OR COALESCE(ph_question_checksum_sha256,'')='' OR COALESCE(ph_release_id,'')='' OR COALESCE(ph_release_version,'')='' OR COALESCE(ph_release_checksum_sha256,'')='')").fetchone()[0])
-        if incomplete: fail(f'postimport_incomplete_lineage count={incomplete}')
-        dup=int(c.execute("SELECT COUNT(*) FROM (SELECT ph_question_id FROM questions WHERE ph_projection_owner='POWER_HOUSE' AND COALESCE(active,0)=1 GROUP BY ph_question_id HAVING COUNT(*)>1)").fetchone()[0])
-        if dup: fail(f'postimport_duplicate_active_external_identity groups={dup}')
-        for t in ('integration_ph_content_releases','integration_ph_release_question_membership','integration_ph_question_version_store'):
-            if not _table(c,t): fail('postimport_integration_table_missing='+t)
-        releases=_count(c,'integration_ph_content_releases'); membership=_count(c,'integration_ph_release_question_membership')
-        if releases<1 or membership<counts['questions']: fail(f'postimport_release_lineage_incomplete releases={releases} membership={membership} questions={counts["questions"]}')
-        unbound=int(c.execute("""SELECT COUNT(*) FROM questions q WHERE q.ph_projection_owner='POWER_HOUSE' AND NOT EXISTS (SELECT 1 FROM integration_ph_release_question_membership m WHERE m.release_id=q.ph_release_id AND m.release_version=q.ph_release_version AND m.question_id=q.ph_question_id AND m.question_version_id=q.ph_question_version_id)""").fetchone()[0])
-        if unbound: fail(f'postimport_question_not_bound_to_release count={unbound}')
+        ph_count=int(c.execute("SELECT COUNT(*) FROM questions WHERE ph_projection_owner='POWER_HOUSE'").fetchone()[0])
+        if ph_count:
+            incomplete=int(c.execute("SELECT COUNT(*) FROM questions WHERE ph_projection_owner='POWER_HOUSE' AND (COALESCE(ph_question_id,'')='' OR COALESCE(ph_question_version_id,'')='' OR COALESCE(ph_question_checksum_sha256,'')='' OR COALESCE(ph_release_id,'')='' OR COALESCE(ph_release_version,'')='' OR COALESCE(ph_release_checksum_sha256,'')='')").fetchone()[0])
+            if incomplete: fail(f'postimport_incomplete_lineage count={incomplete}')
+            dup=int(c.execute("SELECT COUNT(*) FROM (SELECT ph_question_id FROM questions WHERE ph_projection_owner='POWER_HOUSE' AND COALESCE(active,0)=1 GROUP BY ph_question_id HAVING COUNT(*)>1)").fetchone()[0])
+            if dup: fail(f'postimport_duplicate_active_external_identity groups={dup}')
+            for t in ('integration_ph_content_releases','integration_ph_release_question_membership','integration_ph_question_version_store'):
+                if not _table(c,t): fail('postimport_integration_table_missing='+t)
+            releases=_count(c,'integration_ph_content_releases'); membership=_count(c,'integration_ph_release_question_membership')
+            if releases<1 or membership<ph_count: fail(f'postimport_release_lineage_incomplete releases={releases} membership={membership} ph_questions={ph_count}')
+            unbound=int(c.execute("""SELECT COUNT(*) FROM questions q WHERE q.ph_projection_owner='POWER_HOUSE' AND NOT EXISTS (SELECT 1 FROM integration_ph_release_question_membership m WHERE m.release_id=q.ph_release_id AND m.release_version=q.ph_release_version AND m.question_id=q.ph_question_id AND m.question_version_id=q.ph_question_version_id)""").fetchone()[0])
+            if unbound: fail(f'postimport_question_not_bound_to_release count={unbound}')
+        else:
+            releases=0; membership=0; unbound=0
+        emergency=_qualify_emergency_batches(c)
+        if ph_count+int(emergency['questions'])!=counts['questions']: fail('postimport_question_classification_mismatch')
         sha,bi,bfk=_backup_and_verify(c,OPERATIONAL_BACKUP); _restore_semantic_check(OPERATIONAL_BACKUP,counts,reviewers)
-        return {'state':'postimport_qualified','policy':POLICY,'integrity':integrity,'fk':fk,'counts':counts,'priced_plans':priced,'commercial_catalogue':{'approved':True,'count':commercial['count'],'codes':commercial['codes']},'reviewer_state':reviewers,'release_rows':releases,'membership_rows':membership,'unbound_questions':unbound,'backup':str(OPERATIONAL_BACKUP),'backup_sha256':sha,'backup_integrity':bi,'backup_fk':bfk,'preimport_baseline_preserved':BASELINE_BACKUP.exists()}
+        return {'state':'postimport_qualified','policy':POLICY,'integrity':integrity,'fk':fk,'counts':counts,'priced_plans':priced,'commercial_catalogue':{'approved':True,'count':commercial['count'],'codes':commercial['codes']},'reviewer_state':reviewers,'native_power_house_questions':ph_count,'release_rows':releases,'membership_rows':membership,'unbound_questions':unbound,'governed_emergency':emergency,'backup':str(OPERATIONAL_BACKUP),'backup_sha256':sha,'backup_integrity':bi,'backup_fk':bfk,'preimport_baseline_preserved':BASELINE_BACKUP.exists()}
     finally: c.close()
 
 
@@ -180,7 +274,7 @@ def main():
         if not ident: fail('sentinel_corrupt')
         state='existing'
     else:
-        ident=str(uuid.uuid4()); payload={'storage_id':ident,'purpose':'ScoreMax governed persistent storage','schema':3,'policy':POLICY}; tmp=SENTINEL.with_suffix('.tmp')
+        ident=str(uuid.uuid4()); payload={'storage_id':ident,'purpose':'ScoreMax governed persistent storage','schema':4,'policy':POLICY}; tmp=SENTINEL.with_suffix('.tmp')
         with tmp.open('w',encoding='utf-8') as f: json.dump(payload,f,sort_keys=True); f.flush(); os.fsync(f.fileno())
         os.replace(tmp,SENTINEL); state='created'
     digest=hashlib.sha256(ident.encode()).hexdigest(); probe=ROOT/'.write_probe'
