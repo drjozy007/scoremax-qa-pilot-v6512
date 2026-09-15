@@ -1,0 +1,41 @@
+name: Bio13 V6611D Intake Contract Trace
+on:
+  push:
+    branches: [ops/bio13-exact100-v6611d-intake-qualification-20260915]
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Reconstruct exact qualified runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python deploy_v669b_from_env.py | tee /tmp/reconstruct.log
+          grep -q 'V6611D_HOSTED_QUALIFICATION_RUNTIME_READY' /tmp/reconstruct.log
+          echo '=== RUNTIME IDENTITY ==='
+          grep -E 'V6611C_HOSTED_RUNTIME_VERIFIED|V6611D_BRIDGE_OVERLAY_APPLIED|V6611D_HOSTED_QUALIFICATION_RUNTIME_READY' /tmp/reconstruct.log
+      - name: Inspect direct intake and type support
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=scoremax_runtime_v669b
+          echo '=== RELEASE MARKERS ==='
+          grep -RniE --include='*.py' '6\.6\.11D|SCOREMAX_RELEASE_VERSION|V6611D' "$R" | head -120 || true
+          echo '=== EMERGENCY / BULK INTAKE ROUTES ==='
+          grep -RniE --include='*.py' 'Emergency Direct Intake|content_import|_normalize_import_row|_insert_import_question|validate_import_row|3000' "$R" | head -500 || true
+          echo '=== TYPE NORMALISERS / SUPPORTED RENDERERS ==='
+          grep -RniE --include='*.py' 'canonical_question_type|LIVE_MARKABLE_TYPES|MATCHING_SET|ORDERING_SEQUENCE|SHORT_CONSTRUCTED_RESPONSE|MULTIPLE_RESPONSE|matching|ordering|constructed_response|short_response' "$R" | head -1200 || true
+          echo '=== LEARNER TEMPLATE TYPE HANDLING ==='
+          grep -RniE --include='*.html' 'matching|ordering|short_response|constructed|multiple_select|drag' "$R/templates" | head -800 || true
+          echo '=== SCORE / SUBMIT TYPE HANDLING ==='
+          grep -RniE --include='*.py' 'correct_pairs|correct_order|accepted_answers|multiple_select|matching.*score|ordering.*score|constructed.*score' "$R" | head -1000 || true
+          echo '=== QUESTION PACKAGE / PH BRIDGE ==='
+          grep -RniE --include='*.py' 'PH_SM|approved.content|Power House|bridge|manifest_pull|product.activation|question package' "$R" | head -1200 || true
+          echo '=== STATIC COMPILE ==='
+          python -m py_compile "$R"/*.py
