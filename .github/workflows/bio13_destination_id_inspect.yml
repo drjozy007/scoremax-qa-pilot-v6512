@@ -1,0 +1,20 @@
+name: Bio13 Destination ID Inspect
+on:
+  push:
+    branches: [ops/bio13-destination-id-inspect-20260915]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialise current receiver and inspect canonical IDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py >/tmp/deploy.log 2>&1 || { tail -200 /tmp/deploy.log; exit 1; }
+          cd scoremax_runtime_v669b
+          echo IDS_BEGIN
+          grep -RniE --include='*.py' --include='*.json' --include='*.sql' "PK-FSC-2026|FSC2|BIOLOGY|CH13|curriculum_pack_id|programme_id|chapter_id|subject_id" . | head -700 || true
+          echo IDS_END
