@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect Emergency Direct Intake validation and release gate
+      - name: Inspect direct intake field preservation contract
         shell: bash
         run: |
           set -euo pipefail
@@ -18,13 +18,13 @@ jobs:
           rm -rf /tmp/scoremax && mkdir -p /tmp/scoremax
           unzip -q "$ZIP" -d /tmp/scoremax
           F=/tmp/scoremax/app.py
-          echo '=== VALIDATE IMPORT ROW ==='
-          sed -n '8625,8705p' "$F"
-          echo '=== NORMALISE/READ/INSERT ==='
-          sed -n '9840,10075p' "$F"
-          echo '=== ADMIN IMPORT / CONFIRM / RELEASE ELIGIBLE ==='
-          sed -n '10195,10420p' "$F"
-          echo '=== EMERGENCY 3000 SCALE TEST ==='
-          sed -n '1,220p' /tmp/scoremax/scale_test_v6_4_emergency_3000.py
-          echo '=== V6.4 ACCEPTANCE RELEVANT ==='
-          grep -n -i -E 'Emergency Direct Intake|3,000|3000|governed release|eligible release|Power House' /tmp/scoremax/V6_4_0_ACCEPTANCE.md /tmp/scoremax/V6_4_0_BUILD_REPORT.md /tmp/scoremax/V6_5_1_ACCEPTANCE.md /tmp/scoremax/V6_5_1_PLATFORM_INTEGRATION_HANDOFF.md | head -300 || true
+          echo '=== NORMALIZER FUNCTIONS ==='
+          grep -nE '^def (_normalize_import_row|_read_import_upload|_insert_import_question|validate_import_row)' "$F" || true
+          for fn in _normalize_import_row _read_import_upload _insert_import_question; do
+            line=$(grep -n "^def $fn" "$F" | head -1 | cut -d: -f1 || true)
+            if [ -n "$line" ]; then start=$line; end=$((line+220)); echo "===== $fn ====="; sed -n "${start},${end}p" "$F"; fi
+          done
+          echo '=== STIMULUS / CONTEXT / EXTRA COLUMNS REFERENCES ==='
+          grep -RniE --include='*.py' 'stimulus|context|passage|scenario|source locator|progression|cognitive|mastery|extra_json|raw_row|source_row|import.*json|metadata' /tmp/scoremax | head -1400 || true
+          echo '=== QUESTION TABLE SCHEMA ==='
+          grep -RniE --include='*.py' --include='*.sql' 'CREATE TABLE.*questions|ALTER TABLE.*questions' /tmp/scoremax | head -400 || true
