@@ -9,27 +9,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check exact Bio13 question-type compatibility
+      - name: Trace static question type canonicalization
         shell: bash
         run: |
           set -euo pipefail
           ZIP='SCOREMAX_ONLY_UPLOAD_TO_GITHUB_V6_5_12.zip'
-          test -f "$ZIP"
           rm -rf /tmp/scoremax && mkdir -p /tmp/scoremax
           unzip -q "$ZIP" -d /tmp/scoremax
-          cd /tmp/scoremax
-          python - <<'PY'
-          import os,tempfile,sys
-          os.environ['SCOREMAX_DB_PATH']=tempfile.mktemp(suffix='.db')
-          os.environ['SCOREMAX_ENV']='test'
-          import app
-          types=['STANDARD_MCQ','FOUR_STATEMENT_SELECTION','MATCHING_SET','ORDERING_SEQUENCE','CLOZE_SINGLE_SELECT','MULTIPLE_RESPONSE','ADAPTIVE_RECOVERY_PATHWAY_ITEM','SHORT_CONSTRUCTED_RESPONSE']
-          print('LIVE_MARKABLE_TYPES',sorted(app.LIVE_MARKABLE_TYPES))
-          for t in types:
-              print('TYPE_MAP',t,'=>',app.canonical_question_type({'qtype':t}))
-          print('QUESTION_COLUMNS_ABCD_ONLY', all(x in open('app.py',encoding='utf-8').read() for x in ["'option_a'","'option_b'","'option_c'","'option_d'"]))
-          src=open('app.py',encoding='utf-8').read()
-          start=src.index('def _parse_import_options')
-          print('PARSE_OPTIONS_SNIPPET')
-          print(src[start:start+1800])
-          PY
+          F=/tmp/scoremax/app.py
+          echo '=== CANONICAL TYPE FUNCTION ==='
+          line=$(grep -n '^def canonical_question_type' "$F" | head -1 | cut -d: -f1)
+          sed -n "${line},$((line+140))p" "$F"
+          echo '=== LIVE MARKABLE CONSTANT ==='
+          grep -n -A8 -B3 'LIVE_MARKABLE_TYPES' "$F" | head -80 || true
+          echo '=== IMPORT ALIASES ==='
+          line=$(grep -n '^_IMPORT_CANONICAL_ALIASES' "$F" | head -1 | cut -d: -f1)
+          sed -n "${line},$((line+70))p" "$F"
+          echo '=== VALIDATE ROW ==='
+          line=$(grep -n '^def validate_import_row' "$F" | head -1 | cut -d: -f1)
+          sed -n "${line},$((line+120))p" "$F"
+          echo '=== PARSE OPTIONS ==='
+          line=$(grep -n '^def _parse_import_options' "$F" | head -1 | cut -d: -f1)
+          sed -n "${line},$((line+90))p" "$F"
