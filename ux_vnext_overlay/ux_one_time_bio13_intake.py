@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 PAYLOAD_ENV='SCOREMAX_ONE_TIME_BIO13_GZ_B64'
+PAYLOAD_CHUNK_PREFIX='SCOREMAX_ONE_TIME_BIO13_GZ_B64_'
 EXPECTED_CSV_SHA256='ba8e863c4793f694e5227e5b5525147df5e132ecdce0e5ccf5057ae552178fe5'
 EXPECTED_COUNT=100
 PROMPT_PACK_ID='BIO13_SCOREMAX_PILOT100_DIRECT_INTAKE_SAFE_v1_1'
@@ -23,8 +24,20 @@ def _fail(msg: str) -> None:
     raise RuntimeError('BIO13_ONE_TIME_INTAKE_FAIL:'+msg)
 
 
+def _encoded_payload() -> str:
+    direct=os.environ.get(PAYLOAD_ENV,'').strip()
+    if direct:
+        return direct
+    chunks=[]
+    for i in range(1,9):
+        value=os.environ.get(f'{PAYLOAD_CHUNK_PREFIX}{i}','').strip()
+        if value:
+            chunks.append(value)
+    return ''.join(chunks)
+
+
 def _decode_payload() -> tuple[bytes,list[dict],set[str]]:
-    encoded=os.environ.get(PAYLOAD_ENV,'').strip()
+    encoded=_encoded_payload()
     if not encoded:
         return b'',[],set()
     try:
