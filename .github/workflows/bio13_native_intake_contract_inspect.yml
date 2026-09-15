@@ -27,9 +27,10 @@ jobs:
           export SCOREMAX_DB=/tmp/scoremax/state/scoremax.db
           export SCOREMAX_BACKUP_DIR=/tmp/scoremax/backup
           export SCOREMAX_CONTENT_INTAKE_DIR=/tmp/scoremax/intake
-          export SCOREMAX_SECRET=qualification-only-secret
-          export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@scoremax.invalid
-          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password
+          export SCOREMAX_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          export SCOREMAX_STAGING_SESSION_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@example.invalid
+          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD="$(python -c 'import secrets;print(secrets.token_urlsafe(24))')"
           mkdir -p /tmp/scoremax/state /tmp/scoremax/backup /tmp/scoremax/intake
           cd scoremax_runtime_v669b
           python - <<'PY'
