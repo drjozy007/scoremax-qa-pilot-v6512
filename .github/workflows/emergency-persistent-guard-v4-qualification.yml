@@ -1,0 +1,126 @@
+name: Emergency Persistent Guard V4 Qualification
+on:
+  push:
+    branches: [ops/v6611d-emergency-persistent-guard-20260915]
+    paths:
+      - 'scripts/scoremax_persistent_storage_guard.py'
+      - '.github/workflows/emergency-persistent-guard-v4-qualification.yml'
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify guard-only delta and build exact parent runtime
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "f6a3a63702f0a4c622c28eaf96fd9572f92134eb"
+          git diff 27a0ece04c97cd0bebc0b4fcb592747fa3867c07..f6a3a63702f0a4c622c28eaf96fd9572f92134eb --name-only | tee /tmp/delta.txt
+          test "$(wc -l < /tmp/delta.txt)" -eq 1
+          grep -qx 'scripts/scoremax_persistent_storage_guard.py' /tmp/delta.txt
+          python -m py_compile scripts/scoremax_persistent_storage_guard.py
+          python deploy_ux_vnext.py
+          pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Initialise pre-import persistent state
+        env:
+          SCOREMAX_ENV: local
+          PYTHONPATH: scoremax_runtime_v669b
+        run: |
+          set -euo pipefail
+          export SCOREMAX_PERSISTENT_ROOT=/dev/shm/scoremax-guard-public
+          export SCOREMAX_DB=$SCOREMAX_PERSISTENT_ROOT/state/scoremax.db
+          export SCOREMAX_BACKUP_DIR=$SCOREMAX_PERSISTENT_ROOT/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=$SCOREMAX_PERSISTENT_ROOT/intake
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/dev/shm
+          export SCOREMAX_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          export SCOREMAX_STAGING_SESSION_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          rm -rf "$SCOREMAX_PERSISTENT_ROOT" && mkdir -p "$SCOREMAX_PERSISTENT_ROOT/state" "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
+          python - <<'PY'
+          import app as sm
+          sm.init(); c=sm.db(); assert c.execute('PRAGMA quick_check').fetchone()[0]=='ok'; c.close()
+          PY
+          python scripts/scoremax_persistent_storage_guard.py | tee /tmp/pre.log
+          grep -q 'preimport_qualified' /tmp/pre.log
+      - name: Generate and import 100 governed direct-safe rows
+        env:
+          SCOREMAX_ENV: local
+          PYTHONPATH: scoremax_runtime_v669b
+        run: |
+          set -euo pipefail
+          export SCOREMAX_PERSISTENT_ROOT=/dev/shm/scoremax-guard-public
+          export SCOREMAX_DB=$SCOREMAX_PERSISTENT_ROOT/state/scoremax.db
+          export SCOREMAX_BACKUP_DIR=$SCOREMAX_PERSISTENT_ROOT/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=$SCOREMAX_PERSISTENT_ROOT/intake
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/dev/shm
+          export SCOREMAX_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          export SCOREMAX_STAGING_SESSION_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          python - <<'PY'
+          import csv,io
+          from pathlib import Path
+          import app as sm
+          fields=['Question ID','Family ID','Variant','Programme','Country','Qualification','Exam Board','Curriculum Version','Subject','Chapter','Chapter Number','Chapter Name','Topic','Sub-topic','Type','Question','A','B','C','D','Answer','Explanation','Level','Difficulty','Learning Outcome','Concept','Cognitive Skill','Command Word','Marks','Estimated Time Seconds','Stimulus / Context','Rights Status','ScoreMax Ready','Assessment Purpose','Difficulty Source','Source Type','Secure Bank','Status','Review Status','R2 Status']
+          buf=io.StringIO(); w=csv.DictWriter(buf,fieldnames=fields); w.writeheader()
+          for i in range(1,101):
+              w.writerow({'Question ID':f'GUARD-Q-{i:03d}','Family ID':f'GUARD-F-{(i-1)//4:03d}','Programme':'FSc Part 2','Country':'Pakistan','Qualification':'FSc / Intermediate','Curriculum Version':'2023 Curriculum','Subject':'Biology','Chapter':'13 — Thermoregulation and Osmoregulation','Chapter Number':'13','Chapter Name':'Thermoregulation and Osmoregulation','Topic':'Homeostasis','Type':'MCQ','Question':f'Which option is correct for governed guard fixture {i}?','A':'Correct','B':'Distractor B','C':'Distractor C','D':'Distractor D','Answer':'A','Explanation':'A is the governed correct option.','Level':'Foundation','Difficulty':'Easy','Learning Outcome':'Governed test outcome','Concept':'Governed family','Cognitive Skill':'Recall','Marks':'1','Estimated Time Seconds':'60','Rights Status':'ScoreMax Original','ScoreMax Ready':'Yes','Assessment Purpose':'practice|test|mock|mastery','Difficulty Source':'Power House governed source','Source Type':'Power House governed SCOREMAX_CREATED','Secure Bank':'Yes','Status':'Ready','Review Status':'AUTO_APPROVED_FOR_RELEASE','R2 Status':''})
+          raw=buf.getvalue().encode(); Path('/tmp/guard100.csv').write_bytes(raw)
+          sm.init(); c=sm.db(); admin=c.execute("SELECT id,full_name,COALESCE(session_version,0) session_version FROM users WHERE role='admin' AND COALESCE(account_status,'active')='active' ORDER BY id LIMIT 1").fetchone(); assert admin; before=int(c.execute('SELECT COALESCE(MAX(id),0) FROM content_import_batches').fetchone()[0]); c.close()
+          token='guard-public'; client=sm.app.test_client()
+          with client.session_transaction() as s: s.update(user_id=int(admin['id']),role='admin',full_name=str(admin['full_name']),session_version=int(admin['session_version']),_csrf_token=token)
+          r=client.post('/admin/import?mode=emergency',data={'_csrf_token':token,'intake_mode':'EMERGENCY_DIRECT','source_system':'POWER_HOUSE_GOVERNED','source_prompt_pack_id':'GUARD-V4-QUALIFICATION','source_prompt_pack_version':'1'*64,'file':(io.BytesIO(raw),'guard100.csv')},content_type='multipart/form-data',follow_redirects=False); assert r.status_code==200
+          c=sm.db(); b=c.execute('SELECT * FROM content_import_batches WHERE id>? ORDER BY id DESC LIMIT 1',(before,)).fetchone(); assert b and int(b['valid_count'])==100 and int(b['error_count'])==0 and int(b['warning_count'])==0; bid=int(b['id']); c.close()
+          r=client.post('/admin/import/confirm',data={'_csrf_token':token,'batch_id':bid},follow_redirects=False); assert r.status_code in {302,303}; Path('/tmp/bid').write_text(str(bid))
+          PY
+          python scripts/scoremax_persistent_storage_guard.py | tee /tmp/candidate.log
+          grep -q '"candidate": 100' /tmp/candidate.log
+      - name: Release 100 and prove post-release guard
+        env:
+          SCOREMAX_ENV: local
+          PYTHONPATH: scoremax_runtime_v669b
+        run: |
+          set -euo pipefail
+          export SCOREMAX_PERSISTENT_ROOT=/dev/shm/scoremax-guard-public
+          export SCOREMAX_DB=$SCOREMAX_PERSISTENT_ROOT/state/scoremax.db
+          export SCOREMAX_BACKUP_DIR=$SCOREMAX_PERSISTENT_ROOT/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=$SCOREMAX_PERSISTENT_ROOT/intake
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/dev/shm
+          export SCOREMAX_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          export SCOREMAX_STAGING_SESSION_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+          python - <<'PY'
+          from pathlib import Path
+          import app as sm
+          bid=int(Path('/tmp/bid').read_text()); sm.init(); c=sm.db(); admin=c.execute("SELECT id,full_name,COALESCE(session_version,0) session_version FROM users WHERE role='admin' AND COALESCE(account_status,'active')='active' ORDER BY id LIMIT 1").fetchone(); c.close(); token='release'; client=sm.app.test_client()
+          with client.session_transaction() as s: s.update(user_id=int(admin['id']),role='admin',full_name=str(admin['full_name']),session_version=int(admin['session_version']),_csrf_token=token)
+          r=client.post(f'/admin/import/batch/{bid}/release-eligible',data={'_csrf_token':token,'attestation':'I CONFIRM THIS IS A FROZEN ACADEMICALLY APPROVED RELEASE','release_note':'Guard V4 qualification fixture.'},follow_redirects=False); assert r.status_code in {302,303}
+          c=sm.db(); qs=c.execute('SELECT * FROM questions WHERE source_import_batch_id=?',(bid,)).fetchall(); assert len(qs)==100 and all(int(q['active'] or 0)==1 for q in qs); c.backup(__import__('sqlite3').connect('/tmp/good.db')); c.close()
+          PY
+          python scripts/scoremax_persistent_storage_guard.py | tee /tmp/released.log
+          grep -q '"released": 100' /tmp/released.log
+      - name: Five adversarial fail-closed cases
+        env:
+          SCOREMAX_ENV: local
+        run: |
+          set -euo pipefail
+          export SCOREMAX_PERSISTENT_ROOT=/dev/shm/scoremax-guard-public
+          export SCOREMAX_DB=$SCOREMAX_PERSISTENT_ROOT/state/scoremax.db
+          export SCOREMAX_BACKUP_DIR=$SCOREMAX_PERSISTENT_ROOT/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=$SCOREMAX_PERSISTENT_ROOT/intake
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/dev/shm
+          run_case(){ name="$1"; sql="$2"; expect="$3"; cp /tmp/good.db "$SCOREMAX_DB"; python - "$SCOREMAX_DB" "$sql" <<'PY'
+          import sqlite3,sys
+          c=sqlite3.connect(sys.argv[1]); c.execute(sys.argv[2]); c.commit(); c.close()
+          PY
+            set +e; python scripts/scoremax_persistent_storage_guard.py > "/tmp/${name}.log" 2>&1; rc=$?; set -e; test "$rc" -eq 78; grep -q "$expect" "/tmp/${name}.log"; echo "${name}=PASS"; }
+          run_case bad_source "UPDATE content_import_batches SET source_system='MANUAL_FILE'" 'emergency_wrong_source_system'
+          run_case bad_checksum "UPDATE content_import_batches SET payload_checksum=printf('%064d',0)" 'emergency_source_checksum_mismatch'
+          run_case no_attestation "UPDATE content_import_batches SET release_attested_at=''" 'emergency_release_attestation_missing'
+          run_case no_binding "UPDATE questions SET source_import_batch_id=NULL WHERE id=(SELECT MIN(id) FROM questions)" 'postimport_unbound_non_power_house_questions'
+          run_case bad_state "UPDATE questions SET status='Draft' WHERE id=(SELECT MIN(id) FROM questions)" 'emergency_released_question_state_invalid'
+          cp /tmp/good.db "$SCOREMAX_DB"
+          python scripts/scoremax_persistent_storage_guard.py | tee /tmp/final.log
+          grep -q 'SCOREMAX_PERSISTENT_STORAGE_PASS' /tmp/final.log
+          echo 'SCOREMAX_EMERGENCY_GUARD_V4_QUALIFICATION_PASS questions=100 candidate_restart=true released_restart=true attacks=5 fail_closed=true'
