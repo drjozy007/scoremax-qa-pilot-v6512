@@ -27,15 +27,25 @@ def build_csv()->bytes:
     return s.getvalue().encode()
 
 
+def clear_payload():
+    os.environ.pop(mod.PAYLOAD_ENV,None)
+    for i in range(1,9): os.environ.pop(f'{mod.PAYLOAD_CHUNK_PREFIX}{i}',None)
+
+
 def set_payload(raw:bytes):
-    os.environ[mod.PAYLOAD_ENV]=base64.b64encode(gzip.compress(raw,compresslevel=9,mtime=0)).decode()
+    clear_payload()
+    encoded=base64.b64encode(gzip.compress(raw,compresslevel=9,mtime=0)).decode()
+    step=(len(encoded)+3)//4
+    chunks=[encoded[i:i+step] for i in range(0,len(encoded),step)]
+    assert 1 <= len(chunks) <= 4
+    for idx,chunk in enumerate(chunks,1): os.environ[f'{mod.PAYLOAD_CHUNK_PREFIX}{idx}']=chunk
+    assert mod._encoded_payload()==encoded
 
 
 def main():
     shutil.rmtree(ROOT,ignore_errors=True); ROOT.joinpath('state').mkdir(parents=True); BACKUP.mkdir(); INTAKE.mkdir()
     sm.init()
-    # no payload must not mutate content
-    os.environ.pop(mod.PAYLOAD_ENV,None)
+    clear_payload()
     mod.run_one_time_bio13_intake(sm)
     c=sm.db(); assert c.execute('SELECT COUNT(*) FROM questions').fetchone()[0]==0; c.close()
 
@@ -48,19 +58,16 @@ def main():
     c=sm.db(); qs=c.execute('SELECT * FROM questions ORDER BY id').fetchall(); assert len(qs)==100 and all(q['status']=='Approved' and q['review_status']=='Approved' and int(q['active'] or 0)==1 and q['content_environment']=='PRODUCTION' for q in qs)
     b=c.execute("SELECT * FROM content_import_batches WHERE source_prompt_pack_id=?",(mod.PROMPT_PACK_ID,)).fetchone(); assert b and b['release_status']=='RELEASED_ELIGIBLE' and int(b['released_count'])==100
     batches=c.execute('SELECT COUNT(*) FROM content_import_batches').fetchone()[0]; c.close(); assert batches==1
-    # second startup must verify, not duplicate
     mod.run_one_time_bio13_intake(sm)
     c=sm.db(); assert c.execute('SELECT COUNT(*) FROM questions').fetchone()[0]==100 and c.execute('SELECT COUNT(*) FROM content_import_batches').fetchone()[0]==1; c.close()
-    # bad payload hash fails closed before mutation
     bad=raw+b'X'; set_payload(bad)
     try: mod.run_one_time_bio13_intake(sm)
     except RuntimeError as e: assert 'payload_sha256_mismatch' in str(e)
     else: raise AssertionError('bad hash did not fail')
-    # partial target population fails closed
     set_payload(raw); c=sm.db(); c.execute('DELETE FROM questions WHERE id=(SELECT MIN(id) FROM questions)'); c.commit(); c.close()
     try: mod.run_one_time_bio13_intake(sm)
     except RuntimeError as e: assert 'partial_target_population' in str(e)
     else: raise AssertionError('partial population did not fail')
-    print('BIO13_ONE_TIME_INTAKE_QUALIFICATION_PASS no_payload_noop=true imported=100 released=100 scored=100 idempotent_second_start=true bad_hash_fail_closed=true partial_population_fail_closed=true')
+    print('BIO13_ONE_TIME_INTAKE_QUALIFICATION_PASS chunked_payload=true no_payload_noop=true imported=100 released=100 scored=100 idempotent_second_start=true bad_hash_fail_closed=true partial_population_fail_closed=true')
 
 if __name__=='__main__': main()
