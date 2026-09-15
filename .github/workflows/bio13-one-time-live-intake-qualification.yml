@@ -1,0 +1,41 @@
+name: Bio13 One-Time Live Intake Qualification
+on:
+  push:
+    branches: [ops/bio13-one-time-live-intake-20260915]
+    paths:
+      - 'deploy_ux_vnext.py'
+      - 'ux_vnext_overlay/ux_one_time_bio13_intake.py'
+      - 'scripts/qualify_one_time_bio13_intake.py'
+      - '.github/workflows/bio13-one-time-live-intake-qualification.yml'
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify parent and product delta
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor e495c0a6e61be8542b3175f77a8985511e996af0 HEAD
+          git diff e495c0a6e61be8542b3175f77a8985511e996af0..HEAD --name-only | grep -v '^.github/workflows/' | sort | tee /tmp/delta.txt
+          grep -qx 'deploy_ux_vnext.py' /tmp/delta.txt
+          grep -qx 'ux_vnext_overlay/ux_one_time_bio13_intake.py' /tmp/delta.txt
+          grep -qx 'scripts/qualify_one_time_bio13_intake.py' /tmp/delta.txt
+          test "$(wc -l < /tmp/delta.txt)" -eq 3
+          python -m py_compile ux_vnext_overlay/ux_one_time_bio13_intake.py scripts/qualify_one_time_bio13_intake.py deploy_ux_vnext.py
+      - name: Build exact ScoreMax runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          grep -q 'run_one_time_bio13_intake(scoremax)' scoremax_runtime_v669b/scoremax_production.py
+          test -f scoremax_runtime_v669b/ux_one_time_bio13_intake.py
+          pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Execute wrapper qualification
+        run: python scripts/qualify_one_time_bio13_intake.py
