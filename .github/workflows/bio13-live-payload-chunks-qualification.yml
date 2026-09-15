@@ -1,0 +1,36 @@
+name: Bio13 Live Payload Chunks Qualification
+on:
+  push:
+    branches: [ops/bio13-live-payload-chunks-20260915]
+    paths:
+      - 'ux_vnext_overlay/ux_one_time_bio13_intake.py'
+      - 'scripts/qualify_one_time_bio13_intake.py'
+      - '.github/workflows/bio13-live-payload-chunks-qualification.yml'
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify bounded delta
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 2b980e797b856e2c1cb1fc524f83c26972714f64 HEAD
+          git diff 2b980e797b856e2c1cb1fc524f83c26972714f64..HEAD --name-only | grep -v '^.github/workflows/' | sort | tee /tmp/delta.txt
+          grep -qx 'ux_vnext_overlay/ux_one_time_bio13_intake.py' /tmp/delta.txt
+          grep -qx 'scripts/qualify_one_time_bio13_intake.py' /tmp/delta.txt
+          test "$(wc -l < /tmp/delta.txt)" -eq 2
+          python -m py_compile ux_vnext_overlay/ux_one_time_bio13_intake.py scripts/qualify_one_time_bio13_intake.py
+      - name: Build runtime and run qualification
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          python scripts/qualify_one_time_bio13_intake.py
