@@ -1,0 +1,58 @@
+name: Bio13 Native Intake Contract Inspect
+on:
+  push:
+    branches: [ops/bio13-native-intake-qualification-20260915]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Reconstruct exact deployed runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py | tee /tmp/build.log
+          grep -q 'SCOREMAX_UX_VNEXT_V6611D_COMPATIBILITY_PASS' /tmp/build.log
+          grep -q 'release=6.6.11D' /tmp/build.log
+          python -m pip install --disable-pip-version-check -r scoremax_runtime_v669b/requirements.txt
+      - name: Inspect native content admission and catalogue
+        run: |
+          set -euo pipefail
+          export SCOREMAX_ENV=testing
+          export SCOREMAX_PERSISTENT_ROOT=/tmp/scoremax
+          export SCOREMAX_DB=/tmp/scoremax/state/scoremax.db
+          export SCOREMAX_BACKUP_DIR=/tmp/scoremax/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=/tmp/scoremax/intake
+          export SCOREMAX_SECRET=qualification-only-secret
+          export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@scoremax.invalid
+          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password
+          mkdir -p /tmp/scoremax/state /tmp/scoremax/backup /tmp/scoremax/intake
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import inspect,json,sqlite3,os
+          import app as sm
+          import scoremax_integration_v1 as integ
+          sm.init()
+          c=sqlite3.connect(os.environ['SCOREMAX_DB']); c.row_factory=sqlite3.Row
+          print('SCOREMAX_RELEASE',getattr(sm,'SCOREMAX_RELEASE_VERSION',None))
+          print('INTEGRATION_RELEASE',getattr(integ,'SCOREMAX_INTEGRATION_RELEASE',None))
+          print('CONTENT_ROUTE_PRESENT', any(str(r.rule)=='/api/integration/v1/power-house/content-releases' for r in sm.app.url_map.iter_rules()))
+          for name in ['admit_content_envelope','_activate_release','init_schema']:
+              obj=getattr(integ,name,None)
+              print('SIG',name,inspect.signature(obj) if callable(obj) else None)
+              if callable(obj): print('SRC',name,inspect.getsource(obj))
+          print('TABLES')
+          for t in ['curriculum','chapter_catalogue','coverage_packages','questions','integration_ph_content_releases','integration_ph_release_question_membership','integration_ph_question_version_store']:
+              exists=bool(c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(t,)).fetchone())
+              print('TABLE',t,exists)
+              if exists:
+                  cols=[r['name'] for r in c.execute(f'PRAGMA table_info({t})')]
+                  print('COLS',t,cols)
+                  rows=[dict(r) for r in c.execute(f'SELECT * FROM {t} LIMIT 40')]
+                  print('ROWS',t,json.dumps(rows,sort_keys=True,default=str))
+          c.close()
+          PY
