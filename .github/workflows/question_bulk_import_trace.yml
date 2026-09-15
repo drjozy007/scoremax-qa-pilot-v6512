@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect packaged ScoreMax question import routes
+      - name: Inspect Emergency Direct Intake validation and release gate
         shell: bash
         run: |
           set -euo pipefail
@@ -17,11 +17,14 @@ jobs:
           test -f "$ZIP"
           rm -rf /tmp/scoremax && mkdir -p /tmp/scoremax
           unzip -q "$ZIP" -d /tmp/scoremax
-          echo '=== PACKAGE ROOT ==='
-          find /tmp/scoremax -maxdepth 3 -type f | head -300
-          echo '=== QUESTION IMPORT / BULK / XLSX / CSV ROUTES ==='
-          grep -RniE --include='*.py' --include='*.js' --include='*.ts' --include='*.html' --include='*.md' 'xlsx|openpyxl|csv|bulk.*import|import.*question|question.*import|upload.*question|question.*upload|import.*xlsx|excel|spreadsheet|question bank.*upload|question_bank.*import' /tmp/scoremax | head -1800 || true
-          echo '=== QUESTION INGEST FUNCTIONS ==='
-          grep -RniE --include='*.py' 'def .*import|def .*upload|INSERT INTO .*question|upsert.*question|create.*question|bulk.*question|question.*bank' /tmp/scoremax | head -1800 || true
-          echo '=== POWER HOUSE INTEGRATION RECEIVER ==='
-          grep -RniE --include='*.py' 'PH_SM_APPROVED_CONTENT|power.house|content-releases|package_download_url|reasoning_seed_id|claim_family_id' /tmp/scoremax | head -1800 || true
+          F=/tmp/scoremax/app.py
+          echo '=== VALIDATE IMPORT ROW ==='
+          sed -n '8625,8705p' "$F"
+          echo '=== NORMALISE/READ/INSERT ==='
+          sed -n '9840,10075p' "$F"
+          echo '=== ADMIN IMPORT / CONFIRM / RELEASE ELIGIBLE ==='
+          sed -n '10195,10420p' "$F"
+          echo '=== EMERGENCY 3000 SCALE TEST ==='
+          sed -n '1,220p' /tmp/scoremax/scale_test_v6_4_emergency_3000.py
+          echo '=== V6.4 ACCEPTANCE RELEVANT ==='
+          grep -n -i -E 'Emergency Direct Intake|3,000|3000|governed release|eligible release|Power House' /tmp/scoremax/V6_4_0_ACCEPTANCE.md /tmp/scoremax/V6_4_0_BUILD_REPORT.md /tmp/scoremax/V6_5_1_ACCEPTANCE.md /tmp/scoremax/V6_5_1_PLATFORM_INTEGRATION_HANDOFF.md | head -300 || true
