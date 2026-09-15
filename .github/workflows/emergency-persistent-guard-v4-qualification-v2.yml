@@ -1,0 +1,37 @@
+name: Emergency Persistent Guard V4 Qualification v2
+on:
+  push:
+    branches: [ops/v6611d-emergency-persistent-guard-20260915]
+    paths:
+      - 'scripts/scoremax_persistent_storage_guard.py'
+      - 'scripts/qualify_emergency_persistent_guard_v4.py'
+      - '.github/workflows/emergency-persistent-guard-v4-qualification-v2.yml'
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify product delta
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 27a0ece04c97cd0bebc0b4fcb592747fa3867c07 HEAD
+          git diff 27a0ece04c97cd0bebc0b4fcb592747fa3867c07..HEAD --name-only | grep -v '^.github/workflows/' | sort | tee /tmp/product_delta.txt
+          test "$(wc -l < /tmp/product_delta.txt)" -eq 2
+          grep -qx 'scripts/scoremax_persistent_storage_guard.py' /tmp/product_delta.txt
+          grep -qx 'scripts/qualify_emergency_persistent_guard_v4.py' /tmp/product_delta.txt
+          python -m py_compile scripts/scoremax_persistent_storage_guard.py scripts/qualify_emergency_persistent_guard_v4.py
+      - name: Build exact ScoreMax runtime and install dependencies
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Execute 100-row guard qualification
+        run: python scripts/qualify_emergency_persistent_guard_v4.py
