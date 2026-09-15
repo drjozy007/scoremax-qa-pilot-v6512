@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect direct intake field preservation contract
+      - name: Check exact Bio13 question-type compatibility
         shell: bash
         run: |
           set -euo pipefail
@@ -17,14 +17,19 @@ jobs:
           test -f "$ZIP"
           rm -rf /tmp/scoremax && mkdir -p /tmp/scoremax
           unzip -q "$ZIP" -d /tmp/scoremax
-          F=/tmp/scoremax/app.py
-          echo '=== NORMALIZER FUNCTIONS ==='
-          grep -nE '^def (_normalize_import_row|_read_import_upload|_insert_import_question|validate_import_row)' "$F" || true
-          for fn in _normalize_import_row _read_import_upload _insert_import_question; do
-            line=$(grep -n "^def $fn" "$F" | head -1 | cut -d: -f1 || true)
-            if [ -n "$line" ]; then start=$line; end=$((line+220)); echo "===== $fn ====="; sed -n "${start},${end}p" "$F"; fi
-          done
-          echo '=== STIMULUS / CONTEXT / EXTRA COLUMNS REFERENCES ==='
-          grep -RniE --include='*.py' 'stimulus|context|passage|scenario|source locator|progression|cognitive|mastery|extra_json|raw_row|source_row|import.*json|metadata' /tmp/scoremax | head -1400 || true
-          echo '=== QUESTION TABLE SCHEMA ==='
-          grep -RniE --include='*.py' --include='*.sql' 'CREATE TABLE.*questions|ALTER TABLE.*questions' /tmp/scoremax | head -400 || true
+          cd /tmp/scoremax
+          python - <<'PY'
+          import os,tempfile,sys
+          os.environ['SCOREMAX_DB_PATH']=tempfile.mktemp(suffix='.db')
+          os.environ['SCOREMAX_ENV']='test'
+          import app
+          types=['STANDARD_MCQ','FOUR_STATEMENT_SELECTION','MATCHING_SET','ORDERING_SEQUENCE','CLOZE_SINGLE_SELECT','MULTIPLE_RESPONSE','ADAPTIVE_RECOVERY_PATHWAY_ITEM','SHORT_CONSTRUCTED_RESPONSE']
+          print('LIVE_MARKABLE_TYPES',sorted(app.LIVE_MARKABLE_TYPES))
+          for t in types:
+              print('TYPE_MAP',t,'=>',app.canonical_question_type({'qtype':t}))
+          print('QUESTION_COLUMNS_ABCD_ONLY', all(x in open('app.py',encoding='utf-8').read() for x in ["'option_a'","'option_b'","'option_c'","'option_d'"]))
+          src=open('app.py',encoding='utf-8').read()
+          start=src.index('def _parse_import_options')
+          print('PARSE_OPTIONS_SNIPPET')
+          print(src[start:start+1800])
+          PY
