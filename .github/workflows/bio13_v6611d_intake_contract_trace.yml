@@ -20,22 +20,33 @@ jobs:
           grep -q 'V6611D_HOSTED_QUALIFICATION_RUNTIME_READY' /tmp/reconstruct.log
           echo '=== RUNTIME IDENTITY ==='
           grep -E 'V6611C_HOSTED_RUNTIME_VERIFIED|V6611D_BRIDGE_OVERLAY_APPLIED|V6611D_HOSTED_QUALIFICATION_RUNTIME_READY' /tmp/reconstruct.log
-      - name: Inspect direct intake and type support
+      - name: Verify capability and compile
         shell: bash
         run: |
           set -euo pipefail
           R=scoremax_runtime_v669b
-          echo '=== RELEASE MARKERS ==='
-          grep -RniE --include='*.py' '6\.6\.11D|SCOREMAX_RELEASE_VERSION|V6611D' "$R" | head -120 || true
-          echo '=== EMERGENCY / BULK INTAKE ROUTES ==='
-          grep -RniE --include='*.py' 'Emergency Direct Intake|content_import|_normalize_import_row|_insert_import_question|validate_import_row|3000' "$R" | head -500 || true
-          echo '=== TYPE NORMALISERS / SUPPORTED RENDERERS ==='
-          grep -RniE --include='*.py' 'canonical_question_type|LIVE_MARKABLE_TYPES|MATCHING_SET|ORDERING_SEQUENCE|SHORT_CONSTRUCTED_RESPONSE|MULTIPLE_RESPONSE|matching|ordering|constructed_response|short_response' "$R" | head -1200 || true
-          echo '=== LEARNER TEMPLATE TYPE HANDLING ==='
-          grep -RniE --include='*.html' 'matching|ordering|short_response|constructed|multiple_select|drag' "$R/templates" | head -800 || true
-          echo '=== SCORE / SUBMIT TYPE HANDLING ==='
-          grep -RniE --include='*.py' 'correct_pairs|correct_order|accepted_answers|multiple_select|matching.*score|ordering.*score|constructed.*score' "$R" | head -1000 || true
-          echo '=== QUESTION PACKAGE / PH BRIDGE ==='
-          grep -RniE --include='*.py' 'PH_SM|approved.content|Power House|bridge|manifest_pull|product.activation|question package' "$R" | head -1200 || true
-          echo '=== STATIC COMPILE ==='
+          grep -q "LIVE_MARKABLE_TYPES={'single_choice','true_false','fill_blank','multiple_select','numerical','matching','ordering','constructed_response'}" "$R/app.py"
+          grep -q '"matching_set": "matching"' "$R/question_contract_engine.py"
+          grep -q '"ordering_sequence": "ordering"' "$R/question_contract_engine.py"
+          grep -q '"short_response": "constructed_response"' "$R/question_contract_engine.py"
+          grep -q "if qtype=='matching'" "$R/app.py"
+          grep -q "if qtype=='ordering'" "$R/app.py"
+          grep -q "if qtype=='constructed_response'" "$R/app.py"
           python -m py_compile "$R"/*.py
+          find "$R" -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/v6611d_files.sha256
+          sha256sum /tmp/v6611d_files.sha256
+      - name: Package reconstructed runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/scoremax_v6611d_runtime.tar.gz scoremax_runtime_v669b
+          sha256sum /tmp/scoremax_v6611d_runtime.tar.gz | tee /tmp/runtime_archive.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scoremax-v6611d-runtime-bio13-qualification
+          path: |
+            /tmp/scoremax_v6611d_runtime.tar.gz
+            /tmp/runtime_archive.sha256
+            /tmp/reconstruct.log
+          if-no-files-found: error
+          retention-days: 2
