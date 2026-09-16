@@ -16,6 +16,7 @@ os.environ.update({
 sys.path.insert(0,str(RUNTIME))
 import app as sm
 import scoremax_ph_bridge_v6611d as bridge
+from ux_admin_view_as_runtime import install_admin_view_as
 
 FIELDS=['Question ID','Family ID','Programme','Country','Qualification','Curriculum Version','Subject','Chapter','Chapter Number','Chapter Name','Topic','Type','Question','A','B','C','D','Answer','Explanation','Level','Difficulty','Learning Outcome','Concept','Cognitive Skill','Marks','Estimated Time Seconds','Rights Status','ScoreMax Ready','Assessment Purpose','Difficulty Source','Source Type','Secure Bank','Status','Review Status','R2 Status','Power House Public ID','Power House Source Row']
 
@@ -46,6 +47,10 @@ def import_release(raw:bytes):
 
 def main():
     sm.init()
+    # Current production registers Admin View As during scoremax_production startup.
+    # The qualification imports bare app.py, so mirror that current-baseline route registration
+    # before rendering admin templates. This is harness parity, not product behavior.
+    install_admin_view_as(sm.app)
     raw=make_csv(); cl,qdb,bid,digest,ledger=import_release(raw)
     c=sm.db(); q=c.execute('SELECT * FROM questions WHERE id=?',(qdb,)).fetchone()
     msg=bridge.queue_reported_question_incident(c,q,'QUAL-FLAG-001','FACTUAL_ERROR','HIGH','qualification concern',{'source':'QUAL','page':'/admin/questions/'+str(qdb)})
