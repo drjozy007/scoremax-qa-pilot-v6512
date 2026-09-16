@@ -17,8 +17,9 @@ jobs:
         run: |
           set -euo pipefail
           python deploy_ux_vnext.py
-      - name: Inspect contract registry and incident schema
+      - name: Inspect contract registry and envelope versioning
         run: |
           set -euo pipefail
-          grep -R -n -C 80 "def validate_payload\|def validate_envelope\|class.*Contract\|schema_version.*contract_version" scoremax_runtime_v669b/integration_contracts scoremax_runtime_v669b/scoremax_integration_v1.py | head -n 900 || true
-          cat scoremax_runtime_v669b/integration_contracts/SM_PH_CONTENT_INCIDENT_V1.schema.json
+          grep -n -A 80 -B 80 "CONTRACTS" scoremax_runtime_v669b/scoremax_integration_v1.py | head -n 900 || true
+          grep -R -n -A 100 -B 40 "def validate_payload\|def contract_version\|schema_version" scoremax_runtime_v669b/integration_contracts | head -n 1200 || true
+          grep -n -A 60 -B 20 "def _envelope" scoremax_runtime_v669b/scoremax_integration_v1.py
