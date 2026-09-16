@@ -1,0 +1,49 @@
+name: Emergency Return Bridge Trace
+on:
+  push:
+    branches: [ops/emergency-return-bridge-trace-20260916]
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Build current runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+      - name: Inspect rejection handler and evidence schema
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast, pathlib
+          p=pathlib.Path('scoremax_runtime_v669b/app.py')
+          src=p.read_text()
+          tree=ast.parse(src)
+          lines=src.splitlines()
+          found=0
+          for node in ast.walk(tree):
+              if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                  seg='\n'.join(lines[node.lineno-1:getattr(node,'end_lineno',node.lineno)])
+                  if '/admin/questions/' in seg and '/review' in seg:
+                      print('===ADMIN_REVIEW_HANDLER===')
+                      print(seg)
+                      found+=1
+          assert found==1,found
+          PY
+          python - <<'PY'
+          import pathlib,re
+          s=pathlib.Path('scoremax_runtime_v669b/app.py').read_text()
+          for term in ['CREATE TABLE IF NOT EXISTS content_import_batches','CREATE TABLE IF NOT EXISTS content_import_batch_rows']:
+              i=s.find(term)
+              print('===SCHEMA',term,'===')
+              assert i>=0
+              print(s[i:i+4500])
+          PY
+          grep -n "queue_reported_question_incident\|content_import_batch_rows\|Power House Public ID\|Power House Source Row" scoremax_runtime_v669b/app.py scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py || true
