@@ -19,14 +19,23 @@ jobs:
         run: |
           set -euo pipefail
           git merge-base --is-ancestor 214f2343186f798bad5211b3364172da4a0eef51 HEAD
-          python -m py_compile ux_vnext_overlay/ux_emergency_return_bridge.py scripts/qualify_emergency_return_bridge.py deploy_ux_vnext.py
-      - name: Build exact runtime
+          python -m py_compile ux_vnext_overlay/ux_emergency_return_bridge.py ux_vnext_overlay/ux_emergency_return_recovery.py scripts/qualify_emergency_return_bridge.py deploy_ux_vnext.py
+      - name: Materialize exact runtime
         run: |
           set -euo pipefail
           python deploy_ux_vnext.py
+      - name: Verify runtime markers
+        run: |
+          set -euo pipefail
           grep -q 'SM-PH-EMERGENCY-RETURN-BRIDGE-20260916-1' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q 'SM-PH-EMERGENCY-RETURN-RECOVERY-20260916-1' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
           grep -q 'EMERGENCY_DIRECT_GOVERNED' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
-          python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py scoremax_runtime_v669b/ux_content_reviewer.py
-          pip install -r scoremax_runtime_v669b/requirements.txt
+          grep -q 'pending_exception' scripts/scoremax_persistent_storage_guard.py
+      - name: Compile patched runtime
+        run: |
+          set -euo pipefail
+          python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py scoremax_runtime_v669b/ux_content_reviewer.py scoremax_runtime_v669b/scoremax_production.py scripts/scoremax_persistent_storage_guard.py
+      - name: Install runtime requirements
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
       - name: Execute return bridge qualification
         run: python scripts/qualify_emergency_return_bridge.py
