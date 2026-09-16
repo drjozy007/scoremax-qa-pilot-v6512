@@ -14,6 +14,9 @@ from ux_vnext_overlay.ux_restore_access_cards import apply_restore_access_cards
 from ux_vnext_overlay.ux_chapter_card_open_fix import apply_chapter_card_open_fix
 from ux_vnext_overlay.ux_admin_rejection_reason_guard import apply_admin_rejection_reason_guard
 from ux_vnext_overlay.ux_persistent_guard_postrelease_state import apply_persistent_guard_postrelease_state
+from ux_vnext_overlay.ux_emergency_return_bridge import apply_emergency_return_bridge
+from ux_vnext_overlay.ux_emergency_return_contract import apply_emergency_return_contract
+from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return_recovery
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -204,6 +207,9 @@ def main() -> None:
     _install_post_init_teacher_preview()
     _restore_catalogue_browser()
     _install_admin_view_as()
+    apply_emergency_return_bridge(ROOT)
+    apply_emergency_return_contract(ROOT)
+    apply_emergency_return_recovery(ROOT)
     apply_programme_catalogue_routing(ROOT)
     apply_main_subject_fsc_fence(ROOT)
     apply_canonical_student_navigation(ROOT)

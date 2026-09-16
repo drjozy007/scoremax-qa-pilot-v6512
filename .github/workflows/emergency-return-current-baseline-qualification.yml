@@ -1,0 +1,48 @@
+name: Emergency Return Current Baseline Qualification
+on:
+  push:
+    branches: [ops/emergency-return-current-baseline-20260916]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify exact current production ancestry
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor e07218e829f9825cd2d090b67408d43560228f56 HEAD
+          test "$(git merge-base e07218e829f9825cd2d090b67408d43560228f56 HEAD)" = "e07218e829f9825cd2d090b67408d43560228f56"
+      - name: Compile bounded overlays
+        run: |
+          set -euo pipefail
+          python -m py_compile deploy_ux_vnext.py ux_vnext_overlay/ux_emergency_return_bridge.py ux_vnext_overlay/ux_emergency_return_contract.py ux_vnext_overlay/ux_emergency_return_recovery.py scripts/qualify_emergency_return_bridge_current.py
+      - name: Materialize exact runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+      - name: Verify current-baseline controls survived
+        run: |
+          set -euo pipefail
+          grep -q 'SCOREMAX_ADMIN_REJECTION_REASON_GUARD_V1' scoremax_runtime_v669b/app.py
+          grep -q 'SCOREMAX-PERSISTENT-GUARD-V4-POSTRELEASE-STATE-V1' scripts/scoremax_persistent_storage_guard.py
+          grep -q 'def _emergency_direct_identity' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q "'identity_mode':'EMERGENCY_DIRECT_GOVERNED'" scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q 'def reconcile_governed_emergency_rejections' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q 'SCOREMAX_EMERGENCY_RETURN_RECOVERY' scoremax_runtime_v669b/scoremax_production.py
+          grep -q 'install_admin_view_as(scoremax.app)' scoremax_runtime_v669b/scoremax_production.py
+      - name: Compile patched runtime
+        run: |
+          set -euo pipefail
+          python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py scoremax_runtime_v669b/scoremax_integration_v1.py scoremax_runtime_v669b/ux_content_reviewer.py scoremax_runtime_v669b/scoremax_production.py scripts/scoremax_persistent_storage_guard.py
+      - name: Install runtime requirements
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Execute current-baseline return qualification
+        run: python scripts/qualify_emergency_return_bridge_current.py
