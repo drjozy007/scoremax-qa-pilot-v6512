@@ -49,20 +49,26 @@ jobs:
           assert [str(x) for x in ['not_configured','missing_credentials','delivered']]==['not_configured','missing_credentials','delivered']
           print('SCOREMAX_EMERGENCY_RETURN_DISPATCH_QUALIFICATION_PASS incident_route=true existing_dispatcher=true same_ph_credentials=true durable_retry_unconditional=true status_contract_strings=true health_surface=true existing_routes_unchanged=true')
           PY
-      - name: Disposable startup import smoke
+      - name: Disposable hosted-startup import smoke
         run: |
           set -euo pipefail
-          export SCOREMAX_ENV=local
-          export SCOREMAX_DB=/tmp/scoremax-emergency-startup.sqlite3
+          export SCOREMAX_ENV=production
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/tmp/scoremax-emergency-root
           export SCOREMAX_PERSISTENT_ROOT=/tmp/scoremax-emergency-root
+          export SCOREMAX_DB=/tmp/scoremax-emergency-root/state/scoremax.sqlite3
           export SCOREMAX_BACKUP_DIR=/tmp/scoremax-emergency-root/backup
           export SCOREMAX_CONTENT_INTAKE_DIR=/tmp/scoremax-emergency-root/intake
+          export SCOREMAX_INSTANCE_COUNT=1
+          export WEB_CONCURRENCY=1
+          export SCOREMAX_PUBLIC_BASE_URL=https://scoremax.example.invalid
           export SCOREMAX_SECRET=qualification-only-secret
           export SCOREMAX_STAGING_SESSION_SECRET=qualification-only-session
-          mkdir -p "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
+          export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@example.invalid
+          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password
+          mkdir -p /tmp/scoremax-emergency-root/state "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
           cd scoremax_runtime_v669b
           python - <<'PY'
           import scoremax_production
           assert scoremax_production.application is not None
-          print('SCOREMAX_EMERGENCY_RETURN_STARTUP_IMPORT_PASS disposable_db=true production_module_import=true')
+          print('SCOREMAX_EMERGENCY_RETURN_STARTUP_IMPORT_PASS disposable_db=true hosted_entrypoint=true')
           PY
