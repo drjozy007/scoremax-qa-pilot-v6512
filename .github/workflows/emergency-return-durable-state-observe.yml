@@ -1,0 +1,66 @@
+name: Emergency Return Durable State Observe Qualification
+on:
+  push:
+    branches: [ops/emergency-return-durable-state-observe-20260916]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize and compile
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          python -m py_compile scoremax_runtime_v669b/scoremax_production.py scoremax_runtime_v669b/scoremax_integration_v1.py
+      - name: Prove durable state projection is read-only and bounded
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('scoremax_runtime_v669b/scoremax_production.py').read_text(encoding='utf-8')
+          block=s[s.index("import os as _emergency_return_os"):s.index('application=scoremax.app',s.index("import os as _emergency_return_os"))]
+          assert "integration_health(_emergency_return_conn)" in block
+          assert "'SM_PH_CONTENT_INCIDENT_V1'" in block
+          for k in ('connection_state','queued_count','retrying_count','in_flight_count','dead_letter_count','quarantined_count','last_error_code','last_error_at','last_success_at','last_dispatched_at','oldest_backlog_at'):
+              assert repr(k) in block,k
+          forbidden=('receipt_json','envelope_json','Authorization','UPDATE integration_outbox','DELETE FROM integration_outbox','INSERT INTO integration_outbox')
+          for token in forbidden:
+              assert token not in block,token
+          print('SCOREMAX_EMERGENCY_RETURN_DURABLE_STATE_OBSERVE_PASS read_only_health=true bounded_fields=true secret_values=false payloads=false mutation=false')
+          PY
+      - name: Install runtime requirements
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Hosted startup smoke
+        run: |
+          set -euo pipefail
+          export SCOREMAX_ENV=production
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/tmp/scoremax-emergency-health
+          export SCOREMAX_PERSISTENT_ROOT=/tmp/scoremax-emergency-health
+          export SCOREMAX_DB=/tmp/scoremax-emergency-health/state/scoremax.sqlite3
+          export SCOREMAX_BACKUP_DIR=/tmp/scoremax-emergency-health/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=/tmp/scoremax-emergency-health/intake
+          export SCOREMAX_INSTANCE_COUNT=1 WEB_CONCURRENCY=1
+          export SCOREMAX_PUBLIC_BASE_URL=https://scoremax.example.invalid
+          export SCOREMAX_SMTP_HOST=localhost SCOREMAX_SMTP_FROM=qualification@scoremax.invalid
+          export SCOREMAX_SECRET=qualification-only-secret-0123456789abcdef0123456789abcdef
+          export SCOREMAX_STAGING_SESSION_SECRET=qualification-only-session-0123456789abcdef0123456789abcdef
+          export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@example.invalid
+          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password-0123456789abcdef
+          unset SCOREMAX_POWER_HOUSE_BASE_URL SCOREMAX_TO_POWER_HOUSE_TOKEN SCOREMAX_TO_POWER_HOUSE_HMAC_SECRET || true
+          mkdir -p "$SCOREMAX_PERSISTENT_ROOT/state" "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
+          cd scoremax_runtime_v669b
+          python - <<'PY' >/tmp/startup.log
+          import scoremax_production
+          assert scoremax_production.application is not None
+          PY
+          grep -q 'incident_health=' /tmp/startup.log
+          grep -q '"connection_state":"NOT_CONFIGURED"' /tmp/startup.log
+          if grep -q 'qualification-only-secret' /tmp/startup.log; then exit 1; fi
+          tail -n 25 /tmp/startup.log
+          echo SCOREMAX_EMERGENCY_RETURN_DURABLE_STATE_HOSTED_SMOKE_PASS
