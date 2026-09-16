@@ -1,0 +1,68 @@
+name: V015L9AD PH Receipt Consumer Validation
+on:
+  push:
+    branches: [ops/v015l9ad-receipt-validator-20260916]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize current ScoreMax runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Validate exact planned PH receipt projection
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,sys
+          from datetime import datetime, timezone
+          sys.path.insert(0,'scoremax_runtime_v669b')
+          import scoremax_integration_v1 as sm
+
+          def ph_receipt(envelope,domain_result):
+              domain_status=str(domain_result.get('status') or '').upper()
+              if domain_status=='DUPLICATE':
+                  status='DUPLICATE'; errors=[]
+              elif domain_status in {'HELD','ACCEPTED'}:
+                  status='ACCEPTED'; errors=[]
+              else:
+                  status='REJECTED'
+                  code='PH_CONTENT_INCIDENT_'+(domain_status or 'REJECTED')
+                  errors=[{'code':code,'path':'payload.question','message':'Power House did not accept the content incident for governed hold.','retryable':False}]
+              now=datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')
+              mid=str(envelope.get('message_id') or '')
+              checksum=str(envelope.get('payload_checksum_sha256') or '')
+              rid='RCPT::POWER_HOUSE::'+hashlib.sha256((mid+'|'+checksum+'|'+status).encode('utf-8')).hexdigest()[:32]
+              return {
+                'receipt_id':rid,'message_id':mid,'contract_name':str(envelope.get('contract_name') or ''),
+                'receiver_system':'POWER_HOUSE','received_at':now,'status':status,'duplicate_of_receipt_id':None,
+                'accepted_schema_version':str(envelope.get('schema_version') or '') if status in {'ACCEPTED','DUPLICATE'} else None,
+                'payload_checksum_sha256':checksum,'errors':errors,
+              }
+
+          env={
+            'message_id':'msg::SM_PH_CONTENT_INCIDENT_V1::qualification001',
+            'contract_name':'SM_PH_CONTENT_INCIDENT_V1','contract_version':'1','schema_version':'1.1.0',
+            'source_system':'SCOREMAX','destination_system':'POWER_HOUSE',
+            'occurred_at':'2026-09-16T12:00:00Z','sent_at':'2026-09-16T12:00:01Z',
+            'correlation_id':'corr::qualification001','idempotency_key':'incident::qualification001',
+            'producer_version':'6.6.11D','retry_of_message_id':None,
+            'payload_checksum_sha256':'a'*64,'data_classification':'INTERNAL','payload':{},
+          }
+          expected={'HELD':'ACCEPTED','DUPLICATE':'DUPLICATE','IDENTITY_MISMATCH':'REJECTED'}
+          for domain_status,want in expected.items():
+              receipt=ph_receipt(env,{'status':domain_status})
+              assert receipt['status']==want,(domain_status,receipt)
+              errs=sm._dispatch_receipt_errors(receipt,env)
+              assert errs==[],(domain_status,errs,receipt)
+              print(domain_status,json.dumps(receipt,sort_keys=True))
+          print('SCOREMAX_V015L9AD_PH_RECEIPT_CONSUMER_PASS held=ACCEPTED duplicate=DUPLICATE mismatch=REJECTED frozen_validator=true')
+          PY
