@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% block title %}View As · Admin · ScoreMax{% endblock %}{% block content %}
+<section class="compact-page ux-admin-view-as-page">
+  <section class="card ux-admin-hero">
+    <p class="eyebrow">ADMIN · VIEW AS</p>
+    <h1>Inspect ScoreMax as a real user type</h1>
+    <p>Open the actual Student or Teacher interface using isolated ScoreMax preview fixtures. Choose the programme/year you want to inspect, then use the persistent <strong>Exit Admin Preview</strong> bar to return here.</p>
+  </section>
+
+  <section class="card ux-admin-boundary">
+    <strong>Read-only preview</strong>
+    <p>This mode reuses dedicated synthetic preview identities. It does not impersonate a real user and it blocks learner/teacher POST actions while preview mode is active.</p>
+  </section>
+
+  <section class="ux-view-as-grid">
+    {% for role in ['student','teacher'] %}
+    <article class="card ux-view-as-role">
+      <p class="eyebrow">{{role|upper}}</p>
+      <h2>{{'Student experience' if role=='student' else 'Teacher experience'}}</h2>
+      <p>{{'Inspect learner navigation, subjects, programme context, chapter surfaces and product UX.' if role=='student' else 'Inspect the teacher dashboard, classes and teacher-facing workflow.'}}</p>
+      <div class="ux-view-as-actions">
+        {% for p in profiles if p.role==role %}
+        <form method="post" action="{{url_for('admin_view_as_start')}}">
+          <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+          <input type="hidden" name="profile" value="{{p.key}}">
+          <button class="btn {{'alt' if not loop.first else ''}}" type="submit">{{p.programme_label}}</button>
+        </form>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+
+  <section class="card ux-admin-secondary">
+    <p class="eyebrow">QUICK INSPECTION</p>
+    <h2>Content & operations</h2>
+    <div class="actions">
+      <a class="btn alt" href="{{url_for('admin_questions')}}">Questions</a>
+      <a class="btn alt" href="{{url_for('admin_integration_health')}}">Integration health</a>
+      <a class="btn alt" href="{{url_for('admin_dashboard')}}">Admin home</a>
+    </div>
+  </section>
+</section>
+<style>
+.ux-view-as-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}.ux-view-as-role h2{margin:.15rem 0 .4rem}.ux-view-as-role p{color:#667875}.ux-view-as-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.ux-view-as-actions form{margin:0}.ux-view-as-actions button{margin:0}.admin-preview-bar{position:sticky;top:0;z-index:200;display:flex;justify-content:center;align-items:center;gap:16px;padding:9px 16px;background:#172033;color:#fff;font-weight:800;box-shadow:0 3px 12px rgba(15,23,42,.18)}.admin-preview-bar a{color:#fff;background:#2f7f7d;border-radius:999px;padding:6px 12px;text-decoration:none}.admin-preview-bar small{opacity:.82;font-weight:600}@media(max-width:760px){.ux-view-as-grid{grid-template-columns:1fr}.admin-preview-bar{align-items:flex-start;flex-direction:column;gap:6px}}
+</style>
+{% endblock %}
