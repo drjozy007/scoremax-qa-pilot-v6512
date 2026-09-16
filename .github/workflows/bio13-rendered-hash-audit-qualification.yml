@@ -1,0 +1,30 @@
+name: Bio13 Missing46 Rendered Hash Audit Qualification
+on:
+  push:
+    branches: [ops/bio13-rendered-hash-audit-20260916]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Qualify exact bridge hash diagnostic
+        run: |
+          set -euo pipefail
+          python -m py_compile deploy_ux_vnext.py ux_vnext_overlay/ux_bio13_identity_crosswalk_audit.py
+          python deploy_ux_vnext.py >/tmp/materialize.log
+          python -m py_compile scoremax_runtime_v669b/ux_bio13_identity_crosswalk_audit_runtime.py scoremax_runtime_v669b/scoremax_production.py
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('scoremax_runtime_v669b/ux_bio13_identity_crosswalk_audit_runtime.py').read_text(encoding='utf-8')
+          assert 'import scoremax_ph_bridge_v6611d as _bridge' in s
+          assert '_bridge._sha_text' in s
+          assert 'MISSING_SOURCE_FIDELITY_IDS' in s
+          assert 'len(missing_hashes)!=46' in s
+          for forbidden in ('stem','answer','explanation','option_text','UPDATE ','DELETE ','INSERT ','ALTER ','DROP '): assert forbidden not in s,forbidden
+          print('SCOREMAX_BIO13_MISSING46_RENDERED_HASH_QUALIFICATION_PASS exact_bridge_hash=true read_only=true content_not_emitted=true count=46')
+          PY
