@@ -1,0 +1,29 @@
+name: Bio13 Generated Bridge API Inspection
+on:
+  push:
+    branches: [ops/bio13-return-lane-20260916]
+    paths: ['.github/workflows/bio13_generated_bridge_api_inspection.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py >/dev/null
+          python - <<'PY'
+          import ast, pathlib
+          for name in ('scoremax_integration_v1.py','scoremax_ph_bridge_v6611d.py'):
+              p=pathlib.Path('scoremax_runtime_v669b')/name
+              t=ast.parse(p.read_text())
+              print('===',name,'===')
+              for n in t.body:
+                  if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                      args=[a.arg for a in n.args.args]
+                      print(n.name,args)
+          PY
