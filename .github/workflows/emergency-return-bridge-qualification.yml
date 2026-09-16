@@ -24,12 +24,13 @@ jobs:
         run: |
           set -euo pipefail
           python deploy_ux_vnext.py
-      - name: Verify runtime markers
+      - name: Verify runtime semantics
         run: |
           set -euo pipefail
-          grep -q 'SM-PH-EMERGENCY-RETURN-BRIDGE-20260916-1' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
-          grep -q 'SM-PH-EMERGENCY-RETURN-RECOVERY-20260916-1' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
-          grep -q 'EMERGENCY_DIRECT_GOVERNED' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q 'def _emergency_direct_identity' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q "'identity_mode':'EMERGENCY_DIRECT_GOVERNED'" scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q 'def reconcile_governed_emergency_rejections' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          grep -q 'SCOREMAX_EMERGENCY_RETURN_RECOVERY' scoremax_runtime_v669b/scoremax_production.py
           grep -q 'pending_exception' scripts/scoremax_persistent_storage_guard.py
       - name: Compile patched runtime
         run: |
