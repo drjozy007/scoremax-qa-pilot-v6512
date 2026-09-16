@@ -1,7 +1,9 @@
 name: Emergency Return Dispatch Qualification
 on:
   push:
-    branches: [ops/emergency-return-dispatch-route-20260916]
+    branches:
+      - ops/emergency-return-dispatch-route-20260916
+      - ops/emergency-return-startup-hardening-20260916
 permissions:
   contents: read
 jobs:
@@ -19,8 +21,13 @@ jobs:
           python deploy_ux_vnext.py
           python -m py_compile scoremax_runtime_v669b/scoremax_integration_v1.py scoremax_runtime_v669b/scoremax_production.py
           grep -q "_emergency_return_dispatch=_emergency_return_integration.dispatch_due" scoremax_runtime_v669b/scoremax_production.py
+          grep -q "_emergency_return_statuses=\[str(x) for x in _emergency_return_dispatch\]" scoremax_runtime_v669b/scoremax_production.py
           if grep -A3 "reconcile_governed_emergency_rejections" scoremax_runtime_v669b/scoremax_production.py | grep -q "if _emergency_return_queued"; then
             echo 'dispatch remains incorrectly conditional on newly queued recovery' >&2
+            exit 1
+          fi
+          if grep -q "_emergency_return_dispatch.*get('status')" scoremax_runtime_v669b/scoremax_production.py; then
+            echo 'startup still assumes dispatcher returns dicts' >&2
             exit 1
           fi
       - name: Install exact runtime requirements
@@ -39,5 +46,31 @@ jobs:
           assert direction=='SCOREMAX_TO_POWER_HOUSE'
           assert i._dispatch_target('SM_PH_DELIVERY_EVIDENCE_V1')[1]=='/api/integration/v1/scoremax/delivery-evidence'
           assert i._dispatch_target('SM_PH_CONTENT_REQUIREMENT_V1')[1]=='/api/integration/v1/scoremax/content-requirements'
-          print('SCOREMAX_EMERGENCY_RETURN_DISPATCH_QUALIFICATION_PASS incident_route=true existing_dispatcher=true same_ph_credentials=true durable_retry_unconditional=true health_surface=true existing_routes_unchanged=true')
+          assert [str(x) for x in ['not_configured','missing_credentials','delivered']]==['not_configured','missing_credentials','delivered']
+          print('SCOREMAX_EMERGENCY_RETURN_DISPATCH_QUALIFICATION_PASS incident_route=true existing_dispatcher=true same_ph_credentials=true durable_retry_unconditional=true status_contract_strings=true health_surface=true existing_routes_unchanged=true')
+          PY
+      - name: Disposable hosted-startup import smoke
+        run: |
+          set -euo pipefail
+          export SCOREMAX_ENV=production
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/tmp/scoremax-emergency-root
+          export SCOREMAX_PERSISTENT_ROOT=/tmp/scoremax-emergency-root
+          export SCOREMAX_DB=/tmp/scoremax-emergency-root/state/scoremax.sqlite3
+          export SCOREMAX_BACKUP_DIR=/tmp/scoremax-emergency-root/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=/tmp/scoremax-emergency-root/intake
+          export SCOREMAX_INSTANCE_COUNT=1
+          export WEB_CONCURRENCY=1
+          export SCOREMAX_PUBLIC_BASE_URL=https://scoremax.example.invalid
+          export SCOREMAX_SMTP_HOST=localhost
+          export SCOREMAX_SMTP_FROM=qualification@scoremax.invalid
+          export SCOREMAX_SECRET=qualification-only-secret-0123456789abcdef0123456789abcdef
+          export SCOREMAX_STAGING_SESSION_SECRET=qualification-only-session-0123456789abcdef0123456789abcdef
+          export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@example.invalid
+          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password-0123456789abcdef
+          mkdir -p /tmp/scoremax-emergency-root/state "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
+          cd scoremax_runtime_v669b
+          python - <<'PY'
+          import scoremax_production
+          assert scoremax_production.application is not None
+          print('SCOREMAX_EMERGENCY_RETURN_STARTUP_IMPORT_PASS disposable_db=true hosted_entrypoint=true')
           PY
