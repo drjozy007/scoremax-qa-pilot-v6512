@@ -1,0 +1,58 @@
+name: Emergency Return Architecture Trace
+on:
+  push:
+    branches: [ops/emergency-return-architecture-trace-20260916]
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize exact runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py >/tmp/materialize.log
+          tail -n 80 /tmp/materialize.log
+      - name: Inspect dispatcher and health architecture
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('scoremax_runtime_v669b')
+          p=root/'scoremax_integration_v1.py'
+          s=p.read_text(encoding='utf-8')
+          lines=s.splitlines()
+          def show(name, before=20, after=180):
+              for i,line in enumerate(lines):
+                  if line.startswith('def '+name+'('):
+                      print(f'--- {name} @ {i+1} ---')
+                      for j in range(max(0,i-before),min(len(lines),i+after)):
+                          print(f'{j+1}:{lines[j]}')
+                      return
+              print('MISSING',name)
+          for fn in ('dispatch_due','integration_health','_dispatch_target','_claim_due','_schedule_retry'):
+              show(fn)
+          print('--- integration_health callsites/routes ---')
+          for py in root.rglob('*.py'):
+              t=py.read_text(encoding='utf-8',errors='replace')
+              if 'integration_health(' in t or 'integration-health' in t or 'integration/health' in t:
+                  print('FILE',py)
+                  for n,l in enumerate(t.splitlines(),1):
+                      if 'integration_health(' in l or 'integration-health' in l or 'integration/health' in l:
+                          print(f'{n}:{l}')
+          print('--- integration route strings ---')
+          for py in root.rglob('*.py'):
+              t=py.read_text(encoding='utf-8',errors='replace')
+              hits=[]
+              for n,l in enumerate(t.splitlines(),1):
+                  if "'/api/integration" in l or '"/api/integration' in l or 'integration-health' in l:
+                      hits.append((n,l))
+              if hits:
+                  print('FILE',py)
+                  for n,l in hits[:200]: print(f'{n}:{l}')
+          PY
