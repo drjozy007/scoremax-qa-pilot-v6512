@@ -29,8 +29,9 @@ jobs:
           assert "'SM_PH_CONTENT_INCIDENT_V1'" in block
           for k in ('connection_state','queued_count','retrying_count','in_flight_count','dead_letter_count','quarantined_count','last_error_code','last_error_at','last_success_at','last_dispatched_at','oldest_backlog_at'):
               assert repr(k) in block,k
-          for forbidden in ('receipt_json','envelope_json','Authorization','HMAC_SECRET)+('UPDATE integration_outbox','DELETE FROM integration_outbox','INSERT INTO integration_outbox'):
-              assert forbidden not in block,forbidden
+          forbidden=('receipt_json','envelope_json','Authorization','HMAC_SECRET','UPDATE integration_outbox','DELETE FROM integration_outbox','INSERT INTO integration_outbox')
+          for token in forbidden:
+              assert token not in block,token
           print('SCOREMAX_EMERGENCY_RETURN_DURABLE_STATE_OBSERVE_PASS read_only_health=true bounded_fields=true secret_values=false payloads=false mutation=false')
           PY
       - name: Install runtime requirements
