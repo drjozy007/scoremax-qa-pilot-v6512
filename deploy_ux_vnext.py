@@ -17,6 +17,7 @@ from ux_vnext_overlay.ux_persistent_guard_postrelease_state import apply_persist
 from ux_vnext_overlay.ux_emergency_return_bridge import apply_emergency_return_bridge
 from ux_vnext_overlay.ux_emergency_return_contract import apply_emergency_return_contract
 from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return_recovery
+from ux_vnext_overlay.ux_bio13_identity_crosswalk_audit import apply_bio13_identity_crosswalk_audit
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -216,6 +217,7 @@ def main() -> None:
     apply_restore_access_cards(ROOT)
     apply_chapter_card_open_fix(ROOT)
     apply_admin_rejection_reason_guard(ROOT)
+    apply_bio13_identity_crosswalk_audit(ROOT)
     _wire_programme_tabs_to_correct_surfaces()
 
 
