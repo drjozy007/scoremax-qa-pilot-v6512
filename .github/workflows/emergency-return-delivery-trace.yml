@@ -1,0 +1,44 @@
+name: Emergency Return Delivery Trace
+on:
+  push:
+    branches: [ops/emergency-return-delivery-trace-20260916]
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize current runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py >/tmp/materialize.log
+          tail -n 60 /tmp/materialize.log
+      - name: Inspect dispatcher configuration without secrets
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scoremax_runtime_v669b/scoremax_integration_v1.py')
+          s=p.read_text(encoding='utf-8')
+          needles=['def dispatch_due','def _deliver','POWER_HOUSE','BASE_URL','ENDPOINT','WEBHOOK','INTEGRATION','DESTINATION','requests.','urllib']
+          lines=s.splitlines()
+          hits=set()
+          for i,line in enumerate(lines):
+              if any(n in line for n in needles):
+                  for j in range(max(0,i-8),min(len(lines),i+35)):
+                      hits.add(j)
+          print('---DISPATCHER-EXCERPT---')
+          for j in sorted(hits):
+              line=lines[j]
+              # Do not print literal secrets or token values; source code only.
+              print(f'{j+1}:{line}')
+          print('---ENV-NAMES---')
+          import re
+          names=sorted(set(re.findall(r"os\.getenv\(['\"]([^'\"]+)",s)+re.findall(r"os\.environ\.get\(['\"]([^'\"]+)",s)))
+          for n in names: print(n)
+          PY
