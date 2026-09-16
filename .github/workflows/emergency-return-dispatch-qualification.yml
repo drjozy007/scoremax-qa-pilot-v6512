@@ -61,10 +61,10 @@ jobs:
           export SCOREMAX_INSTANCE_COUNT=1
           export WEB_CONCURRENCY=1
           export SCOREMAX_PUBLIC_BASE_URL=https://scoremax.example.invalid
-          export SCOREMAX_SECRET=qualification-only-secret
-          export SCOREMAX_STAGING_SESSION_SECRET=qualification-only-session
+          export SCOREMAX_SECRET=qualification-only-secret-0123456789abcdef0123456789abcdef
+          export SCOREMAX_STAGING_SESSION_SECRET=qualification-only-session-0123456789abcdef0123456789abcdef
           export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@example.invalid
-          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password
+          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password-0123456789abcdef
           mkdir -p /tmp/scoremax-emergency-root/state "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
           cd scoremax_runtime_v669b
           python - <<'PY'
