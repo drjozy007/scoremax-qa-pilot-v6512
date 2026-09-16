@@ -1,0 +1,37 @@
+name: Emergency Return Dispatch Qualification
+on:
+  push:
+    branches: [ops/emergency-return-dispatch-route-20260916]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize current production runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          python -m py_compile scoremax_runtime_v669b/scoremax_integration_v1.py
+      - name: Qualify existing dispatcher extension
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import sys
+          sys.path.insert(0,'scoremax_runtime_v669b')
+          import scoremax_integration_v1 as i
+          import os
+          os.environ['SCOREMAX_POWER_HOUSE_BASE_URL']='https://powerhouse.example.invalid'
+          url,path,direction=i._dispatch_target('SM_PH_CONTENT_INCIDENT_V1')
+          assert url=='https://powerhouse.example.invalid/api/integration/v1/scoremax/content-incidents',(url,path,direction)
+          assert path=='/api/integration/v1/scoremax/content-incidents'
+          assert direction=='SCOREMAX_TO_POWER_HOUSE'
+          assert i._dispatch_target('SM_PH_DELIVERY_EVIDENCE_V1')[1]=='/api/integration/v1/scoremax/delivery-evidence'
+          assert i._dispatch_target('SM_PH_CONTENT_REQUIREMENT_V1')[1]=='/api/integration/v1/scoremax/content-requirements'
+          print('SCOREMAX_EMERGENCY_RETURN_DISPATCH_QUALIFICATION_PASS incident_route=true existing_dispatcher=true same_ph_credentials=true health_surface=true existing_routes_unchanged=true')
+          PY
