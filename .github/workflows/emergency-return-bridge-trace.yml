@@ -17,9 +17,10 @@ jobs:
         run: |
           set -euo pipefail
           python deploy_ux_vnext.py
-      - name: Inspect contract registry and envelope versioning
+      - name: Inspect exact schema loader selection
         run: |
           set -euo pipefail
-          grep -n -A 80 -B 80 "CONTRACTS" scoremax_runtime_v669b/scoremax_integration_v1.py | head -n 900 || true
-          grep -R -n -A 100 -B 40 "def validate_payload\|def contract_version\|schema_version" scoremax_runtime_v669b/integration_contracts | head -n 1200 || true
-          grep -n -A 60 -B 20 "def _envelope" scoremax_runtime_v669b/scoremax_integration_v1.py
+          grep -n -A 45 -B 20 "SCHEMA_VERSION" scoremax_runtime_v669b/scoremax_integration_v1.py | head -n 500
+          grep -n -A 140 -B 30 "def _strict_envelope_errors" scoremax_runtime_v669b/scoremax_integration_v1.py
+          grep -n -A 120 -B 40 "integration_contracts" scoremax_runtime_v669b/scoremax_integration_v1.py | head -n 900
+          find scoremax_runtime_v669b/integration_contracts -maxdepth 2 -type f -name 'SM_PH_CONTENT_INCIDENT_V1.schema.json' -print -exec grep -n 'schema_version' {} \;
