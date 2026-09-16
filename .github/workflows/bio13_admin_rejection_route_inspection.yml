@@ -1,0 +1,39 @@
+name: Bio13 Admin Rejection Route Inspection
+on:
+  push:
+    branches: [ops/bio13-return-lane-20260916]
+    paths: ['.github/workflows/bio13_admin_rejection_route_inspection.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Build exact live runtime and inspect rejection route
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py >/tmp/build.log
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('scoremax_runtime_v669b')
+          needles=['/admin/questions/<int:question_id>/review','/admin/questions/','review_status','Rejected','Reject','rejected']
+          for p in [root/'app.py',*sorted((root/'templates').glob('*.html'))]:
+              try: lines=p.read_text(encoding='utf-8').splitlines()
+              except Exception: continue
+              hits=[]
+              for i,line in enumerate(lines):
+                  if any(n in line for n in needles): hits.append(i)
+              if not hits: continue
+              print(f'=== {p} ===')
+              seen=set()
+              for i in hits:
+                  a=max(0,i-12); b=min(len(lines),i+20)
+                  if (a,b) in seen: continue
+                  seen.add((a,b))
+                  for j in range(a,b): print(f'{j+1:05d}: {lines[j]}')
+                  print('---')
+          PY
