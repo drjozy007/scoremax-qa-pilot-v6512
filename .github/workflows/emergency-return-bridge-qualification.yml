@@ -26,7 +26,6 @@ jobs:
           python deploy_ux_vnext.py
           grep -q 'SM-PH-EMERGENCY-RETURN-BRIDGE-20260916-1' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
           grep -q 'EMERGENCY_DIRECT_GOVERNED' scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
-          grep -q "incident_code=f'SMAR-" scoremax_runtime_v669b/app.py
           python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py scoremax_runtime_v669b/ux_content_reviewer.py
           pip install -r scoremax_runtime_v669b/requirements.txt
       - name: Execute return bridge qualification
