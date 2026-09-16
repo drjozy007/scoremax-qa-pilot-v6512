@@ -21,29 +21,11 @@ jobs:
       - name: Inspect rejection handler and evidence schema
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import ast, pathlib
-          p=pathlib.Path('scoremax_runtime_v669b/app.py')
-          src=p.read_text()
-          tree=ast.parse(src)
-          lines=src.splitlines()
-          found=0
-          for node in ast.walk(tree):
-              if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)):
-                  seg='\n'.join(lines[node.lineno-1:getattr(node,'end_lineno',node.lineno)])
-                  if '/admin/questions/' in seg and '/review' in seg:
-                      print('===ADMIN_REVIEW_HANDLER===')
-                      print(seg)
-                      found+=1
-          assert found==1,found
-          PY
-          python - <<'PY'
-          import pathlib,re
-          s=pathlib.Path('scoremax_runtime_v669b/app.py').read_text()
-          for term in ['CREATE TABLE IF NOT EXISTS content_import_batches','CREATE TABLE IF NOT EXISTS content_import_batch_rows']:
-              i=s.find(term)
-              print('===SCHEMA',term,'===')
-              assert i>=0
-              print(s[i:i+4500])
-          PY
-          grep -n "queue_reported_question_incident\|content_import_batch_rows\|Power House Public ID\|Power House Source Row" scoremax_runtime_v669b/app.py scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py || true
+          echo '===REVIEW ROUTE LOCATIONS==='
+          grep -R -n -C 30 "admin/questions/.*/review\|admin_question.*review\|review_question" scoremax_runtime_v669b ux_vnext_overlay | head -n 500 || true
+          echo '===IMPORT EVIDENCE REFERENCES==='
+          grep -R -n -C 12 "content_import_batch_rows\|CREATE TABLE IF NOT EXISTS content_import_batches\|Power House Public ID\|Power House Source Row" scoremax_runtime_v669b | head -n 800 || true
+          echo '===BRIDGE INCIDENT FUNCTION==='
+          grep -n -A 110 -B 15 "def queue_reported_question_incident" scoremax_runtime_v669b/scoremax_ph_bridge_v6611d.py
+          echo '===APP REVIEW STATUS MUTATIONS==='
+          grep -R -n -C 15 "review_status.*Rejected\|Rejected.*review_status\|status.*Rejected\|Rejected.*status" scoremax_runtime_v669b | head -n 500 || true
