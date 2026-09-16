@@ -61,6 +61,8 @@ jobs:
           export SCOREMAX_INSTANCE_COUNT=1
           export WEB_CONCURRENCY=1
           export SCOREMAX_PUBLIC_BASE_URL=https://scoremax.example.invalid
+          export SCOREMAX_SMTP_HOST=localhost
+          export SCOREMAX_SMTP_FROM=qualification@scoremax.invalid
           export SCOREMAX_SECRET=qualification-only-secret-0123456789abcdef0123456789abcdef
           export SCOREMAX_STAGING_SESSION_SECRET=qualification-only-session-0123456789abcdef0123456789abcdef
           export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@example.invalid
