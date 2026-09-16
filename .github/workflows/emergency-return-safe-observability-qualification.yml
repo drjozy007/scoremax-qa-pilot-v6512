@@ -1,0 +1,77 @@
+name: Emergency Return Safe Observability Qualification
+on:
+  push:
+    branches: [ops/emergency-return-safe-observability-20260916]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize current runtime
+        run: |
+          set -euo pipefail
+          python deploy_ux_vnext.py
+          python -m py_compile scoremax_runtime_v669b/scoremax_production.py scoremax_runtime_v669b/scoremax_integration_v1.py
+      - name: Prove bounded presence-only observability
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('scoremax_runtime_v669b/scoremax_production.py').read_text(encoding='utf-8')
+          required=[
+            "'base_url_configured':bool(_emergency_return_os.environ.get('SCOREMAX_POWER_HOUSE_BASE_URL'))",
+            "'token_configured':bool(_emergency_return_os.environ.get('SCOREMAX_TO_POWER_HOUSE_TOKEN'))",
+            "'hmac_configured':bool(_emergency_return_os.environ.get('SCOREMAX_TO_POWER_HOUSE_HMAC_SECRET'))",
+            "_emergency_return_json.dumps(_emergency_return_dispatch,sort_keys=True",
+          ]
+          for x in required: assert x in s,x
+          forbidden=[
+            "os.environ.get('SCOREMAX_TO_POWER_HOUSE_TOKEN')+'",
+            "os.environ.get('SCOREMAX_TO_POWER_HOUSE_HMAC_SECRET')+'",
+            "os.environ.get('SCOREMAX_POWER_HOUSE_BASE_URL')+'",
+            'receipt_json','envelope_json'
+          ]
+          # only inspect the generated startup observability block, not unrelated runtime code
+          block=s[s.index("import os as _emergency_return_os"):s.index('application=scoremax.app',s.index("import os as _emergency_return_os"))]
+          for x in forbidden: assert x not in block,x
+          assert "dispatch_statuses=[" not in block
+          print('SCOREMAX_EMERGENCY_RETURN_SAFE_OBSERVABILITY_PASS dispatch_dict=true presence_only=true secret_values=false payloads=false receipts=false')
+          PY
+      - name: Install runtime requirements
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Hosted startup smoke with missing PH config
+        run: |
+          set -euo pipefail
+          export SCOREMAX_ENV=production
+          export SCOREMAX_EXPECTED_PERSISTENT_MOUNT=/tmp/scoremax-emergency-observe
+          export SCOREMAX_PERSISTENT_ROOT=/tmp/scoremax-emergency-observe
+          export SCOREMAX_DB=/tmp/scoremax-emergency-observe/state/scoremax.sqlite3
+          export SCOREMAX_BACKUP_DIR=/tmp/scoremax-emergency-observe/backup
+          export SCOREMAX_CONTENT_INTAKE_DIR=/tmp/scoremax-emergency-observe/intake
+          export SCOREMAX_INSTANCE_COUNT=1 WEB_CONCURRENCY=1
+          export SCOREMAX_PUBLIC_BASE_URL=https://scoremax.example.invalid
+          export SCOREMAX_SMTP_HOST=localhost SCOREMAX_SMTP_FROM=qualification@scoremax.invalid
+          export SCOREMAX_SECRET=qualification-only-secret-0123456789abcdef0123456789abcdef
+          export SCOREMAX_STAGING_SESSION_SECRET=qualification-only-session-0123456789abcdef0123456789abcdef
+          export SCOREMAX_BOOTSTRAP_ADMIN_EMAIL=qualification-admin@example.invalid
+          export SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD=qualification-only-password-0123456789abcdef
+          unset SCOREMAX_POWER_HOUSE_BASE_URL SCOREMAX_TO_POWER_HOUSE_TOKEN SCOREMAX_TO_POWER_HOUSE_HMAC_SECRET || true
+          mkdir -p "$SCOREMAX_PERSISTENT_ROOT/state" "$SCOREMAX_BACKUP_DIR" "$SCOREMAX_CONTENT_INTAKE_DIR"
+          cd scoremax_runtime_v669b
+          python - <<'PY' >/tmp/startup.log
+          import scoremax_production
+          assert scoremax_production.application is not None
+          PY
+          grep -q 'SCOREMAX_EMERGENCY_RETURN_RECOVERY' /tmp/startup.log
+          grep -q '"base_url_configured":false' /tmp/startup.log
+          grep -q '"token_configured":false' /tmp/startup.log
+          grep -q '"hmac_configured":false' /tmp/startup.log
+          if grep -q 'qualification-only-secret' /tmp/startup.log; then exit 1; fi
+          cat /tmp/startup.log | tail -n 25
+          echo SCOREMAX_EMERGENCY_RETURN_HOSTED_OBSERVABILITY_SMOKE_PASS
