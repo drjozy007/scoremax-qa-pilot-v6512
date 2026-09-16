@@ -6,9 +6,17 @@ from pathlib import Path
 
 ADMIN_STYLE = r'''<style id="ux-admin-workspace-v1-style">
 .ux-admin-home{max-width:1180px;margin:0 auto}.ux-admin-hero{border-top:6px solid #2f7f7d;background:linear-gradient(135deg,#eef9f7,#fff 62%,#fff8e9);padding:30px}.ux-admin-hero h1{margin:.15rem 0 .45rem;font-size:clamp(2rem,4vw,3rem);color:#173f3d}.ux-admin-hero p{max-width:820px;color:#586b68}.ux-admin-boundary{border-left:5px solid #d6a74d;background:#fffaf0}.ux-admin-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.ux-admin-kpis .metric{display:flex;flex-direction:column;gap:6px;min-height:92px}.ux-admin-kpis .metric span{color:#667875;font-size:.78rem}.ux-admin-kpis .metric strong{font-size:1.7rem;color:#173f3d}.ux-admin-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ux-admin-section{margin:0}.ux-admin-section h2{margin:.1rem 0 .35rem;color:#205f5c}.ux-admin-section p{margin:.2rem 0 1rem;color:#667875}.ux-admin-actions{display:flex;gap:8px;flex-wrap:wrap}.ux-admin-actions a{margin:0!important}.ux-admin-secondary{margin-top:16px}.ux-admin-secondary .actions{display:flex;gap:8px;flex-wrap:wrap}.ux-admin-secondary .actions a{margin:0!important}
-@media(max-width:900px){.ux-admin-kpis{grid-template-columns:repeat(2,1fr)}.ux-admin-sections{grid-template-columns:1fr}}
-@media(max-width:560px){.ux-admin-kpis{grid-template-columns:1fr}.ux-admin-hero{padding:22px}}
+.admin-preview-bar{position:sticky;top:0;z-index:220;min-height:44px;display:flex;align-items:center;justify-content:center;gap:12px;padding:7px 16px;background:#172033;color:#fff;white-space:nowrap;overflow-x:auto;box-shadow:0 3px 12px rgba(15,23,42,.18)}.admin-preview-bar strong{letter-spacing:.02em}.admin-preview-bar span{font-weight:750}.admin-preview-bar small{opacity:.78}.admin-preview-bar a{display:inline-flex;align-items:center;color:#fff;background:#2f7f7d;border-radius:999px;padding:6px 12px;text-decoration:none;font-weight:850}.admin-preview-bar+.site-header{top:44px!important}.admin-preview-bar~.student-context-stack{top:108px!important}
+@media(max-width:900px){.ux-admin-kpis{grid-template-columns:repeat(2,1fr)}.ux-admin-sections{grid-template-columns:1fr}.admin-preview-bar+.site-header{top:44px!important}.admin-preview-bar~.student-context-stack{top:102px!important}}
+@media(max-width:560px){.ux-admin-kpis{grid-template-columns:1fr}.ux-admin-hero{padding:22px}.admin-preview-bar{justify-content:flex-start;font-size:.84rem}}
 </style>'''
+
+PREVIEW_BANNER='''{% if session.get('admin_view_as_mode') %}
+<div class="admin-preview-bar" role="status" aria-label="Admin preview mode">
+  <strong>ADMIN PREVIEW</strong><span>{{session.get('admin_view_as_label')}}</span><small>Read-only synthetic view</small><a href="{{url_for('admin_view_as_exit')}}">Exit Admin Preview</a>
+</div>
+{% endif %}
+'''
 
 
 def _replace_once(text: str, pattern: str, replacement, label: str) -> str:
@@ -22,19 +30,23 @@ def _replace_once(text: str, pattern: str, replacement, label: str) -> str:
 def _simplify_admin_navigation(path: Path) -> None:
     text=path.read_text(encoding='utf-8')
     desktop='''{% elif session.get('role')=='admin' %}
-        <a href="{{url_for('admin_dashboard')}}">Home</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_interests')}}">Interest</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('logout')}}">Logout</a>
+        <a href="{{url_for('admin_dashboard')}}">Home</a><a href="{{url_for('admin_view_as')}}">View As</a><a href="{{url_for('admin_questions')}}">Questions</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_interests')}}">Interest</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('logout')}}">Logout</a>
       {% else %}'''
     text=_replace_once(text,r"\{% elif session\.get\('role'\)=='admin' %\}.*?\{% else %\}",desktop,'DESKTOP_NAV')
 
     mobile='''{% elif session.get('user_id') and session.get('role')=='admin' %}
-    <a href="{{url_for('admin_dashboard')}}">Admin Home</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_interests')}}">Interest & Demand</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('admin_challenges')}}">Challenges</a><a href="{{url_for('admin_daily_spark')}}">Daily Spark</a><a href="{{url_for('admin_community')}}">Community</a><a href="{{url_for('logout')}}">Logout</a>
+    <a href="{{url_for('admin_dashboard')}}">Admin Home</a><a href="{{url_for('admin_view_as')}}">View As</a><a href="{{url_for('admin_questions')}}">Questions</a><a href="{{url_for('admin_users')}}">Users</a><a href="{{url_for('admin_interests')}}">Interest & Demand</a><a href="{{url_for('admin_analytics')}}">Analytics</a><a href="{{url_for('admin_payments')}}">Payments</a><a href="{{url_for('admin_referrals')}}">Referrals</a><a href="{{url_for('admin_integration_health')}}">Integration</a><a href="{{url_for('admin_exams')}}">Exams</a><a href="{{url_for('admin_challenges')}}">Challenges</a><a href="{{url_for('admin_daily_spark')}}">Daily Spark</a><a href="{{url_for('admin_community')}}">Community</a><a href="{{url_for('logout')}}">Logout</a>
   {% elif session.get('user_id') %}'''
     text=_replace_once(text,r"\{% elif session\.get\('user_id'\) and session\.get\('role'\)=='parent' %\}(.*?)\{% elif session\.get\('user_id'\) %\}",lambda m: "{% elif session.get('user_id') and session.get('role')=='parent' %}"+m.group(1)+mobile,'MOBILE_NAV')
 
     if 'ux-admin-workspace-v1-style' not in text:
         if '</head>' not in text: raise SystemExit('UX_ADMIN_HEAD_MISSING')
         text=text.replace('</head>',ADMIN_STYLE+'\n</head>',1)
-    for token in ("url_for('admin_dashboard')","url_for('admin_users')","url_for('admin_interests')","url_for('admin_integration_health')",'>Logout</a>'):
+    if 'admin-preview-bar' not in text:
+        anchor='<a class="skip-link" href="#mainContent">Skip to main content</a>'
+        if anchor not in text: raise SystemExit('UX_ADMIN_PREVIEW_BANNER_ANCHOR_MISSING')
+        text=text.replace(anchor,PREVIEW_BANNER+anchor,1)
+    for token in ("url_for('admin_dashboard')","url_for('admin_view_as')","url_for('admin_questions')","url_for('admin_users')","url_for('admin_interests')","url_for('admin_integration_health')",'>Logout</a>','admin-preview-bar',"url_for('admin_view_as_exit')"):
         if token not in text: raise SystemExit('UX_ADMIN_NAV_POSTCHECK_MISSING:'+token)
     admin_start=text.find("session.get('role')=='admin'")
     admin_end=text.find("{% else %}",admin_start)
@@ -50,7 +62,7 @@ def _replace_admin_home(path: Path) -> None:
         raise SystemExit('UX_ADMIN_HOME_BASELINE_MISSING')
     replacement='''{% extends 'base.html' %}{% block title %}Admin · ScoreMax{% endblock %}{% block content %}
 <section class="ux-admin-home">
-  <section class="card ux-admin-hero"><p class="eyebrow">SCOREMAX ADMIN</p><h1>Platform operations</h1><p>Manage accounts, demand, access, payments, product operations and system integration. Academic question review and academic release authority remain in Power House.</p></section>
+  <section class="card ux-admin-hero"><p class="eyebrow">SCOREMAX ADMIN</p><h1>Platform operations</h1><p>Manage accounts, demand, access, payments, product operations and system integration. Academic question review and academic release authority remain in Power House.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_view_as')}}">View ScoreMax as…</a><a class="btn alt" href="{{url_for('admin_questions')}}">Inspect questions</a></div></section>
   <section class="card ux-admin-boundary"><strong>System boundary</strong><p>ScoreMax controls learner/product operations and activates exact Power House releases after governed admission. Academic review, rectification and approval are not performed here.</p><a class="btn small" href="{{url_for('admin_integration_health')}}">Open integration health</a></section>
   <section class="ux-admin-kpis">
     <div class="card metric"><span>Students</span><strong>{{m.students}}</strong></div>
@@ -59,6 +71,7 @@ def _replace_admin_home(path: Path) -> None:
     <div class="card metric"><span>Active subscriptions</span><strong>{{m.active_subscriptions}}</strong></div>
   </section>
   <section class="ux-admin-sections">
+    <article class="card ux-admin-section"><p class="eyebrow">PRODUCT INSPECTION</p><h2>View As & Questions</h2><p>Open the real student or teacher interface through isolated preview identities, or inspect the delivered question catalogue.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_view_as')}}">View As</a><a class="btn alt" href="{{url_for('admin_questions')}}">Questions</a></div></article>
     <article class="card ux-admin-section"><p class="eyebrow">PEOPLE & DEMAND</p><h2>Accounts & interest</h2><p>Manage users and see demand for programmes, events and community opportunities.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_users')}}">Users</a><a class="btn alt" href="{{url_for('admin_interests')}}">Interest & Demand</a><a class="btn alt" href="{{url_for('institutions')}}">Institutions</a></div></article>
     <article class="card ux-admin-section"><p class="eyebrow">COMMERCIAL</p><h2>Payments & referrals</h2><p>Manage subscriptions, payments, access packages and referral rewards.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_payments')}}">Payments</a><a class="btn alt" href="{{url_for('admin_referrals')}}">Referrals</a></div></article>
     <article class="card ux-admin-section"><p class="eyebrow">OPERATIONS</p><h2>Analytics & integration</h2><p>Monitor platform activity and operational exceptions across connected systems.</p><div class="ux-admin-actions"><a class="btn" href="{{url_for('admin_analytics')}}">Analytics</a><a class="btn alt" href="{{url_for('admin_integration_health')}}">Integration health</a></div></article>
@@ -79,6 +92,6 @@ def apply_admin_workspace(root: Path) -> None:
     _simplify_admin_navigation(base)
     _replace_admin_home(home)
     home_text=home.read_text(encoding='utf-8')
-    for token in ('SCOREMAX ADMIN','System boundary','Academic question review and academic release authority remain in Power House.',"url_for('admin_interests')","url_for('admin_integration_health')"):
+    for token in ('SCOREMAX ADMIN','System boundary','Academic question review and academic release authority remain in Power House.',"url_for('admin_view_as')","url_for('admin_questions')","url_for('admin_interests')","url_for('admin_integration_health')"):
         if token not in home_text: raise SystemExit('UX_ADMIN_HOME_POSTCHECK_MISSING:'+token)
-    print('SCOREMAX_UX_ADMIN_WORKSPACE_V1_PASS nav=flat interest_demand=true mobile_admin=true power_house_boundary=true legacy_routes_preserved=true',flush=True)
+    print('SCOREMAX_UX_ADMIN_WORKSPACE_V2_PASS nav=flat view_as=true questions=true preview_banner=true power_house_boundary=true legacy_routes_preserved=true',flush=True)
