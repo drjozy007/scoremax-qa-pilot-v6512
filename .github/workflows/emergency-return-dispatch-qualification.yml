@@ -17,15 +17,21 @@ jobs:
         run: |
           set -euo pipefail
           python deploy_ux_vnext.py
-          python -m py_compile scoremax_runtime_v669b/scoremax_integration_v1.py
+          python -m py_compile scoremax_runtime_v669b/scoremax_integration_v1.py scoremax_runtime_v669b/scoremax_production.py
+          grep -q "_emergency_return_dispatch=_emergency_return_integration.dispatch_due" scoremax_runtime_v669b/scoremax_production.py
+          if grep -A3 "reconcile_governed_emergency_rejections" scoremax_runtime_v669b/scoremax_production.py | grep -q "if _emergency_return_queued"; then
+            echo 'dispatch remains incorrectly conditional on newly queued recovery' >&2
+            exit 1
+          fi
+      - name: Install exact runtime requirements
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
       - name: Qualify existing dispatcher extension
         run: |
           set -euo pipefail
           python - <<'PY'
-          import sys
+          import sys,os
           sys.path.insert(0,'scoremax_runtime_v669b')
           import scoremax_integration_v1 as i
-          import os
           os.environ['SCOREMAX_POWER_HOUSE_BASE_URL']='https://powerhouse.example.invalid'
           url,path,direction=i._dispatch_target('SM_PH_CONTENT_INCIDENT_V1')
           assert url=='https://powerhouse.example.invalid/api/integration/v1/scoremax/content-incidents',(url,path,direction)
@@ -33,5 +39,5 @@ jobs:
           assert direction=='SCOREMAX_TO_POWER_HOUSE'
           assert i._dispatch_target('SM_PH_DELIVERY_EVIDENCE_V1')[1]=='/api/integration/v1/scoremax/delivery-evidence'
           assert i._dispatch_target('SM_PH_CONTENT_REQUIREMENT_V1')[1]=='/api/integration/v1/scoremax/content-requirements'
-          print('SCOREMAX_EMERGENCY_RETURN_DISPATCH_QUALIFICATION_PASS incident_route=true existing_dispatcher=true same_ph_credentials=true health_surface=true existing_routes_unchanged=true')
+          print('SCOREMAX_EMERGENCY_RETURN_DISPATCH_QUALIFICATION_PASS incident_route=true existing_dispatcher=true same_ph_credentials=true durable_retry_unconditional=true health_surface=true existing_routes_unchanged=true')
           PY
