@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 from pathlib import Path
+from .ux_emergency_return_dispatch import apply_emergency_return_dispatch
 
 MARKER='SM-PH-CONTENT-INCIDENT-V1-SCHEMA-1.1.0-20260916-CURRENT'
 INCIDENT='SM_PH_CONTENT_INCIDENT_V1'
@@ -66,4 +67,5 @@ def apply_emergency_return_contract(root:Path)->None:
     frozen=json.loads(old_schema_path.read_text(encoding='utf-8'))
     if frozen.get('properties',{}).get('schema_version',{}).get('const')!='1.0.0': raise SystemExit('EMERGENCY_INCIDENT_V1_FROZEN_SCHEMA_CHANGED')
     if json.loads(target.read_text(encoding='utf-8'))['properties']['schema_version']['const']!='1.1.0': raise SystemExit('EMERGENCY_INCIDENT_V11_SCHEMA_WRITE_FAILED')
+    apply_emergency_return_dispatch(root)
     print(f'{MARKER} PASS frozen_1_0_0=true incident_1_1_0=true native_shape_preserved=true emergency_shape_closed=true',flush=True)
