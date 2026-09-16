@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 import shutil
 
 from deploy_ux_vnext_recovery import main as recovery_main
@@ -124,30 +123,10 @@ def _install_admin_view_as() -> None:
         text=text.replace(anchor,replacement,1)
         production.write_text(text,encoding='utf-8')
 
-    # Avoid unrelated integration housekeeping writes while an administrator is only
-    # inspecting a synthetic Student/Teacher experience.
-    app_path=ROOT/'app.py'
-    app_text=app_path.read_text(encoding='utf-8')
-    rx=re.compile(
-        r"(def _integration_housekeeping_tick\(\):.*?)(if session\.get\('role'\)=='qa_student':\n\s+return None)",
-        re.S,
-    )
-    if "session.get('admin_view_as_mode')" not in app_text[app_text.find('def _integration_housekeeping_tick'):app_text.find('def rate_limit')]:
-        matches=list(rx.finditer(app_text))
-        if len(matches)!=1:
-            raise SystemExit(f'SCOREMAX_ADMIN_VIEW_AS_HOUSEKEEPING_ANCHOR_MISMATCH:matches={len(matches)}')
-        app_text=rx.sub(
-            lambda m:m.group(1)+"if session.get('role')=='qa_student' or session.get('admin_view_as_mode'):\n        return None",
-            app_text,
-            count=1,
-        )
-        app_path.write_text(app_text,encoding='utf-8')
-
     rendered=production.read_text(encoding='utf-8')
     runtime=(ROOT/'ux_admin_view_as_runtime.py').read_text(encoding='utf-8')
     template=(ROOT/'templates'/'ux_admin_view_as.html').read_text(encoding='utf-8')
     base=(ROOT/'templates'/'base.html').read_text(encoding='utf-8')
-    app_rendered=app_path.read_text(encoding='utf-8')
     required=(
         'install_admin_view_as(scoremax.app)',
         "app.add_url_rule('/admin/view-as'",
@@ -161,14 +140,15 @@ def _install_admin_view_as() -> None:
         "url_for('admin_view_as_exit')",
         "session.get('admin_view_as_mode')",
     )
-    combined='\n'.join((rendered,runtime,template,base,app_rendered))
+    combined='\n'.join((rendered,runtime,template,base))
     missing=[token for token in required if token not in combined]
     if missing:
         raise SystemExit('SCOREMAX_ADMIN_VIEW_AS_POSTBUILD_CONTROL_MISSING:'+','.join(missing))
     print(
         'SCOREMAX_ADMIN_VIEW_AS_BUILD_PASS roles=student,teacher '
         'programmes=fsc1,fsc2,mdcat synthetic_fixtures=true read_only=true '
-        'persistent_exit_banner=true questions_link=true learner_nav_untouched=true',
+        'persistent_exit_banner=true questions_link=true learner_nav_untouched=true '
+        'core_runtime_patch=false',
         flush=True,
     )
 
