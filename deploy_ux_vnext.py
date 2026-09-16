@@ -12,6 +12,7 @@ from ux_vnext_overlay.ux_main_subject_fsc_fence import apply_main_subject_fsc_fe
 from ux_vnext_overlay.ux_canonical_student_navigation import apply_canonical_student_navigation
 from ux_vnext_overlay.ux_restore_access_cards import apply_restore_access_cards
 from ux_vnext_overlay.ux_emergency_return_bridge import apply_emergency_return_bridge
+from ux_vnext_overlay.ux_emergency_return_contract import apply_emergency_return_contract
 from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return_recovery
 
 ROOT=Path('scoremax_runtime_v669b')
@@ -147,6 +148,7 @@ def main() -> None:
     _install_post_init_teacher_preview()
     _restore_catalogue_browser()
     apply_emergency_return_bridge(ROOT)
+    apply_emergency_return_contract(ROOT)
     apply_emergency_return_recovery(ROOT)
     apply_programme_catalogue_routing(ROOT)
     apply_main_subject_fsc_fence(ROOT)
