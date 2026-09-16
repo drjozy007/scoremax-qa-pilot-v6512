@@ -42,7 +42,7 @@ def _simplify_admin_navigation(path: Path) -> None:
     if 'ux-admin-workspace-v1-style' not in text:
         if '</head>' not in text: raise SystemExit('UX_ADMIN_HEAD_MISSING')
         text=text.replace('</head>',ADMIN_STYLE+'\n</head>',1)
-    if 'admin-preview-bar' not in text:
+    if "session.get('admin_view_as_mode')" not in text:
         anchor='<a class="skip-link" href="#mainContent">Skip to main content</a>'
         if anchor not in text: raise SystemExit('UX_ADMIN_PREVIEW_BANNER_ANCHOR_MISSING')
         text=text.replace(anchor,PREVIEW_BANNER+anchor,1)
