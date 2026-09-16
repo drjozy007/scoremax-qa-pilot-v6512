@@ -48,9 +48,10 @@ def import_release(raw:bytes):
 def main():
     sm.init()
     # Current production registers Admin View As during scoremax_production startup.
-    # The qualification imports bare app.py, so mirror that current-baseline route registration
-    # before rendering admin templates. This is harness parity, not product behavior.
+    # The qualification imports bare app.py, so mirror that current-baseline route registration.
     install_admin_view_as(sm.app)
+
+    # Direct post-bridge rejection: exactly one incident, and recovery must not duplicate it.
     raw=make_csv(); cl,qdb,bid,digest,ledger=import_release(raw)
     c=sm.db(); q=c.execute('SELECT * FROM questions WHERE id=?',(qdb,)).fetchone()
     msg=bridge.queue_reported_question_incident(c,q,'QUAL-FLAG-001','FACTUAL_ERROR','HIGH','qualification concern',{'source':'QUAL','page':'/admin/questions/'+str(qdb)})
@@ -69,20 +70,39 @@ def main():
     assert r.status_code in {302,303},r.status_code
     c=sm.db(); q=c.execute('SELECT * FROM questions WHERE id=?',(qdb,)).fetchone(); assert q['status']=='Rejected' and q['review_status']=='Rejected' and int(q['active'])==0
     ev=c.execute("SELECT * FROM question_review_events WHERE question_id=? AND action='Rejected' ORDER BY id DESC LIMIT 1",(qdb,)).fetchone(); assert ev
-    bridge_events=c.execute("SELECT * FROM ph_bridge_incident_events_v6611d WHERE question_db_id=? AND feedback_code LIKE 'SMAR-%'",(qdb,)).fetchall(); assert len(bridge_events)==1,len(bridge_events)
-    # The startup reconciler must be idempotent when the direct reject already created an incident.
-    first=bridge.reconcile_governed_emergency_rejections(c)
-    second=bridge.reconcile_governed_emergency_rejections(c)
-    assert first in {0,1} and second==0
+    direct_events=c.execute("SELECT * FROM ph_bridge_incident_events_v6611d WHERE question_db_id=? AND feedback_code LIKE 'SMAR-%'",(qdb,)).fetchall(); assert len(direct_events)==1,len(direct_events)
+    assert bridge.reconcile_governed_emergency_rejections(c)==0
+    assert bridge.reconcile_governed_emergency_rejections(c)==0
+    assert len(c.execute("SELECT * FROM ph_bridge_incident_events_v6611d WHERE question_db_id=? AND feedback_code LIKE 'SMAR-%'",(qdb,)).fetchall())==1
     assert c.execute('PRAGMA quick_check').fetchone()[0]=='ok'; assert not c.execute('PRAGMA foreign_key_check').fetchall(); c.close()
 
+    # Invalid governed identity: reject must fail atomically and leave no audit/event residue.
     raw2=make_csv(ph_id='',qid='BIO12-CH13-QUAL-002'); cl2,qdb2,bid2,digest2,ledger2=import_release(raw2)
     r=cl2.post(f'/admin/questions/{qdb2}/review',data={'_csrf_token':'qual-csrf','action':'reject','reason_code':'Other','note':'must fail identity'},follow_redirects=False)
     assert r.status_code in {302,303}
     c=sm.db(); q2=c.execute('SELECT * FROM questions WHERE id=?',(qdb2,)).fetchone(); assert q2['status']=='Approved' and q2['review_status']=='Approved' and int(q2['active'])==1,q2['status']
     assert not c.execute("SELECT 1 FROM question_review_events WHERE question_id=? AND action='Rejected'",(qdb2,)).fetchone()
     assert not c.execute("SELECT 1 FROM ph_bridge_incident_events_v6611d WHERE question_db_id=?",(qdb2,)).fetchone()
+    c.close()
+
+    # Pre-bridge scenario matching the live row-31 case: local audited rejection exists but no PH incident.
+    raw3=make_csv(ph_id='PH-RS-Q-QUAL-003',qid='BIO12-CH13-QUAL-003'); cl3,qdb3,bid3,digest3,ledger3=import_release(raw3)
+    c=sm.db()
+    a=admin()
+    c.execute("UPDATE questions SET review_status='Rejected',status='Rejected',active=0,reviewer='qualification-prebridge',reviewed_at=CURRENT_TIMESTAMP WHERE id=?",(qdb3,))
+    ev3=c.execute("INSERT INTO question_review_events(question_id,action,reviewer_id,reason_code,note) VALUES(?,?,?,?,?)",(qdb3,'Rejected',int(a['id']),'Factual/scientific issue','pre-bridge audited rejection')).lastrowid
+    c.commit()
+    assert not c.execute("SELECT 1 FROM ph_bridge_incident_events_v6611d WHERE question_db_id=?",(qdb3,)).fetchone()
+    assert bridge.reconcile_governed_emergency_rejections(c)==1
+    recovered=c.execute("SELECT * FROM ph_bridge_incident_events_v6611d WHERE question_db_id=? AND feedback_code=?",(qdb3,f'SMAR-RECOVER-{qdb3}-{ev3}')).fetchall(); assert len(recovered)==1,len(recovered)
+    out3=c.execute('SELECT envelope_json FROM integration_outbox WHERE message_id=?',(recovered[0]['outbox_message_id'],)).fetchone(); assert out3
+    env3=json.loads(out3['envelope_json']); ident3=env3['payload']['question']
+    assert env3['schema_version']=='1.1.0' and ident3['identity_mode']=='EMERGENCY_DIRECT_GOVERNED'
+    assert ident3['source_question_id']=='BIO12-CH13-QUAL-003' and ident3['power_house_public_id']=='PH-RS-Q-QUAL-003' and ident3['power_house_source_row']=='756'
+    assert bridge.reconcile_governed_emergency_rejections(c)==0
+    assert len(c.execute("SELECT * FROM ph_bridge_incident_events_v6611d WHERE question_db_id=? AND feedback_code LIKE 'SMAR-%'",(qdb3,)).fetchall())==1
     assert c.execute('PRAGMA quick_check').fetchone()[0]=='ok'; assert not c.execute('PRAGMA foreign_key_check').fetchall(); c.close()
-    print('SCOREMAX_EMERGENCY_RETURN_CURRENT_BASELINE_QUALIFICATION_PASS schema_1_1_0=true emergency_identity=true admin_reject_atomic=true rejection_reason_guard=true invalid_identity_rollback=true restart_idempotent=true persistent_guard_v4_reused=true integrity=ok')
+
+    print('SCOREMAX_EMERGENCY_RETURN_CURRENT_BASELINE_QUALIFICATION_PASS schema_1_1_0=true emergency_identity=true admin_reject_atomic=true rejection_reason_guard=true invalid_identity_rollback=true prebridge_recovery_exact=true postbridge_no_duplicate=true restart_idempotent=true persistent_guard_v4_reused=true integrity=ok')
 
 if __name__=='__main__': main()
