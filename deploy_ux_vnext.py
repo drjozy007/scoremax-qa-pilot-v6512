@@ -12,6 +12,7 @@ from ux_vnext_overlay.ux_main_subject_fsc_fence import apply_main_subject_fsc_fe
 from ux_vnext_overlay.ux_canonical_student_navigation import apply_canonical_student_navigation
 from ux_vnext_overlay.ux_restore_access_cards import apply_restore_access_cards
 from ux_vnext_overlay.ux_chapter_card_open_fix import apply_chapter_card_open_fix
+from ux_vnext_overlay.ux_admin_rejection_reason_guard import apply_admin_rejection_reason_guard
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -206,6 +207,7 @@ def main() -> None:
     apply_canonical_student_navigation(ROOT)
     apply_restore_access_cards(ROOT)
     apply_chapter_card_open_fix(ROOT)
+    apply_admin_rejection_reason_guard(ROOT)
     _wire_programme_tabs_to_correct_surfaces()
 
 
