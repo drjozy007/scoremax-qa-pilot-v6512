@@ -34,7 +34,7 @@ def apply_persistent_guard_batch_retirement(root: Path) -> None:
                 and str(batch_retirement['prompt_pack_version'] or '').lower()==str(b['source_prompt_pack_version'] or '').lower()
                 and str(batch_retirement['transport_sha256'] or '').lower()==str(b['payload_checksum'] or '').lower()
                 and int(batch_retirement['question_count'] or 0)==row_count
-                and int(batch_retirement['active_after'] or -1)==0
+                and int(batch_retirement['active_after'])==0
                 and int(batch_retirement['historical_attempts_preserved'] or 0)==1
                 and str(batch_retirement['policy'] or '')=='SCOREMAX-BIO13-FAILED-PILOT-RETIREMENT-V1'
             )
@@ -46,7 +46,7 @@ def apply_persistent_guard_batch_retirement(root: Path) -> None:
                     'prompt_pack_version_equal':str(batch_retirement['prompt_pack_version'] or '').lower()==str(b['source_prompt_pack_version'] or '').lower(),
                     'transport_sha_equal':str(batch_retirement['transport_sha256'] or '').lower()==str(b['payload_checksum'] or '').lower(),
                     'question_count_equal':int(batch_retirement['question_count'] or 0)==row_count,
-                    'active_after_zero':int(batch_retirement['active_after'] or -1)==0,
+                    'active_after_zero':int(batch_retirement['active_after'])==0,
                     'history_preserved':int(batch_retirement['historical_attempts_preserved'] or 0)==1,
                     'policy_equal':str(batch_retirement['policy'] or '')=='SCOREMAX-BIO13-FAILED-PILOT-RETIREMENT-V1',
                 },sort_keys=True,separators=(',',':')),flush=True)
@@ -54,6 +54,8 @@ def apply_persistent_guard_batch_retirement(root: Path) -> None:
                 print('SCOREMAX_BATCH_RETIREMENT_EVIDENCE_MISSING batch_id='+str(bid),flush=True)
             for q in qrows:
 """
+    if "int(batch_retirement['active_after'] or -1)==0" in replacement:
+        raise SystemExit('SCOREMAX_BATCH_RETIREMENT_ZERO_REGRESSION')
     if anchor not in text:
         raise SystemExit('SCOREMAX_BATCH_RETIREMENT_GUARD_ANCHOR_MISSING')
     text=text.replace(anchor,replacement,1)
@@ -84,6 +86,6 @@ def apply_persistent_guard_batch_retirement(root: Path) -> None:
         'SCOREMAX_PERSISTENT_GUARD_BATCH_RETIREMENT_PASS '
         'exact_batch_evidence=true manual_question_events_unchanged=true '
         'legacy_withdrawn_compatibility=true canonical_retired_state=true '
-        'diagnostic_on_mismatch=true historical_attempts_preserved=true release_authority=false',
+        'zero_value_safe=true diagnostic_on_mismatch=true historical_attempts_preserved=true release_authority=false',
         flush=True,
     )
