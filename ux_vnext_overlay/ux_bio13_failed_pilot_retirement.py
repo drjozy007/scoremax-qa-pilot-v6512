@@ -2,13 +2,14 @@ from __future__ import annotations
 from pathlib import Path
 
 MARKER='SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT_V1'
+AUTHORITATIVE_TRANSPORT_SHA='ba8e863c4793f694e5227e5b5525147df5e132ecdce0e5ccf5057ae552178fe5'
 
 RUNTIME = r"""from __future__ import annotations
 import json,os
 
 PROMPT_PACK_ID='BIO13_SCOREMAX_PILOT100_DIRECT_INTAKE_SAFE_v1_1'
 PROMPT_PACK_VERSION='e1ddb25d2213058de86394fa00b119c29b18ac6eb98c285599ee8ca6b1651883'
-TRANSPORT_SHA='ba8e863c4793f694e5225147df5e132ecdce0e5ccf5057ae552178fe5'
+TRANSPORT_SHA='ba8e863c4793f694e5227e5b5525147df5e132ecdce0e5ccf5057ae552178fe5'
 POLICY='SCOREMAX-BIO13-FAILED-PILOT-RETIREMENT-V1'
 
 
@@ -89,6 +90,12 @@ def run(scoremax):
 
 
 def apply_bio13_failed_pilot_retirement(root: Path) -> None:
+    audit_builder=(Path(__file__).resolve().parent/'ux_bio13_identity_crosswalk_audit.py').read_text(encoding='utf-8')
+    expected=f'EXPECTED_CSV_SHA256="{AUTHORITATIVE_TRANSPORT_SHA}"'
+    if expected not in audit_builder:
+        raise SystemExit('SCOREMAX_BIO13_RETIREMENT_TRANSPORT_AUTHORITY_DRIFT')
+    if f"TRANSPORT_SHA='{AUTHORITATIVE_TRANSPORT_SHA}'" not in RUNTIME:
+        raise SystemExit('SCOREMAX_BIO13_RETIREMENT_RUNTIME_SHA_DRIFT')
     module=root/'ux_bio13_failed_pilot_retirement_runtime.py'
     compile(RUNTIME,str(module),'exec')
     module.write_text(RUNTIME,encoding='utf-8')
@@ -107,4 +114,4 @@ def apply_bio13_failed_pilot_retirement(root: Path) -> None:
     rendered=production.read_text(encoding='utf-8')
     if '_run_bio13_failed_pilot_retirement(scoremax)' not in rendered:
         raise SystemExit('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT_INSTALL_MISSING')
-    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true armed_only=true history_preserved=true runtime_compile=true release_authority=false',flush=True)
+    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true authoritative_transport_sha=true authority_drift_gate=true armed_only=true history_preserved=true runtime_compile=true release_authority=false',flush=True)
