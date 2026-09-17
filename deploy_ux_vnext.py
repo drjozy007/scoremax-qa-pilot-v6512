@@ -18,6 +18,7 @@ from ux_vnext_overlay.ux_emergency_return_bridge import apply_emergency_return_b
 from ux_vnext_overlay.ux_emergency_return_contract import apply_emergency_return_contract
 from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return_recovery
 from ux_vnext_overlay.ux_bio13_identity_crosswalk_audit import apply_bio13_identity_crosswalk_audit
+from ux_vnext_overlay.ux_bio13_withdrawal_reconcile import apply_bio13_withdrawal_reconcile
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -218,6 +219,7 @@ def main() -> None:
     apply_chapter_card_open_fix(ROOT)
     apply_admin_rejection_reason_guard(ROOT)
     apply_bio13_identity_crosswalk_audit(ROOT)
+    apply_bio13_withdrawal_reconcile(ROOT)
     _wire_programme_tabs_to_correct_surfaces()
 
 
