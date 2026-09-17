@@ -3,7 +3,7 @@ from pathlib import Path
 
 MARKER='SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT_V1'
 
-RUNTIME = r'''from __future__ import annotations
+RUNTIME = r"""from __future__ import annotations
 import json,os
 
 PROMPT_PACK_ID='BIO13_SCOREMAX_PILOT100_DIRECT_INTAKE_SAFE_v1_1'
@@ -85,11 +85,12 @@ def run(scoremax):
         c.rollback(); raise
     finally:
         c.close()
-'''
+"""
 
 
 def apply_bio13_failed_pilot_retirement(root: Path) -> None:
     module=root/'ux_bio13_failed_pilot_retirement_runtime.py'
+    compile(RUNTIME,str(module),'exec')
     module.write_text(RUNTIME,encoding='utf-8')
     production=root/'scoremax_production.py'
     text=production.read_text(encoding='utf-8')
@@ -106,4 +107,4 @@ def apply_bio13_failed_pilot_retirement(root: Path) -> None:
     rendered=production.read_text(encoding='utf-8')
     if '_run_bio13_failed_pilot_retirement(scoremax)' not in rendered:
         raise SystemExit('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT_INSTALL_MISSING')
-    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true armed_only=true history_preserved=true release_authority=false',flush=True)
+    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true armed_only=true history_preserved=true runtime_compile=true release_authority=false',flush=True)
