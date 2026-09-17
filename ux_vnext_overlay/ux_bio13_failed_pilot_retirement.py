@@ -17,58 +17,88 @@ def _armed():
     return str(os.environ.get('SCOREMAX_RETIRE_FAILED_BIO13_PILOT','OFF')).strip().upper()=='ARMED'
 
 
+def _ensure(c):
+    c.execute('''CREATE TABLE IF NOT EXISTS bio13_failed_pilot_retirement_v1(
+      id INTEGER PRIMARY KEY,
+      batch_id INTEGER NOT NULL UNIQUE,
+      batch_code TEXT NOT NULL,
+      prompt_pack_id TEXT NOT NULL,
+      prompt_pack_version TEXT NOT NULL,
+      transport_sha256 TEXT NOT NULL,
+      question_count INTEGER NOT NULL,
+      active_before INTEGER NOT NULL,
+      inactive_before INTEGER NOT NULL,
+      active_after INTEGER NOT NULL,
+      historical_attempts_preserved INTEGER NOT NULL DEFAULT 1,
+      policy TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )''')
+
+
+def _batch(c):
+    batches=c.execute('''SELECT id,batch_code,row_count,valid_count,error_count,warning_count
+      FROM content_import_batches
+      WHERE source_prompt_pack_id=? AND source_prompt_pack_version=? AND payload_checksum=?
+      ORDER BY id''',(PROMPT_PACK_ID,PROMPT_PACK_VERSION,TRANSPORT_SHA)).fetchall()
+    if len(batches)!=1: raise RuntimeError(f'BIO13_RETIRE_BATCH_COUNT:{len(batches)}')
+    b=batches[0]
+    if int(b['row_count'] or 0)!=100 or int(b['valid_count'] or 0)!=100 or int(b['error_count'] or 0)!=0:
+        raise RuntimeError('BIO13_RETIRE_BATCH_NOT_EXACT_CLEAN_100')
+    return b
+
+
+def _rows(c,bid):
+    rows=c.execute('''SELECT q.id,q.question_id,q.active,q.status,q.review_status,q.scoremax_ready,q.content_environment,r.row_json
+      FROM content_import_batch_rows r JOIN questions q ON q.id=r.question_db_id
+      WHERE r.batch_id=? AND r.import_status='IMPORTED' ORDER BY q.id''',(bid,)).fetchall()
+    if len(rows)!=100 or len({int(r['id']) for r in rows})!=100:
+        raise RuntimeError(f'BIO13_RETIRE_IMPORTED_POPULATION:{len(rows)}')
+    for r in rows:
+        try: src=json.loads(str(r['row_json'] or '{}'))
+        except Exception as exc: raise RuntimeError('BIO13_RETIRE_MALFORMED_IMMUTABLE_ROW') from exc
+        if str(src.get('Question ID') or '').strip()!=str(r['question_id'] or '').strip():
+            raise RuntimeError('BIO13_RETIRE_SOURCE_QID_MISMATCH')
+        if not str(src.get('Power House Public ID') or '').strip() or not str(src.get('Power House Source Row') or '').strip():
+            raise RuntimeError('BIO13_RETIRE_IDENTITY_TRIPLET_INCOMPLETE')
+    return rows
+
+
+def _normalize_completed(c,b,rows,done):
+    if not done: return False
+    if str(done['prompt_pack_id'] or '')!=PROMPT_PACK_ID or str(done['prompt_pack_version'] or '')!=PROMPT_PACK_VERSION or str(done['transport_sha256'] or '').lower()!=TRANSPORT_SHA:
+        raise RuntimeError('BIO13_RETIRE_DONE_IDENTITY_MISMATCH')
+    if int(done['question_count'] or 0)!=100 or int(done['active_after'] or -1)!=0 or int(done['historical_attempts_preserved'] or 0)!=1 or str(done['policy'] or '')!=POLICY:
+        raise RuntimeError('BIO13_RETIRE_DONE_EVIDENCE_INVALID')
+    if any(int(r['active'] or 0)!=0 for r in rows):
+        raise RuntimeError('BIO13_RETIRE_IDEMPOTENCY_ACTIVE')
+    legacy=[int(r['id']) for r in rows if str(r['status'] or '')=='Withdrawn']
+    if legacy:
+        c.execute('BEGIN IMMEDIATE') if not getattr(c,'in_transaction',False) else None
+        marks=','.join('?' for _ in legacy)
+        c.execute(f"UPDATE questions SET status='Retired',review_status='Retired',scoremax_ready=0,content_environment='PRODUCTION' WHERE id IN ({marks})",legacy)
+        c.commit()
+        print(f'SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT_NORMALIZED questions={len(legacy)} status=Retired review_status=Retired scoremax_ready=0 active=0 historical_attempts_preserved=true',flush=True)
+    return True
+
+
 def run(scoremax):
-    if not _armed():
-        print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT disabled=true',flush=True); return
     c=scoremax.db()
     try:
-        c.execute('''CREATE TABLE IF NOT EXISTS bio13_failed_pilot_retirement_v1(
-          id INTEGER PRIMARY KEY,
-          batch_id INTEGER NOT NULL UNIQUE,
-          batch_code TEXT NOT NULL,
-          prompt_pack_id TEXT NOT NULL,
-          prompt_pack_version TEXT NOT NULL,
-          transport_sha256 TEXT NOT NULL,
-          question_count INTEGER NOT NULL,
-          active_before INTEGER NOT NULL,
-          inactive_before INTEGER NOT NULL,
-          active_after INTEGER NOT NULL,
-          historical_attempts_preserved INTEGER NOT NULL DEFAULT 1,
-          policy TEXT NOT NULL,
-          reason TEXT NOT NULL,
-          created_at TEXT NOT NULL
-        )''')
-        batches=c.execute('''SELECT id,batch_code,row_count,valid_count,error_count,warning_count
-          FROM content_import_batches
-          WHERE source_prompt_pack_id=? AND source_prompt_pack_version=? AND payload_checksum=?
-          ORDER BY id''',(PROMPT_PACK_ID,PROMPT_PACK_VERSION,TRANSPORT_SHA)).fetchall()
-        if len(batches)!=1: raise RuntimeError(f'BIO13_RETIRE_BATCH_COUNT:{len(batches)}')
-        b=batches[0]; bid=int(b['id'])
-        if int(b['row_count'] or 0)!=100 or int(b['valid_count'] or 0)!=100 or int(b['error_count'] or 0)!=0:
-            raise RuntimeError('BIO13_RETIRE_BATCH_NOT_EXACT_CLEAN_100')
-        rows=c.execute('''SELECT q.id,q.question_id,q.active,q.status,r.row_json
-          FROM content_import_batch_rows r JOIN questions q ON q.id=r.question_db_id
-          WHERE r.batch_id=? AND r.import_status='IMPORTED' ORDER BY q.id''',(bid,)).fetchall()
-        if len(rows)!=100 or len({int(r['id']) for r in rows})!=100:
-            raise RuntimeError(f'BIO13_RETIRE_IMPORTED_POPULATION:{len(rows)}')
-        for r in rows:
-            try: src=json.loads(str(r['row_json'] or '{}'))
-            except Exception as exc: raise RuntimeError('BIO13_RETIRE_MALFORMED_IMMUTABLE_ROW') from exc
-            if str(src.get('Question ID') or '').strip()!=str(r['question_id'] or '').strip():
-                raise RuntimeError('BIO13_RETIRE_SOURCE_QID_MISMATCH')
-            if not str(src.get('Power House Public ID') or '').strip() or not str(src.get('Power House Source Row') or '').strip():
-                raise RuntimeError('BIO13_RETIRE_IDENTITY_TRIPLET_INCOMPLETE')
+        _ensure(c)
+        b=_batch(c); bid=int(b['id']); rows=_rows(c,bid)
         done=c.execute('SELECT * FROM bio13_failed_pilot_retirement_v1 WHERE batch_id=?',(bid,)).fetchone()
+        if _normalize_completed(c,b,rows,done):
+            print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT PASS idempotent=true questions=100 active=0 batch_evidence=true historical_attempts_preserved=true',flush=True); return
+        if not _armed():
+            print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT disabled=true',flush=True); return
         active=sum(1 for r in rows if int(r['active'] or 0)==1); inactive=100-active
-        if done:
-            if active!=0: raise RuntimeError(f'BIO13_RETIRE_IDEMPOTENCY_ACTIVE:{active}')
-            print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT PASS idempotent=true questions=100 active=0 historical_attempts_preserved=true',flush=True); return
         if active!=98 or inactive!=2:
             raise RuntimeError(f'BIO13_RETIRE_PRESTATE_MISMATCH:active={active}:inactive={inactive}')
         ids=[int(r['id']) for r in rows if int(r['active'] or 0)==1]
         c.execute('BEGIN IMMEDIATE') if not getattr(c,'in_transaction',False) else None
         marks=','.join('?' for _ in ids)
-        c.execute(f"UPDATE questions SET active=0,status='Withdrawn' WHERE id IN ({marks})",ids)
+        c.execute(f"UPDATE questions SET active=0,status='Retired',review_status='Retired',scoremax_ready=0,content_environment='PRODUCTION' WHERE id IN ({marks})",ids)
         remaining=int(c.execute('''SELECT COUNT(*) FROM content_import_batch_rows r JOIN questions q ON q.id=r.question_db_id
           WHERE r.batch_id=? AND r.import_status='IMPORTED' AND q.active=1''',(bid,)).fetchone()[0])
         if remaining!=0: raise RuntimeError(f'BIO13_RETIRE_ACTIVE_REMAINS:{remaining}')
@@ -81,7 +111,7 @@ def run(scoremax):
           (bid,str(b['batch_code'] or ''),PROMPT_PACK_ID,PROMPT_PACK_VERSION,TRANSPORT_SHA,100,98,2,0,1,POLICY,
            'Historical Emergency Direct pilot failed governed population authority; retire learner delivery without rewriting historical attempts or source evidence.'))
         c.commit()
-        print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT PASS questions=100 withdrawn_now=98 already_inactive=2 active_after=0 historical_attempts_preserved=true db_integrity=ok db_fk=0 release_authority=false',flush=True)
+        print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT PASS questions=100 retired_now=98 already_inactive=2 active_after=0 historical_attempts_preserved=true db_integrity=ok db_fk=0 release_authority=false',flush=True)
     except Exception:
         c.rollback(); raise
     finally:
@@ -114,4 +144,4 @@ def apply_bio13_failed_pilot_retirement(root: Path) -> None:
     rendered=production.read_text(encoding='utf-8')
     if '_run_bio13_failed_pilot_retirement(scoremax)' not in rendered:
         raise SystemExit('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT_INSTALL_MISSING')
-    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true authoritative_transport_sha=true authority_drift_gate=true armed_only=true history_preserved=true runtime_compile=true release_authority=false',flush=True)
+    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true authoritative_transport_sha=true authority_drift_gate=true canonical_retired_state=true batch_evidence=true armed_only_for_initial_mutation=true history_preserved=true runtime_compile=true release_authority=false',flush=True)
