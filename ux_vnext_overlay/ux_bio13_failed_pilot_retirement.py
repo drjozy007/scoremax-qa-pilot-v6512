@@ -68,7 +68,7 @@ def _normalize_completed(c,b,rows,done):
     if not done: return False
     if str(done['prompt_pack_id'] or '')!=PROMPT_PACK_ID or str(done['prompt_pack_version'] or '')!=PROMPT_PACK_VERSION or str(done['transport_sha256'] or '').lower()!=TRANSPORT_SHA:
         raise RuntimeError('BIO13_RETIRE_DONE_IDENTITY_MISMATCH')
-    if int(done['question_count'] or 0)!=100 or int(done['active_after'] or -1)!=0 or int(done['historical_attempts_preserved'] or 0)!=1 or str(done['policy'] or '')!=POLICY:
+    if int(done['question_count'] or 0)!=100 or int(done['active_after'])!=0 or int(done['historical_attempts_preserved'] or 0)!=1 or str(done['policy'] or '')!=POLICY:
         raise RuntimeError('BIO13_RETIRE_DONE_EVIDENCE_INVALID')
     if any(int(r['active'] or 0)!=0 for r in rows):
         raise RuntimeError('BIO13_RETIRE_IDEMPOTENCY_ACTIVE')
@@ -126,6 +126,8 @@ def apply_bio13_failed_pilot_retirement(root: Path) -> None:
         raise SystemExit('SCOREMAX_BIO13_RETIREMENT_TRANSPORT_AUTHORITY_DRIFT')
     if f"TRANSPORT_SHA='{AUTHORITATIVE_TRANSPORT_SHA}'" not in RUNTIME:
         raise SystemExit('SCOREMAX_BIO13_RETIREMENT_RUNTIME_SHA_DRIFT')
+    if "int(done['active_after'] or -1)" in RUNTIME:
+        raise SystemExit('SCOREMAX_BIO13_RETIREMENT_ZERO_REGRESSION')
     module=root/'ux_bio13_failed_pilot_retirement_runtime.py'
     compile(RUNTIME,str(module),'exec')
     module.write_text(RUNTIME,encoding='utf-8')
@@ -144,4 +146,4 @@ def apply_bio13_failed_pilot_retirement(root: Path) -> None:
     rendered=production.read_text(encoding='utf-8')
     if '_run_bio13_failed_pilot_retirement(scoremax)' not in rendered:
         raise SystemExit('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT_INSTALL_MISSING')
-    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true authoritative_transport_sha=true authority_drift_gate=true canonical_retired_state=true batch_evidence=true armed_only_for_initial_mutation=true history_preserved=true runtime_compile=true release_authority=false',flush=True)
+    print(MARKER+' BUILD_PASS exact_batch_fingerprint=true authoritative_transport_sha=true authority_drift_gate=true canonical_retired_state=true batch_evidence=true zero_value_safe=true armed_only_for_initial_mutation=true history_preserved=true runtime_compile=true release_authority=false',flush=True)
