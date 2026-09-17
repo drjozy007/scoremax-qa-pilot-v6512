@@ -60,32 +60,39 @@ def apply_persistent_guard_batch_retirement(root: Path) -> None:
         raise SystemExit('SCOREMAX_BATCH_RETIREMENT_GUARD_ANCHOR_MISSING')
     text=text.replace(anchor,replacement,1)
 
-    anchor2="""                if environment=='CANDIDATE':
-                    continue
-                fail(f'emergency_inactive_question_state_invalid batch={code} question={q[\"question_id\"]} status={status} review={review_status} env={environment}')
+    # Exact sealed batch-retirement evidence must be evaluated before the generic
+    # per-question Admin Reject/Retire audit rule. Otherwise a governed batch
+    # retirement can be rejected by a rule that only applies to manual actions.
+    anchor2="""                if status in {'Rejected','Retired'} and review_status==status and environment=='PRODUCTION':
+                    if not _table(c,'question_review_events'):
+                        fail(f'emergency_postrelease_audit_table_missing batch={code}')
 """
     replacement2="""                if batch_retirement_valid and environment=='PRODUCTION':
-                    # Compatibility state from the first sealed batch-retirement write.
-                    # It is normalized by application startup to Retired/Retired.
+                    # Exact governed batch retirement is authoritative for this
+                    # historical pilot population. Manual Admin Reject/Retire rules
+                    # remain unchanged for every other question.
                     if status=='Withdrawn' and review_status=='Approved':
                         post_release_inactive+=1
                         continue
                     if status=='Retired' and review_status=='Retired' and int(q['scoremax_ready'] or 0)==0:
                         post_release_inactive+=1
                         continue
-                if environment=='CANDIDATE':
-                    continue
-                fail(f'emergency_inactive_question_state_invalid batch={code} question={q[\"question_id\"]} status={status} review={review_status} env={environment}')
+                if status in {'Rejected','Retired'} and review_status==status and environment=='PRODUCTION':
+                    if not _table(c,'question_review_events'):
+                        fail(f'emergency_postrelease_audit_table_missing batch={code}')
 """
     if anchor2 not in text:
-        raise SystemExit('SCOREMAX_BATCH_RETIREMENT_GUARD_STATE_ANCHOR_MISSING')
+        raise SystemExit('SCOREMAX_BATCH_RETIREMENT_GUARD_PRECEDENCE_ANCHOR_MISSING')
     text=text.replace(anchor2,replacement2,1)
+    if text.find('if batch_retirement_valid and environment==\'PRODUCTION\':') > text.find("if status in {'Rejected','Retired'} and review_status==status and environment=='PRODUCTION':"):
+        raise SystemExit('SCOREMAX_BATCH_RETIREMENT_PRECEDENCE_REGRESSION')
     compile(text,str(guard),'exec')
     guard.write_text(text,encoding='utf-8')
     print(
         'SCOREMAX_PERSISTENT_GUARD_BATCH_RETIREMENT_PASS '
         'exact_batch_evidence=true manual_question_events_unchanged=true '
-        'legacy_withdrawn_compatibility=true canonical_retired_state=true '
-        'zero_value_safe=true diagnostic_on_mismatch=true historical_attempts_preserved=true release_authority=false',
+        'batch_retirement_precedes_manual_audit=true legacy_withdrawn_compatibility=true '
+        'canonical_retired_state=true zero_value_safe=true diagnostic_on_mismatch=true '
+        'historical_attempts_preserved=true release_authority=false',
         flush=True,
     )
