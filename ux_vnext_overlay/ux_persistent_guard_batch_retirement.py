@@ -38,6 +38,20 @@ def apply_persistent_guard_batch_retirement(root: Path) -> None:
                 and int(batch_retirement['historical_attempts_preserved'] or 0)==1
                 and str(batch_retirement['policy'] or '')=='SCOREMAX-BIO13-FAILED-PILOT-RETIREMENT-V1'
             )
+            if batch_retirement and not batch_retirement_valid:
+                print('SCOREMAX_BATCH_RETIREMENT_EVIDENCE_MISMATCH '+json.dumps({
+                    'batch_id':bid,
+                    'batch_code_equal':str(batch_retirement['batch_code'] or '')==code,
+                    'prompt_pack_id_equal':str(batch_retirement['prompt_pack_id'] or '')==str(b['source_prompt_pack_id'] or ''),
+                    'prompt_pack_version_equal':str(batch_retirement['prompt_pack_version'] or '').lower()==str(b['source_prompt_pack_version'] or '').lower(),
+                    'transport_sha_equal':str(batch_retirement['transport_sha256'] or '').lower()==str(b['payload_checksum'] or '').lower(),
+                    'question_count_equal':int(batch_retirement['question_count'] or 0)==row_count,
+                    'active_after_zero':int(batch_retirement['active_after'] or -1)==0,
+                    'history_preserved':int(batch_retirement['historical_attempts_preserved'] or 0)==1,
+                    'policy_equal':str(batch_retirement['policy'] or '')=='SCOREMAX-BIO13-FAILED-PILOT-RETIREMENT-V1',
+                },sort_keys=True,separators=(',',':')),flush=True)
+            elif not batch_retirement:
+                print('SCOREMAX_BATCH_RETIREMENT_EVIDENCE_MISSING batch_id='+str(bid),flush=True)
             for q in qrows:
 """
     if anchor not in text:
@@ -70,6 +84,6 @@ def apply_persistent_guard_batch_retirement(root: Path) -> None:
         'SCOREMAX_PERSISTENT_GUARD_BATCH_RETIREMENT_PASS '
         'exact_batch_evidence=true manual_question_events_unchanged=true '
         'legacy_withdrawn_compatibility=true canonical_retired_state=true '
-        'historical_attempts_preserved=true release_authority=false',
+        'diagnostic_on_mismatch=true historical_attempts_preserved=true release_authority=false',
         flush=True,
     )
