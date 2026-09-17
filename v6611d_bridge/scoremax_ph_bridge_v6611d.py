@@ -190,7 +190,12 @@ def admit_withdrawal_envelope(c, envelope, content_sha_header=''):
     i._begin_immediate(c)
     existing=c.execute('SELECT * FROM ph_bridge_withdrawal_receipts_v6611d WHERE export_public_id=?',(export_id,)).fetchone()
     if existing:
-        rec=i._receipt(c,envelope,'DUPLICATE'); c.commit(); return rec,200
+        original=c.execute('''SELECT receipt_id FROM integration_receipts
+                              WHERE message_id=? AND contract_name=? AND status='ACCEPTED'
+                              ORDER BY received_at,receipt_id LIMIT 1''',(str(existing['inbound_message_id'] or ''),WITHDRAWAL)).fetchone()
+        if not original or not str(original['receipt_id'] or ''):
+            c.rollback(); raise RuntimeError('WITHDRAWAL_DUPLICATE_ORIGINAL_RECEIPT_MISSING')
+        rec=i._receipt(c,envelope,'DUPLICATE',duplicate_of=str(original['receipt_id'])); c.commit(); return rec,200
     results=[_withdraw_one(c,item) for item in items]
     ack_payload={
       'export_public_id':export_id,
