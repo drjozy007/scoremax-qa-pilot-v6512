@@ -14,6 +14,7 @@ from ux_vnext_overlay.ux_restore_access_cards import apply_restore_access_cards
 from ux_vnext_overlay.ux_chapter_card_open_fix import apply_chapter_card_open_fix
 from ux_vnext_overlay.ux_admin_rejection_reason_guard import apply_admin_rejection_reason_guard
 from ux_vnext_overlay.ux_persistent_guard_postrelease_state import apply_persistent_guard_postrelease_state
+from ux_vnext_overlay.ux_persistent_guard_batch_retirement import apply_persistent_guard_batch_retirement
 from ux_vnext_overlay.ux_emergency_return_bridge import apply_emergency_return_bridge
 from ux_vnext_overlay.ux_emergency_return_contract import apply_emergency_return_contract
 from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return_recovery
@@ -199,6 +200,7 @@ def _assert_referral_hero_v3() -> None:
 def main() -> None:
     recovery_main()
     apply_persistent_guard_postrelease_state(ROOT)
+    apply_persistent_guard_batch_retirement(ROOT)
     apply_preimport_hardening(ROOT)
     _restore_delivery_reviewer()
     apply_referral_hero_v3(ROOT)
