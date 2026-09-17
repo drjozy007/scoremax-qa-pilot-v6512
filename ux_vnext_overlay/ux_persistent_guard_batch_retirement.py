@@ -1,0 +1,75 @@
+from __future__ import annotations
+from pathlib import Path
+
+
+def apply_persistent_guard_batch_retirement(root: Path) -> None:
+    """Extend the existing post-release guard for governed batch retirement only.
+
+    Manual Admin Reject/Retire remains unchanged and still requires per-question
+    question_review_events. A batch retirement is accepted only when the exact
+    sealed retirement record matches the imported batch identity and population.
+    """
+    guard=Path('scripts')/'scoremax_persistent_storage_guard.py'
+    if not guard.is_file():
+        raise SystemExit('SCOREMAX_BATCH_RETIREMENT_GUARD_SOURCE_MISSING')
+    text=guard.read_text(encoding='utf-8')
+    marker='SCOREMAX-PERSISTENT-GUARD-V4-BATCH-RETIREMENT-V1'
+    if marker in text:
+        return
+    anchor="""            post_release_inactive=0
+            for q in qrows:
+"""
+    replacement="""            post_release_inactive=0
+            # SCOREMAX-PERSISTENT-GUARD-V4-BATCH-RETIREMENT-V1
+            batch_retirement=None
+            if _table(c,'bio13_failed_pilot_retirement_v1'):
+                batch_retirement=c.execute(
+                    \"SELECT * FROM bio13_failed_pilot_retirement_v1 WHERE batch_id=? ORDER BY id DESC LIMIT 1\",
+                    (bid,),
+                ).fetchone()
+            batch_retirement_valid=bool(
+                batch_retirement
+                and str(batch_retirement['batch_code'] or '')==code
+                and str(batch_retirement['prompt_pack_id'] or '')==str(b['source_prompt_pack_id'] or '')
+                and str(batch_retirement['prompt_pack_version'] or '').lower()==str(b['source_prompt_pack_version'] or '').lower()
+                and str(batch_retirement['transport_sha256'] or '').lower()==str(b['payload_checksum'] or '').lower()
+                and int(batch_retirement['question_count'] or 0)==row_count
+                and int(batch_retirement['active_after'] or -1)==0
+                and int(batch_retirement['historical_attempts_preserved'] or 0)==1
+                and str(batch_retirement['policy'] or '')=='SCOREMAX-BIO13-FAILED-PILOT-RETIREMENT-V1'
+            )
+            for q in qrows:
+"""
+    if anchor not in text:
+        raise SystemExit('SCOREMAX_BATCH_RETIREMENT_GUARD_ANCHOR_MISSING')
+    text=text.replace(anchor,replacement,1)
+
+    anchor2="""                if environment=='CANDIDATE':
+                    continue
+                fail(f'emergency_inactive_question_state_invalid batch={code} question={q[\"question_id\"]} status={status} review={review_status} env={environment}')
+"""
+    replacement2="""                if batch_retirement_valid and environment=='PRODUCTION':
+                    # Compatibility state from the first sealed batch-retirement write.
+                    # It is normalized by application startup to Retired/Retired.
+                    if status=='Withdrawn' and review_status=='Approved':
+                        post_release_inactive+=1
+                        continue
+                    if status=='Retired' and review_status=='Retired' and int(q['scoremax_ready'] or 0)==0:
+                        post_release_inactive+=1
+                        continue
+                if environment=='CANDIDATE':
+                    continue
+                fail(f'emergency_inactive_question_state_invalid batch={code} question={q[\"question_id\"]} status={status} review={review_status} env={environment}')
+"""
+    if anchor2 not in text:
+        raise SystemExit('SCOREMAX_BATCH_RETIREMENT_GUARD_STATE_ANCHOR_MISSING')
+    text=text.replace(anchor2,replacement2,1)
+    compile(text,str(guard),'exec')
+    guard.write_text(text,encoding='utf-8')
+    print(
+        'SCOREMAX_PERSISTENT_GUARD_BATCH_RETIREMENT_PASS '
+        'exact_batch_evidence=true manual_question_events_unchanged=true '
+        'legacy_withdrawn_compatibility=true canonical_retired_state=true '
+        'historical_attempts_preserved=true release_authority=false',
+        flush=True,
+    )
