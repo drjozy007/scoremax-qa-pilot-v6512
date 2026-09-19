@@ -21,6 +21,7 @@ from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return
 from ux_vnext_overlay.ux_bio13_identity_crosswalk_audit import apply_bio13_identity_crosswalk_audit
 from ux_vnext_overlay.ux_bio13_failed_pilot_retirement import apply_bio13_failed_pilot_retirement
 from ux_vnext_overlay.ux_source_market_v12_receiver import apply_source_market_v12_receiver
+from ux_vnext_overlay.ux_safe98_destination_verifier import apply_safe98_destination_verifier
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -225,7 +226,7 @@ def main() -> None:
     apply_bio13_identity_crosswalk_audit(ROOT)
     apply_bio13_failed_pilot_retirement(ROOT)
     _wire_programme_tabs_to_correct_surfaces()
-
+    apply_safe98_destination_verifier(ROOT)
 
 if __name__ == '__main__':
     main()
