@@ -642,23 +642,28 @@ def _learner_stimulus_text(stimulus):
     return '\n'.join(parts)
 
 def _text_option_id(content):
-    """Resolve a governed TEXT primary key to exactly one supplied option, without fuzzy matching."""
+    """Resolve governed TEXT key/accepted answers to one supplied option, without fuzzy matching."""
     marking=content.get('marking') or {}
     options=[o for o in (content.get('options') or []) if isinstance(o,dict)]
     if str(marking.get('key_type') or '').upper()!='TEXT' or not options:
         return None
+    candidates=[]
     key=marking.get('key')
-    if isinstance(key,(dict,list)) or key is None:
-        return None
-    token=str(key).strip()
-    if not token:
+    if key is not None and not isinstance(key,(dict,list)):
+        token=str(key).strip()
+        if token: candidates.append(token)
+    for value in (marking.get('accepted_answers') or []):
+        token=str(value).strip()
+        if token: candidates.append(token)
+    if not candidates:
         return None
     matches=[]
-    for opt in options:
-        oid=str(opt.get('option_id') or '').strip()
-        text=str(opt.get('text') or '').strip()
-        if token==oid or token==text:
-            matches.append(oid)
+    for token in candidates:
+        for opt in options:
+            oid=str(opt.get('option_id') or '').strip()
+            text=str(opt.get('text') or '').strip()
+            if token==oid or token==text:
+                matches.append(oid)
     unique=[x for x in dict.fromkeys(matches) if x]
     return unique[0] if len(unique)==1 else None
 
