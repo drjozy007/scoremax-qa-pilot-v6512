@@ -14,12 +14,37 @@ RELEASE_VERSION="1"
 TARGET="PH-RS-Q-1E94CCFE2E15F0E679D9FC"
 TARGET_VERSION="QV::PH-RS-Q-1E94CCFE2E15F0E679D9FC::v1"
 ACK="SM_PH_QUESTION_WITHDRAWAL_ACK_V1"
+ACK_ENDPOINT="/api/integration/v1/scoremax/question-withdrawal-acks"
+
+def _ensure_ack_endpoint():
+    incident_contract="SM_PH_CONTENT_INCIDENT_V1"
+    candidates=[]
+    for name,value in vars(integ).items():
+        if not isinstance(value,dict): continue
+        if incident_contract not in value: continue
+        incident_endpoint=str(value.get(incident_contract) or "")
+        if "/api/integration/" not in incident_endpoint: continue
+        candidates.append((name,value))
+    if len(candidates)!=1:
+        raise RuntimeError(f"ACK_ENDPOINT_REGISTRY_COUNT:{len(candidates)}")
+    name,registry=candidates[0]
+    existing=str(registry.get(ACK) or "")
+    if existing and existing!=ACK_ENDPOINT:
+        raise RuntimeError(f"ACK_ENDPOINT_CONFLICT:{name}:{existing}")
+    registry[ACK]=ACK_ENDPOINT
+    if str(registry.get(ACK) or "")!=ACK_ENDPOINT:
+        raise RuntimeError("ACK_ENDPOINT_INSTALL_FAILED")
+    print("SCOREMAX_SAFE98_ACK_ENDPOINT_READY "+canon({
+      "registry":name,"contract":ACK,"endpoint":ACK_ENDPOINT,
+      "existing_dispatcher_extended":True
+    }),flush=True)
 
 def canon(v): return json.dumps(v,sort_keys=True,separators=(",",":"),default=str)
 
 def main():
     mode=os.environ.get("SCOREMAX_SAFE98_WITHDRAWAL_CLOSE","OFF").strip().upper()
     if mode not in {"CHECK","FLUSH_ACK"}: raise RuntimeError("MODE_MUST_BE_CHECK_OR_FLUSH_ACK")
+    _ensure_ack_endpoint()
     c=sqlite3.connect(DB,timeout=30); c.row_factory=sqlite3.Row
     try:
         member=int(c.execute("""SELECT COUNT(*) FROM integration_ph_release_question_membership
