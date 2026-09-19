@@ -283,6 +283,14 @@ def main():
     runs=durability_probe(); db_state='absent'; db_integrity='n/a'; db_fk='n/a'
     if DB.exists(): db_integrity,fk=check_sqlite(DB); db_state='existing'; db_fk=str(fk)
     qualification=qualify_database()
+    # SCOREMAX_SAFE98_RETURN_PROBE_HOOK_V1: bounded one-shot against an already STAGED, non-activated SAFE98 release.
+    # OFF by default; never materialises or activates learner content.
+    if os.environ.get('SCOREMAX_SAFE98_RETURN_PROBE','OFF').strip().upper()=='RUN':
+        import subprocess,sys
+        probe_script=Path(__file__).with_name('safe98_return_loop_probe.py')
+        if not probe_script.is_file(): fail('safe98_return_probe_script_missing')
+        cp=subprocess.run([sys.executable,str(probe_script)],check=False,env=dict(os.environ))
+        if cp.returncode: fail(f'safe98_return_probe_failed rc={cp.returncode}')
     print(f'SCOREMAX_PERSISTENT_STORAGE_PASS policy={POLICY} mount={MOUNT} state={state} storage_id_sha256={digest} probe_runs={runs} db_state={db_state} db_integrity={db_integrity} db_fk={db_fk} db={DB} backup={BACKUP} intake={INTAKE}',flush=True)
     print('SCOREMAX_PERSISTENT_QUALIFICATION='+json.dumps(qualification,sort_keys=True),flush=True)
 
