@@ -17,26 +17,27 @@ ACK="SM_PH_QUESTION_WITHDRAWAL_ACK_V1"
 ACK_ENDPOINT="/api/integration/v1/scoremax/question-withdrawal-acks"
 
 def _ensure_ack_endpoint():
-    incident_contract="SM_PH_CONTENT_INCIDENT_V1"
-    candidates=[]
-    for name,value in vars(integ).items():
-        if not isinstance(value,dict): continue
-        if incident_contract not in value: continue
-        incident_endpoint=str(value.get(incident_contract) or "")
-        if "/api/integration/" not in incident_endpoint: continue
-        candidates.append((name,value))
-    if len(candidates)!=1:
-        raise RuntimeError(f"ACK_ENDPOINT_REGISTRY_COUNT:{len(candidates)}")
-    name,registry=candidates[0]
-    existing=str(registry.get(ACK) or "")
-    if existing and existing!=ACK_ENDPOINT:
-        raise RuntimeError(f"ACK_ENDPOINT_CONFLICT:{name}:{existing}")
-    registry[ACK]=ACK_ENDPOINT
-    if str(registry.get(ACK) or "")!=ACK_ENDPOINT:
-        raise RuntimeError("ACK_ENDPOINT_INSTALL_FAILED")
+    original=getattr(integ,"_dispatch_target",None)
+    if original is None or not callable(original):
+        raise RuntimeError("ACK_DISPATCH_TARGET_MISSING")
+    if getattr(integ,"_SAFE98_ACK_TARGET_PATCHED",False):
+        url,path,direction=integ._dispatch_target(ACK)
+        if path!=ACK_ENDPOINT or direction!="SCOREMAX_TO_POWER_HOUSE":
+            raise RuntimeError("ACK_DISPATCH_TARGET_PATCH_DRIFT")
+        return
+    def patched(contract):
+        if contract==ACK:
+            base=os.environ.get("SCOREMAX_POWER_HOUSE_BASE_URL","").rstrip("/")
+            return (base+ACK_ENDPOINT if base else ""),ACK_ENDPOINT,"SCOREMAX_TO_POWER_HOUSE"
+        return original(contract)
+    integ._dispatch_target=patched
+    integ._SAFE98_ACK_TARGET_PATCHED=True
+    url,path,direction=integ._dispatch_target(ACK)
+    if path!=ACK_ENDPOINT or direction!="SCOREMAX_TO_POWER_HOUSE":
+        raise RuntimeError("ACK_DISPATCH_TARGET_INSTALL_FAILED")
     print("SCOREMAX_SAFE98_ACK_ENDPOINT_READY "+canon({
-      "registry":name,"contract":ACK,"endpoint":ACK_ENDPOINT,
-      "existing_dispatcher_extended":True
+      "contract":ACK,"endpoint":ACK_ENDPOINT,"direction":direction,
+      "existing_dispatcher_extended":True,"base_configured":bool(url)
     }),flush=True)
 
 def canon(v): return json.dumps(v,sort_keys=True,separators=(",",":"),default=str)
@@ -164,7 +165,7 @@ def main():
                     if before["message_id"]!=expected_message: raise RuntimeError("ACK_FORCE_DUE_MESSAGE_MISMATCH")
                     if before["export_public_id"]!=expected_export: raise RuntimeError("ACK_FORCE_DUE_EXPORT_MISMATCH")
                     if before["item_state"]!="STAGED_EXCLUDED": raise RuntimeError("ACK_FORCE_DUE_STATE_MISMATCH")
-                    if int(before["attempt_count"] or 0)!=4: raise RuntimeError(f"ACK_FORCE_DUE_ATTEMPT_MISMATCH:{before['attempt_count']}")
+                    if int(before["attempt_count"] or 0)!=5: raise RuntimeError(f"ACK_FORCE_DUE_ATTEMPT_MISMATCH:{before['attempt_count']}")
                     if str(before.get("last_error_code") or "")!="INVALID_OR_MISMATCHED_INTEGRATION_RECEIPT_V1":
                         raise RuntimeError("ACK_FORCE_DUE_UNEXPECTED_PRIOR_ERROR:"+str(before.get("last_error_code")))
                     c.execute("""UPDATE integration_outbox
