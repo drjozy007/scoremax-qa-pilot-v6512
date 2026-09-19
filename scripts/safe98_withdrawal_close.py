@@ -99,13 +99,39 @@ def main():
             if before["status"]=="DELIVERED":
                 result["event"]="ALREADY_DELIVERED"
             else:
-                if before["status"] not in {"PENDING","RETRYING"}: raise RuntimeError("ACK_NOT_DISPATCHABLE:"+before["status"])
+                if before["status"] not in {"PENDING","RETRY"}: raise RuntimeError("ACK_NOT_DISPATCHABLE:"+before["status"])
+                force_due=os.environ.get("SCOREMAX_SAFE98_WITHDRAWAL_ACK_FORCE_DUE","OFF").strip().upper()
+                if before["status"]=="RETRY" and force_due=="RUN":
+                    expected_message="msg::SM_PH_QUESTION_WITHDRAWAL_ACK_V1::e944e4da37a37a69ce77ddadef67"
+                    expected_export="PH-SMWD15L1-7E5BF1D67C0B6D677AEA6E15"
+                    if int(before["outbox_id"])!=6: raise RuntimeError("ACK_FORCE_DUE_WRONG_OUTBOX")
+                    if before["message_id"]!=expected_message: raise RuntimeError("ACK_FORCE_DUE_MESSAGE_MISMATCH")
+                    if before["export_public_id"]!=expected_export: raise RuntimeError("ACK_FORCE_DUE_EXPORT_MISMATCH")
+                    if before["item_state"]!="STAGED_EXCLUDED": raise RuntimeError("ACK_FORCE_DUE_STATE_MISMATCH")
+                    if int(before["attempt_count"] or 0)!=3: raise RuntimeError(f"ACK_FORCE_DUE_ATTEMPT_MISMATCH:{before['attempt_count']}")
+                    if str(before.get("last_error_code") or "")!="INVALID_OR_MISMATCHED_INTEGRATION_RECEIPT_V1":
+                        raise RuntimeError("ACK_FORCE_DUE_UNEXPECTED_PRIOR_ERROR:"+str(before.get("last_error_code")))
+                    c.execute("""UPDATE integration_outbox
+                                 SET next_attempt_at=CURRENT_TIMESTAMP
+                                 WHERE id=? AND status='RETRY' AND message_id=?""",
+                              (6,expected_message))
+                    c.commit()
+                    refreshed=dict(c.execute("SELECT * FROM integration_outbox WHERE id=6").fetchone())
+                    if str(refreshed.get("status") or "")!="RETRY" or str(refreshed.get("message_id") or "")!=expected_message:
+                        raise RuntimeError("ACK_FORCE_DUE_POSTSTATE_BAD")
+                    print("SCOREMAX_SAFE98_ACK_GOVERNED_FORCE_DUE "+canon({
+                      "event":"FORCE_DUE_PASS","outbox_id":6,"message_id":expected_message,
+                      "export_public_id":expected_export,"attempt_count_preserved":int(refreshed.get("attempt_count") or 0),
+                      "status":refreshed.get("status"),"next_attempt_at":refreshed.get("next_attempt_at"),
+                      "prior_error_code":before.get("last_error_code")
+                    }),flush=True)
                 due_total=int(c.execute("""SELECT COUNT(*) FROM integration_outbox
-                  WHERE status IN ('PENDING','RETRYING')""").fetchone()[0])
+                  WHERE status IN ('PENDING','RETRY')
+                    AND (next_attempt_at IS NULL OR next_attempt_at<=CURRENT_TIMESTAMP)""").fetchone()[0])
                 if due_total!=1: raise RuntimeError(f"UNRELATED_DUE_OUTBOX_PRESENT:{due_total}")
-                dispatch=integ.dispatch_due(c,limit=5,timeout=15)
+                dispatch=integ.dispatch_due(c,limit=1,timeout=15)
                 post=dict(c.execute("SELECT * FROM integration_outbox WHERE id=?",(int(ackrow["id"]),)).fetchone())
-                if str(post.get("status") or "")!="DELIVERED": raise RuntimeError("ACK_NOT_DELIVERED:"+canon(dispatch))
+                if str(post.get("status") or "")!="DELIVERED": raise RuntimeError("ACK_NOT_DELIVERED:"+canon({"dispatch":dispatch,"post":post}))
                 result.update({"event":"FLUSH_ACK_PASS","dispatch":dispatch,"ack_post_status":"DELIVERED",
                                "ack_post_attempt_count":int(post.get("attempt_count") or 0)})
             qc2=c.execute("PRAGMA quick_check").fetchone()[0]; fk2=len(c.execute("PRAGMA foreign_key_check").fetchall())
