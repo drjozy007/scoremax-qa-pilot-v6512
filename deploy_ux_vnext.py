@@ -20,6 +20,7 @@ from ux_vnext_overlay.ux_emergency_return_contract import apply_emergency_return
 from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return_recovery
 from ux_vnext_overlay.ux_bio13_identity_crosswalk_audit import apply_bio13_identity_crosswalk_audit
 from ux_vnext_overlay.ux_bio13_failed_pilot_retirement import apply_bio13_failed_pilot_retirement
+from ux_vnext_overlay.ux_source_market_v12_receiver import apply_source_market_v12_receiver
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -199,6 +200,7 @@ def _assert_referral_hero_v3() -> None:
 
 def main() -> None:
     recovery_main()
+    apply_source_market_v12_receiver(ROOT)
     apply_persistent_guard_postrelease_state(ROOT)
     apply_persistent_guard_batch_retirement(ROOT)
     apply_preimport_hardening(ROOT)
