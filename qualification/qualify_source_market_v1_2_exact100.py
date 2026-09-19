@@ -132,6 +132,7 @@ def main():
                 "content":q.get("content"),
                 "architecture":q.get("architecture"),
                 "governance":q.get("governance"),
+                "provenance":q.get("provenance"),
             },sort_keys=True,ensure_ascii=False),flush=True)
 
     # A. Exact governed question/stimulus objects through 1.2 INLINE admission.
