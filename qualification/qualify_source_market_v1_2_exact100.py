@@ -127,8 +127,8 @@ def main():
     # Diagnostic only: no question mutation and no receiver relaxation.
     import re
     tiered=[]
-    tier_pat=re.compile(r"\\b(?:tier\\s*1|tier\\s*2|both\\s+tiers|answer\\s+both\\s+tiers)\\b",re.I)
-    composite_pat=re.compile(r"\\btier\\s*1\\s*:\\s*[^;]+;\\s*tier\\s*2\\s*:\\s*.+$",re.I)
+    tier_pat=re.compile(r"\b(?:tier\s*1|tier\s*2|both\s+tiers|answer\s+both\s+tiers)\b",re.I)
+    composite_pat=re.compile(r"\btier\s*1\s*:\s*[^;]+;\s*tier\s*2\s*:\s*.+$",re.I)
     for idx,q in enumerate(questions):
         content=q.get("content") or {}
         marking=content.get("marking") or {}
@@ -144,7 +144,7 @@ def main():
         option_ids=[str(o.get("option_id") or "").strip() for o in opts]
         has_second_surface=(
             any(re.search(r"^(?:T2|TIER[_ -]?2)[:._ -]",x,re.I) for x in option_ids)
-            or any(re.search(r"\\btier\\s*2\\b",x,re.I) for x in statements)
+            or any(re.search(r"\btier\s*2\b",x,re.I) for x in statements)
             or isinstance(content.get("tier_2"),dict)
             or isinstance(content.get("tier2"),dict)
             or isinstance(content.get("response_groups"),list) and len(content.get("response_groups") or [])>=2
