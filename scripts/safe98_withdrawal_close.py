@@ -80,7 +80,15 @@ def main():
           "attempt_count":int(ackrow.get("attempt_count") or 0),
           "message_id":str(ackrow.get("message_id") or ""),
           "export_public_id":str((ackenv.get("payload") or {}).get("export_public_id") or ""),
-          "item_state":str(target_result[0].get("state") or "")
+          "item_state":str(target_result[0].get("state") or ""),
+          "last_http_status":ackrow.get("last_http_status"),
+          "last_error_code":ackrow.get("last_error_code"),
+          "last_error_redacted":ackrow.get("last_error_redacted"),
+          "next_attempt_at":ackrow.get("next_attempt_at"),
+          "delivered_at":ackrow.get("delivered_at"),
+          "business_receipt_id":ackrow.get("business_receipt_id"),
+          "retry_cycle":ackrow.get("retry_cycle"),
+          "cycle_attempt_count":ackrow.get("cycle_attempt_count")
         }
         result={"event":"CHECK_PASS","mode":mode,"membership":98,"target_membership":1,"staged_exclusions":1,
                 "activation_eligible":97,"activation_authorizations":0,"target_materialised_rows":0,
