@@ -117,6 +117,24 @@ def apply_source_market_v12_receiver(root: Path) -> None:
     # Read-only bounded diagnostic: expose only string vocabulary from existing canonical_family.
     contract_engine=root/"question_contract_engine.py"
     if contract_engine.is_file():
+        ce=contract_engine.read_text(encoding="utf-8")
+        alias_marker="SM-SOURCE-MARKET-MCQ-SINGLE-ALIAS-1"
+        if alias_marker not in ce:
+            ce += r'''
+
+# SM-SOURCE-MARKET-MCQ-SINGLE-ALIAS-1
+# Schema-1.2 incoming MCQ_SINGLE is the same single-choice construct already governed
+# by standard_mcq -> single_choice in the existing ScoreMax contract tables.
+_original_canonical_family_source_market_v12 = canonical_family
+def canonical_family(value):
+    token=_text(value).strip().lower().replace("-","_").replace(" ","_")
+    if token=="mcq_single":
+        return "standard_mcq"
+    return _original_canonical_family_source_market_v12(value)
+'''
+            compile(ce,str(contract_engine),"exec")
+            contract_engine.write_text(ce,encoding="utf-8")
+    if contract_engine.is_file():
         ce_text=contract_engine.read_text(encoding="utf-8")
         ce_tree=ast.parse(ce_text)
         vocab=[]
