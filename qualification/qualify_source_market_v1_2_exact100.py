@@ -245,5 +245,142 @@ def main():
 
     print("SCOREMAX_V12_RECEIVER_ACCEPTANCE_PASS exact100=100 source_objects_exact=true inline=true manifest_pull=true staged_only=true activation_authority_required=true",flush=True)
 
+
+SAFE98_BLOCKED_IDS={
+    "PH-RS-Q-BE9C43562034461C7B484A",
+    "PH-RS-Q-717ACEAD333442AF065264",
+}
+
+def _stimulus_id(obj):
+    if not isinstance(obj,dict):
+        return ""
+    for k in ("stimulus_id","id","public_id"):
+        v=str(obj.get(k) or "").strip()
+        if v:
+            return v
+    return ""
+
+def main_safe98():
+    env_raw,env=load_fixture(ENV_FIX)
+    pkg_raw,durable=load_fixture(PKG_FIX)
+    assert str(env.get("schema_version"))=="1.2.0",env.get("schema_version")
+    payload=dict(env["payload"])
+    release=copy.deepcopy(payload["release"])
+    full_questions=list(durable.get("questions") or [])
+    full_stimuli=list(durable.get("stimuli") or [])
+    assert len(full_questions)==100,len(full_questions)
+
+    full_by_id={str(q.get("question_id") or ""):q for q in full_questions}
+    assert SAFE98_BLOCKED_IDS.issubset(set(full_by_id)), SAFE98_BLOCKED_IDS-set(full_by_id)
+    questions=[copy.deepcopy(q) for q in full_questions if str(q.get("question_id") or "") not in SAFE98_BLOCKED_IDS]
+    assert len(questions)==98,len(questions)
+    assert not (SAFE98_BLOCKED_IDS & {str(q.get("question_id") or "") for q in questions})
+
+    # Retain only governed stimuli actually referenced by the 98 safe questions.
+    refs=set()
+    for q in questions:
+        content=q.get("content") or {}
+        for k in ("stimulus_ref","stimulus_id"):
+            v=str(content.get(k) or "").strip()
+            if v:
+                refs.add(v)
+    stimuli=[copy.deepcopy(x) for x in full_stimuli if _stimulus_id(x) in refs] if refs else []
+    stimulus_ids={_stimulus_id(x) for x in stimuli}
+    missing_refs=sorted(refs-stimulus_ids)
+    assert not missing_refs,missing_refs
+
+    # Prove retained question objects are untouched relative to the governed exact100 fixture.
+    for q in questions:
+        qid=str(q.get("question_id") or "")
+        assert canonical_bytes(q)==canonical_bytes(full_by_id[qid]),qid
+
+    release["release_id"]="REL::QUAL::BIO12-CH13::SAFE98::V015L9AE"
+    release["release_version"]="1"
+    release["question_count"]=98
+    release["stimulus_count"]=len(stimuli)
+    release["supersedes_release_version"]=None
+    release["withdrawn_at"]=None
+    release["withdrawal_reason"]=None
+
+    package_body={
+        "package_schema_version":"1.2.0",
+        "release_id":str(release["release_id"]),
+        "release_version":str(release["release_version"]),
+        "stimuli":copy.deepcopy(stimuli),
+        "questions":copy.deepcopy(questions),
+    }
+    zip_bytes,manifest_bytes=build_manifest_zip(package_body,release)
+    release["package_checksum_sha256"]=hashlib.sha256(zip_bytes).hexdigest()
+    release["manifest_checksum_sha256"]=hashlib.sha256(manifest_bytes).hexdigest()
+
+    print("SCOREMAX_V12_SAFE98_SELECTION_PASS "+json.dumps({
+        "source_population":100,
+        "selected":98,
+        "held":2,
+        "held_ids":sorted(SAFE98_BLOCKED_IDS),
+        "stimuli":len(stimuli),
+        "retained_question_objects_exact":True,
+    },sort_keys=True),flush=True)
+
+    # A. INLINE receiver admission of exact safe98 objects.
+    inline=copy.deepcopy(env)
+    inline["payload"]["release"]=copy.deepcopy(release)
+    inline["payload"]["delivery_mode"]="INLINE"
+    inline["payload"]["package_download_url"]=None
+    inline["payload"]["questions"]=copy.deepcopy(questions)
+    inline["payload"]["stimuli"]=copy.deepcopy(stimuli)
+    set_message_identity(inline,"SAFE98-INLINE")
+
+    c=conn("/tmp/scoremax_v12_safe98_inline.db")
+    rec,status=sm.admit_content_envelope(c,inline,inline["payload_checksum_sha256"])
+    assert status==202,(status,rec)
+    row=c.execute("SELECT * FROM integration_ph_content_releases WHERE release_id=? AND release_version=?",
+                  (release["release_id"],release["release_version"])).fetchone()
+    assert row and row["local_status"]=="STAGED",dict(row) if row else None
+    assert int(row["question_count"])==98,dict(row)
+    assert c.execute("SELECT COUNT(*) FROM integration_ph_release_question_membership").fetchone()[0]==98
+    assert c.execute("SELECT COUNT(*) FROM integration_ph_question_version_store").fetchone()[0]==98
+    assert c.execute("SELECT COUNT(*) FROM integration_ph_product_activation_authorizations").fetchone()[0]==0
+    rec2,status2=sm.admit_content_envelope(c,inline,inline["payload_checksum_sha256"])
+    assert status2==200,(status2,rec2)
+    assert c.execute("SELECT COUNT(*) FROM integration_ph_content_releases").fetchone()[0]==1
+    assert c.execute("SELECT COUNT(*) FROM integration_ph_release_question_membership").fetchone()[0]==98
+    assert_db_health(c)
+    print("SCOREMAX_V12_SAFE98_INLINE_PASS schema=1.2.0 accepted=98 staged=true learner_live=false replay_idempotent=true quick_check=ok fk=0",flush=True)
+    c.close()
+
+    # B. MANIFEST_PULL receiver admission of the same exact safe98 objects.
+    manifest_env=copy.deepcopy(env)
+    manifest_env["payload"]["release"]=copy.deepcopy(release)
+    manifest_env["payload"]["delivery_mode"]="MANIFEST_PULL"
+    manifest_env["payload"]["package_download_url"]="https://qualification.invalid/safe98-package.zip"
+    manifest_env["payload"]["questions"]=[]
+    manifest_env["payload"]["stimuli"]=[]
+    set_message_identity(manifest_env,"SAFE98-MANIFEST")
+
+    old_download=sm._download_manifest_package
+    sm._download_manifest_package=lambda url,timeout=20: zip_bytes
+    try:
+        c=conn("/tmp/scoremax_v12_safe98_manifest.db")
+        rec3,status3=sm.admit_content_envelope(c,manifest_env,manifest_env["payload_checksum_sha256"])
+        assert status3==202,(status3,rec3)
+        row=c.execute("SELECT * FROM integration_ph_content_releases WHERE release_id=? AND release_version=?",
+                      (release["release_id"],release["release_version"])).fetchone()
+        assert row and row["local_status"]=="STAGED",dict(row) if row else None
+        assert int(row["question_count"])==98
+        assert c.execute("SELECT COUNT(*) FROM integration_ph_release_question_membership").fetchone()[0]==98
+        assert c.execute("SELECT COUNT(*) FROM integration_ph_question_version_store").fetchone()[0]==98
+        assert c.execute("SELECT COUNT(*) FROM integration_ph_product_activation_authorizations").fetchone()[0]==0
+        assert_db_health(c)
+        print("SCOREMAX_V12_SAFE98_MANIFEST_PASS schema=1.2.0 package_questions=98 staged=true learner_live=false manifest_integrity=true quick_check=ok fk=0",flush=True)
+        c.close()
+    finally:
+        sm._download_manifest_package=old_download
+
+    print("SCOREMAX_V12_SAFE98_RECEIVER_ACCEPTANCE_PASS selected=98 held=2 source_objects_exact=true inline=true manifest_pull=true staged_only=true activation_authority_required=true",flush=True)
+    return 0
+
 if __name__=="__main__":
+    if os.environ.get("SCOREMAX_V12_SAFE98_ONLY")=="1":
+        raise SystemExit(main_safe98())
     raise SystemExit(main())
