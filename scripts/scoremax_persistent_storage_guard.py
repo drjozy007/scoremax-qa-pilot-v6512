@@ -298,13 +298,20 @@ def main():
         if not export_script.is_file(): fail('safe98_lineage_export_script_missing')
         cp=subprocess.run([sys.executable,str(export_script)],check=False,env=dict(os.environ))
         if cp.returncode: fail(f'safe98_lineage_export_failed rc={cp.returncode}')
-    # SCOREMAX_SAFE98_DEADLETTER_INTROSPECT_HOOK_V1: read-only recovery primitive/target-state inspection.
-    if True:
+    # SCOREMAX_SAFE98_DEADLETTER_INTROSPECT_HOOK_V1: disabled after read-only qualification PASS.
+    if False:
         import subprocess,sys
         diag_script=Path(__file__).with_name('safe98_deadletter_introspect.py')
         if not diag_script.is_file(): fail('safe98_deadletter_introspect_script_missing')
         cp=subprocess.run([sys.executable,str(diag_script)],check=False,env=dict(os.environ))
         if cp.returncode: fail(f'safe98_deadletter_introspect_failed rc={cp.returncode}')
+    # SCOREMAX_SAFE98_DEADLETTER_REQUEUE_HOOK_V1: one bounded governed replay of the same immutable SAFE98 incident.
+    if True:
+        import subprocess,sys
+        rq_script=Path(__file__).with_name('safe98_deadletter_requeue.py')
+        if not rq_script.is_file(): fail('safe98_deadletter_requeue_script_missing')
+        cp=subprocess.run([sys.executable,str(rq_script)],check=False,env=dict(os.environ))
+        if cp.returncode: fail(f'safe98_deadletter_requeue_failed rc={cp.returncode}')
     print(f'SCOREMAX_PERSISTENT_STORAGE_PASS policy={POLICY} mount={MOUNT} state={state} storage_id_sha256={digest} probe_runs={runs} db_state={db_state} db_integrity={db_integrity} db_fk={db_fk} db={DB} backup={BACKUP} intake={INTAKE}',flush=True)
     print('SCOREMAX_PERSISTENT_QUALIFICATION='+json.dumps(qualification,sort_keys=True),flush=True)
 
