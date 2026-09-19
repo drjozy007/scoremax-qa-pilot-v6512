@@ -100,6 +100,28 @@ def main():
             text_shapes[(str(content.get("question_family_type") or ""),str(content.get("exam_question_type") or ""),len(opts),display_only)]+=1
     print("SCOREMAX_V12_DIAG_GENERATED "+json.dumps(dict(generated),sort_keys=True),flush=True)
     print("SCOREMAX_V12_DIAG_TEXT_SHAPES "+json.dumps([{"family":k[0],"exam":k[1],"options":k[2],"display_only":k[3],"count":v} for k,v in sorted(text_shapes.items())],sort_keys=True),flush=True)
+    unresolved=[]
+    for idx,q in enumerate(questions):
+        content=q.get("content") or {}; marking=content.get("marking") or {}; opts=list(content.get("options") or [])
+        if str(marking.get("key_type") or "").upper()=="TEXT" and opts and not sm._text_option_id(content):
+            key=marking.get("key"); accepted=list(marking.get("accepted_answers") or [])
+            opt_ids={str(o.get("option_id") or "").strip() for o in opts if isinstance(o,dict)}
+            opt_texts={str(o.get("text") or "").strip() for o in opts if isinstance(o,dict)}
+            tokens=[]
+            if key is not None and not isinstance(key,(dict,list)): tokens.append(str(key).strip())
+            tokens.extend(str(x).strip() for x in accepted)
+            unresolved.append({
+                "index":idx,"question_id":str(q.get("question_id") or ""),
+                "family":str(content.get("question_family_type") or ""),
+                "exam":str(content.get("exam_question_type") or ""),
+                "marking_keys":sorted(marking.keys()),
+                "key_python_type":type(key).__name__,
+                "key_length":len(str(key)) if key is not None else 0,
+                "accepted_count":len(accepted),"option_count":len(opts),
+                "token_matches_option_id":sum(1 for x in tokens if x in opt_ids),
+                "token_matches_option_text":sum(1 for x in tokens if x in opt_texts),
+            })
+    print("SCOREMAX_V12_DIAG_UNRESOLVED "+json.dumps(unresolved,sort_keys=True),flush=True)
 
     # A. Exact governed question/stimulus objects through 1.2 INLINE admission.
     inline=copy.deepcopy(env)
