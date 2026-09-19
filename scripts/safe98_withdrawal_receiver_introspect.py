@@ -60,7 +60,7 @@ def db_state():
             if probes: rel[t]["probes"]=probes
         state={}
         if "integration_ph_content_releases" in tables:
-            r=c.execute("SELECT * FROM integration_ph_content_releases WHERE release_id=? AND release_version=?",(RELEASE_ID,RELEASE_VERSION)).fetchone()
+            r=c.execute("SELECT local_status,release_status,question_count,activated_at,withdrawn_at,withdrawal_reason,package_checksum_sha256 FROM integration_ph_content_releases WHERE release_id=? AND release_version=?",(RELEASE_ID,RELEASE_VERSION)).fetchone()
             if r: state["release"]=dict(r)
         if "integration_ph_release_question_membership" in tables:
             r=c.execute("""SELECT * FROM integration_ph_release_question_membership
@@ -72,13 +72,16 @@ def db_state():
             state["activation_authorizations"]=int(c.execute("SELECT COUNT(*) FROM integration_ph_product_activation_authorizations WHERE release_id=? AND release_version=?",(RELEASE_ID,RELEASE_VERSION)).fetchone()[0])
         state["quick_check"]=c.execute("PRAGMA quick_check").fetchone()[0]
         state["fk"]=len(c.execute("PRAGMA foreign_key_check").fetchall())
-        return {"relevant_tables":rel,"state":state}
+        concise_tables={}
+        for name in ("ph_bridge_withdrawal_receipts_v6611d","integration_ph_content_releases","integration_ph_release_question_membership","integration_ph_product_activation_authorizations"):
+            if name in rel: concise_tables[name]=rel[name]
+        return {"relevant_tables":concise_tables,"state":state}
     finally: c.close()
 
 def main():
     result={
       "marker":"SCOREMAX_SAFE98_WITHDRAWAL_RECEIVER_INTROSPECT_V1",
-      "source_hits":source_hits(),
+      "source_hits":[{"path":x["path"],"terms":x["terms"],"snippets":[{"term":y["term"],"snippet":y["snippet"][:1600]} for y in x["snippets"]]} for x in source_hits()],
       "db":db_state(),
       "mutated":False
     }
