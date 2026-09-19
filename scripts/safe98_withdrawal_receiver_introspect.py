@@ -11,6 +11,9 @@ TERMS=[
  "/api/integration/v1/power-house/question-withdrawals",
  "STOP_FUTURE_DELIVERY_PRESERVE_HISTORICAL_ATTEMPTS",
  "historical_attempts_must_be_preserved",
+ "def admit_withdrawal_envelope",
+ "question_version_fingerprint",
+ "ph_bridge_withdrawal_receipts_v6611d",
 ]
 RELEASE_ID="REL::PILOT::BIO12-CH13::SAFE98::20260919"
 RELEASE_VERSION="1"
