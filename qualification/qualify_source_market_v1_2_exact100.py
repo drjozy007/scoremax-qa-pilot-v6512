@@ -380,7 +380,126 @@ def main_safe98():
     print("SCOREMAX_V12_SAFE98_RECEIVER_ACCEPTANCE_PASS selected=98 held=2 source_objects_exact=true inline=true manifest_pull=true staged_only=true activation_authority_required=true",flush=True)
     return 0
 
+
+def transfer_safe98_persistent():
+    """One-time controlled transport of the exact PH-derived safe98 payload to persistent ScoreMax."""
+    import hmac
+    from datetime import datetime, timezone
+    from urllib import request as urlrequest, error as urlerror
+
+    _,env=load_fixture(ENV_FIX)
+    _,durable=load_fixture(PKG_FIX)
+    questions=list(durable.get("questions") or [])
+    stimuli=list(durable.get("stimuli") or [])
+    assert len(questions)==100,len(questions)
+    full_by_id={str(q.get("question_id") or ""):q for q in questions}
+    assert SAFE98_BLOCKED_IDS.issubset(set(full_by_id))
+
+    safe=[copy.deepcopy(q) for q in questions if str(q.get("question_id") or "") not in SAFE98_BLOCKED_IDS]
+    assert len(safe)==98,len(safe)
+    for q in safe:
+        qid=str(q.get("question_id") or "")
+        assert canonical_bytes(q)==canonical_bytes(full_by_id[qid]),qid
+
+    refs=set()
+    for q in safe:
+        content=q.get("content") or {}
+        for k in ("stimulus_ref","stimulus_id"):
+            v=str(content.get(k) or "").strip()
+            if v: refs.add(v)
+    safe_stimuli=[copy.deepcopy(x) for x in stimuli if _stimulus_id(x) in refs] if refs else []
+    assert refs=={_stimulus_id(x) for x in safe_stimuli},(refs,{_stimulus_id(x) for x in safe_stimuli})
+
+    release=copy.deepcopy(env["payload"]["release"])
+    release.update({
+        "release_id":"REL::PILOT::BIO12-CH13::SAFE98::20260919",
+        "release_version":"1",
+        "question_count":98,
+        "stimulus_count":len(safe_stimuli),
+        "supersedes_release_version":None,
+        "withdrawn_at":None,
+        "withdrawal_reason":None,
+    })
+    package_body={
+        "package_schema_version":"1.2.0",
+        "release_id":release["release_id"],
+        "release_version":release["release_version"],
+        "stimuli":copy.deepcopy(safe_stimuli),
+        "questions":copy.deepcopy(safe),
+    }
+    zip_bytes,manifest_bytes=build_manifest_zip(package_body,release)
+    release["package_checksum_sha256"]=hashlib.sha256(zip_bytes).hexdigest()
+    release["manifest_checksum_sha256"]=hashlib.sha256(manifest_bytes).hexdigest()
+
+    outbound=copy.deepcopy(env)
+    outbound["payload"]["release"]=copy.deepcopy(release)
+    outbound["payload"]["delivery_mode"]="INLINE"
+    outbound["payload"]["package_download_url"]=None
+    outbound["payload"]["questions"]=copy.deepcopy(safe)
+    outbound["payload"]["stimuli"]=copy.deepcopy(safe_stimuli)
+    outbound["message_id"]="PH-SEND::BIO12-CH13::SAFE98::20260919::1"
+    outbound["correlation_id"]="PH-SEND::BIO12-CH13::SAFE98::20260919"
+    outbound["idempotency_key"]="PH-SEND::BIO12-CH13::SAFE98::20260919::1"
+    outbound["payload_checksum_sha256"]=sm.payload_checksum(outbound["payload"])
+
+    # Local receiver validation immediately before network transport.
+    local=conn("/tmp/scoremax_v12_safe98_pretransport.db")
+    receipt,status=sm.admit_content_envelope(local,copy.deepcopy(outbound),outbound["payload_checksum_sha256"])
+    assert status==202,(status,receipt)
+    assert local.execute("SELECT COUNT(*) FROM integration_ph_release_question_membership").fetchone()[0]==98
+    assert local.execute("SELECT COUNT(*) FROM integration_ph_product_activation_authorizations").fetchone()[0]==0
+    assert_db_health(local); local.close()
+
+    base=os.environ.get("SAFE98_SCOREMAX_BASE_URL","").rstrip("/")
+    token=os.environ.get("SAFE98_PH_TO_SM_TOKEN","")
+    secret=os.environ.get("SAFE98_PH_TO_SM_HMAC_SECRET","")
+    if not base or not token or not secret:
+        raise RuntimeError("SAFE98 transport credentials/base URL are not configured")
+    path="/api/integration/v1/power-house/content-releases"
+    url=base+path
+    sent=datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00","Z")
+    checksum=outbound["payload_checksum_sha256"]
+    raw="\n".join(["POST",path,outbound["message_id"],sent,checksum])
+    signature=hmac.new(secret.encode(),raw.encode(),hashlib.sha256).hexdigest()
+    body=canonical_bytes(outbound)
+    req=urlrequest.Request(url,data=body,method="POST",headers={
+        "Content-Type":"application/json",
+        "Authorization":"Bearer "+token,
+        "X-Message-Id":outbound["message_id"],
+        "X-Sent-At":sent,
+        "X-Content-SHA256":checksum,
+        "X-Signature":"hmac-sha256="+signature,
+    })
+    try:
+        with urlrequest.urlopen(req,timeout=30) as resp:
+            status=int(resp.status)
+            response_body=resp.read().decode("utf-8")
+    except urlerror.HTTPError as exc:
+        status=int(exc.code)
+        response_body=exc.read().decode("utf-8","replace")
+    response=json.loads(response_body)
+    if status not in (200,202):
+        raise RuntimeError("SAFE98 persistent receiver rejected transport: status="+str(status)+" response="+json.dumps(response,sort_keys=True))
+    if str(response.get("status") or "").upper() not in {"ACCEPTED","DUPLICATE"}:
+        raise RuntimeError("SAFE98 persistent receiver receipt is not accepted/duplicate: "+json.dumps(response,sort_keys=True))
+    print("PH_TO_SCOREMAX_SAFE98_TRANSFER_PASS "+json.dumps({
+        "release_id":release["release_id"],
+        "release_version":release["release_version"],
+        "question_count":98,
+        "stimulus_count":len(safe_stimuli),
+        "held_excluded":2,
+        "retained_objects_exact":True,
+        "receiver_http_status":status,
+        "receiver_status":response.get("status"),
+        "accepted_schema_version":response.get("accepted_schema_version"),
+        "receipt_id":response.get("receipt_id"),
+        "learner_activation_requested":False,
+    },sort_keys=True),flush=True)
+    return 0
+
 if __name__=="__main__":
+    if os.environ.get("SCOREMAX_V12_SAFE98_PERSISTENT_TRANSFER")=="1":
+        raise SystemExit(transfer_safe98_persistent())
     if os.environ.get("SCOREMAX_V12_SAFE98_ONLY")=="1":
         raise SystemExit(main_safe98())
     raise SystemExit(main())
