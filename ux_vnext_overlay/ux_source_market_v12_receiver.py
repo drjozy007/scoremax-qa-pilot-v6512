@@ -113,7 +113,7 @@ def apply_source_market_v12_receiver(root: Path) -> None:
         "NOT_APPLICABLE",
         "_two_tier_key(content)",
         "_text_option_id(content)",
-        "_load_manifest_package(package_bytes,release,schema_version)",
+        "def _load_manifest_package(package_bytes,release,schema_version=",
         "_governance_ready(q,schema_version)",
         "_semantic_content_errors(questions,stimuli,schema_version)",
     )
