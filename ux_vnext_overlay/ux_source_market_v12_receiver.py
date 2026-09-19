@@ -6,8 +6,6 @@ import shutil
 from pathlib import Path
 
 FUNCTIONS = (
-    "_contract_schema_path",
-    "_strict_envelope_errors",
     "_governance_ready",
     "_semantic_question_errors",
     "_semantic_content_errors",
@@ -81,11 +79,6 @@ def apply_source_market_v12_receiver(root: Path) -> None:
     for name in FUNCTIONS:
         text=_replace_function(text,donor,name)
 
-    health_old="'local_schema_version':RECTIFIED_SCHEMA_VERSION if contract=='PH_SM_APPROVED_CONTENT_V1' else SCHEMA_VERSION,"
-    health_new="'local_schema_version':SOURCE_MARKET_SCHEMA_VERSION if contract=='PH_SM_APPROVED_CONTENT_V1' else SCHEMA_VERSION,"
-    if health_old in text:
-        text=text.replace(health_old,health_new,1)
-
     compile(text,str(target),"exec")
     target.write_text(text,encoding="utf-8")
 
@@ -109,6 +102,7 @@ def apply_source_market_v12_receiver(root: Path) -> None:
     rendered=target.read_text(encoding="utf-8")
     required=(
         "SOURCE_MARKET_SCHEMA_VERSION='1.2.0'",
+        "sv in {'1.1.0','1.2.0'}",
         "TEXT_OPTIONS_UNRESOLVED",
         "NOT_APPLICABLE",
         "_two_tier_key(content)",
