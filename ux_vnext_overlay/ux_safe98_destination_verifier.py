@@ -45,6 +45,25 @@ if _safe98_os.environ.get("SCOREMAX_VERIFY_SAFE98_DESTINATION")=="1":
         ).hexdigest()
         _safe98_payload=_safe98_json.loads(str(_safe98_rel["immutable_payload_json"]))
         _safe98_payload_q=list(_safe98_payload.get("questions") or [])
+        # SAFE98_SECTION_DIGESTS_V2: canonical section digests, content not emitted.
+        def _safe98_canon(v):
+            return _safe98_json.dumps(v,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False)
+        _safe98_section_keys=sorted(set().union(*(set(q.keys()) for q in _safe98_payload_q)))
+        _safe98_section_digests={}
+        for _k in _safe98_section_keys:
+            if _k in {"question_version_id","question_checksum_sha256"}:
+                continue
+            _pairs=[]
+            for _q in sorted(_safe98_payload_q,key=lambda x:str(x.get("question_id") or "")):
+                _qid=str(_q.get("question_id") or "")
+                _vh=_safe98_hashlib.sha256(_safe98_canon(_q.get(_k)).encode()).hexdigest()
+                _pairs.append(_qid+"|"+_vh)
+            _safe98_section_digests[_k]=_safe98_hashlib.sha256("\n".join(_pairs).encode()).hexdigest()
+        _safe98_semantic_pairs=[]
+        for _q in sorted(_safe98_payload_q,key=lambda x:str(x.get("question_id") or "")):
+            _clean={k:v for k,v in _q.items() if k not in {"question_version_id","question_checksum_sha256"}}
+            _safe98_semantic_pairs.append(str(_q.get("question_id") or "")+"|"+_safe98_hashlib.sha256(_safe98_canon(_clean).encode()).hexdigest())
+        _safe98_semantic_digest=_safe98_hashlib.sha256("\n".join(_safe98_semantic_pairs).encode()).hexdigest()
         _safe98_payload_map={
           str(q.get("question_id") or ""):(str(q.get("question_version_id") or ""),str(q.get("question_checksum_sha256") or ""))
           for q in _safe98_payload_q
@@ -108,6 +127,9 @@ if _safe98_os.environ.get("SCOREMAX_VERIFY_SAFE98_DESTINATION")=="1":
           "learner_active_rows":_safe98_active,
           "payload_store_exact":True,
           "question_version_checksum_digest":_safe98_pair_digest,
+          "question_semantic_digest_excluding_version_checksum":_safe98_semantic_digest,
+          "question_section_keys":_safe98_section_keys,
+          "question_section_digests":_safe98_section_digests,
           "package_checksum_sha256":str(_safe98_rel["package_checksum_sha256"]),
           "probe_question":{
             "question_id":str(_safe98_members[0]["question_id"]),
