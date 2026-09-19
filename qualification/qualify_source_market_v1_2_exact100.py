@@ -88,6 +88,19 @@ def main():
     assert len(questions)==100,(len(questions),len(stimuli))
     assert hashlib.sha256(pkg_raw).hexdigest(), "fixture hash unavailable"
 
+    # Bounded diagnostic: vocabulary/shape only; no learner question text.
+    from collections import Counter
+    generated=Counter(str((q.get("governance") or {}).get("generated_clearance_status")) for q in questions)
+    text_shapes=Counter()
+    for q in questions:
+        content=q.get("content") or {}; marking=content.get("marking") or {}
+        if str(marking.get("key_type") or "").upper()=="TEXT":
+            opts=list(content.get("options") or [])
+            display_only=sum(1 for o in opts if isinstance(o,dict) and bool(o.get("is_display_only")))
+            text_shapes[(str(content.get("question_family_type") or ""),str(content.get("exam_question_type") or ""),len(opts),display_only)]+=1
+    print("SCOREMAX_V12_DIAG_GENERATED "+json.dumps(dict(generated),sort_keys=True),flush=True)
+    print("SCOREMAX_V12_DIAG_TEXT_SHAPES "+json.dumps([{"family":k[0],"exam":k[1],"options":k[2],"display_only":k[3],"count":v} for k,v in sorted(text_shapes.items())],sort_keys=True),flush=True)
+
     # A. Exact governed question/stimulus objects through 1.2 INLINE admission.
     inline=copy.deepcopy(env)
     inline["payload"]["delivery_mode"]="INLINE"
