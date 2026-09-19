@@ -306,7 +306,7 @@ def main():
         cp=subprocess.run([sys.executable,str(diag_script)],check=False,env=dict(os.environ))
         if cp.returncode: fail(f'safe98_deadletter_introspect_failed rc={cp.returncode}')
     # SCOREMAX_SAFE98_DEADLETTER_REQUEUE_HOOK_V1: one bounded governed replay of the same immutable SAFE98 incident.
-    if True:
+    if False:
         import subprocess,sys
         rq_script=Path(__file__).with_name('safe98_deadletter_requeue.py')
         if not rq_script.is_file(): fail('safe98_deadletter_requeue_script_missing')
