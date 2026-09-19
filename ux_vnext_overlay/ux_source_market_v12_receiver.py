@@ -114,6 +114,20 @@ def apply_source_market_v12_receiver(root: Path) -> None:
     missing=[x for x in required if x not in rendered]
     if missing:
         raise SystemExit("SCOREMAX_V12_RECEIVER_POSTBUILD_CONTROL_MISSING:"+",".join(missing))
+    # Read-only bounded diagnostic: expose only string vocabulary from existing canonical_family.
+    contract_engine=root/"question_contract_engine.py"
+    if contract_engine.is_file():
+        ce_text=contract_engine.read_text(encoding="utf-8")
+        ce_tree=ast.parse(ce_text)
+        vocab=[]
+        for node in ast.walk(ce_tree):
+            if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name=="canonical_family":
+                for sub in ast.walk(node):
+                    if isinstance(sub,ast.Constant) and isinstance(sub.value,str) and 0 < len(sub.value) <= 80:
+                        vocab.append(sub.value)
+                break
+        print("SCOREMAX_V12_FAMILY_VOCAB_DIAG "+json.dumps(sorted(set(vocab))),flush=True)
+
     print(
         "SCOREMAX_V12_RECEIVER_OVERLAY_PASS "
         "schema=1.2.0 backward_1.0_1.1_preserved=true "
