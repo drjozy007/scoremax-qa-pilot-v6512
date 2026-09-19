@@ -122,6 +122,17 @@ def main():
                 "token_matches_option_text":sum(1 for x in tokens if x in opt_texts),
             })
     print("SCOREMAX_V12_DIAG_UNRESOLVED "+json.dumps(unresolved,sort_keys=True),flush=True)
+    # Targeted private diagnostic for the two unresolved governed payloads only.
+    # No database mutation and no learner activation.
+    unresolved_ids={x["question_id"] for x in unresolved}
+    for q in questions:
+        if str(q.get("question_id") or "") in unresolved_ids:
+            print("SCOREMAX_V12_DIAG_UNRESOLVED_PAYLOAD "+json.dumps({
+                "question_id":q.get("question_id"),
+                "content":q.get("content"),
+                "architecture":q.get("architecture"),
+                "governance":q.get("governance"),
+            },sort_keys=True,ensure_ascii=False),flush=True)
 
     # A. Exact governed question/stimulus objects through 1.2 INLINE admission.
     inline=copy.deepcopy(env)
