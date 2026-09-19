@@ -285,7 +285,7 @@ def main():
     qualification=qualify_database()
     # SCOREMAX_SAFE98_RETURN_PROBE_HOOK_V1: bounded one-shot against an already STAGED, non-activated SAFE98 release.
     # OFF by default; never materialises or activates learner content.
-    if os.environ.get('SCOREMAX_SAFE98_RETURN_PROBE','OFF').strip().upper()=='RUN':
+    if False and os.environ.get('SCOREMAX_SAFE98_RETURN_PROBE','OFF').strip().upper()=='RUN':
         import subprocess,sys
         probe_script=Path(__file__).with_name('safe98_return_loop_probe.py')
         if not probe_script.is_file(): fail('safe98_return_probe_script_missing')
@@ -299,7 +299,7 @@ def main():
         cp=subprocess.run([sys.executable,str(export_script)],check=False,env=dict(os.environ))
         if cp.returncode: fail(f'safe98_lineage_export_failed rc={cp.returncode}')
     # SCOREMAX_SAFE98_DEADLETTER_INTROSPECT_HOOK_V1: read-only recovery primitive/target-state inspection.
-    if os.environ.get('SCOREMAX_SAFE98_DEADLETTER_INTROSPECT','OFF').strip().upper()=='RUN':
+    if True:
         import subprocess,sys
         diag_script=Path(__file__).with_name('safe98_deadletter_introspect.py')
         if not diag_script.is_file(): fail('safe98_deadletter_introspect_script_missing')
