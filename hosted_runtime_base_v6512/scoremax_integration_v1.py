@@ -122,9 +122,11 @@ def _contract_schema_path(contract, schema_version='1.0.0'):
     if contract=='PH_SM_APPROVED_CONTENT_V1' and str(schema_version)==SOURCE_MARKET_SCHEMA_VERSION:
         return base/'v1_2_0'/'PH_SM_APPROVED_CONTENT_V1.schema.json'
     if contract=='PH_SM_APPROVED_CONTENT_MANIFEST_V1':
-        return base/'v1_1_0'/'PH_SM_APPROVED_CONTENT_MANIFEST_V1.schema.json'
+        version_dir='v1_2_0' if str(schema_version)==SOURCE_MARKET_SCHEMA_VERSION else 'v1_1_0'
+        return base/version_dir/'PH_SM_APPROVED_CONTENT_MANIFEST_V1.schema.json'
     if contract=='PH_SM_APPROVED_CONTENT_PACKAGE_V1':
-        return base/'v1_1_0'/'PH_SM_APPROVED_CONTENT_PACKAGE_V1.schema.json'
+        version_dir='v1_2_0' if str(schema_version)==SOURCE_MARKET_SCHEMA_VERSION else 'v1_1_0'
+        return base/version_dir/'PH_SM_APPROVED_CONTENT_PACKAGE_V1.schema.json'
     return base/(contract+'.schema.json')
 
 def _validator(contract,schema_version='1.0.0'):
