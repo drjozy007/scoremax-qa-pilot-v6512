@@ -49,13 +49,19 @@ def main():
         rel=dict(c.execute("SELECT * FROM integration_ph_content_releases WHERE release_id=? AND release_version=?",(RELEASE_ID,RELEASE_VERSION)).fetchone())
         acks=c.execute("""SELECT * FROM integration_outbox WHERE contract_name=? ORDER BY id DESC""",(ACK,)).fetchall()
         target_acks=[]
+        current_acks=[]
+        current_export=str(dict(excl[0]).get("export_public_id") or "") if len(excl)==1 else ""
+        if not current_export: raise RuntimeError("CURRENT_EXCLUSION_EXPORT_ID_MISSING")
         for r in acks:
             d=dict(r)
             try: env=json.loads(d.get("envelope_json") or "{}")
             except Exception: env={}
-            items=list(((env.get("payload") or {}).get("items") or []))
+            payload=dict(env.get("payload") or {})
+            items=list(payload.get("items") or [])
             if any(str(x.get("question_public_id") or "")==TARGET for x in items):
                 target_acks.append((d,env))
+                if str(payload.get("export_public_id") or "")==current_export:
+                    current_acks.append((d,env))
         qc=c.execute("PRAGMA quick_check").fetchone()[0]; fk=len(c.execute("PRAGMA foreign_key_check").fetchall())
         if member!=98 or target_member!=1: raise RuntimeError(f"MEMBERSHIP_BAD:{member}:{target_member}")
         if len(all_excl)!=1 or len(excl)!=1: raise RuntimeError(f"EXCLUSION_COUNT_BAD:{len(all_excl)}:{len(excl)}")
@@ -63,8 +69,8 @@ def main():
         if activation!=0 or target_rows!=0 or learner_active!=0: raise RuntimeError(f"ZERO_ACTIVATION_BROKEN:{activation}:{target_rows}:{learner_active}")
         if str(rel.get("local_status") or "")!="STAGED": raise RuntimeError("RELEASE_NOT_STAGED")
         if qc!="ok" or fk: raise RuntimeError("DB_INTEGRITY_BAD")
-        if len(target_acks)!=1: raise RuntimeError(f"TARGET_ACK_COUNT_BAD:{len(target_acks)}")
-        ackrow,ackenv=target_acks[0]
+        if len(current_acks)!=1: raise RuntimeError(f"CURRENT_ACK_COUNT_BAD:{len(current_acks)}:historical_target_acks={len(target_acks)}")
+        ackrow,ackenv=current_acks[0]
         ackitems=list(((ackenv.get("payload") or {}).get("items") or []))
         target_result=[x for x in ackitems if str(x.get("question_public_id") or "")==TARGET]
         if len(target_result)!=1 or str(target_result[0].get("state") or "") not in {"STAGED_EXCLUDED","WITHDRAWN_AND_STAGED_EXCLUDED"}:
@@ -78,7 +84,9 @@ def main():
         }
         result={"event":"CHECK_PASS","mode":mode,"membership":98,"target_membership":1,"staged_exclusions":1,
                 "activation_eligible":97,"activation_authorizations":0,"target_materialised_rows":0,
-                "learner_active_rows":0,"local_status":"STAGED","ack":before,"quick_check":qc,"fk":fk}
+                "learner_active_rows":0,"local_status":"STAGED","ack":before,
+                "historical_target_ack_count":len(target_acks),"current_export_public_id":current_export,
+                "current_ack_count":len(current_acks),"quick_check":qc,"fk":fk}
         if mode=="FLUSH_ACK":
             if before["status"]=="DELIVERED":
                 result["event"]="ALREADY_DELIVERED"
