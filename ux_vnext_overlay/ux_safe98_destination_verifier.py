@@ -85,7 +85,9 @@ if _safe98_os.environ.get("SCOREMAX_VERIFY_SAFE98_DESTINATION")=="1":
         assert len(_safe98_payload_q)==98,len(_safe98_payload_q)
         assert _safe98_payload_map==_safe98_store_map
         assert _safe98_activation==0,_safe98_activation
-        assert len(_safe98_local_ids)==98,len(_safe98_local_ids)
+        # STAGED content must remain outside learner-local question materialisation until
+        # explicit ScoreMax-owned activation authority is created.
+        assert len(_safe98_local_ids)==0,len(_safe98_local_ids)
         assert _safe98_active==0,_safe98_active
         assert _safe98_receipt and str(_safe98_receipt["status"])=="ACCEPTED",dict(_safe98_receipt) if _safe98_receipt else None
         assert str(_safe98_receipt["accepted_schema_version"])=="1.2.0",_safe98_receipt["accepted_schema_version"]
@@ -102,6 +104,7 @@ if _safe98_os.environ.get("SCOREMAX_VERIFY_SAFE98_DESTINATION")=="1":
           "membership_count":len(_safe98_members),
           "held_ids_absent":True,
           "activation_authorizations":_safe98_activation,
+          "local_materialised_question_rows":len(_safe98_local_ids),
           "learner_active_rows":_safe98_active,
           "payload_store_exact":True,
           "question_version_checksum_digest":_safe98_pair_digest,
