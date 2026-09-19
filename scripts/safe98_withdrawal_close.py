@@ -44,7 +44,29 @@ def canon(v): return json.dumps(v,sort_keys=True,separators=(",",":"),default=st
 def main():
     mode=os.environ.get("SCOREMAX_SAFE98_WITHDRAWAL_CLOSE","OFF").strip().upper()
     if mode not in {"CHECK","FLUSH_ACK"}: raise RuntimeError("MODE_MUST_BE_CHECK_OR_FLUSH_ACK")
-    _ensure_ack_endpoint()
+    if os.environ.get("SCOREMAX_SAFE98_ACK_DISPATCH_DIAG","OFF").strip().upper()=="RUN":
+        import inspect
+        dicts=[]
+        for name,value in sorted(vars(integ).items()):
+            if not isinstance(value,dict): continue
+            sample=[]
+            for k,v in value.items():
+                ks=str(k); vs=str(v)
+                if ("POWER_HOUSE" in ks or "POWER_HOUSE" in vs or "SM_PH" in ks or "SM_PH" in vs or "/api/integration/" in vs):
+                    sample.append([ks,vs])
+            if sample:
+                dicts.append({"name":name,"sample":sample[:30],"size":len(value)})
+        try: src=inspect.getsource(integ.dispatch_due)
+        except Exception as exc: src=f"<unavailable:{type(exc).__name__}>"
+        selected=[line for line in src.splitlines() if any(tok in line.lower() for tok in ("endpoint","url","contract","power_house","outbound","destination"))]
+        print("SCOREMAX_SAFE98_ACK_DISPATCH_DIAG "+canon({
+          "dispatch_module":getattr(integ.dispatch_due,"__module__",""),
+          "dispatch_names":sorted(set(str(x) for x in getattr(getattr(integ.dispatch_due,"__code__",None),"co_names",()) or ())),
+          "selected_source":selected[:120],
+          "routing_dicts":dicts
+        }),flush=True)
+    if mode=="FLUSH_ACK":
+        _ensure_ack_endpoint()
     c=sqlite3.connect(DB,timeout=30); c.row_factory=sqlite3.Row
     try:
         member=int(c.execute("""SELECT COUNT(*) FROM integration_ph_release_question_membership
