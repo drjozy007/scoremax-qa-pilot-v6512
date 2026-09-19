@@ -9,6 +9,7 @@ RUNTIME=ROOT/"hosted_runtime_base_v6512"
 FIX=ROOT/"qualification"
 sys.path.insert(0,str(RUNTIME))
 import scoremax_integration_v1 as sm
+import app as scoremax_app
 
 ENV_FIX=FIX/"source_market_v1_2_exact100_envelope.zlib.b64"
 PKG_FIX=FIX/"source_market_v1_2_exact100_package_json.zlib.b64"
@@ -19,11 +20,9 @@ def load_fixture(path: Path):
 
 def conn(path: str):
     p=Path(path); p.unlink(missing_ok=True)
-    c=sqlite3.connect(p)
-    c.row_factory=sqlite3.Row
-    c.execute("PRAGMA foreign_keys=ON")
-    sm.init_schema(c)
-    c.commit()
+    scoremax_app.DB=p
+    scoremax_app.init()
+    c=scoremax_app.db()
     return c
 
 def qcounts(c):
