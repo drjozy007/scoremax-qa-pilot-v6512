@@ -59,11 +59,20 @@ def main():
         try: src=inspect.getsource(integ.dispatch_due)
         except Exception as exc: src=f"<unavailable:{type(exc).__name__}>"
         selected=[line for line in src.splitlines() if any(tok in line.lower() for tok in ("endpoint","url","contract","power_house","outbound","destination"))]
+        helpers={}
+        for hn in ("_dispatch_target","_credentials"):
+            hf=getattr(integ,hn,None)
+            if hf is None:
+                helpers[hn]="<missing>"
+            else:
+                try: helpers[hn]=inspect.getsource(hf)
+                except Exception as exc: helpers[hn]=f"<unavailable:{type(exc).__name__}>"
         print("SCOREMAX_SAFE98_ACK_DISPATCH_DIAG "+canon({
           "dispatch_module":getattr(integ.dispatch_due,"__module__",""),
           "dispatch_names":sorted(set(str(x) for x in getattr(getattr(integ.dispatch_due,"__code__",None),"co_names",()) or ())),
           "selected_source":selected[:120],
-          "routing_dicts":dicts
+          "routing_dicts":dicts,
+          "helpers":helpers
         }),flush=True)
     if mode=="FLUSH_ACK":
         _ensure_ack_endpoint()
