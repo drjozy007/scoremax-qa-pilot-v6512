@@ -122,6 +122,50 @@ def main():
                 "token_matches_option_text":sum(1 for x in tokens if x in opt_texts),
             })
     print("SCOREMAX_V12_DIAG_UNRESOLVED "+json.dumps(unresolved,sort_keys=True),flush=True)
+
+    # Bounded full-population regression expectation for learner-visible two-tier contracts.
+    # Diagnostic only: no question mutation and no receiver relaxation.
+    import re
+    tiered=[]
+    tier_pat=re.compile(r"\\b(?:tier\\s*1|tier\\s*2|both\\s+tiers|answer\\s+both\\s+tiers)\\b",re.I)
+    composite_pat=re.compile(r"\\btier\\s*1\\s*:\\s*[^;]+;\\s*tier\\s*2\\s*:\\s*.+$",re.I)
+    for idx,q in enumerate(questions):
+        content=q.get("content") or {}
+        marking=content.get("marking") or {}
+        stem=str(content.get("stem") or "")
+        key=str(marking.get("key") or "")
+        accepted=[str(x) for x in (marking.get("accepted_answers") or [])]
+        if not (tier_pat.search(stem) or composite_pat.search(key) or any(composite_pat.search(x) for x in accepted)):
+            continue
+        opts=[o for o in (content.get("options") or []) if isinstance(o,dict) and not bool(o.get("is_display_only"))]
+        statements=[str(x).strip() for x in (content.get("statements") or []) if str(x).strip()]
+        # Flat A-D options alone provide only one selectable response surface. A valid two-tier
+        # item must expose a second learner-visible response set/structure in the payload.
+        option_ids=[str(o.get("option_id") or "").strip() for o in opts]
+        has_second_surface=(
+            any(re.search(r"^(?:T2|TIER[_ -]?2)[:._ -]",x,re.I) for x in option_ids)
+            or any(re.search(r"\\btier\\s*2\\b",x,re.I) for x in statements)
+            or isinstance(content.get("tier_2"),dict)
+            or isinstance(content.get("tier2"),dict)
+            or isinstance(content.get("response_groups"),list) and len(content.get("response_groups") or [])>=2
+        )
+        tiered.append({
+            "index":idx,
+            "question_id":str(q.get("question_id") or ""),
+            "family":str(content.get("question_family_type") or ""),
+            "exam":str(content.get("exam_question_type") or ""),
+            "option_count":len(opts),
+            "statement_count":len(statements),
+            "key_is_composite":bool(composite_pat.search(key)),
+            "tier2_surface_present":bool(has_second_surface),
+            "expected_firewall_disposition":"CLEAR" if has_second_surface else "CONTENT_HOLD",
+        })
+    print("SCOREMAX_V12_TIERED_FULL100_SCAN "+json.dumps(tiered,sort_keys=True),flush=True)
+    print("SCOREMAX_V12_TIERED_FULL100_SUMMARY "+json.dumps({
+        "tiered_count":len(tiered),
+        "expected_hold_count":sum(1 for x in tiered if x["expected_firewall_disposition"]=="CONTENT_HOLD"),
+        "expected_clear_count":sum(1 for x in tiered if x["expected_firewall_disposition"]=="CLEAR"),
+    },sort_keys=True),flush=True)
     # Targeted private diagnostic for the two unresolved governed payloads only.
     # No database mutation and no learner activation.
     unresolved_ids={x["question_id"] for x in unresolved}
