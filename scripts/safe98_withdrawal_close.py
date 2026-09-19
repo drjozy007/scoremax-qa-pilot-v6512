@@ -165,9 +165,10 @@ def main():
                     if before["message_id"]!=expected_message: raise RuntimeError("ACK_FORCE_DUE_MESSAGE_MISMATCH")
                     if before["export_public_id"]!=expected_export: raise RuntimeError("ACK_FORCE_DUE_EXPORT_MISMATCH")
                     if before["item_state"]!="STAGED_EXCLUDED": raise RuntimeError("ACK_FORCE_DUE_STATE_MISMATCH")
-                    expected_attempt=7 if before["status"]=="DEAD_LETTER" else int(before["attempt_count"] or 0)
+                    expected_attempt=8 if before["status"]=="DEAD_LETTER" else int(before["attempt_count"] or 0)
                     if int(before["attempt_count"] or 0)!=expected_attempt: raise RuntimeError(f"ACK_FORCE_DUE_ATTEMPT_MISMATCH:{before['attempt_count']}")
-                    if str(before.get("last_error_code") or "")!="INVALID_OR_MISMATCHED_INTEGRATION_RECEIPT_V1":
+                    expected_prior_error="HTTP_502" if before["status"]=="DEAD_LETTER" and expected_attempt==8 else "INVALID_OR_MISMATCHED_INTEGRATION_RECEIPT_V1"
+                    if str(before.get("last_error_code") or "")!=expected_prior_error:
                         raise RuntimeError("ACK_FORCE_DUE_UNEXPECTED_PRIOR_ERROR:"+str(before.get("last_error_code")))
                     if before["status"]=="DEAD_LETTER":
                         # Governed recovery of the same terminal message: preserve attempt_count,
