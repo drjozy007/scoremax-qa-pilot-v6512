@@ -326,6 +326,13 @@ def main():
         if not ap_script.is_file(): fail('safe98_activation_source_probe_missing')
         cp=subprocess.run([sys.executable,str(ap_script)],check=False,env=dict(os.environ))
         if cp.returncode: fail(f'safe98_activation_source_probe_failed rc={cp.returncode}')
+    # SCOREMAX_SAFE98_WITHDRAWAL_CLOSE_V1: prove one staged exclusion/97 eligible; optionally flush its sole ACK.
+    if os.environ.get('SCOREMAX_SAFE98_WITHDRAWAL_CLOSE','OFF').strip().upper() in {'CHECK','FLUSH_ACK'}:
+        import subprocess,sys
+        close_script=Path(__file__).with_name('safe98_withdrawal_close.py')
+        if not close_script.is_file(): fail('safe98_withdrawal_close_script_missing')
+        cp=subprocess.run([sys.executable,str(close_script)],check=False,env=dict(os.environ))
+        if cp.returncode: fail(f'safe98_withdrawal_close_failed rc={cp.returncode}')
     print(f'SCOREMAX_PERSISTENT_STORAGE_PASS policy={POLICY} mount={MOUNT} state={state} storage_id_sha256={digest} probe_runs={runs} db_state={db_state} db_integrity={db_integrity} db_fk={db_fk} db={DB} backup={BACKUP} intake={INTAKE}',flush=True)
     print('SCOREMAX_PERSISTENT_QUALIFICATION='+json.dumps(qualification,sort_keys=True),flush=True)
 
