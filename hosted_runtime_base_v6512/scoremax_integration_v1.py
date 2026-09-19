@@ -553,7 +553,7 @@ def _record_inbound(c,envelope,receipt,status):
       (envelope['message_id'],envelope['contract_name'],envelope['source_system'],envelope['idempotency_key'],envelope['payload_checksum_sha256'],now,now,1,receipt['receipt_id'],status))
 
 
-def _governance_ready(q):
+def _governance_ready(q,schema_version=SCHEMA_VERSION):
     g=q.get('governance') or {}; a=q.get('architecture') or {}
     required={'academic_review_state':'APPROVED','hold_status':'CLEAR','release_readiness':'READY'}
     for k,v in required.items():
@@ -563,7 +563,10 @@ def _governance_ready(q):
     if str(g.get('r2_status') or '').upper() not in {'NOT_REQUIRED','CLEARED','PASSED','COMPLETE'}:
         return False,'R2_NOT_CLEARED'
     generated=g.get('generated_clearance_status')
-    if generated not in (None,'') and str(generated).upper() not in {'CLEARED','NOT_REQUIRED'}:
+    generated_ok={'CLEARED','NOT_REQUIRED'}
+    if str(schema_version or '')=='1.2.0':
+        generated_ok.add('NOT_APPLICABLE')
+    if generated not in (None,'') and str(generated).upper() not in generated_ok:
         return False,'GENERATED_CLEARANCE_NOT_CLEARED'
     if str(g.get('rights_status') or '').upper() not in RIGHTS_ELIGIBLE:
         return False,'RIGHTS_NOT_ELIGIBLE'
@@ -582,6 +585,7 @@ def _legacy_level(v):
 
 def _qtype(content):
     key=str((content.get('marking') or {}).get('key_type') or '').upper(); exam=str(content.get('exam_question_type') or '').upper(); fam=str(content.get('question_family_type') or '').upper()
+    if key=='TEXT' and content.get('options') and _text_option_id(content): return 'MCQ',True
     if key=='RUBRIC_ONLY': return 'Extended Response',False
     if key=='NUMERIC' or 'NUMERIC' in exam: return 'Numerical',True
     if key=='BOOLEAN' or 'TRUE' in exam: return 'True/False',True
@@ -637,7 +641,29 @@ def _learner_stimulus_text(stimulus):
             parts.append(canonical_json(value))
     return '\n'.join(parts)
 
-def _semantic_question_errors(q,stimuli,index=0):
+def _text_option_id(content):
+    """Resolve a governed TEXT primary key to exactly one supplied option, without fuzzy matching."""
+    marking=content.get('marking') or {}
+    options=[o for o in (content.get('options') or []) if isinstance(o,dict)]
+    if str(marking.get('key_type') or '').upper()!='TEXT' or not options:
+        return None
+    key=marking.get('key')
+    if isinstance(key,(dict,list)) or key is None:
+        return None
+    token=str(key).strip()
+    if not token:
+        return None
+    matches=[]
+    for opt in options:
+        oid=str(opt.get('option_id') or '').strip()
+        text=str(opt.get('text') or '').strip()
+        if token==oid or token==text:
+            matches.append(oid)
+    unique=[x for x in dict.fromkeys(matches) if x]
+    return unique[0] if len(unique)==1 else None
+
+
+def _semantic_question_errors(q,stimuli,index=0,schema_version=SCHEMA_VERSION):
     errors=[]; path=f'payload.questions[{index}]'
     content=q.get('content') or {}; marking=content.get('marking') or {}; options=content.get('options') or []
     key_type=str(marking.get('key_type') or '').upper(); key=marking.get('key')
@@ -686,7 +712,11 @@ def _semantic_question_errors(q,stimuli,index=0):
         if not str(key if key is not None else '').strip() and not accepted:
             errors.append({'code':'TEXT_KEY_REQUIRED','path':f'{path}.content.marking','message':'TEXT requires a key or at least one accepted answer','retryable':False})
         if options:
-            errors.append({'code':'TEXT_OPTIONS_INCOHERENT','path':f'{path}.content.options','message':'TEXT questions must not depend on option IDs','retryable':False})
+            if str(schema_version or '')=='1.2.0':
+                if not _text_option_id(content):
+                    errors.append({'code':'TEXT_OPTIONS_UNRESOLVED','path':f'{path}.content.options','message':'Schema 1.2 TEXT-with-options requires the governed primary key to resolve exactly to one supplied option','retryable':False})
+            else:
+                errors.append({'code':'TEXT_OPTIONS_INCOHERENT','path':f'{path}.content.options','message':'TEXT questions must not depend on option IDs','retryable':False})
     elif key_type=='BOOLEAN':
         if isinstance(key,bool):
             pass
@@ -700,7 +730,7 @@ def _semantic_question_errors(q,stimuli,index=0):
         errors.append({'code':'MARKING_MODE_INCOHERENT','path':f'{path}.content.marking.rubric','message':'A rubric cannot silently replace an auto-markable key','retryable':False})
     return errors
 
-def _semantic_content_errors(questions,stimuli):
+def _semantic_content_errors(questions,stimuli,schema_version=SCHEMA_VERSION):
     errors=[]; stim_lookup={}; seen_stim=set()
     for i,s in enumerate(stimuli or []):
         sid=str((s or {}).get('stimulus_id') or '')
@@ -715,7 +745,7 @@ def _semantic_content_errors(questions,stimuli):
         if qvid in seen_qvids:
             errors.append({'code':'DUPLICATE_QUESTION_VERSION_ID','path':f'payload.questions[{i}].question_version_id','message':'question_version_id must be unique within a release snapshot','retryable':False})
         seen_qids.add(qid); seen_qvids.add(qvid)
-        errors.extend(_semantic_question_errors(q,stim_lookup,i))
+        errors.extend(_semantic_question_errors(q,stim_lookup,i,schema_version))
     return errors
 
 def _projection(q,stimuli):
@@ -730,13 +760,19 @@ def _projection(q,stimuli):
     qtype,auto=_qtype(content)
     answer_cfg={'options':[{'id':str(x.get('option_id') or ''),'text':str(x.get('text') or '')} for x in options]}
     key_type=str(marking.get('key_type') or '').upper()
-    if key_type=='TEXT':
+    text_option_id=_text_option_id(content) if key_type=='TEXT' and options else None
+    if key_type=='TEXT' and text_option_id:
+        answer=text_option_id
+        answer_cfg['correct_option_ids']=[text_option_id]
+    elif key_type=='TEXT':
         accepted=[str(x) for x in (marking.get('accepted_answers') or [])]
         if key is not None and str(key) not in accepted: accepted.insert(0,str(key))
         answer_cfg['accepted_answers']=accepted
     elif marking.get('accepted_answers'):
         answer_cfg['accepted_answers']=list(marking.get('accepted_answers') or [])
-    marking_cfg={'marks':float(marking.get('marks') or 0),'negative_marks':float(marking.get('negative_marks') or 0),'auto_markable':bool(auto),'key_type':key_type}
+    projected_key_type='SINGLE_OPTION' if text_option_id else key_type
+    marking_cfg={'marks':float(marking.get('marks') or 0),'negative_marks':float(marking.get('negative_marks') or 0),'auto_markable':bool(auto),'key_type':projected_key_type}
+    if text_option_id: marking_cfg['correct_option_ids']=[text_option_id]
     if key_type in {'SINGLE_OPTION','MULTIPLE_OPTIONS'}: marking_cfg['correct_option_ids']=key if isinstance(key,list) else ([str(key)] if key is not None else [])
     if key_type=='BOOLEAN': marking_cfg['correct_option_ids']=[answer]
     if key_type=='NUMERIC':
@@ -1020,14 +1056,14 @@ def admit_content_envelope(c,envelope,content_sha_header=''):
         if (qid,qvid) in seen:
             errors.append({'code':'DUPLICATE_QUESTION_VERSION','path':f'payload.questions[{i}]','message':'Duplicate question version in package','retryable':False})
         seen.add((qid,qvid))
-        ok,why=_governance_ready(q)
+        ok,why=_governance_ready(q,schema_version)
         if not ok:
             errors.append({'code':why,'path':f'payload.questions[{i}].governance','message':'Question is not learner-release-ready','retryable':False})
         curr=q.get('curriculum') or {}
         for rk in ('market_id','programme_id','subject_id','chapter_id'):
             if str(curr.get(rk) or '')!=str(rel.get(rk) or ''):
                 errors.append({'code':'SCOPE_MISMATCH','path':f'payload.questions[{i}].curriculum.{rk}','message':'Question scope differs from release scope','retryable':False})
-    errors.extend(_semantic_content_errors(questions,stimuli))
+    errors.extend(_semantic_content_errors(questions,stimuli,schema_version))
     if errors:
         _begin_immediate(c); rec=_receipt(c,envelope,'REJECTED',errors); c.commit(); return rec,422
 
