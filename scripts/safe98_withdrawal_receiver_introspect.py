@@ -14,6 +14,10 @@ TERMS=[
  "def admit_withdrawal_envelope",
  "question_version_fingerprint",
  "ph_bridge_withdrawal_receipts_v6611d",
+ "integration_ph_release_question_membership",
+ "def activate",
+ "ACTIVATED_LEARNER_LIVE",
+ "integration_ph_product_activation_authorizations",
 ]
 RELEASE_ID="REL::PILOT::BIO12-CH13::SAFE98::20260919"
 RELEASE_VERSION="1"
