@@ -172,10 +172,13 @@ def main():
                     if before["status"]=="DEAD_LETTER":
                         # Governed recovery of the same terminal message: preserve attempt_count,
                         # increment retry_cycle, clear terminal claim state, and make due now.
+                        cols={str(r[1]) for r in c.execute("PRAGMA table_info(integration_outbox)").fetchall()}
+                        required={"status","retry_cycle","next_attempt_at","claim_token","claim_expires_at","attempt_count","message_id","id"}
+                        missing=sorted(required-cols)
+                        if missing: raise RuntimeError("ACK_REQUEUE_SCHEMA_MISSING:"+",".join(missing))
                         c.execute("""UPDATE integration_outbox
                                      SET status='RETRY',
                                          retry_cycle=COALESCE(retry_cycle,0)+1,
-                                         cycle_attempt_count=0,
                                          next_attempt_at=CURRENT_TIMESTAMP,
                                          claim_token='',claim_expires_at=''
                                      WHERE id=? AND status='DEAD_LETTER' AND message_id=?""",
