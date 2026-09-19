@@ -855,7 +855,7 @@ def _safe_zip_member(name):
     return bool(n) and not n.startswith('/') and '..' not in Path(n).parts
 
 
-def _load_manifest_package(package_bytes,release):
+def _load_manifest_package(package_bytes,release,schema_version='1.1.0'):
     pkg_sha=hashlib.sha256(package_bytes).hexdigest()
     if pkg_sha!=str(release.get('package_checksum_sha256') or ''):
         raise ValueError('Package SHA-256 mismatch')
@@ -869,7 +869,7 @@ def _load_manifest_package(package_bytes,release):
         if hashlib.sha256(manifest_bytes).hexdigest()!=str(release.get('manifest_checksum_sha256') or ''):
             raise ValueError('Manifest SHA-256 mismatch')
         manifest=json.loads(manifest_bytes.decode('utf-8'))
-        serr=_schema_errors(manifest,'PH_SM_APPROVED_CONTENT_MANIFEST_V1','1.1.0')
+        serr=_schema_errors(manifest,'PH_SM_APPROVED_CONTENT_MANIFEST_V1',schema_version)
         if serr: raise ValueError('Manifest schema invalid: '+canonical_json(serr))
         if manifest['release_id']!=release.get('release_id') or manifest['release_version']!=release.get('release_version'):
             raise ValueError('Manifest release identity mismatch')
@@ -885,7 +885,7 @@ def _load_manifest_package(package_bytes,release):
         if hashlib.sha256(content_bytes).hexdigest()!=manifest['content_file_sha256']:
             raise ValueError('Content file SHA-256 mismatch')
         package=json.loads(content_bytes.decode('utf-8'))
-        serr=_schema_errors(package,'PH_SM_APPROVED_CONTENT_PACKAGE_V1','1.1.0')
+        serr=_schema_errors(package,'PH_SM_APPROVED_CONTENT_PACKAGE_V1',schema_version)
         if serr: raise ValueError('Content package schema invalid: '+canonical_json(serr))
         if package['release_id']!=release.get('release_id') or package['release_version']!=release.get('release_version'):
             raise ValueError('Content package release identity mismatch')
@@ -992,7 +992,7 @@ def admit_content_envelope(c,envelope,content_sha_header=''):
     if delivery=='MANIFEST_PULL':
         try:
             package_bytes=_download_manifest_package(p.get('package_download_url'))
-            package,manifest=_load_manifest_package(package_bytes,rel)
+            package,manifest=_load_manifest_package(package_bytes,rel,schema_version)
             questions=list(package.get('questions') or []); stimuli=list(package.get('stimuli') or [])
         except Exception as exc:
             retryable=isinstance(exc,(TimeoutError,ConnectionError,urlerror.URLError)) or (isinstance(exc,urlerror.HTTPError) and int(getattr(exc,'code',0) or 0) in {408,425,429,500,502,503,504})
