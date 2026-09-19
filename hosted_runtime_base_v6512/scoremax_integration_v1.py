@@ -21,6 +21,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 CONTRACT_VERSION='1'
 SCHEMA_VERSION='1.0.0'
 RECTIFIED_SCHEMA_VERSION='1.1.0'
+SOURCE_MARKET_SCHEMA_VERSION='1.2.0'
 SCOREMAX_INTEGRATION_RELEASE='6.5.10'
 RECEIVER='SCOREMAX'
 RETRY_DELAYS=[0,60,300,1800,7200,43200]
@@ -118,6 +119,8 @@ def _contract_schema_path(contract, schema_version='1.0.0'):
     base=Path(__file__).resolve().parent/'integration_contracts'
     if contract=='PH_SM_APPROVED_CONTENT_V1' and str(schema_version)=='1.1.0':
         return base/'v1_1_0'/'PH_SM_APPROVED_CONTENT_V1.schema.json'
+    if contract=='PH_SM_APPROVED_CONTENT_V1' and str(schema_version)==SOURCE_MARKET_SCHEMA_VERSION:
+        return base/'v1_2_0'/'PH_SM_APPROVED_CONTENT_V1.schema.json'
     if contract=='PH_SM_APPROVED_CONTENT_MANIFEST_V1':
         return base/'v1_1_0'/'PH_SM_APPROVED_CONTENT_MANIFEST_V1.schema.json'
     if contract=='PH_SM_APPROVED_CONTENT_PACKAGE_V1':
@@ -147,7 +150,7 @@ def _schema_errors(value,contract,schema_version='1.0.0'):
 
 def _strict_envelope_errors(envelope,contract,source,destination):
     sv=str(envelope.get('schema_version') or '') if isinstance(envelope,dict) else ''
-    supported={'1.0.0','1.1.0'} if contract=='PH_SM_APPROVED_CONTENT_V1' else {'1.0.0'}
+    supported={'1.0.0','1.1.0',SOURCE_MARKET_SCHEMA_VERSION} if contract=='PH_SM_APPROVED_CONTENT_V1' else {'1.0.0'}
     if sv not in supported:
         return [{'code':'SCHEMA_VERSION','path':'schema_version','message':'Unsupported schema version','retryable':False}]
     errors=_schema_errors(envelope,contract,sv)
