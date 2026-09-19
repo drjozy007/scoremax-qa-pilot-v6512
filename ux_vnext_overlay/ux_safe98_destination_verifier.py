@@ -113,6 +113,7 @@ if _safe98_os.environ.get("SCOREMAX_VERIFY_SAFE98_DESTINATION")=="1":
             "question_id":str(_safe98_members[0]["question_id"]),
             "question_version_id":str(_safe98_members[0]["question_version_id"]),
             "question_checksum_sha256":str(_safe98_members[0]["question_checksum_sha256"]),
+            "projection":_safe98_json.loads(str(_safe98_members[0]["scoremax_projection_json"] or "{}")),
           },
           "receipt_id":str(_safe98_receipt["receipt_id"]),
           "receipt_status":str(_safe98_receipt["status"]),
