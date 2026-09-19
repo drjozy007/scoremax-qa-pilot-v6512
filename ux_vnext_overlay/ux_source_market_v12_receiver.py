@@ -128,6 +128,22 @@ def apply_source_market_v12_receiver(root: Path) -> None:
                 break
         print("SCOREMAX_V12_FAMILY_VOCAB_DIAG "+json.dumps(sorted(set(vocab))),flush=True)
 
+        tables={}
+        for node in ce_tree.body:
+            if isinstance(node,(ast.Assign,ast.AnnAssign)):
+                targets=node.targets if isinstance(node,ast.Assign) else [node.target]
+                names=[t.id for t in targets if isinstance(t,ast.Name)]
+                if not names: continue
+                name=names[0]
+                if not any(k in name.upper() for k in ("FAMILY","ALIAS","TYPE","FORMAT")): continue
+                try:
+                    value=ast.literal_eval(node.value)
+                except Exception:
+                    continue
+                if isinstance(value,(dict,list,tuple,set)):
+                    tables[name]=value
+        print("SCOREMAX_V12_FAMILY_TABLES_DIAG "+json.dumps(tables,sort_keys=True,default=list),flush=True)
+
     print(
         "SCOREMAX_V12_RECEIVER_OVERLAY_PASS "
         "schema=1.2.0 backward_1.0_1.1_preserved=true "
