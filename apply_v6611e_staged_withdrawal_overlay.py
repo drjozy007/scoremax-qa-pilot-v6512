@@ -192,6 +192,7 @@ marker={
   'activation_filters_exclusions':True,
   'historical_attempts_preserved':True,
   'release_authority_changed':False,
+  'cross_system_calls_on_learner_request':False,
 }
 (ROOT/'V6611E_STAGED_WITHDRAWAL_MARKER.json').write_text(json.dumps(marker,sort_keys=True,indent=2)+'\n',encoding='utf-8')
 for p in (app,integration,bridge):
