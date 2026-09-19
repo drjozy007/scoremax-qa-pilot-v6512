@@ -585,6 +585,7 @@ def _legacy_level(v):
 
 def _qtype(content):
     key=str((content.get('marking') or {}).get('key_type') or '').upper(); exam=str(content.get('exam_question_type') or '').upper(); fam=str(content.get('question_family_type') or '').upper()
+    if key=='TEXT' and _two_tier_key(content): return 'Two Tier',True
     if key=='TEXT' and content.get('options') and _text_option_id(content): return 'MCQ',True
     if key=='RUBRIC_ONLY': return 'Extended Response',False
     if key=='NUMERIC' or 'NUMERIC' in exam: return 'Numerical',True
@@ -640,6 +641,31 @@ def _learner_stimulus_text(stimulus):
         if isinstance(value,(list,dict)) and value:
             parts.append(canonical_json(value))
     return '\n'.join(parts)
+
+_TWO_TIER_KEY_RE=re.compile(r"(?i)^\\s*Tier\\s*1\\s*:\\s*([A-Za-z0-9_]+)\\s*;\\s*Tier\\s*2\\s*:\\s*([1-9][0-9]*)\\s*$")
+
+def _two_tier_key(content):
+    """Resolve an explicit governed two-tier TEXT key against visible Tier-1 options + Tier-2 statements."""
+    marking=content.get('marking') or {}
+    if str(marking.get('key_type') or '').upper()!='TEXT':
+        return None
+    options=[o for o in (content.get('options') or []) if isinstance(o,dict)]
+    statements=[str(x).strip() for x in (content.get('statements') or []) if str(x).strip()]
+    if not options or not statements:
+        return None
+    key=marking.get('key')
+    if isinstance(key,(dict,list)) or key is None:
+        return None
+    m=_TWO_TIER_KEY_RE.fullmatch(str(key))
+    if not m:
+        return None
+    tier1=str(m.group(1)).strip()
+    tier2=int(m.group(2))
+    option_ids={str(o.get('option_id') or '').strip() for o in options}
+    if tier1 not in option_ids or tier2<1 or tier2>len(statements):
+        return None
+    return tier1,str(tier2)
+
 
 def _text_option_id(content):
     """Resolve governed TEXT key/accepted answers to one supplied option, without fuzzy matching."""
@@ -718,8 +744,8 @@ def _semantic_question_errors(q,stimuli,index=0,schema_version=SCHEMA_VERSION):
             errors.append({'code':'TEXT_KEY_REQUIRED','path':f'{path}.content.marking','message':'TEXT requires a key or at least one accepted answer','retryable':False})
         if options:
             if str(schema_version or '')=='1.2.0':
-                if not _text_option_id(content):
-                    errors.append({'code':'TEXT_OPTIONS_UNRESOLVED','path':f'{path}.content.options','message':'Schema 1.2 TEXT-with-options requires the governed primary key to resolve exactly to one supplied option','retryable':False})
+                if not _two_tier_key(content) and not _text_option_id(content):
+                    errors.append({'code':'TEXT_OPTIONS_UNRESOLVED','path':f'{path}.content.options','message':'Schema 1.2 TEXT-with-options must resolve to one governed option or a complete explicit two-tier construct','retryable':False})
             else:
                 errors.append({'code':'TEXT_OPTIONS_INCOHERENT','path':f'{path}.content.options','message':'TEXT questions must not depend on option IDs','retryable':False})
     elif key_type=='BOOLEAN':
@@ -765,8 +791,16 @@ def _projection(q,stimuli):
     qtype,auto=_qtype(content)
     answer_cfg={'options':[{'id':str(x.get('option_id') or ''),'text':str(x.get('text') or '')} for x in options]}
     key_type=str(marking.get('key_type') or '').upper()
-    text_option_id=_text_option_id(content) if key_type=='TEXT' and options else None
-    if key_type=='TEXT' and text_option_id:
+    two_tier=_two_tier_key(content) if key_type=='TEXT' else None
+    text_option_id=_text_option_id(content) if key_type=='TEXT' and options and not two_tier else None
+    if key_type=='TEXT' and two_tier:
+        tier1,tier2=two_tier
+        answer=f"Tier 1: {tier1}; Tier 2: {tier2}"
+        answer_cfg['tier_1_options']=[{'id':str(x.get('option_id') or ''),'text':str(x.get('text') or '')} for x in options]
+        answer_cfg['tier_2_reasons']=[{'id':str(i+1),'text':str(x)} for i,x in enumerate(content.get('statements') or [])]
+        answer_cfg['tier_1_correct_option_id']=tier1
+        answer_cfg['tier_2_correct_reason_id']=tier2
+    elif key_type=='TEXT' and text_option_id:
         answer=text_option_id
         answer_cfg['correct_option_ids']=[text_option_id]
     elif key_type=='TEXT':
@@ -775,8 +809,11 @@ def _projection(q,stimuli):
         answer_cfg['accepted_answers']=accepted
     elif marking.get('accepted_answers'):
         answer_cfg['accepted_answers']=list(marking.get('accepted_answers') or [])
-    projected_key_type='SINGLE_OPTION' if text_option_id else key_type
+    projected_key_type='TWO_TIER' if two_tier else ('SINGLE_OPTION' if text_option_id else key_type)
     marking_cfg={'marks':float(marking.get('marks') or 0),'negative_marks':float(marking.get('negative_marks') or 0),'auto_markable':bool(auto),'key_type':projected_key_type}
+    if two_tier:
+        marking_cfg['tier_1_correct_option_id']=two_tier[0]
+        marking_cfg['tier_2_correct_reason_id']=two_tier[1]
     if text_option_id: marking_cfg['correct_option_ids']=[text_option_id]
     if key_type in {'SINGLE_OPTION','MULTIPLE_OPTIONS'}: marking_cfg['correct_option_ids']=key if isinstance(key,list) else ([str(key)] if key is not None else [])
     if key_type=='BOOLEAN': marking_cfg['correct_option_ids']=[answer]
