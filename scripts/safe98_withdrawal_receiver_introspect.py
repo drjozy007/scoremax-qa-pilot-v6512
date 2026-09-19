@@ -77,10 +77,19 @@ def db_state():
             state["membership_count"]=int(c.execute("SELECT COUNT(*) FROM integration_ph_release_question_membership WHERE release_id=? AND release_version=?",(RELEASE_ID,RELEASE_VERSION)).fetchone()[0])
         if "integration_ph_product_activation_authorizations" in tables:
             state["activation_authorizations"]=int(c.execute("SELECT COUNT(*) FROM integration_ph_product_activation_authorizations WHERE release_id=? AND release_version=?",(RELEASE_ID,RELEASE_VERSION)).fetchone()[0])
+        if "ph_bridge_staged_withdrawal_exclusions_v6611e" in tables:
+            rows=c.execute("""SELECT * FROM ph_bridge_staged_withdrawal_exclusions_v6611e
+                              WHERE release_id=? AND release_version=?
+                              ORDER BY id""",(RELEASE_ID,RELEASE_VERSION)).fetchall()
+            state["staged_exclusions"]=[dict(r) for r in rows]
+            state["target_staged_exclusion_count"]=sum(
+                1 for r in rows
+                if str(r["question_id"] or "")==TARGET and str(r["question_version_id"] or "")==TARGET_VERSION
+            )
         state["quick_check"]=c.execute("PRAGMA quick_check").fetchone()[0]
         state["fk"]=len(c.execute("PRAGMA foreign_key_check").fetchall())
         concise_tables={}
-        for name in ("ph_bridge_withdrawal_receipts_v6611d","integration_ph_content_releases","integration_ph_release_question_membership","integration_ph_product_activation_authorizations"):
+        for name in ("ph_bridge_withdrawal_receipts_v6611d","ph_bridge_staged_withdrawal_exclusions_v6611e","integration_ph_content_releases","integration_ph_release_question_membership","integration_ph_product_activation_authorizations"):
             if name in rel: concise_tables[name]=rel[name]
         return {"relevant_tables":concise_tables,"state":state}
     finally: c.close()
