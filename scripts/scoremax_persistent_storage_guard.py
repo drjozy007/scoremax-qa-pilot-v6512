@@ -319,6 +319,13 @@ def main():
         if not wi_script.is_file(): fail('safe98_withdrawal_introspect_script_missing')
         cp=subprocess.run([sys.executable,str(wi_script)],check=False,env=dict(os.environ))
         if cp.returncode: fail(f'safe98_withdrawal_introspect_failed rc={cp.returncode}')
+    # SCOREMAX_SAFE98_ACTIVATION_SOURCE_PROBE_V1: read-only source inspection only.
+    if os.environ.get('SCOREMAX_SAFE98_ACTIVATION_SOURCE_PROBE','OFF').strip().upper()=='RUN':
+        import subprocess,sys
+        ap_script=Path(__file__).with_name('safe98_activation_source_probe.py')
+        if not ap_script.is_file(): fail('safe98_activation_source_probe_missing')
+        cp=subprocess.run([sys.executable,str(ap_script)],check=False,env=dict(os.environ))
+        if cp.returncode: fail(f'safe98_activation_source_probe_failed rc={cp.returncode}')
     print(f'SCOREMAX_PERSISTENT_STORAGE_PASS policy={POLICY} mount={MOUNT} state={state} storage_id_sha256={digest} probe_runs={runs} db_state={db_state} db_integrity={db_integrity} db_fk={db_fk} db={DB} backup={BACKUP} intake={INTAKE}',flush=True)
     print('SCOREMAX_PERSISTENT_QUALIFICATION='+json.dumps(qualification,sort_keys=True),flush=True)
 
