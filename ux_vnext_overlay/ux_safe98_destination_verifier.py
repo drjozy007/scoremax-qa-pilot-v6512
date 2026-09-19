@@ -108,6 +108,12 @@ if _safe98_os.environ.get("SCOREMAX_VERIFY_SAFE98_DESTINATION")=="1":
           "learner_active_rows":_safe98_active,
           "payload_store_exact":True,
           "question_version_checksum_digest":_safe98_pair_digest,
+          "package_checksum_sha256":str(_safe98_rel["package_checksum_sha256"]),
+          "probe_question":{
+            "question_id":str(_safe98_members[0]["question_id"]),
+            "question_version_id":str(_safe98_members[0]["question_version_id"]),
+            "question_checksum_sha256":str(_safe98_members[0]["question_checksum_sha256"]),
+          },
           "receipt_id":str(_safe98_receipt["receipt_id"]),
           "receipt_status":str(_safe98_receipt["status"]),
           "quick_check":_safe98_qc,
