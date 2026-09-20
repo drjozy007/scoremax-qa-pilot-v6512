@@ -527,6 +527,11 @@ def install_content_reviewer(app) -> None:
               'nonempty_option_text_count':sum(1 for x in _opts if str(x.get('text') or '').strip()),
               'statements_count':len(_stmts),
               'option_ids':[str(x.get('option_id') or '') for x in _opts],
+              'stimulus_type':type(_c.get('inline_stimulus')).__name__,
+              'stimulus_keys':sorted(list((_c.get('inline_stimulus') or {}).keys())) if isinstance(_c.get('inline_stimulus'),dict) else [],
+              'stimulus_text':str(((_c.get('inline_stimulus') or {}).get('text') if isinstance(_c.get('inline_stimulus'),dict) else '') or '')[:4000],
+              'marking_key':_mark.get('key'),
+              'accepted_answers':list(_mark.get('accepted_answers') or []),
             })
         print('SCOREMAX_STAGED_MATCHING_STRUCTURE_DIAG '+json.dumps({'count':len(_matching),'items':_matching},sort_keys=True,separators=(',',':')),flush=True)
     finally:
