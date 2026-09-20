@@ -114,6 +114,9 @@ def _install_matching_runtime() -> None:
         pattern=r"(    options=answer_cfg\.get\('options'\) or \[\n(?:.*\n){1,5}?    \]\n)(    c\.close\(\)\n    answered_count=)"
         match=re.search(pattern,text)
         if not match:
+            _idx=text.find("options=answer_cfg.get('options')")
+            _snippet=text[max(0,_idx-500):_idx+1800] if _idx>=0 else '<options-anchor-not-found>'
+            print('SCOREMAX_MATCHING_ROUTE_DIAG '+repr(_snippet),flush=True)
             raise SystemExit('SCOREMAX_MATCHING_ROUTE_ANCHOR_MISMATCH')
         route_new=match.group(1)+"""    matching_ui=None; matching_saved={}
     if qtype=='matching':
