@@ -489,6 +489,46 @@ def install_content_reviewer(app) -> None:
     try:
         _diag=_staged_boundary_snapshot(_diag_conn)
         print('SCOREMAX_STAGED_REVIEWER_BOUNDARY '+json.dumps(_diag,sort_keys=True,separators=(',',':')),flush=True)
+        _matching=[]
+        _rows=_diag_conn.execute("""SELECT m.id membership_id,v.question_id,v.question_version_id,v.content_json
+          FROM integration_ph_release_question_membership m
+          JOIN integration_ph_question_version_store v
+            ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
+          JOIN integration_ph_content_releases r
+            ON r.release_id=m.release_id AND r.release_version=m.release_version
+          WHERE r.local_status='STAGED'
+            AND NOT EXISTS (
+              SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
+              WHERE e.release_id=m.release_id AND e.release_version=m.release_version
+                AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id
+            )
+          ORDER BY m.ordinal,m.id""").fetchall()
+        for _r in _rows:
+            try: _c=json.loads(_r['content_json'] or '{}')
+            except Exception: _c={}
+            _family=str(_c.get('question_family_type') or '')
+            _exam=str(_c.get('exam_question_type') or '')
+            _ped=str(_c.get('pedagogical_type') or '')
+            _tokens='|'.join((_family,_exam,_ped)).upper()
+            if 'MATCH' not in _tokens:
+                continue
+            _opts=[x for x in (_c.get('options') or []) if isinstance(x,dict)]
+            _stmts=[str(x) for x in (_c.get('statements') or []) if str(x).strip()]
+            _mark=_c.get('marking') or {}
+            _matching.append({
+              'membership_id':int(_r['membership_id']),
+              'question_id':str(_r['question_id']),
+              'question_version_id':str(_r['question_version_id']),
+              'question_family_type':_family,
+              'exam_question_type':_exam,
+              'pedagogical_type':_ped,
+              'key_type':str(_mark.get('key_type') or ''),
+              'options_count':len(_opts),
+              'nonempty_option_text_count':sum(1 for x in _opts if str(x.get('text') or '').strip()),
+              'statements_count':len(_stmts),
+              'option_ids':[str(x.get('option_id') or '') for x in _opts],
+            })
+        print('SCOREMAX_STAGED_MATCHING_STRUCTURE_DIAG '+json.dumps({'count':len(_matching),'items':_matching},sort_keys=True,separators=(',',':')),flush=True)
     finally:
         _diag_conn.close()
     app._ux_content_reviewer_installed=True
