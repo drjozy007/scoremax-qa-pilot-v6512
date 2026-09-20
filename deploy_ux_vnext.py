@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import shutil
 
 from deploy_ux_vnext_recovery import main as recovery_main
@@ -109,15 +110,12 @@ def _install_matching_runtime() -> None:
             raise SystemExit('SCOREMAX_MATCHING_MARK_ANCHOR_MISMATCH')
         text=text.replace(mark_anchor,mark_insert,1)
 
-    route_anchor="""    options=answer_cfg.get('options') or [
-        {'id':code,'text':q[key]} for code,key in [('A','option_a'),('B','option_b'),('C','option_c'),('D','option_d')] if q[key]
-    ]
-    c.close()
-"""
-    route_new="""    options=answer_cfg.get('options') or [
-        {'id':code,'text':q[key]} for code,key in [('A','option_a'),('B','option_b'),('C','option_c'),('D','option_d')] if q[key]
-    ]
-    matching_ui=None; matching_saved={}
+    if "matching_ui=None; matching_saved={}" not in text:
+        pattern=r"(    options=answer_cfg\.get\('options'\) or \[\n(?:.*\n){1,5}?    \]\n)(    c\.close\(\)\n    answered_count=)"
+        match=re.search(pattern,text)
+        if not match:
+            raise SystemExit('SCOREMAX_MATCHING_ROUTE_ANCHOR_MISMATCH')
+        route_new=match.group(1)+"""    matching_ui=None; matching_saved={}
     if qtype=='matching':
         from ux_matching_support import parse_matching_surface,parse_matching_key
         matching_ui=parse_matching_surface(q['stimulus_data'] if 'stimulus_data' in q.keys() else '',marking_cfg.get('matching_key') or q['answer'])
@@ -125,12 +123,8 @@ def _install_matching_runtime() -> None:
         if not matching_ui.get('valid'):
             c.close()
             abort(503,description='Matching question is not safely renderable.')
-    c.close()
-"""
-    if "matching_ui=None; matching_saved={}" not in text:
-        if text.count(route_anchor)!=1:
-            raise SystemExit('SCOREMAX_MATCHING_ROUTE_ANCHOR_MISMATCH')
-        text=text.replace(route_anchor,route_new,1)
+"""+match.group(2)
+        text=text[:match.start()]+route_new+text[match.end():]
 
     render_anchor="""        qtype=qtype,options=options,answer_cfg=answer_cfg,marking_cfg=marking_cfg,confidence=confidence,response_times=response_times,
         exam_meta=exam_meta
@@ -202,8 +196,10 @@ let questionSeconds=0;
 """
         if '</head>' in t:
             t=t.replace('</head>',style_patch+'</head>',1)
+        elif '{% block content %}' in t:
+            t=t.replace('{% block content %}','{% block content %}\\n'+style_patch,1)
         else:
-            t=style_patch+t
+            raise SystemExit('SCOREMAX_MATCHING_TEMPLATE_STYLE_ANCHOR_MISSING')
     tpl.write_text(t,encoding='utf-8')
 
     combined=text+'\\n'+tpl.read_text(encoding='utf-8')
