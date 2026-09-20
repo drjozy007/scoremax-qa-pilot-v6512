@@ -118,6 +118,19 @@ def _install_matching_runtime() -> None:
         print('SCOREMAX_MATCHING_MARK_DIAG '+repr(mark_window),flush=True)
         raise SystemExit('SCOREMAX_MATCHING_MARK_CONTRACT_UNPROVEN')
 
+    from ux_matching_support import parse_matching_surface
+    _bio13_fixture='''Left items:
+L1. Ectotherm
+L2. Endotherm
+
+Right options:
+R1. External sources provide most body heat
+R2. Internal metabolism generates most body heat
+R3. Internal solute concentration matches seawater'''
+    _bio13=parse_matching_surface(_bio13_fixture,'{"L1":"R1","L2":"R2"}')
+    if not _bio13.get('valid') or len(_bio13.get('left') or [])!=2 or len(_bio13.get('right') or [])!=3:
+        raise SystemExit('SCOREMAX_MATCHING_BIO13_FIXTURE_FAIL:'+str(_bio13))
+    print('SCOREMAX_MATCHING_BIO13_FIXTURE_PASS left=2 right=3 mobile_tap_select=true',flush=True)
     print('SCOREMAX_MATCHING_RUNTIME_BUILD_PASS existing_structured_runtime=true existing_renderer=true deterministic_marking=true duplicate_runtime=false fail_closed=true',flush=True)
 
 
