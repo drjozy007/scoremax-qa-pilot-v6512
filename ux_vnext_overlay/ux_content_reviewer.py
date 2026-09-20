@@ -115,6 +115,150 @@ def _has_exact_ph_lineage(q: dict) -> bool:
     return str(q.get('ph_projection_owner') or '')=='POWER_HOUSE' and all(str(q.get(k) or '').strip() for k in required)
 
 
+
+# SCOREMAX_STAGED_DELIVERY_REVIEWER_V1
+def _table_exists(conn, name: str) -> bool:
+    return bool(conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(str(name),)).fetchone())
+
+
+def _staged_rows(conn):
+    exclusion = """
+      AND NOT EXISTS (
+        SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
+        WHERE e.release_id=m.release_id AND e.release_version=m.release_version
+          AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id
+      )
+    """ if _table_exists(conn,'ph_bridge_staged_withdrawal_exclusions_v6611e') else ""
+    sql = """SELECT m.id membership_id,m.ordinal,m.release_id,m.release_version,
+                    v.question_id,v.question_version_id,v.question_version_number,
+                    v.question_checksum_sha256,v.scoremax_projection_json,
+                    r.package_checksum_sha256 release_checksum_sha256,
+                    r.market_id release_market_id,r.programme_id release_programme_id,
+                    r.subject_id release_subject_id,r.chapter_id release_chapter_id,
+                    r.local_status
+             FROM integration_ph_release_question_membership m
+             JOIN integration_ph_question_version_store v
+               ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
+             JOIN integration_ph_content_releases r
+               ON r.release_id=m.release_id AND r.release_version=m.release_version
+             WHERE r.local_status='STAGED' """ + exclusion + """
+             ORDER BY r.admitted_at,m.ordinal,m.id"""
+    return conn.execute(sql).fetchall()
+
+
+def _staged_question_dict(row):
+    try:
+        q=json.loads(row['scoremax_projection_json'] or '{}')
+    except Exception:
+        q={}
+    q=dict(q or {})
+    q.update({
+      'membership_id':int(row['membership_id']),
+      'public_id':str(row['question_id'] or ''),
+      'ph_projection_owner':'POWER_HOUSE',
+      'ph_question_id':str(row['question_id'] or ''),
+      'ph_question_version_id':str(row['question_version_id'] or ''),
+      'ph_question_checksum_sha256':str(row['question_checksum_sha256'] or '').lower(),
+      'ph_release_id':str(row['release_id'] or ''),
+      'ph_release_version':str(row['release_version'] or ''),
+      'ph_release_checksum_sha256':str(row['release_checksum_sha256'] or '').lower(),
+      'ph_market_id':str(q.get('ph_market_id') or row['release_market_id'] or ''),
+      'ph_programme_id':str(q.get('ph_programme_id') or row['release_programme_id'] or ''),
+      'ph_subject_id':str(q.get('ph_subject_id') or row['release_subject_id'] or ''),
+      'ph_chapter_id':str(q.get('ph_chapter_id') or row['release_chapter_id'] or ''),
+      'review_source':'STAGED_POWER_HOUSE',
+      'is_withdrawn':False,
+      'status':'Staged',
+    })
+    return q
+
+
+def _staged_question(conn, membership_id: int):
+    rows=[r for r in _staged_rows(conn) if int(r['membership_id'])==int(membership_id)]
+    return _staged_question_dict(rows[0]) if len(rows)==1 else None
+
+
+def _staged_flags(conn, reviewer_user_id: int, question_version_id: str):
+    rows=conn.execute("""SELECT * FROM pilot_feedback
+      WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT'
+      ORDER BY id DESC LIMIT 250""",(reviewer_user_id,)).fetchall()
+    out=[]
+    for row in rows:
+        d=dict(row)
+        try: ctx=json.loads(d.get('context_json') or '{}')
+        except Exception: ctx={}
+        if str(ctx.get('review_source') or '')=='STAGED_POWER_HOUSE' and str(ctx.get('ph_question_version_id') or '')==str(question_version_id):
+            out.append(d)
+    return out
+
+
+def _queue_staged_incident(conn, q: dict, code: str, reason: str, severity: str, description: str, context: dict) -> str:
+    import scoremax_ph_bridge_v6611d as ph_bridge_v6611d
+    import scoremax_integration_v1 as integration_v1
+    required=('ph_question_id','ph_question_version_id','ph_question_checksum_sha256',
+              'ph_release_id','ph_release_version','ph_release_checksum_sha256')
+    if str(q.get('ph_projection_owner') or '')!='POWER_HOUSE':
+        return ''
+    if any(not str(q.get(k) or '').strip() for k in required):
+        return ''
+    if len(str(q.get('ph_question_checksum_sha256') or ''))!=64 or len(str(q.get('ph_release_checksum_sha256') or ''))!=64:
+        return ''
+    payload={
+      'incident_id':'SMINC::'+ph_bridge_v6611d._sha_text(code+'|'+str(q['ph_question_version_id']))[:32],
+      'scoremax_feedback_code':str(code),
+      'category':str(reason or 'OTHER')[:120],
+      'severity':str(severity or 'MEDIUM').upper()[:20],
+      'description':ph_bridge_v6611d._redact_free_text(description),
+      'source':'SCOREMAX_DELIVERY_REVIEWER',
+      'page_path':ph_bridge_v6611d._safe_page_path(context.get('page')),
+      'question':{
+        'question_id':str(q['ph_question_id']),
+        'question_version_id':str(q['ph_question_version_id']),
+        'question_checksum_sha256':str(q['ph_question_checksum_sha256']).lower(),
+        'release_id':str(q['ph_release_id']),
+        'release_version':str(q['ph_release_version']),
+        'release_checksum_sha256':str(q['ph_release_checksum_sha256']).lower(),
+        'market_id':str(q.get('ph_market_id') or ''),
+        'programme_id':str(q.get('ph_programme_id') or ''),
+        'subject_id':str(q.get('ph_subject_id') or ''),
+        'chapter_id':str(q.get('ph_chapter_id') or ''),
+        'rendered_question_sha256':ph_bridge_v6611d._sha_text(str(q.get('question') or '')),
+      },
+      'reporter_identity_included':False,
+      'student_pii_included':False,
+      'release_authority_conferred':False,
+    }
+    idem='content-incident::'+str(code)+'::'+str(q['ph_question_version_id'])
+    env=integration_v1._envelope(ph_bridge_v6611d.INCIDENT,'POWER_HOUSE',idem,str(code),payload,ph_bridge_v6611d.RELEASE,'INTERNAL')
+    return integration_v1._queue(conn,env,str(code),'PILOT_FEEDBACK',str(code))
+
+
+def _staged_boundary_snapshot(conn):
+    staged=conn.execute("SELECT release_id,release_version FROM integration_ph_content_releases WHERE local_status='STAGED' ORDER BY id").fetchall()
+    membership=0; eligible=0; materialised=0; learner_active=0; authorizations=0
+    for rel in staged:
+        rid=str(rel['release_id']); ver=str(rel['release_version'])
+        membership += int(conn.execute("SELECT COUNT(*) FROM integration_ph_release_question_membership WHERE release_id=? AND release_version=?",(rid,ver)).fetchone()[0])
+        if _table_exists(conn,'ph_bridge_staged_withdrawal_exclusions_v6611e'):
+            eligible += int(conn.execute("""SELECT COUNT(*) FROM integration_ph_release_question_membership m
+              WHERE m.release_id=? AND m.release_version=?
+                AND NOT EXISTS (
+                  SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
+                  WHERE e.release_id=m.release_id AND e.release_version=m.release_version
+                    AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id
+                )""",(rid,ver)).fetchone()[0])
+        else:
+            eligible += int(conn.execute("SELECT COUNT(*) FROM integration_ph_release_question_membership WHERE release_id=? AND release_version=?",(rid,ver)).fetchone()[0])
+        materialised += int(conn.execute("""SELECT COUNT(*) FROM questions
+          WHERE ph_projection_owner='POWER_HOUSE' AND ph_release_id=? AND ph_release_version=?""",(rid,ver)).fetchone()[0])
+        learner_active += int(conn.execute("""SELECT COUNT(*) FROM questions
+          WHERE ph_projection_owner='POWER_HOUSE' AND ph_release_id=? AND ph_release_version=? AND COALESCE(active,0)=1""",(rid,ver)).fetchone()[0])
+        authorizations += int(conn.execute("""SELECT COUNT(*) FROM integration_ph_product_activation_authorizations
+          WHERE release_id=? AND release_version=?""",(rid,ver)).fetchone()[0])
+    return {'staged_releases':len(staged),'membership':membership,'eligible':eligible,
+            'materialised':materialised,'learner_active':learner_active,'activation_authorizations':authorizations}
+
+
 def _reviewer_nav_patch() -> str:
     return r'''<style id="ux-content-reviewer-nav-style">.ux-review-nav{background:#fff7e6!important;color:#6f4a00!important;border-radius:9px!important;font-weight:900!important}.ux-reviewer-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:999px;background:#fff7e6;color:#6f4a00;font-size:.62rem;font-weight:900}</style><script id="ux-content-reviewer-nav">(function(){function add(){const nav=document.querySelector('.site-header .desktop-nav');const account=nav&&nav.querySelector('.student-account-menu');if(nav&&account&&!nav.querySelector('.ux-review-nav')){const a=document.createElement('a');a.className='ux-review-nav'+(location.pathname.startsWith('/student/content-review')?' active':'');a.href='/student/content-review';a.textContent='Review';nav.insertBefore(a,account);}const menu=document.querySelector('.student-account-dropdown');if(menu&&!menu.querySelector('.ux-review-menu')){const a=document.createElement('a');a.className='ux-review-menu';a.href='/student/content-review';a.textContent='Review Questions';menu.insertBefore(a,menu.firstElementChild?.nextSibling||null);}}function later(){setTimeout(add,30);setTimeout(add,180);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',later);else later();})();</script>'''
 
@@ -229,6 +373,108 @@ def install_content_reviewer(app) -> None:
             flash(f'Flag {code} is safely queued for Power House ({delivery}{": "+error if error else ""}). ScoreMax made no academic change.','warning')
         return redirect(url_for('ux_content_review_question',question_id=question_id,view='reviewer'))
 
+
+    @app.route('/student/content-review/staged',methods=['GET'],endpoint='ux_content_review_staged')
+    def ux_content_review_staged():
+        _require_reviewer()
+        subject=(request.args.get('subject') or '').strip()
+        chapter=(request.args.get('chapter') or '').strip()
+        search=(request.args.get('q') or '').strip().lower()
+        conn=_connect()
+        try:
+            questions=[]
+            for row in _staged_rows(conn):
+                q=_staged_question_dict(row)
+                if subject and str(q.get('subject') or '').lower()!=subject.lower(): continue
+                if chapter and str(q.get('chapter') or '').lower()!=chapter.lower(): continue
+                if search and search not in str(q.get('public_id') or '').lower() and search not in str(q.get('question') or '').lower(): continue
+                questions.append(q)
+                if len(questions)>=120: break
+            all_q=[_staged_question_dict(r) for r in _staged_rows(conn)]
+            subjects=sorted({str(q.get('subject') or '') for q in all_q if str(q.get('subject') or '')})
+            chapters=sorted({str(q.get('chapter') or '') for q in all_q if str(q.get('chapter') or '')})
+            snap=_staged_boundary_snapshot(conn)
+            flagged_count=conn.execute("SELECT COUNT(*) FROM pilot_feedback WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT' AND context_json LIKE '%STAGED_POWER_HOUSE%'",(session['user_id'],)).fetchone()[0]
+            open_count=conn.execute("SELECT COUNT(*) FROM pilot_feedback WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT' AND context_json LIKE '%STAGED_POWER_HOUSE%' AND status NOT IN ('RESOLVED','CLOSED')",(session['user_id'],)).fetchone()[0]
+        finally:
+            conn.close()
+        return render_template('ux_staged_content_review.html',questions=questions,subjects=subjects,chapters=chapters,
+          filters={'subject':subject,'chapter':chapter,'q':request.args.get('q') or ''},
+          stats={'staged':snap['eligible'],'membership':snap['membership'],'flagged':flagged_count,'open':open_count},
+          boundary=snap)
+
+    @app.route('/student/content-review/staged/<int:membership_id>',methods=['GET'],endpoint='ux_content_review_staged_question')
+    def ux_content_review_staged_question(membership_id):
+        _require_reviewer()
+        mode=(request.args.get('view') or 'student').strip().lower()
+        if mode not in {'student','reviewer'}: mode='student'
+        conn=_connect()
+        try:
+            q=_staged_question(conn,membership_id)
+            if not q: abort(404)
+            rows=_staged_rows(conn)
+            ids=[int(r['membership_id']) for r in rows]
+            try: idx=ids.index(int(membership_id))
+            except ValueError: idx=-1
+            prev_id=ids[idx-1] if idx>0 else None
+            next_id=ids[idx+1] if idx>=0 and idx+1<len(ids) else None
+            flags=_staged_flags(conn,session['user_id'],q['ph_question_version_id'])
+        finally:
+            conn.close()
+        return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,prev_id=prev_id,next_id=next_id)
+
+    @app.route('/student/content-review/staged/<int:membership_id>/flag',methods=['POST'],endpoint='ux_content_review_staged_flag')
+    def ux_content_review_staged_flag(membership_id):
+        _require_reviewer()
+        reason=(request.form.get('reason') or '').strip().upper()
+        if reason not in FLAG_REASONS:
+            flash('Choose a valid reason for the flag.','error')
+            return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer'))
+        notes=(request.form.get('notes') or '').strip()[:3000]
+        label,severity=FLAG_REASONS[reason]
+        conn=_connect()
+        try:
+            q=_staged_question(conn,membership_id)
+            if not q:
+                flash('This staged question is no longer eligible for review.','error')
+                return redirect(url_for('ux_content_review_staged'))
+            code='CRF-'+datetime.now().strftime('%Y%m%d%H%M%S')+'-'+secrets.token_hex(2).upper()
+            page=f'/student/content-review/staged/{membership_id}'
+            context={
+              'source':'SCOREMAX_DELIVERY_REVIEWER','review_source':'STAGED_POWER_HOUSE',
+              'reason_code':reason,'reason_label':label,'staged_membership_id':membership_id,
+              'ph_question_id':q['ph_question_id'],'ph_question_version_id':q['ph_question_version_id'],
+              'ph_release_id':q['ph_release_id'],'ph_release_version':q['ph_release_version'],
+              'ph_question_checksum_sha256':q['ph_question_checksum_sha256'],
+              'requested_action':'POWER_HOUSE_EXCEPTION','withdrawal_authority':'POWER_HOUSE',
+              'reviewer_can_withdraw':False,'reviewer_can_edit':False,'page':page,
+            }
+            description=(f'{label}. '+notes).strip()
+            outbox_message_id=_queue_staged_incident(conn,q,code,reason,severity,description,context)
+            if not outbox_message_id:
+                conn.rollback()
+                flash('Power House incident handoff could not establish exact staged lineage. Nothing was changed.','error')
+                return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer'))
+            conn.execute("""INSERT INTO pilot_feedback(feedback_code,reporter_user_id,category,severity,description,question_id,routing_target,status,context_json,page_path)
+              VALUES(?,?,?,?,?,NULL,'Power House','QUEUED',?,?)""",
+              (code,session['user_id'],'ACADEMIC_CONTENT',severity,description,json.dumps(context,sort_keys=True),page))
+            conn.commit()
+            import scoremax_integration_v1 as integration_v1
+            integration_v1.dispatch_due(conn,limit=20,timeout=8)
+            row=conn.execute("SELECT status,last_error_code FROM integration_outbox WHERE message_id=?",(outbox_message_id,)).fetchone()
+            delivery=str(row['status'] if row else 'UNKNOWN')
+            error=str(row['last_error_code'] if row else '')
+            local_status='DELIVERED_TO_POWER_HOUSE' if delivery=='DELIVERED' else ('QUEUED' if delivery in {'PENDING','RETRY','IN_FLIGHT'} else delivery)
+            conn.execute("UPDATE pilot_feedback SET status=? WHERE feedback_code=?",(local_status,code)); conn.commit()
+        finally:
+            conn.close()
+        if delivery=='DELIVERED':
+            flash(f'Flag {code} delivered to Power House. ScoreMax made no academic or learner-state change.','success')
+        else:
+            flash(f'Flag {code} is safely queued for Power House ({delivery}{": "+error if error else ""}). ScoreMax made no academic or learner-state change.','warning')
+        return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer'))
+
+
     @app.after_request
     def _ux_content_reviewer_nav(response):
         if not response.is_sequence or 'text/html' not in (response.content_type or '').lower(): return response
@@ -239,4 +485,10 @@ def install_content_reviewer(app) -> None:
             response.set_data(html); response.content_length=len(response.get_data())
         return response
 
+    _diag_conn=_connect()
+    try:
+        _diag=_staged_boundary_snapshot(_diag_conn)
+        print('SCOREMAX_STAGED_REVIEWER_BOUNDARY '+json.dumps(_diag,sort_keys=True,separators=(',',':')),flush=True)
+    finally:
+        _diag_conn.close()
     app._ux_content_reviewer_installed=True
