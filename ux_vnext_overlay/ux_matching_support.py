@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 
-_LABEL_RE=re.compile(r"^\\s*([A-Za-z0-9_]+)\\s*[\\).:\\-]\\s*(\\S.*)$")
+_LABEL_RE=re.compile(r"^\s*([A-Za-z0-9_]+)\s*[\).:\-]\s*(\S.*)$")
 
 
 def parse_matching_key(value):
