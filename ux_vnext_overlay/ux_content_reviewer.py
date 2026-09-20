@@ -131,7 +131,7 @@ def _staged_rows(conn):
     """ if _table_exists(conn,'ph_bridge_staged_withdrawal_exclusions_v6611e') else ""
     sql = """SELECT m.id membership_id,m.ordinal,m.release_id,m.release_version,
                     v.question_id,v.question_version_id,v.question_version_number,
-                    v.question_checksum_sha256,v.scoremax_projection_json,
+                    v.question_checksum_sha256,v.scoremax_projection_json,v.content_json,
                     r.package_checksum_sha256 release_checksum_sha256,
                     r.market_id release_market_id,r.programme_id release_programme_id,
                     r.subject_id release_subject_id,r.chapter_id release_chapter_id,
@@ -152,6 +152,17 @@ def _staged_question_dict(row):
     except Exception:
         q={}
     q=dict(q or {})
+    try:
+        _content=json.loads(row['content_json'] or '{}')
+    except Exception:
+        _content={}
+    _exam=str(_content.get('exam_question_type') or '').upper()
+    _family=str(_content.get('question_family_type') or '').upper()
+    _matching=('MATCHING' in _exam or 'MATCHING' in _family)
+    if _matching:
+        q['qtype']='Matching'
+        q['_matching_key']=(_content.get('marking') or {}).get('key')
+        q['_source_content']=_content
     q.update({
       'membership_id':int(row['membership_id']),
       'public_id':str(row['question_id'] or ''),
@@ -412,6 +423,10 @@ def install_content_reviewer(app) -> None:
         try:
             q=_staged_question(conn,membership_id)
             if not q: abort(404)
+            matching_ui=None
+            if str(q.get('qtype') or '').strip().lower()=='matching':
+                from ux_matching_support import parse_matching_surface
+                matching_ui=parse_matching_surface(q.get('stimulus_data') or '',q.get('_matching_key') or q.get('answer'))
             rows=_staged_rows(conn)
             ids=[int(r['membership_id']) for r in rows]
             try: idx=ids.index(int(membership_id))
@@ -421,7 +436,7 @@ def install_content_reviewer(app) -> None:
             flags=_staged_flags(conn,session['user_id'],q['ph_question_version_id'])
         finally:
             conn.close()
-        return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,prev_id=prev_id,next_id=next_id)
+        return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,prev_id=prev_id,next_id=next_id,matching_ui=matching_ui)
 
     @app.route('/student/content-review/staged/<int:membership_id>/flag',methods=['POST'],endpoint='ux_content_review_staged_flag')
     def ux_content_review_staged_flag(membership_id):
