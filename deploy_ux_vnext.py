@@ -217,6 +217,10 @@ let questionSeconds=0;
     combined=text+'\\n'+tpl.read_text(encoding='utf-8')
     for token in ("'matching'","matching_key","parse_matching_surface","data-matching-left","matching-answer-json"):
         if token not in combined:
+            _t=tpl.read_text(encoding='utf-8')
+            _idx=_t.find("qtype=='matching'")
+            if _idx<0: _idx=_t.find('qtype == \'matching\'')
+            print('SCOREMAX_MATCHING_TEMPLATE_DIAG '+repr(_t[max(0,_idx-1200):_idx+5000] if _idx>=0 else _t[:5000]),flush=True)
             raise SystemExit('SCOREMAX_MATCHING_RUNTIME_CONTROL_MISSING:'+token)
     print('SCOREMAX_MATCHING_RUNTIME_BUILD_PASS receiver_type=true learner_renderer=true deterministic_marking=true fail_closed=true',flush=True)
 
