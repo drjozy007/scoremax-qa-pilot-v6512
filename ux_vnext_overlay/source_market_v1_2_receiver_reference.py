@@ -585,6 +585,7 @@ def _legacy_level(v):
 
 def _qtype(content):
     key=str((content.get('marking') or {}).get('key_type') or '').upper(); exam=str(content.get('exam_question_type') or '').upper(); fam=str(content.get('question_family_type') or '').upper()
+    if 'MATCHING' in exam or 'MATCHING' in fam: return 'Matching',True
     if key=='TEXT' and _two_tier_key(content): return 'Two Tier',True
     if key=='TEXT' and content.get('options') and _text_option_id(content): return 'MCQ',True
     if key=='RUBRIC_ONLY': return 'Extended Response',False
@@ -694,6 +695,49 @@ def _text_option_id(content):
     return unique[0] if len(unique)==1 else None
 
 
+def _matching_key(content):
+    exam=str(content.get('exam_question_type') or '').upper()
+    fam=str(content.get('question_family_type') or '').upper()
+    if 'MATCHING' not in exam and 'MATCHING' not in fam:
+        return None
+    marking=content.get('marking') or {}
+    if str(marking.get('key_type') or '').upper()!='TEXT':
+        return None
+    raw=marking.get('key')
+    try:
+        value=raw if isinstance(raw,dict) else json.loads(str(raw or '').strip())
+    except Exception:
+        return None
+    if not isinstance(value,dict) or not value:
+        return None
+    out={}
+    for k,v in value.items():
+        left=str(k or '').strip(); right=str(v or '').strip()
+        if not left or not right or left in out:
+            return None
+        out[left]=right
+    return out or None
+
+
+def _matching_visible_refs(content,stimuli):
+    stim=content.get('inline_stimulus')
+    if not stim and content.get('stimulus_ref'):
+        stim=stimuli.get(str(content.get('stimulus_ref')))
+    raw='\n'.join(x for x in (
+        _learner_stimulus_text(stim),
+        '\n'.join(str(x) for x in (content.get('statements') or []) if str(x).strip()),
+    ) if str(x or '').strip())
+    refs=set()
+    for line in raw.splitlines():
+        m=re.match(r'^\\s*([A-Za-z0-9_]+)\\s*[\\).:\\-]\\s*\\S',line)
+        if m: refs.add(m.group(1))
+    for opt in (content.get('options') or []):
+        if not isinstance(opt,dict): continue
+        oid=str(opt.get('option_id') or '').strip()
+        if oid: refs.add(oid)
+    return refs,raw
+
+
 def _semantic_question_errors(q,stimuli,index=0,schema_version=SCHEMA_VERSION):
     errors=[]; path=f'payload.questions[{index}]'
     content=q.get('content') or {}; marking=content.get('marking') or {}; options=content.get('options') or []
@@ -709,6 +753,18 @@ def _semantic_question_errors(q,stimuli,index=0,schema_version=SCHEMA_VERSION):
     stimulus_ref=str(content.get('stimulus_ref') or '').strip()
     if stimulus_ref and stimulus_ref not in stimuli:
         errors.append({'code':'UNRESOLVED_STIMULUS_REFERENCE','path':f'{path}.content.stimulus_ref','message':'Referenced stimulus is not present in this release snapshot','retryable':False})
+    matching_declared=('MATCHING' in str(content.get('exam_question_type') or '').upper() or 'MATCHING' in str(content.get('question_family_type') or '').upper())
+    if matching_declared:
+        matching=_matching_key(content)
+        if matching is None:
+            errors.append({'code':'MATCHING_KEY_INVALID','path':f'{path}.content.marking.key','message':'Matching requires a non-empty JSON object mapping visible left IDs to visible right IDs','retryable':False})
+        else:
+            visible_refs,visible_raw=_matching_visible_refs(content,stimuli)
+            required=set(matching.keys())|set(matching.values())
+            if not visible_raw.strip():
+                errors.append({'code':'MATCHING_VISIBLE_MATERIAL_MISSING','path':f'{path}.content.stimulus_ref','message':'Matching requires governed learner-visible labelled material','retryable':False})
+            elif not required.issubset(visible_refs):
+                errors.append({'code':'MATCHING_VISIBLE_LABEL_MISSING','path':f'{path}.content','message':'Every keyed matching label must exist in learner-visible material','retryable':False})
     if key_type not in SUPPORTED_LIVE_KEY_TYPES:
         code='UNSUPPORTED_RUBRIC_ONLY_DELIVERY' if key_type=='RUBRIC_ONLY' else 'UNSUPPORTED_MARKING_KEY_TYPE'
         errors.append({'code':code,'path':f'{path}.content.marking.key_type','message':'This governed marking mode is not safely deliverable by the current ScoreMax assessment runtime','retryable':False})
@@ -739,15 +795,18 @@ def _semantic_question_errors(q,stimuli,index=0,schema_version=SCHEMA_VERSION):
         if options:
             errors.append({'code':'NUMERIC_OPTIONS_INCOHERENT','path':f'{path}.content.options','message':'NUMERIC questions must not depend on option IDs','retryable':False})
     elif key_type=='TEXT':
-        accepted=[str(x).strip() for x in (marking.get('accepted_answers') or []) if str(x).strip()]
-        if not str(key if key is not None else '').strip() and not accepted:
-            errors.append({'code':'TEXT_KEY_REQUIRED','path':f'{path}.content.marking','message':'TEXT requires a key or at least one accepted answer','retryable':False})
-        if options:
-            if str(schema_version or '')=='1.2.0':
-                if not _two_tier_key(content) and not _text_option_id(content):
-                    errors.append({'code':'TEXT_OPTIONS_UNRESOLVED','path':f'{path}.content.options','message':'Schema 1.2 TEXT-with-options must resolve to one governed option or a complete explicit two-tier construct','retryable':False})
-            else:
-                errors.append({'code':'TEXT_OPTIONS_INCOHERENT','path':f'{path}.content.options','message':'TEXT questions must not depend on option IDs','retryable':False})
+        if _matching_key(content):
+            pass
+        else:
+            accepted=[str(x).strip() for x in (marking.get('accepted_answers') or []) if str(x).strip()]
+            if not str(key if key is not None else '').strip() and not accepted:
+                errors.append({'code':'TEXT_KEY_REQUIRED','path':f'{path}.content.marking','message':'TEXT requires a key or at least one accepted answer','retryable':False})
+            if options:
+                if str(schema_version or '')=='1.2.0':
+                    if not _two_tier_key(content) and not _text_option_id(content):
+                        errors.append({'code':'TEXT_OPTIONS_UNRESOLVED','path':f'{path}.content.options','message':'Schema 1.2 TEXT-with-options must resolve to one governed option or a complete explicit two-tier construct','retryable':False})
+                else:
+                    errors.append({'code':'TEXT_OPTIONS_INCOHERENT','path':f'{path}.content.options','message':'TEXT questions must not depend on option IDs','retryable':False})
     elif key_type=='BOOLEAN':
         if isinstance(key,bool):
             pass
@@ -791,9 +850,14 @@ def _projection(q,stimuli):
     qtype,auto=_qtype(content)
     answer_cfg={'options':[{'id':str(x.get('option_id') or ''),'text':str(x.get('text') or '')} for x in options]}
     key_type=str(marking.get('key_type') or '').upper()
-    two_tier=_two_tier_key(content) if key_type=='TEXT' else None
-    text_option_id=_text_option_id(content) if key_type=='TEXT' and options and not two_tier else None
-    if key_type=='TEXT' and two_tier:
+    matching_key=_matching_key(content) if key_type=='TEXT' else None
+    two_tier=_two_tier_key(content) if key_type=='TEXT' and not matching_key else None
+    text_option_id=_text_option_id(content) if key_type=='TEXT' and options and not two_tier and not matching_key else None
+    if key_type=='TEXT' and matching_key:
+        answer=canonical_json(matching_key)
+        answer_cfg['matching_left_ids']=list(matching_key.keys())
+        answer_cfg['matching_correct_right_ids']=list(dict.fromkeys(matching_key.values()))
+    elif key_type=='TEXT' and two_tier:
         tier1,tier2=two_tier
         answer=f"Tier 1: {tier1}; Tier 2: {tier2}"
         answer_cfg['tier_1_options']=[{'id':str(x.get('option_id') or ''),'text':str(x.get('text') or '')} for x in options]
@@ -809,8 +873,10 @@ def _projection(q,stimuli):
         answer_cfg['accepted_answers']=accepted
     elif marking.get('accepted_answers'):
         answer_cfg['accepted_answers']=list(marking.get('accepted_answers') or [])
-    projected_key_type='TWO_TIER' if two_tier else ('SINGLE_OPTION' if text_option_id else key_type)
+    projected_key_type='MATCHING' if matching_key else ('TWO_TIER' if two_tier else ('SINGLE_OPTION' if text_option_id else key_type))
     marking_cfg={'marks':float(marking.get('marks') or 0),'negative_marks':float(marking.get('negative_marks') or 0),'auto_markable':bool(auto),'key_type':projected_key_type}
+    if matching_key:
+        marking_cfg['matching_key']=matching_key
     if two_tier:
         marking_cfg['tier_1_correct_option_id']=two_tier[0]
         marking_cfg['tier_2_correct_reason_id']=two_tier[1]
