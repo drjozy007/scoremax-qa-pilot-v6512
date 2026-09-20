@@ -118,7 +118,14 @@ def _install_matching_runtime() -> None:
         print('SCOREMAX_MATCHING_MARK_DIAG '+repr(mark_window),flush=True)
         raise SystemExit('SCOREMAX_MATCHING_MARK_CONTRACT_UNPROVEN')
 
-    from ux_matching_support import parse_matching_surface
+    import importlib.util
+    _ms_path=ROOT/'ux_matching_support.py'
+    _ms_spec=importlib.util.spec_from_file_location('scoremax_matching_fixture',_ms_path)
+    if _ms_spec is None or _ms_spec.loader is None:
+        raise SystemExit('SCOREMAX_MATCHING_FIXTURE_LOADER_MISSING')
+    _ms=importlib.util.module_from_spec(_ms_spec)
+    _ms_spec.loader.exec_module(_ms)
+    parse_matching_surface=_ms.parse_matching_surface
     _bio13_fixture='''Left items:
 L1. Ectotherm
 L2. Endotherm
