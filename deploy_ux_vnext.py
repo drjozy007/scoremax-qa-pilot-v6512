@@ -30,6 +30,7 @@ def _restore_delivery_reviewer() -> None:
     for rel in (
         'ux_content_reviewer.py','ux_reviewer_accounts.py',
         'templates/ux_content_review.html','templates/ux_content_review_question.html',
+        'templates/ux_staged_content_review.html','templates/ux_staged_content_review_question.html',
     ):
         src=Path('ux_vnext_overlay')/rel
         dst=ROOT/rel
@@ -58,7 +59,24 @@ def _restore_delivery_reviewer() -> None:
     for token in ('install_content_reviewer(scoremax.app)','ensure_reviewer_accounts()'):
         if token not in rendered:
             raise SystemExit('SCOREMAX_DELIVERY_REVIEWER_INSTALL_CONTROL_MISSING:'+token)
+    staged_runtime=(ROOT/'ux_content_reviewer.py').read_text(encoding='utf-8')
+    staged_list=(ROOT/'templates'/'ux_staged_content_review.html').read_text(encoding='utf-8')
+    staged_item=(ROOT/'templates'/'ux_staged_content_review_question.html').read_text(encoding='utf-8')
+    staged_required=(
+      'SCOREMAX_STAGED_DELIVERY_REVIEWER_V1',
+      "app.route('/student/content-review/staged'",
+      'integration_ph_question_version_store',
+      'integration_ph_release_question_membership',
+      'STAGED_POWER_HOUSE',
+      'release_authority_conferred',
+      'learner inactive',
+    )
+    staged_combined='\n'.join((staged_runtime,staged_list,staged_item))
+    staged_missing=[token for token in staged_required if token not in staged_combined]
+    if staged_missing:
+        raise SystemExit('SCOREMAX_STAGED_DELIVERY_REVIEWER_CONTROL_MISSING:'+','.join(staged_missing))
     print('SCOREMAX_DELIVERY_REVIEWER_RESTORED read_only=true accounts=5 edits=false release_authority=false power_house_incident_bridge=true',flush=True)
+    print('SCOREMAX_STAGED_DELIVERY_REVIEWER_BUILD_PASS staged_store_read=true materialisation=false learner_activation=false exact_ph_lineage=true existing_incident_lane=true',flush=True)
 
 
 def _install_post_init_teacher_preview() -> None:
