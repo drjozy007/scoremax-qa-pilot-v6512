@@ -83,146 +83,42 @@ def _restore_delivery_reviewer() -> None:
 
 def _install_matching_runtime() -> None:
     app=ROOT/'app.py'
-    text=app.read_text(encoding='utf-8')
-    old="LIVE_MARKABLE_TYPES={'single_choice','true_false','fill_blank','multiple_select','numerical'}"
-    if old in text:
-        text=text.replace(old,"LIVE_MARKABLE_TYPES={'single_choice','true_false','fill_blank','multiple_select','numerical','matching'}",1)
-
-    mark_anchor="""    if qtype=='fill_blank':
-"""
-    mark_insert="""    if qtype=='matching':
-        expected=marking_cfg.get('matching_key') or {}
-        try:
-            candidate=json.loads(response)
-        except Exception:
-            candidate={}
-        if not isinstance(candidate,dict):
-            candidate={}
-        candidate={str(k):str(v) for k,v in candidate.items() if str(k) and str(v)}
-        expected={str(k):str(v) for k,v in dict(expected or {}).items() if str(k) and str(v)}
-        ok=bool(expected) and candidate==expected
-        return ok,correct_marks if ok else incorrect_marks,''
-
-    if qtype=='fill_blank':
-"""
-    if "if qtype=='matching':" not in text:
-        if text.count(mark_anchor)!=1:
-            raise SystemExit('SCOREMAX_MATCHING_MARK_ANCHOR_MISMATCH')
-        text=text.replace(mark_anchor,mark_insert,1)
-
-    if "matching_ui=None; matching_saved={}" not in text:
-        route_anchor="""    saved_current=answers.get(str(ids[idx]),'')
-    saved_struct=safe_json(saved_current,{} if qtype=='matching' else []) if qtype in {'matching','ordering'} else {}
-    saved_positions={str(item_id):pos+1 for pos,item_id in enumerate(saved_struct)} if qtype=='ordering' and isinstance(saved_struct,list) else {}
-    c.close()
-"""
-        route_new="""    saved_current=answers.get(str(ids[idx]),'')
-    saved_struct=safe_json(saved_current,{} if qtype=='matching' else []) if qtype in {'matching','ordering'} else {}
-    saved_positions={str(item_id):pos+1 for pos,item_id in enumerate(saved_struct)} if qtype=='ordering' and isinstance(saved_struct,list) else {}
-    matching_ui=None; matching_saved=saved_struct if isinstance(saved_struct,dict) else {}
-    if qtype=='matching':
-        from ux_matching_support import parse_matching_surface
-        matching_ui=parse_matching_surface(
-            q['stimulus_data'] if 'stimulus_data' in q.keys() else '',
-            marking_cfg.get('matching_key') or q['answer']
-        )
-        if not matching_ui.get('valid'):
-            c.close()
-            abort(503,description='Matching question is not safely renderable.')
-    c.close()
-"""
-        if text.count(route_anchor)!=1:
-            _idx=text.find("saved_current=answers.get(str(ids[idx]),'')")
-            _snippet=text[max(0,_idx-500):_idx+1600] if _idx>=0 else '<saved-current-anchor-not-found>'
-            print('SCOREMAX_MATCHING_ROUTE_DIAG '+repr(_snippet),flush=True)
-            raise SystemExit('SCOREMAX_MATCHING_ROUTE_ANCHOR_MISMATCH')
-        text=text.replace(route_anchor,route_new,1)
-
-    render_anchor="""        qtype=qtype,options=options,answer_cfg=answer_cfg,marking_cfg=marking_cfg,confidence=confidence,response_times=response_times,
-        saved_struct=saved_struct,saved_positions=saved_positions,exam_meta=exam_meta
-"""
-    render_new="""        qtype=qtype,options=options,answer_cfg=answer_cfg,marking_cfg=marking_cfg,confidence=confidence,response_times=response_times,
-        saved_struct=saved_struct,saved_positions=saved_positions,exam_meta=exam_meta,matching_ui=matching_ui,matching_saved=matching_saved
-"""
-    if "matching_saved=matching_saved" not in text:
-        if text.count(render_anchor)!=1:
-            raise SystemExit('SCOREMAX_MATCHING_RENDER_ARGS_ANCHOR_MISMATCH')
-        text=text.replace(render_anchor,render_new,1)
-
-    compile(text,str(app),'exec')
-    app.write_text(text,encoding='utf-8')
-
     tpl=ROOT/'templates'/'take_test_v4.html'
+    text=app.read_text(encoding='utf-8')
     t=tpl.read_text(encoding='utf-8')
-    if "qtype=='matching'" not in t:
-        opt_anchor="""{% elif qtype=='fill_blank' %}
-"""
-        opt_new="""{% elif qtype=='matching' %}
-  <p class="muted">Match each item on the left with one item on the right.</p>
-  <div class="matching-assessment-grid">
-    <div class="matching-left-list">
-    {% for left in matching_ui.left %}
-      <label class="matching-row"><span><strong>{{left.id}}</strong> {{left.text}}</span>
-        <select data-matching-left="{{left.id}}" required>
-          <option value="">Choose match</option>
-          {% for right in matching_ui.right %}<option value="{{right.id}}" {% if matching_saved.get(left.id)==right.id %}selected{% endif %}>{{right.id}} — {{right.text}}</option>{% endfor %}
-        </select>
-      </label>
-    {% endfor %}
-    </div>
-    <aside class="matching-right-bank"><strong>Right-side choices</strong>{% for right in matching_ui.right %}<div class="matching-choice"><strong>{{right.id}}</strong> {{right.text}}</div>{% endfor %}</aside>
-  </div>
-  <input type="hidden" name="answer" id="matching-answer-json" value="">
-{% elif qtype=='fill_blank' %}
-"""
-        if t.count(opt_anchor)!=1:
-            raise SystemExit('SCOREMAX_MATCHING_TEMPLATE_OPTION_ANCHOR_MISMATCH')
-        t=t.replace(opt_anchor,opt_new,1)
 
-        script_anchor="""<script>
-let questionSeconds=0;
-"""
-        script_new="""<script>
-(function(){
-  const form=document.getElementById('question-form');
-  if(!form) return;
-  form.addEventListener('submit',function(){
-    const hidden=document.getElementById('matching-answer-json');
-    if(!hidden) return;
-    const out={};
-    document.querySelectorAll('[data-matching-left]').forEach(function(sel){
-      if(sel.value) out[sel.getAttribute('data-matching-left')]=sel.value;
-    });
-    hidden.value=JSON.stringify(out);
-  });
-})();
-let questionSeconds=0;
-"""
-        if t.count(script_anchor)!=1:
-            raise SystemExit('SCOREMAX_MATCHING_TEMPLATE_SCRIPT_ANCHOR_MISMATCH')
-        t=t.replace(script_anchor,script_new,1)
+    # Existing ScoreMax structured-response architecture is authoritative.
+    # Matching support must extend it, never install a second assessment path.
+    required_app=(
+        "qtype in {'matching','ordering'}",
+        "saved_struct=safe_json",
+        "matching",
+    )
+    missing_app=[x for x in required_app if x not in text]
+    if missing_app:
+        raise SystemExit('SCOREMAX_MATCHING_EXISTING_RUNTIME_MISSING:'+','.join(missing_app))
 
-        style_patch="""<style id="scoremax-matching-runtime-style">
-.matching-assessment-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.8fr);gap:14px;margin:14px 0}.matching-left-list{display:grid;gap:10px}.matching-row{display:grid;grid-template-columns:1fr minmax(180px,.7fr);gap:12px;align-items:center;padding:12px;border:1px solid #dfe8e7;border-radius:12px;background:#fff}.matching-row select{width:100%}.matching-right-bank{display:grid;align-content:start;gap:8px;padding:12px;border:1px solid #dfe8e7;border-radius:12px;background:#f8fbfb}.matching-choice{padding:8px;border-radius:9px;background:#fff}@media(max-width:720px){.matching-assessment-grid{grid-template-columns:1fr}.matching-row{grid-template-columns:1fr}}
-</style>
-"""
-        if '</head>' in t:
-            t=t.replace('</head>',style_patch+'</head>',1)
-        elif '{% block content %}' in t:
-            t=t.replace('{% block content %}','{% block content %}\\n'+style_patch,1)
-        else:
-            raise SystemExit('SCOREMAX_MATCHING_TEMPLATE_STYLE_ANCHOR_MISSING')
-    tpl.write_text(t,encoding='utf-8')
+    required_tpl=(
+        "qtype=='matching'",
+        "answer_cfg.get('left_items'",
+        "answer_cfg.get('right_options'",
+        'name="match::{{ item.id }}"',
+        "saved_struct.get(item.id)",
+    )
+    missing_tpl=[x for x in required_tpl if x not in t]
+    if missing_tpl:
+        raise SystemExit('SCOREMAX_MATCHING_EXISTING_TEMPLATE_MISSING:'+','.join(missing_tpl))
 
-    combined=text+'\\n'+tpl.read_text(encoding='utf-8')
-    for token in ("'matching'","matching_key","parse_matching_surface","data-matching-left","matching-answer-json"):
-        if token not in combined:
-            _t=tpl.read_text(encoding='utf-8')
-            _idx=_t.find("qtype=='matching'")
-            if _idx<0: _idx=_t.find('qtype == \'matching\'')
-            print('SCOREMAX_MATCHING_TEMPLATE_DIAG '+repr(_t[max(0,_idx-1200):_idx+5000] if _idx>=0 else _t[:5000]),flush=True)
-            raise SystemExit('SCOREMAX_MATCHING_RUNTIME_CONTROL_MISSING:'+token)
-    print('SCOREMAX_MATCHING_RUNTIME_BUILD_PASS receiver_type=true learner_renderer=true deterministic_marking=true fail_closed=true',flush=True)
+    # Marking support must exist before matching can ever become learner-live.
+    mark_pos=text.find("if qtype=='matching':")
+    if mark_pos<0:
+        raise SystemExit('SCOREMAX_MATCHING_MARKER_MISSING')
+    mark_window=text[mark_pos:mark_pos+2600]
+    if not any(tok in mark_window for tok in ('matching_key','correct_pairs','expected_map','correct_mapping')):
+        print('SCOREMAX_MATCHING_MARK_DIAG '+repr(mark_window),flush=True)
+        raise SystemExit('SCOREMAX_MATCHING_MARK_CONTRACT_UNPROVEN')
+
+    print('SCOREMAX_MATCHING_RUNTIME_BUILD_PASS existing_structured_runtime=true existing_renderer=true deterministic_marking=true duplicate_runtime=false fail_closed=true',flush=True)
 
 
 def _install_post_init_teacher_preview() -> None:
