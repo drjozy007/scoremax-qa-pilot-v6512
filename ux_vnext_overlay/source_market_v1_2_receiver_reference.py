@@ -729,7 +729,7 @@ def _matching_visible_refs(content,stimuli):
     ) if str(x or '').strip())
     refs=set()
     for line in raw.splitlines():
-        m=re.match(r'^\\s*([A-Za-z0-9_]+)\\s*[\\).:\\-]\\s*\\S',line)
+        m=re.match(r'^\s*([A-Za-z0-9_]+)\s*[\).:\-]\s*\S',line)
         if m: refs.add(m.group(1))
     for opt in (content.get('options') or []):
         if not isinstance(opt,dict): continue
