@@ -111,29 +111,38 @@ def _install_matching_runtime() -> None:
         text=text.replace(mark_anchor,mark_insert,1)
 
     if "matching_ui=None; matching_saved={}" not in text:
-        pattern=r"(    options=answer_cfg\.get\('options'\) or \[\n(?:.*\n){1,5}?    \]\n)(    c\.close\(\)\n    answered_count=)"
-        match=re.search(pattern,text)
-        if not match:
-            _idx=text.find("options=answer_cfg.get('options')")
-            _snippet=text[max(0,_idx-500):_idx+1800] if _idx>=0 else '<options-anchor-not-found>'
-            print('SCOREMAX_MATCHING_ROUTE_DIAG '+repr(_snippet),flush=True)
-            raise SystemExit('SCOREMAX_MATCHING_ROUTE_ANCHOR_MISMATCH')
-        route_new=match.group(1)+"""    matching_ui=None; matching_saved={}
+        route_anchor="""    saved_current=answers.get(str(ids[idx]),'')
+    saved_struct=safe_json(saved_current,{} if qtype=='matching' else []) if qtype in {'matching','ordering'} else {}
+    saved_positions={str(item_id):pos+1 for pos,item_id in enumerate(saved_struct)} if qtype=='ordering' and isinstance(saved_struct,list) else {}
+    c.close()
+"""
+        route_new="""    saved_current=answers.get(str(ids[idx]),'')
+    saved_struct=safe_json(saved_current,{} if qtype=='matching' else []) if qtype in {'matching','ordering'} else {}
+    saved_positions={str(item_id):pos+1 for pos,item_id in enumerate(saved_struct)} if qtype=='ordering' and isinstance(saved_struct,list) else {}
+    matching_ui=None; matching_saved=saved_struct if isinstance(saved_struct,dict) else {}
     if qtype=='matching':
-        from ux_matching_support import parse_matching_surface,parse_matching_key
-        matching_ui=parse_matching_surface(q['stimulus_data'] if 'stimulus_data' in q.keys() else '',marking_cfg.get('matching_key') or q['answer'])
-        matching_saved=parse_matching_key(answers.get(str(q['id']),'')) or {}
+        from ux_matching_support import parse_matching_surface
+        matching_ui=parse_matching_surface(
+            q['stimulus_data'] if 'stimulus_data' in q.keys() else '',
+            marking_cfg.get('matching_key') or q['answer']
+        )
         if not matching_ui.get('valid'):
             c.close()
             abort(503,description='Matching question is not safely renderable.')
-"""+match.group(2)
-        text=text[:match.start()]+route_new+text[match.end():]
+    c.close()
+"""
+        if text.count(route_anchor)!=1:
+            _idx=text.find("saved_current=answers.get(str(ids[idx]),'')")
+            _snippet=text[max(0,_idx-500):_idx+1600] if _idx>=0 else '<saved-current-anchor-not-found>'
+            print('SCOREMAX_MATCHING_ROUTE_DIAG '+repr(_snippet),flush=True)
+            raise SystemExit('SCOREMAX_MATCHING_ROUTE_ANCHOR_MISMATCH')
+        text=text.replace(route_anchor,route_new,1)
 
     render_anchor="""        qtype=qtype,options=options,answer_cfg=answer_cfg,marking_cfg=marking_cfg,confidence=confidence,response_times=response_times,
-        exam_meta=exam_meta
+        saved_struct=saved_struct,saved_positions=saved_positions,exam_meta=exam_meta
 """
     render_new="""        qtype=qtype,options=options,answer_cfg=answer_cfg,marking_cfg=marking_cfg,confidence=confidence,response_times=response_times,
-        exam_meta=exam_meta,matching_ui=matching_ui,matching_saved=matching_saved
+        saved_struct=saved_struct,saved_positions=saved_positions,exam_meta=exam_meta,matching_ui=matching_ui,matching_saved=matching_saved
 """
     if "matching_saved=matching_saved" not in text:
         if text.count(render_anchor)!=1:
