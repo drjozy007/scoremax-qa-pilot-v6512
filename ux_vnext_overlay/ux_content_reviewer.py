@@ -527,12 +527,33 @@ def install_content_reviewer(app) -> None:
               'nonempty_option_text_count':sum(1 for x in _opts if str(x.get('text') or '').strip()),
               'statements_count':len(_stmts),
               'option_ids':[str(x.get('option_id') or '') for x in _opts],
+              'stimulus_ref':str(_c.get('stimulus_ref') or ''),
               'stimulus_type':type(_c.get('inline_stimulus')).__name__,
               'stimulus_keys':sorted(list((_c.get('inline_stimulus') or {}).keys())) if isinstance(_c.get('inline_stimulus'),dict) else [],
               'stimulus_text':str(((_c.get('inline_stimulus') or {}).get('text') if isinstance(_c.get('inline_stimulus'),dict) else '') or '')[:4000],
+              'resolved_stimulus':None,
               'marking_key':_mark.get('key'),
               'accepted_answers':list(_mark.get('accepted_answers') or []),
             })
+        if _matching:
+            _stim_lookup={}
+            _srows=_diag_conn.execute("""SELECT s.stimulus_id,s.stimulus_version_id,s.immutable_payload_json
+              FROM integration_ph_stimulus_version_store s""").fetchall()
+            for _sr in _srows:
+                try: _sp=json.loads(_sr['immutable_payload_json'] or '{}')
+                except Exception: _sp={}
+                _stim_lookup[str(_sr['stimulus_id'])]={'stimulus_version_id':str(_sr['stimulus_version_id']),'payload':_sp}
+            for _m in _matching:
+                _ref=str(_m.get('stimulus_ref') or '')
+                if _ref and _ref in _stim_lookup:
+                    _sp=dict(_stim_lookup[_ref]['payload'] or {})
+                    _content=_sp.get('content')
+                    _m['resolved_stimulus']={
+                      'stimulus_version_id':_stim_lookup[_ref]['stimulus_version_id'],
+                      'payload_keys':sorted(list(_sp.keys())),
+                      'content_type':type(_content).__name__,
+                      'content':_content,
+                    }
         print('SCOREMAX_STAGED_MATCHING_STRUCTURE_DIAG '+json.dumps({'count':len(_matching),'items':_matching},sort_keys=True,separators=(',',':')),flush=True)
     finally:
         _diag_conn.close()
