@@ -255,12 +255,58 @@ def authorize_product_activation(c,release_id,release_version,package_checksum_s
     return _smqa_v13_authorize_product_activation(c,release_id,release_version,package_checksum_sha256,actor,reason)
 """
 
+
+def _install_numeric_entry_alias(root: Path) -> None:
+    """Bind PH NUMERIC_ENTRY only to an already-supported native ScoreMax numeric family."""
+    import importlib.util
+    import sys
+    root=Path(root)
+    target=root/"question_contract_engine.py"
+    if not target.is_file():
+        raise SystemExit("SCOREMAX_QA_V13_NUMERIC_CONTRACT_ENGINE_MISSING")
+    text=target.read_text(encoding="utf-8")
+    marker="SCOREMAX_CROSS50_NUMERIC_ENTRY_ALIAS_V13_1"
+    if marker in text:
+        return
+    sys.path.insert(0,str(root))
+    try:
+        spec=importlib.util.spec_from_file_location("scoremax_qce_numeric_probe",target)
+        if spec is None or spec.loader is None:
+            raise SystemExit("SCOREMAX_QA_V13_NUMERIC_PROBE_LOADER_MISSING")
+        mod=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        canonical=getattr(mod,"canonical_family",None)
+        if canonical is None:
+            raise SystemExit("SCOREMAX_QA_V13_CANONICAL_FAMILY_MISSING")
+        candidates=("numeric_response","numeric","numerical","numerical_entry","number_entry","number_response","numeric_input")
+        accepted=[]
+        for token in candidates:
+            try:
+                family=str(canonical(token) or "").strip()
+            except Exception:
+                continue
+            if family:
+                accepted.append((token,family))
+        families=sorted({family for _,family in accepted})
+        if len(families)!=1:
+            raise SystemExit("SCOREMAX_QA_V13_NATIVE_NUMERIC_FAMILY_UNRESOLVED:"+repr(accepted))
+        native_token=next(token for token,family in accepted if family==families[0])
+    finally:
+        try: sys.path.remove(str(root))
+        except ValueError: pass
+    patch=f'''\n\n# {marker}\n_original_canonical_family_cross50_numeric = canonical_family\ndef canonical_family(value):\n    token=_text(value).strip().lower().replace("-","_").replace(" ","_")\n    if token=="numeric_entry":\n        return _original_canonical_family_cross50_numeric({native_token!r})\n    return _original_canonical_family_cross50_numeric(value)\n'''
+    text += patch
+    compile(text,str(target),"exec")
+    target.write_text(text,encoding="utf-8")
+    print("SCOREMAX_CROSS50_NUMERIC_ENTRY_ALIAS_V13_PASS native_token="+native_token+" canonical_family="+families[0]+" invented_family=false",flush=True)
+
 def apply_cross50_qa_staging_v13(root: Path) -> None:
     root=Path(root)
     target=root/"scoremax_integration_v1.py"
     if not target.is_file():
         raise SystemExit("SCOREMAX_QA_V13_RUNTIME_MISSING")
     _build_schema(root)
+    _install_numeric_entry_alias(root)
     text=target.read_text(encoding="utf-8")
     if MARKER not in text:
         text += "\n\n"+_runtime_patch()+"\n"
