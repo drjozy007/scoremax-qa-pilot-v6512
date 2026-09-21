@@ -293,3 +293,108 @@ if _c50diag_os.environ.get("SCOREMAX_DIAG_CROSS50_REJECTION")=="1":
     compile(text,str(p),"exec")
     p.write_text(text,encoding="utf-8")
     print("SCOREMAX_CROSS50_REJECTION_DIAGNOSTIC_V1 BUILD_PASS read_only=true",flush=True)
+
+
+def apply_cross50_all_destination_verifier(root: Path) -> None:
+    p=Path(root)/"scoremax_production.py"
+    text=p.read_text(encoding="utf-8")
+    marker="# SCOREMAX_CROSS50_ALL_DESTINATION_VERIFIER_V1"
+    if marker in text:
+        return
+    text += r'''
+
+# SCOREMAX_CROSS50_ALL_DESTINATION_VERIFIER_V1
+import os as _c50all_os
+if _c50all_os.environ.get("SCOREMAX_VERIFY_CROSS50_ALL_DESTINATIONS")=="1":
+    import json as _c50all_json
+    import scoremax_integration_v1 as _c50all_integration
+    _c50all_specs=(
+      ("Mathematics","REL::CROSS50-QA13::MATHEMATICS::CH6",16),
+      ("Chemistry","REL::CROSS50-QA13::CHEMISTRY::CH7",16),
+      ("Physics","REL::CROSS50-QA13::PHYSICS::CH13",18),
+    )
+    _c50all_c=scoremax.db()
+    try:
+        _c50all_integration.init_schema(_c50all_c)
+        _c50all_seen=[]
+        for _subj,_rid,_expected in _c50all_specs:
+            _rel=_c50all_c.execute(
+              "SELECT * FROM integration_ph_content_releases WHERE release_id=? ORDER BY admitted_at DESC LIMIT 1",
+              (_rid,)
+            ).fetchone()
+            if not _rel:
+                continue
+            _rel=dict(_rel); _rv=str(_rel["release_version"])
+            _members=_c50all_c.execute(
+              """SELECT m.question_id,m.question_version_id,v.local_question_db_id,
+                        v.scoremax_projection_json,v.architecture_json,v.governance_json
+                 FROM integration_ph_release_question_membership m
+                 JOIN integration_ph_question_version_store v
+                   ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
+                 WHERE m.release_id=? AND m.release_version=? ORDER BY m.ordinal,m.id""",
+              (_rid,_rv)
+            ).fetchall()
+            _activation=int(_c50all_c.execute(
+              "SELECT COUNT(*) FROM integration_ph_product_activation_authorizations WHERE release_id=? AND release_version=?",
+              (_rid,_rv)
+            ).fetchone()[0])
+            _local=[int(x["local_question_db_id"]) for x in _members if x["local_question_db_id"] is not None]
+            _active=0
+            if _local:
+                _marks=",".join("?" for _ in _local)
+                _active=int(_c50all_c.execute(
+                  f"SELECT COUNT(*) FROM questions WHERE id IN ({_marks}) AND COALESCE(active,0)<>0",_local
+                ).fetchone()[0])
+            _mastery_bad=_gov_bad=_projection_bad=0
+            for _row in _members:
+                _a=_c50all_json.loads(str(_row["architecture_json"] or "{}"))
+                _g=_c50all_json.loads(str(_row["governance_json"] or "{}"))
+                _p=_c50all_json.loads(str(_row["scoremax_projection_json"] or "{}"))
+                if str(_a.get("mastery_status") or "")!="PENDING_CONTRACT" or bool(_a.get("independent_mastery_eligible")) or float(_a.get("independent_mastery_weight") or 0)!=0:
+                    _mastery_bad+=1
+                if str(_g.get("release_readiness") or "")!="NOT_AUTHORIZED" or bool(_g.get("release_authority_conferred")) or bool(_g.get("mastery_authority_conferred")):
+                    _gov_bad+=1
+                if int(_p.get("active") or 0)!=0 or int(_p.get("scoremax_ready") or 0)!=0 or str(_p.get("content_environment") or "")!="QA_STAGED":
+                    _projection_bad+=1
+            _q=int(_c50all_c.execute(
+              "SELECT COUNT(*) FROM integration_quarantine WHERE status='OPEN' AND payload_json LIKE ?",
+              ("%"+_rid+"%",)
+            ).fetchone()[0])
+            assert str(_rel["local_status"])=="STAGED",(_subj,_rel["local_status"])
+            assert str(_rel["schema_version"])=="1.3.0",(_subj,_rel["schema_version"])
+            assert str(_rel["release_operation"])=="STAGE_FOR_DELIVERY_QA",(_subj,_rel["release_operation"])
+            assert int(_rel["question_count"])==_expected,(_subj,_rel["question_count"])
+            assert len(_members)==_expected,(_subj,len(_members))
+            assert len({str(x["question_id"]) for x in _members})==_expected
+            assert _activation==0,(_subj,_activation)
+            assert len(_local)==0,(_subj,len(_local))
+            assert _active==0,(_subj,_active)
+            assert _mastery_bad==0,(_subj,_mastery_bad)
+            assert _gov_bad==0,(_subj,_gov_bad)
+            assert _projection_bad==0,(_subj,_projection_bad)
+            assert _q==0,(_subj,_q)
+            _c50all_seen.append(_subj)
+            print("SCOREMAX_CROSS50_DESTINATION_PASS "+_c50all_json.dumps({
+              "subject":_subj,"release_id":_rid,"release_version":_rv,
+              "question_count":_expected,"membership_count":len(_members),
+              "local_status":"STAGED","schema_version":"1.3.0",
+              "release_operation":"STAGE_FOR_DELIVERY_QA",
+              "activation_authorizations":0,"local_materialised_question_rows":0,
+              "learner_active_rows":0,"mastery_pending":_expected,
+              "projection_qa_staged":_expected,"release_authority_conferred":False,
+              "mastery_authority_conferred":False,"open_release_quarantine":0
+            },sort_keys=True),flush=True)
+        _qc=str(_c50all_c.execute("PRAGMA quick_check").fetchone()[0])
+        _fk=len(_c50all_c.execute("PRAGMA foreign_key_check").fetchall())
+        assert _qc=="ok",_qc
+        assert _fk==0,_fk
+        print("SCOREMAX_CROSS50_DESTINATION_SUMMARY "+_c50all_json.dumps({
+          "verified_subjects":_c50all_seen,"verified_count":len(_c50all_seen),
+          "quick_check":_qc,"foreign_key_violations":_fk
+        },sort_keys=True),flush=True)
+    finally:
+        _c50all_c.close()
+'''
+    compile(text,str(p),"exec")
+    p.write_text(text,encoding="utf-8")
+    print("SCOREMAX_CROSS50_ALL_DESTINATION_VERIFIER_V1 BUILD_PASS read_only=true optional_subjects=true activation=false",flush=True)
