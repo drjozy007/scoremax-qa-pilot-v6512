@@ -23,6 +23,7 @@ from ux_vnext_overlay.ux_bio13_identity_crosswalk_audit import apply_bio13_ident
 from ux_vnext_overlay.ux_bio13_failed_pilot_retirement import apply_bio13_failed_pilot_retirement
 from ux_vnext_overlay.ux_source_market_v12_receiver import apply_source_market_v12_receiver
 from ux_vnext_overlay.ux_cross50_qa_staging_v13 import apply_cross50_qa_staging_v13
+from ux_vnext_overlay.ux_cross50_qa_staging_v13_qualification import assert_cross50_qa_v13
 from ux_vnext_overlay.ux_safe98_destination_verifier import apply_safe98_destination_verifier
 
 ROOT=Path('scoremax_runtime_v669b')
@@ -284,6 +285,7 @@ def main() -> None:
     recovery_main()
     apply_source_market_v12_receiver(ROOT)
     apply_cross50_qa_staging_v13(ROOT)
+    assert_cross50_qa_v13(ROOT)
     apply_persistent_guard_postrelease_state(ROOT)
     apply_persistent_guard_batch_retirement(ROOT)
     apply_preimport_hardening(ROOT)
