@@ -1,5 +1,6 @@
 from __future__ import annotations
 import importlib.util
+import sys
 from pathlib import Path
 
 def assert_cross50_stimulus_single_select_alias(root: Path) -> None:
@@ -14,6 +15,7 @@ def assert_cross50_stimulus_single_select_alias(root: Path) -> None:
     if spec is None or spec.loader is None:
         raise SystemExit("SCOREMAX_QA_V13B_IMPORT_FAILED")
     mod=importlib.util.module_from_spec(spec)
+    sys.modules[spec.name]=mod
     spec.loader.exec_module(mod)
     resolved=mod.canonical_family("STIMULUS_SINGLE_SELECT_MCQ")
     if not resolved or str(resolved).strip().lower()=="stimulus_single_select_mcq":
