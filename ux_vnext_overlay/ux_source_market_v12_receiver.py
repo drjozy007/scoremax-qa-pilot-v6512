@@ -13,7 +13,7 @@ FUNCTIONS = (
     "_projection",
     "admit_content_envelope",
 )
-INSERT_FUNCTIONS = ("_two_tier_key", "_text_option_id")
+INSERT_FUNCTIONS = ("_two_tier_key", "_text_option_id", "_matching_key", "_matching_visible_refs", "_matching_surface_items")
 
 
 def _function_span(text: str, name: str):
@@ -107,6 +107,10 @@ def apply_source_market_v12_receiver(root: Path) -> None:
         "NOT_APPLICABLE",
         "_two_tier_key(content)",
         "_text_option_id(content)",
+        "_matching_key(content)",
+        "def _matching_key(content):",
+        "def _matching_visible_refs(content,stimuli):",
+        "def _matching_surface_items(content,stimuli,matching_key):",
         "def _load_manifest_package(package_bytes,release,schema_version=",
         "_governance_ready(q,schema_version)",
         "_semantic_content_errors(questions,stimuli,schema_version)",
