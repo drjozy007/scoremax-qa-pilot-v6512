@@ -81,8 +81,7 @@ def _build_schema(root: Path) -> None:
     path.write_text(json.dumps(schema,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
     json.loads(path.read_text(encoding="utf-8"))
 
-def _runtime_patch() -> str:
-    return r'''
+def _runtime_patch() -> str:\n    return r"""
 # SCOREMAX_CROSS50_QA_STAGING_V13_1
 QA_STAGING_SCHEMA_VERSION='1.3.0'
 
@@ -253,7 +252,7 @@ def authorize_product_activation(c,release_id,release_version,package_checksum_s
     if rel and str(rel['release_operation'] or '').upper()!='PUBLISH_SNAPSHOT':
         return {'status':'REJECTED','code':'QA_STAGING_NOT_ACTIVATABLE','activated_count':0}
     return _smqa_v13_authorize_product_activation(c,release_id,release_version,package_checksum_sha256,actor,reason)
-'''
+"""
 
 def apply_cross50_qa_staging_v13(root: Path) -> None:
     root=Path(root)
