@@ -26,7 +26,7 @@ from ux_vnext_overlay.ux_cross50_qa_staging_v13 import apply_cross50_qa_staging_
 from ux_vnext_overlay.ux_cross50_qa_staging_v13_qualification import assert_cross50_qa_v13
 from ux_vnext_overlay.ux_cross50_stimulus_single_select_alias_v13b import apply_cross50_stimulus_single_select_alias
 from ux_vnext_overlay.ux_cross50_stimulus_single_select_alias_v13b_qualification import assert_cross50_stimulus_single_select_alias
-from ux_vnext_overlay.ux_safe98_destination_verifier import apply_safe98_destination_verifier, apply_cross50_math16_destination_verifier, apply_cross50_rejection_diagnostic
+from ux_vnext_overlay.ux_safe98_destination_verifier import apply_safe98_destination_verifier, apply_cross50_math16_destination_verifier, apply_cross50_rejection_diagnostic, apply_cross50_all_destination_verifier
 
 ROOT=Path('scoremax_runtime_v669b')
 
@@ -317,6 +317,7 @@ def main() -> None:
     _wire_programme_tabs_to_correct_surfaces()
     apply_safe98_destination_verifier(ROOT)
     apply_cross50_math16_destination_verifier(ROOT)
+    apply_cross50_all_destination_verifier(ROOT)
     apply_cross50_rejection_diagnostic(ROOT)
 
 if __name__ == '__main__':
