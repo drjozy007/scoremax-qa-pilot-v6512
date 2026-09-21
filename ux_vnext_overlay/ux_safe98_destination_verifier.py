@@ -253,3 +253,43 @@ if _c50_os.environ.get("SCOREMAX_VERIFY_CROSS50_MATH16_DESTINATION")=="1":
     compile(text,str(p),"exec")
     p.write_text(text,encoding="utf-8")
     print("SCOREMAX_CROSS50_MATH16_DESTINATION_VERIFIER_V1 BUILD_PASS read_only=true activation=false",flush=True)
+
+
+def apply_cross50_rejection_diagnostic(root: Path) -> None:
+    p=Path(root)/"scoremax_production.py"
+    text=p.read_text(encoding="utf-8")
+    marker="# SCOREMAX_CROSS50_REJECTION_DIAGNOSTIC_V1"
+    if marker in text:
+        return
+    text += r'''
+
+# SCOREMAX_CROSS50_REJECTION_DIAGNOSTIC_V1
+import os as _c50diag_os
+if _c50diag_os.environ.get("SCOREMAX_DIAG_CROSS50_REJECTION")=="1":
+    import json as _c50diag_json
+    _c50diag_c=scoremax.db()
+    try:
+        _c50diag_cols=[str(r[1]) for r in _c50diag_c.execute("PRAGMA table_info(integration_receipts)").fetchall()]
+        _c50diag_row=_c50diag_c.execute(
+            "SELECT * FROM integration_receipts WHERE status='REJECTED' ORDER BY received_at DESC LIMIT 1"
+        ).fetchone()
+        if not _c50diag_row:
+            print("SCOREMAX_CROSS50_REJECTION_DIAG "+_c50diag_json.dumps({"status":"NO_REJECTED_RECEIPT","columns":_c50diag_cols},sort_keys=True),flush=True)
+        else:
+            _d=dict(_c50diag_row)
+            _safe={}
+            for _k,_v in _d.items():
+                _lk=str(_k).lower()
+                if any(_x in _lk for _x in ("payload","envelope","token","secret","authorization")):
+                    continue
+                if _v is None or isinstance(_v,(int,float)):
+                    _safe[_k]=_v
+                else:
+                    _safe[_k]=str(_v)[:16000]
+            print("SCOREMAX_CROSS50_REJECTION_DIAG "+_c50diag_json.dumps({"status":"FOUND","receipt":_safe,"columns":_c50diag_cols},sort_keys=True),flush=True)
+    finally:
+        _c50diag_c.close()
+'''
+    compile(text,str(p),"exec")
+    p.write_text(text,encoding="utf-8")
+    print("SCOREMAX_CROSS50_REJECTION_DIAGNOSTIC_V1 BUILD_PASS read_only=true",flush=True)
