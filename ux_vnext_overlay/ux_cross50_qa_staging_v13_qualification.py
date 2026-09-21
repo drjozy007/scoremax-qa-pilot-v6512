@@ -33,6 +33,10 @@ def assert_cross50_qa_v13(root: Path) -> None:
       "activation_fence":"'QA_STAGING_NOT_ACTIVATABLE'" in text and "release_operation" in text,
       "staged_store":"STAGE_FOR_DELIVERY_QA" in text and "'STAGED'" in text,
       "qa_projection":"content_environment':'QA_STAGED'" in text and "'scoremax_ready':0" in text and "'active':0" in text,
+      "matching_key_helper":"def _matching_key(content):" in text,
+      "matching_visible_helper":"def _matching_visible_refs(content,stimuli):" in text,
+      "matching_surface_helper":"def _matching_surface_items(content,stimuli,matching_key):" in text,
+      "matching_validator_bound":"matching=_matching_key(content)" in text,
     }
     failed=[k for k,v in checks.items() if not v]
     if failed:
@@ -50,4 +54,5 @@ def assert_cross50_qa_v13(root: Path) -> None:
     print("SCOREMAX_CROSS50_QA_STAGING_V13_QUAL_PASS "
           "schema=1.3.0 qa_operation_only=true inline_only=true "
           "mastery_pending=true mastery_credit_zero=true learner_materialisation=false "
-          "activation_fenced=true backward_1_0_1_1_1_2_present=true",flush=True)
+          "activation_fenced=true matching_semantic_helpers=true "
+          "backward_1_0_1_1_1_2_present=true",flush=True)
