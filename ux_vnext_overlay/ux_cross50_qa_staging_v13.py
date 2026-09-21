@@ -258,8 +258,7 @@ def authorize_product_activation(c,release_id,release_version,package_checksum_s
 
 def _install_numeric_entry_alias(root: Path) -> None:
     """Bind PH NUMERIC_ENTRY only to an already-supported native ScoreMax numeric family."""
-    import importlib.util
-    import sys
+    import ast
     root=Path(root)
     target=root/"question_contract_engine.py"
     if not target.is_file():
@@ -268,37 +267,50 @@ def _install_numeric_entry_alias(root: Path) -> None:
     marker="SCOREMAX_CROSS50_NUMERIC_ENTRY_ALIAS_V13_1"
     if marker in text:
         return
-    sys.path.insert(0,str(root))
-    try:
-        spec=importlib.util.spec_from_file_location("scoremax_qce_numeric_probe",target)
-        if spec is None or spec.loader is None:
-            raise SystemExit("SCOREMAX_QA_V13_NUMERIC_PROBE_LOADER_MISSING")
-        mod=importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        canonical=getattr(mod,"canonical_family",None)
-        if canonical is None:
-            raise SystemExit("SCOREMAX_QA_V13_CANONICAL_FAMILY_MISSING")
-        candidates=("numeric_response","numeric","numerical","numerical_entry","number_entry","number_response","numeric_input")
-        accepted=[]
-        for token in candidates:
-            try:
-                family=str(canonical(token) or "").strip()
-            except Exception:
-                continue
-            if family:
-                accepted.append((token,family))
-        families=sorted({family for _,family in accepted})
-        if len(families)!=1:
-            raise SystemExit("SCOREMAX_QA_V13_NATIVE_NUMERIC_FAMILY_UNRESOLVED:"+repr(accepted))
-        native_token=next(token for token,family in accepted if family==families[0])
-    finally:
-        try: sys.path.remove(str(root))
-        except ValueError: pass
-    patch=f'''\n\n# {marker}\n_original_canonical_family_cross50_numeric = canonical_family\ndef canonical_family(value):\n    token=_text(value).strip().lower().replace("-","_").replace(" ","_")\n    if token=="numeric_entry":\n        return _original_canonical_family_cross50_numeric({native_token!r})\n    return _original_canonical_family_cross50_numeric(value)\n'''
+
+    tree=ast.parse(text)
+    tables={}
+    for node in tree.body:
+        if not isinstance(node,(ast.Assign,ast.AnnAssign)):
+            continue
+        targets=node.targets if isinstance(node,ast.Assign) else [node.target]
+        names=[t.id for t in targets if isinstance(t,ast.Name)]
+        if not names:
+            continue
+        name=names[0]
+        if name not in {"FAMILY_ALIASES","RUNTIME_ALIASES","EXPLICIT_RESPONSE_ALIASES"}:
+            continue
+        try:
+            value=ast.literal_eval(node.value)
+        except Exception:
+            continue
+        if isinstance(value,dict):
+            tables[name]=value
+
+    fam=tables.get("FAMILY_ALIASES") or {}
+    run=tables.get("RUNTIME_ALIASES") or {}
+    explicit=tables.get("EXPLICIT_RESPONSE_ALIASES") or {}
+    native_family=str(fam.get("numeric") or "")
+    runtime_family=str(run.get(native_family) or run.get("numerical_interpretation") or "")
+    explicit_family=str(explicit.get("numeric") or "")
+    if native_family!="numerical_interpretation" or runtime_family!="numerical" or explicit_family!="numerical":
+        raise SystemExit(
+            "SCOREMAX_QA_V13_NATIVE_NUMERIC_FAMILY_UNRESOLVED:"
+            +repr({"FAMILY_ALIASES.numeric":native_family,
+                   "RUNTIME_ALIASES."+native_family:runtime_family,
+                   "EXPLICIT_RESPONSE_ALIASES.numeric":explicit_family})
+        )
+
+    patch=f'''\n\n# {marker}\n_original_canonical_family_cross50_numeric = canonical_family\ndef canonical_family(value):\n    token=_text(value).strip().lower().replace("-", "_").replace(" ", "_")\n    if token=="numeric_entry":\n        return _original_canonical_family_cross50_numeric("numeric")\n    return _original_canonical_family_cross50_numeric(value)\n'''
     text += patch
     compile(text,str(target),"exec")
     target.write_text(text,encoding="utf-8")
-    print("SCOREMAX_CROSS50_NUMERIC_ENTRY_ALIAS_V13_PASS native_token="+native_token+" canonical_family="+families[0]+" invented_family=false",flush=True)
+    print(
+        "SCOREMAX_CROSS50_NUMERIC_ENTRY_ALIAS_V13_PASS "
+        "source_token=NUMERIC_ENTRY canonical_family=numerical_interpretation "
+        "runtime_family=numerical invented_family=false",
+        flush=True,
+    )
 
 def apply_cross50_qa_staging_v13(root: Path) -> None:
     root=Path(root)
