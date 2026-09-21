@@ -81,7 +81,8 @@ def _build_schema(root: Path) -> None:
     path.write_text(json.dumps(schema,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
     json.loads(path.read_text(encoding="utf-8"))
 
-def _runtime_patch() -> str:\n    return r"""
+def _runtime_patch() -> str:
+    return r"""
 # SCOREMAX_CROSS50_QA_STAGING_V13_1
 QA_STAGING_SCHEMA_VERSION='1.3.0'
 
