@@ -149,3 +149,107 @@ if _safe98_os.environ.get("SCOREMAX_VERIFY_SAFE98_DESTINATION")=="1":
     compile(s,str(p),"exec")
     p.write_text(s,encoding="utf-8")
     print(MARKER+" BUILD_PASS read_only=true gated=true learner_activation=false",flush=True)
+
+
+def apply_cross50_math16_destination_verifier(root: Path) -> None:
+    p=Path(root)/"scoremax_production.py"
+    text=p.read_text(encoding="utf-8")
+    marker="# SCOREMAX_CROSS50_MATH16_DESTINATION_VERIFIER_V1"
+    if marker in text:
+        return
+    text += r'''
+
+# SCOREMAX_CROSS50_MATH16_DESTINATION_VERIFIER_V1
+import os as _c50_os
+if _c50_os.environ.get("SCOREMAX_VERIFY_CROSS50_MATH16_DESTINATION")=="1":
+    import json as _c50_json
+    import scoremax_integration_v1 as _c50_integration
+    _c50_release_id="REL::CROSS50-QA13::MATHEMATICS::CH6"
+    _c50_release_version="QA13-C874939F972614A1"
+    _c50_c=scoremax.db()
+    try:
+        _c50_integration.init_schema(_c50_c)
+        _c50_rel=_c50_c.execute(
+          "SELECT * FROM integration_ph_content_releases WHERE release_id=? AND release_version=?",
+          (_c50_release_id,_c50_release_version)
+        ).fetchone()
+        if not _c50_rel:
+            raise RuntimeError("CROSS50_MATH16_RELEASE_MISSING")
+        _c50_rel=dict(_c50_rel)
+        _c50_members=_c50_c.execute(
+          """SELECT m.question_id,m.question_version_id,v.question_checksum_sha256,
+                    v.local_question_db_id,v.scoremax_projection_json,v.architecture_json,v.governance_json
+             FROM integration_ph_release_question_membership m
+             JOIN integration_ph_question_version_store v
+               ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
+             WHERE m.release_id=? AND m.release_version=? ORDER BY m.ordinal,m.id""",
+          (_c50_release_id,_c50_release_version)
+        ).fetchall()
+        _c50_activation=int(_c50_c.execute(
+          "SELECT COUNT(*) FROM integration_ph_product_activation_authorizations WHERE release_id=? AND release_version=?",
+          (_c50_release_id,_c50_release_version)
+        ).fetchone()[0])
+        _c50_local=[int(r["local_question_db_id"]) for r in _c50_members if r["local_question_db_id"] is not None]
+        _c50_active=0
+        if _c50_local:
+            _marks=",".join("?" for _ in _c50_local)
+            _c50_active=int(_c50_c.execute(
+              f"SELECT COUNT(*) FROM questions WHERE id IN ({_marks}) AND COALESCE(active,0)<>0",_c50_local
+            ).fetchone()[0])
+        _c50_mastery_bad=0; _c50_gov_bad=0; _c50_projection_bad=0
+        for _r in _c50_members:
+            _a=_c50_json.loads(str(_r["architecture_json"] or "{}"))
+            _g=_c50_json.loads(str(_r["governance_json"] or "{}"))
+            _p=_c50_json.loads(str(_r["scoremax_projection_json"] or "{}"))
+            if str(_a.get("mastery_status") or "")!="PENDING_CONTRACT" or bool(_a.get("independent_mastery_eligible")) or float(_a.get("independent_mastery_weight") or 0)!=0:
+                _c50_mastery_bad+=1
+            if str(_g.get("release_readiness") or "")!="NOT_AUTHORIZED" or bool(_g.get("release_authority_conferred")) or bool(_g.get("mastery_authority_conferred")):
+                _c50_gov_bad+=1
+            if int(_p.get("active") or 0)!=0 or int(_p.get("scoremax_ready") or 0)!=0 or str(_p.get("content_environment") or "")!="QA_STAGED":
+                _c50_projection_bad+=1
+        _c50_qc=str(_c50_c.execute("PRAGMA quick_check").fetchone()[0])
+        _c50_fk=len(_c50_c.execute("PRAGMA foreign_key_check").fetchall())
+        _c50_q=int(_c50_c.execute(
+          "SELECT COUNT(*) FROM integration_quarantine WHERE status='OPEN' AND payload_json LIKE ?",
+          ("%"+_c50_release_id+"%",)
+        ).fetchone()[0])
+        assert str(_c50_rel["local_status"])=="STAGED",_c50_rel["local_status"]
+        assert str(_c50_rel["schema_version"])=="1.3.0",_c50_rel["schema_version"]
+        assert str(_c50_rel["release_operation"])=="STAGE_FOR_DELIVERY_QA",_c50_rel["release_operation"]
+        assert int(_c50_rel["question_count"])==16,_c50_rel["question_count"]
+        assert len(_c50_members)==16,len(_c50_members)
+        assert len({str(r["question_id"]) for r in _c50_members})==16
+        assert _c50_activation==0,_c50_activation
+        assert len(_c50_local)==0,len(_c50_local)
+        assert _c50_active==0,_c50_active
+        assert _c50_mastery_bad==0,_c50_mastery_bad
+        assert _c50_gov_bad==0,_c50_gov_bad
+        assert _c50_projection_bad==0,_c50_projection_bad
+        assert _c50_qc=="ok",_c50_qc
+        assert _c50_fk==0,_c50_fk
+        assert _c50_q==0,_c50_q
+        print("SCOREMAX_CROSS50_MATH16_DESTINATION_PASS "+_c50_json.dumps({
+          "release_id":_c50_release_id,
+          "release_version":_c50_release_version,
+          "schema_version":str(_c50_rel["schema_version"]),
+          "release_operation":str(_c50_rel["release_operation"]),
+          "local_status":str(_c50_rel["local_status"]),
+          "question_count":16,
+          "membership_count":16,
+          "activation_authorizations":_c50_activation,
+          "local_materialised_question_rows":len(_c50_local),
+          "learner_active_rows":_c50_active,
+          "mastery_pending":16,
+          "release_authority_conferred":False,
+          "mastery_authority_conferred":False,
+          "projection_qa_staged":16,
+          "quick_check":_c50_qc,
+          "foreign_key_violations":_c50_fk,
+          "open_release_quarantine":_c50_q
+        },sort_keys=True),flush=True)
+    finally:
+        _c50_c.close()
+'''
+    compile(text,str(p),"exec")
+    p.write_text(text,encoding="utf-8")
+    print("SCOREMAX_CROSS50_MATH16_DESTINATION_VERIFIER_V1 BUILD_PASS read_only=true activation=false",flush=True)
