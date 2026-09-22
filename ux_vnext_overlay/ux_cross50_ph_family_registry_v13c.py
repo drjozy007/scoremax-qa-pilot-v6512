@@ -29,4 +29,4 @@ def apply_cross50_ph_family_registry(root: Path) -> None:
     text += patch
     compile(text,str(target),"exec")
     target.write_text(text,encoding="utf-8")
-    print("SCOREMAX_CROSS50_PH_FAMILY_REGISTRY_V13C_BUILD_PASS explicit_aliases=3 invented_family=false unknown_fail_closed=true",flush=True)
+    print("SCOREMAX_CROSS50_PH_FAMILY_REGISTRY_V13C_BUILD_PASS explicit_aliases=4 invented_family=false unknown_fail_closed=true",flush=True)
