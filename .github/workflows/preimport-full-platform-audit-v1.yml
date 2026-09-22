@@ -8,6 +8,7 @@ on:
       - 'scripts/preimport_full_platform_audit.py'
       - 'scripts/preimport_governance_gates.py'
       - 'scripts/qualify_account_startup_repair.py'
+      - 'scripts/qualify_build_determinism.py'
       - 'deploy_ux_vnext.py'
       - 'ux_vnext_overlay/**'
 
@@ -43,7 +44,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           git rev-parse HEAD > /tmp/scoremax_qualified_commit.txt
-          python deploy_ux_vnext.py
+          python scripts/qualify_build_determinism.py --report /tmp/scoremax_build_determinism.json
           mkdir -p /tmp/scoremax_qualified_source
           cp scoremax_runtime_v669b/{app.py,account_security_engine.py,scoremax_production.py} /tmp/scoremax_qualified_source/
           sha256sum /tmp/scoremax_qualified_source/*.py > /tmp/scoremax_qualified_source/SHA256SUMS.txt
@@ -100,6 +101,7 @@ jobs:
           name: scoremax-preimport-full-platform-audit-v1
           path: |
             /tmp/scoremax_qualified_commit.txt
+            /tmp/scoremax_build_determinism.json
             /tmp/scoremax_qualified_source/
             /tmp/scoremax_account_startup_repair.json
             /tmp/scoremax_preimport_audit.json
