@@ -114,6 +114,63 @@ def _scrub_credential_logging(text: str) -> str:
     return text
 
 
+
+def _harden_account_revocation(root: Path, text: str) -> str:
+    """Use the existing account-security engine for every live password/status mutation."""
+    path=root/'account_security_engine.py'
+    engine=path.read_text(encoding='utf-8')
+    marker='# SCOREMAX_ACCOUNT_REVOCATION_REPAIR_V1'
+    if marker not in engine:
+        engine += r'''
+
+# SCOREMAX_ACCOUNT_REVOCATION_REPAIR_V1
+
+def replace_password(c, *, user_id: int, password_hash: str, changed_at: str) -> None:
+    """Caller owns commit/rollback. Changing a password revokes sessions and reset links."""
+    if not password_hash:
+        raise ValueError('PASSWORD_HASH_REQUIRED')
+    sqlite_mutation.begin_immediate(c)
+    result=c.execute("UPDATE users SET password_hash=?,session_version=COALESCE(session_version,0)+1 WHERE id=?",
+                     (str(password_hash),int(user_id)))
+    if result.rowcount != 1:
+        raise ValueError('USER_NOT_FOUND')
+    c.execute("UPDATE password_reset_tokens SET used_at=? WHERE user_id=? AND COALESCE(used_at,'')=''",
+              (str(changed_at),int(user_id)))
+
+
+def set_account_status(c, *, user_id: int, status: str, changed_at: str) -> None:
+    """A disable/re-enable cycle must never revive an old browser/preview session."""
+    if status not in {'active','disabled'}:
+        raise ValueError('INVALID_ACCOUNT_STATUS')
+    sqlite_mutation.begin_immediate(c)
+    row=c.execute('SELECT account_status FROM users WHERE id=?',(int(user_id),)).fetchone()
+    if not row:
+        raise ValueError('USER_NOT_FOUND')
+    if str(row['account_status'] or 'active') != status:
+        c.execute("UPDATE users SET account_status=?,session_version=COALESCE(session_version,0)+1 WHERE id=?",
+                  (status,int(user_id)))
+    if status == 'disabled':
+        c.execute("UPDATE password_reset_tokens SET used_at=? WHERE user_id=? AND COALESCE(used_at,'')=''",
+                  (str(changed_at),int(user_id)))
+'''
+        compile(engine,str(path),'exec')
+        path.write_text(engine,encoding='utf-8')
+    replacements=(
+        ("            c.execute(\"UPDATE users SET password_hash=?,session_version=COALESCE(session_version,0)+1 WHERE id=?\",(generate_password_hash(password),claimed['user_id']))",
+         "            account_security.replace_password(c,user_id=claimed['user_id'],password_hash=generate_password_hash(password),changed_at=now_reset)"),
+        ("    c=db(); c.execute(\"UPDATE users SET password_hash=? WHERE id=?\",(generate_password_hash(password),user_id)); c.commit(); c.close()",
+         "    c=db()\n    try:\n        with c:\n            if not c.execute('SELECT 1 FROM users WHERE id=?',(user_id,)).fetchone(): abort(404)\n            account_security.replace_password(c,user_id=user_id,password_hash=generate_password_hash(password),changed_at=datetime.now().isoformat(timespec='seconds'))\n    finally:\n        c.close()"),
+        ("    if status not in ('active','disabled'): status='active'\n    c=db(); c.execute(\"UPDATE users SET account_status=? WHERE id=?\",(status,user_id)); c.commit(); c.close()",
+         "    if status not in ('active','disabled'): abort(400)\n    c=db()\n    try:\n        with c:\n            if not c.execute('SELECT 1 FROM users WHERE id=?',(user_id,)).fetchone(): abort(404)\n            account_security.set_account_status(c,user_id=user_id,status=status,changed_at=datetime.now().isoformat(timespec='seconds'))\n    finally:\n        c.close()"),
+    )
+    for old,new in replacements:
+        if new in text:
+            continue
+        if text.count(old)!=1:
+            raise SystemExit('SCOREMAX_ACCOUNT_REVOCATION_ANCHOR_MISMATCH')
+        text=text.replace(old,new,1)
+    return text
+
 def apply_preimport_hardening(root: Path) -> None:
     app_path=root/'app.py'
     text=app_path.read_text(encoding='utf-8')
@@ -123,6 +180,7 @@ def apply_preimport_hardening(root: Path) -> None:
     text=_disable_demo_progress_default(text)
     text=_harden_admin_payment_plan_validation(text)
     text=_scrub_credential_logging(text)
+    text=_harden_account_revocation(root,text)
     app_path.write_text(text,encoding='utf-8')
     _repair_digital_coach_mock_state(root)
     _remove_inactive_reviewer_runtime_templates(root)
