@@ -184,6 +184,10 @@ def _install_shared_learner_question_surface() -> None:
     rebuilt=take.read_text(encoding='utf-8')
     if rebuilt.count(include)!=1:
         raise SystemExit('SCOREMAX_LIVE_CANONICAL_RENDERER_INCLUDE_COUNT_INVALID')
+    _ord=surface.find("qtype=='ordering'")
+    if _ord<0:
+        _ord=surface.find('qtype == \'ordering\'')
+    print('SCOREMAX_ORDERING_RENDERER_CONTRACT '+repr(surface[max(0,_ord-300):_ord+1800]),flush=True)
     print(
         'SCOREMAX_SHARED_LEARNER_RENDERER_BUILD_PASS '
         f'component_bytes={len(surface.encode("utf-8"))} '
