@@ -8,7 +8,7 @@ _MARKER='SCOREMAX_CONSTRUCTED_AUTO_MARKER_V1'
 
 
 def _norm(value):
-    return re.sub(r'\\s+',' ',str(value or '').strip()).casefold()
+    return re.sub(r'\s+',' ',str(value or '').strip()).casefold()
 
 
 def _accepted_from_cfg(answer_cfg, fallback=''):
@@ -28,14 +28,14 @@ def _looks_symbolic(value):
     if not text:
         return False
     letters=re.findall(r'[A-Za-z]+',text)
-    digits=len(re.findall(r'\\d',text))
+    digits=len(re.findall(r'\d',text))
     math=len(re.findall(r'[=+*/^<>⟨⟩²³₀-₉-]',text))
     # Compact numeric/list/formula responses should not go through prose similarity.
     if digits and len(letters)<=4:
         return True
     if math>=2 and len(letters)<=8:
         return True
-    if re.fullmatch(r'[\\s\\d,.;:+*/^()-]+',text):
+    if re.fullmatch(r'[\s\d,.;:+*/^()-]+',text):
         return True
     return False
 
