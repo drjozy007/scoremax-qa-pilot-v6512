@@ -1,0 +1,91 @@
+{% extends "base.html" %}{% block title %}Mastery & Rigor · Admin{% endblock %}{% block content %}
+<style>
+.mr-shell{max-width:1180px;margin:0 auto;padding:24px 18px 56px}.mr-hero{border-top:6px solid #2f7f7d}.mr-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.mr-level-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.mr-level-card h3{margin:.2rem 0 .75rem}.mr-range{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.mr-range input{grid-column:1/-1;width:100%}.mr-level-card .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.mr-level-card label,.mr-policy-form label{font-size:.75rem;font-weight:800;color:#53616d}.mr-level-card input,.mr-policy-form input,.mr-policy-form select,.mr-level-card textarea,.mr-policy-form textarea{width:100%;margin-top:4px}.mr-policy-table td small{color:#71807b}.mr-note{padding:12px 14px;border-left:4px solid #d6a74d;background:#fffaf0}.mr-baseline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.mr-baseline div{padding:12px;border:1px solid #e2e7df;border-radius:12px}.mr-baseline strong{display:block;font-size:1.25rem}.mr-audit{font-size:.75rem}@media(max-width:850px){.mr-grid,.mr-level-grid{grid-template-columns:1fr}.mr-baseline{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.mr-baseline{grid-template-columns:1fr}}
+</style>
+<section class="mr-shell">
+  <section class="card mr-hero">
+    <p class="eyebrow">ADMIN · ACADEMIC GOVERNANCE</p>
+    <h1>Mastery & Rigor</h1>
+    <p>Control how demanding future ScoreMax assessments are and how much evidence a learner must accumulate before a mastery level is verified. Historical attempts and previously earned evidence are never rewritten.</p>
+  </section>
+
+  <section class="card mr-note">
+    <strong>Operating principle</strong>
+    <p>Mastery % remains understandable learner performance. These controls govern the strength, breadth, novelty, complexity and recency of evidence required before ScoreMax trusts that performance enough to award a mastery level.</p>
+  </section>
+
+  <section class="card">
+    <div class="split"><div><p class="eyebrow">GLOBAL CALIBRATION</p><h2>Assessment Rigor & Mastery Standard</h2></div>{% if active_global %}<span class="status-pill good">Active global policy · v{{active_global.policy_version}}</span>{% endif %}</div>
+    <p class="muted">50/100 is the neutral baseline. Raising Mastery Standard tightens future mastery evidence requirements. Raising Assessment Rigor shifts future forms toward harder and more novel evidence.</p>
+    <form class="mr-policy-form" method="post" action="{{url_for('admin_create_assessment_policy')}}">
+      <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+      <input type="hidden" name="scope_type" value="global">
+      <input type="hidden" name="scope_key" value="">
+      <div class="mr-grid">
+        <label>Name<input name="name" value="Global Mastery & Rigor Policy" required></label>
+        <label>Policy version<input name="policy_version" placeholder="e.g. 2" required></label>
+      </div>
+      <div class="mr-grid">
+        <label class="mr-range"><span>Assessment Rigor</span><output id="rigorOut">{{active_global.rigor_score if active_global else 50}}</output><input type="range" min="0" max="100" value="{{active_global.rigor_score if active_global else 50}}" name="rigor_score" oninput="rigorOut.value=this.value"></label>
+        <label class="mr-range"><span>Mastery Standard</span><output id="standardOut">{{active_global.mastery_standard_score if active_global else 50}}</output><input type="range" min="0" max="100" value="{{active_global.mastery_standard_score if active_global else 50}}" name="mastery_standard_score" oninput="standardOut.value=this.value"></label>
+      </div>
+      <label>Academic reason<textarea name="reason" required placeholder="Why are you changing the standard?"></textarea></label>
+      <button class="btn alt">Save Draft & Preview Impact</button>
+    </form>
+    <p class="muted">A new policy is saved as DRAFT first. It must then be activated explicitly. If a stricter policy is activated, existing verified mastery is not deleted; affected records become Verification Due where the existing governed logic requires reconfirmation.</p>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow">LEVEL RULES</p><h2>Detailed mastery thresholds</h2>
+    <p class="muted">These are the baseline rules at Mastery Standard 50. The Mastery Standard slider adjusts them within bounded guardrails for future forms.</p>
+    <div class="mr-level-grid">
+    {% for p in levels %}
+      <form method="post" action="{{url_for('admin_mastery_rigor_level')}}" class="card mr-level-card">
+        <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+        <input type="hidden" name="mastery_level" value="{{p.mastery_level}}">
+        <div class="split"><h3>{{p.mastery_level}}</h3><span class="status-pill">Rank {{p.level_rank}}</span></div>
+        <div class="form-grid">
+          <label>Minimum accuracy %<input type="number" name="min_accuracy" min="0" max="100" step="0.1" value="{{p.min_accuracy}}" required></label>
+          <label>Minimum questions<input type="number" name="min_questions" min="5" value="{{p.min_questions}}" required></label>
+          <label>Passing forms<input type="number" name="min_forms" min="1" value="{{p.min_forms}}" required></label>
+          <label>Verification days<input type="number" name="verification_days" min="1" value="{{p.verification_days}}" required></label>
+          <label>Target-level / complexity share<input type="number" name="target_band_pct" min="0" max="1" step="0.05" value="{{p.target_band_pct}}" required></label>
+          <label>Minimum unseen-family share<input type="number" name="unseen_family_pct" min="0" max="1" step="0.05" value="{{p.unseen_family_pct}}" required></label>
+          <label>Minimum breadth / coverage<input type="number" name="min_breadth_pct" min="0" max="1" step="0.05" value="{{p.min_breadth_pct}}" required></label>
+          <label>External percentile target<input type="number" name="external_percentile_target" min="0" max="100" step="0.1" value="{{p.external_percentile_target or ''}}" placeholder="Not required"></label>
+        </div>
+        <label>Reason for change<textarea name="reason" required placeholder="Required for audit trail"></textarea></label>
+        <button class="btn">Save {{p.mastery_level}}</button>
+      </form>
+    {% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow">INTERPRETATION</p><h2>What each control does</h2>
+    <div class="mr-baseline">
+      <div><strong>Accuracy</strong><span>How often the learner gets eligible questions right.</span></div>
+      <div><strong>Breadth</strong><span>How much of the available knowledge-node / LO coverage is represented.</span></div>
+      <div><strong>Complexity</strong><span>Target-level share plus Assessment Rigor control harder-question exposure.</span></div>
+      <div><strong>Novelty</strong><span>Unseen-family requirements prevent repeated variants inflating confidence.</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="split"><div><p class="eyebrow">VERSIONED POLICIES</p><h2>Rigor / mastery policy history</h2></div><a class="btn alt small" href="{{url_for('admin_assessment_blueprints')}}">Assessment Blueprints</a></div>
+    <div class="table-wrap mr-policy-table"><table><thead><tr><th>Policy</th><th>Scope</th><th>Rigor</th><th>Mastery</th><th>Impact preview</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for p in policies %}<tr>
+      <td>{{p.name}}<br><small>v{{p.policy_version}}</small></td><td>{{p.scope_type}} {{p.scope_key}}</td>
+      <td>{{p.rigor_score}}/100</td><td>{{p.mastery_standard_score}}/100</td>
+      <td>{% set sim=p.preview.get('historical_simulation',{}) %}<strong>{{sim.get('observed_forms',0)}} historical form(s)</strong><br><small>{{sim.get('confidence','No simulation yet')}}</small>{% if sim.get('levels') %}<details><summary>Estimated impact</summary>{% for x in sim.get('levels',[]) %}<div>{{x.level}}: {{x.current_form_pass_rate}}% → {{x.estimated_proposed_form_pass_rate}}%</div>{% endfor %}</details>{% endif %}</td>
+      <td>{{p.status}}</td><td>{% if p.status=='DRAFT' %}<form method="post" action="{{url_for('admin_activate_assessment_policy',policy_id=p.id)}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input name="reason" required placeholder="Approval reason"><button class="btn small">Activate</button></form>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="7">No policies yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow">POLICY AUDIT</p><h2>Recent level-rule changes</h2>
+    {% for a in audit %}<div class="ux-history-row mr-audit"><strong>{{a.mastery_level}} · {{a.created_at}}</strong><span>{{a.reason}}</span></div>{% else %}<p class="muted">No detailed mastery-rule changes recorded yet.</p>{% endfor %}
+  </section>
+</section>
+{% endblock %}
