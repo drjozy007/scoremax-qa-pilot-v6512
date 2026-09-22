@@ -165,7 +165,7 @@ def _install_shared_learner_question_surface() -> None:
     required=(
         "qtype in ['single_choice','true_false']",
         "qtype=='numerical'",
-        "qtype in ['short_response','extended_response']",
+        "constructed_response",
         "qtype=='matching'",
         "qtype=='ordering'",
     )
