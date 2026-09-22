@@ -865,6 +865,8 @@ def install_content_reviewer(app) -> None:
                   'family':_src.get('question_family_type'),
                   'exam_type':_src.get('exam_question_type'),
                   'key_type':_mark.get('key_type'),
+                  'key':_mark.get('key'),
+                  'accepted_answers':list(_mark.get('accepted_answers') or []),
                   'marks':_mark.get('marks'),
                   'command_word':_src.get('command_word'),
                   'rubric_type':type(_rubric).__name__,
