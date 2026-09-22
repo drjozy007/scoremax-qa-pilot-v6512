@@ -191,6 +191,55 @@ def _staged_question_dict(row):
     return q
 
 
+
+def _staged_learner_render_context(q: dict) -> dict:
+    """Use ScoreMax's own runtime type adapter and learner-template inputs."""
+    import app as scoremax
+    q['id']=int(q.get('membership_id') or q.get('id') or 0)
+    def _obj(value):
+        if isinstance(value,dict):
+            return dict(value)
+        return scoremax.safe_json(value,{})
+    answer_cfg=_obj(q.get('answer_config'))
+    marking_cfg=_obj(q.get('marking_config'))
+    options=answer_cfg.get('options') or [
+      {'id':code,'text':q.get(key)}
+      for code,key in [('A','option_a'),('B','option_b'),('C','option_c'),('D','option_d')]
+      if str(q.get(key) or '').strip()
+    ]
+    qtype=scoremax.canonical_question_type(q)
+
+    # Matching remains governed by the same canonical learner renderer. When the
+    # staged projection carries the visible surface rather than materialised
+    # answer_config, adapt that governed surface into the runtime's existing
+    # left_items/right_options contract; no second renderer is created.
+    if qtype=='matching' and (not answer_cfg.get('left_items') or not answer_cfg.get('right_options')):
+        from ux_matching_support import parse_matching_surface
+        parsed=parse_matching_surface(q.get('stimulus_data') or '',q.get('_matching_key') or q.get('answer'))
+        if parsed.get('valid'):
+            answer_cfg=dict(answer_cfg)
+            answer_cfg['left_items']=list(parsed.get('left') or [])
+            answer_cfg['right_options']=list(parsed.get('right') or [])
+
+    return {
+      'qtype':qtype,'options':options,'answer_cfg':answer_cfg,'marking_cfg':marking_cfg,
+      'answers':{},'saved_struct':{},'confidence':{},'response_times':{},
+      'qa_sandbox':True,'qa_session_id':'STAGED-POWER-HOUSE',
+      'qa_render_checksum':str(q.get('ph_question_checksum_sha256') or ''),
+      'assessment':{'mode':'review'},'exam_meta':{},
+    }
+
+
+def _staged_canonical_surface_probe(q: dict):
+    ctx=_staged_learner_render_context(q)
+    html=render_template('_learner_question_surface.html',q=q,**ctx)
+    interactive=any(token in html for token in (
+      '<input','<textarea','<select','draggable=','data-order','name="match::','name="order::'
+    ))
+    unsupported=('interactive renderer is not active yet' in html.lower())
+    return ctx,bool(interactive and not unsupported),html
+
+
 def _staged_question(conn, membership_id: int):
     rows=[r for r in _staged_rows(conn) if int(r['membership_id'])==int(membership_id)]
     return _staged_question_dict(rows[0]) if len(rows)==1 else None
@@ -495,10 +544,6 @@ def install_content_reviewer(app) -> None:
             ids=[int(r['membership_id']) for r in rows]
             if int(membership_id) not in ids:
                 abort(404)
-            matching_ui=None
-            if str(q.get('qtype') or '').strip().lower()=='matching':
-                from ux_matching_support import parse_matching_surface
-                matching_ui=parse_matching_surface(q.get('stimulus_data') or '',q.get('_matching_key') or q.get('answer'))
             try: idx=ids.index(int(membership_id))
             except ValueError: idx=-1
             prev_id=ids[idx-1] if idx>0 else None
@@ -507,10 +552,12 @@ def install_content_reviewer(app) -> None:
             decision=_staged_decision(conn,session['user_id'],membership_id)
             position=(idx+1) if idx>=0 else None
             total=len(ids)
+            render_ctx,render_supported,_render_probe=_staged_canonical_surface_probe(q)
         finally:
             conn.close()
         return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,
-          prev_id=prev_id,next_id=next_id,matching_ui=matching_ui,decision=decision,batch=batch,position=position,total=total)
+          prev_id=prev_id,next_id=next_id,decision=decision,batch=batch,position=position,total=total,
+          render_supported=render_supported,**render_ctx)
 
     @app.route('/student/content-review/staged/<int:membership_id>/decision',methods=['POST'],endpoint='ux_content_review_staged_decision')
     def ux_content_review_staged_decision(membership_id):
@@ -535,6 +582,11 @@ def install_content_reviewer(app) -> None:
             ids=[int(r['membership_id']) for r in batch_rows]
             if int(membership_id) not in ids:
                 abort(404)
+            if decision=='APPROVED':
+                _ctx,_render_supported,_probe=_staged_canonical_surface_probe(q)
+                if not _render_supported:
+                    flash('Cannot approve this item: the canonical ScoreMax learner renderer did not produce an interactive response control.','error')
+                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
             now=datetime.utcnow().replace(microsecond=0).isoformat()+'Z'
             if decision=='REJECTED':
                 label,severity=FLAG_REASONS[reason]
@@ -728,4 +780,23 @@ def install_content_reviewer(app) -> None:
         print('SCOREMAX_STAGED_MATCHING_STRUCTURE_DIAG '+json.dumps({'count':len(_matching),'items':_matching},sort_keys=True,separators=(',',':')),flush=True)
     finally:
         _diag_conn.close()
+    _render_diag_conn=_connect()
+    try:
+        _cross50=[_staged_question_dict(x) for x in _filter_staged_rows(_staged_rows(_render_diag_conn),'cross50')]
+        _render_types={}
+        _unsupported=[]
+        with app.test_request_context('/student/content-review/staged?batch=cross50'):
+            for _q in _cross50:
+                _ctx,_ok,_html=_staged_canonical_surface_probe(_q)
+                _qt=str(_ctx.get('qtype') or '')
+                _render_types[_qt]=_render_types.get(_qt,0)+1
+                if not _ok:
+                    _unsupported.append({'membership_id':_q.get('membership_id'),'question_id':_q.get('ph_question_id'),'qtype':_qt})
+        print('SCOREMAX_CROSS50_CANONICAL_RENDER_DIAG '+json.dumps({
+          'total':len(_cross50),'interactive':len(_cross50)-len(_unsupported),
+          'unsupported_count':len(_unsupported),'qtypes':_render_types,'unsupported':_unsupported[:20],
+          'same_component_as_live':True,'approval_fail_closed':True,
+        },sort_keys=True,separators=(',',':')),flush=True)
+    finally:
+        _render_diag_conn.close()
     app._ux_content_reviewer_installed=True
