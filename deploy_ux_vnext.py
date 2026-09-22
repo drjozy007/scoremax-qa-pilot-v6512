@@ -147,6 +147,52 @@ R3. Internal solute concentration matches seawater'''
     print('SCOREMAX_MATCHING_RUNTIME_BUILD_PASS existing_structured_runtime=true existing_renderer=true deterministic_marking=true duplicate_runtime=false fail_closed=true',flush=True)
 
 
+
+def _install_shared_learner_question_surface() -> None:
+    """Make staged QA and the live assessment consume one canonical learner surface."""
+    take=ROOT/'templates'/'take_test_v4.html'
+    staged=ROOT/'templates'/'ux_staged_content_review_question.html'
+    component=ROOT/'templates'/'_learner_question_surface.html'
+    text=take.read_text(encoding='utf-8')
+    start_token='<span class="pill">{{ q.level }}</span>'
+    start=text.find(start_token)
+    if start<0:
+        raise SystemExit('SCOREMAX_CANONICAL_RENDERER_START_MISSING')
+    end=text.find("\n</div>\n{% if assessment.mode",start)
+    if end<0:
+        raise SystemExit('SCOREMAX_CANONICAL_RENDERER_END_MISSING')
+    surface=text[start:end].rstrip()+"\n"
+    required=(
+        "qtype in ['single_choice','true_false']",
+        "qtype=='numerical'",
+        "qtype in ['short_response','extended_response']",
+        "qtype=='matching'",
+        "qtype=='ordering'",
+    )
+    missing=[token for token in required if token not in surface]
+    if missing:
+        raise SystemExit('SCOREMAX_CANONICAL_RENDERER_FAMILY_MISSING:'+','.join(missing))
+    component.write_text(surface,encoding='utf-8')
+    include="{% include '_learner_question_surface.html' %}"
+    take.write_text(text[:start]+include+text[end:],encoding='utf-8')
+    staged_text=staged.read_text(encoding='utf-8')
+    if include not in staged_text:
+        raise SystemExit('SCOREMAX_STAGED_CANONICAL_RENDERER_INCLUDE_MISSING')
+    for forbidden in ('ux-match-interaction','ux-options','q.option_a','q.option_b','q.option_c','q.option_d'):
+        if forbidden in staged_text:
+            raise SystemExit('SCOREMAX_STAGED_DUPLICATE_RENDERER_SURVIVED:'+forbidden)
+    rebuilt=take.read_text(encoding='utf-8')
+    if rebuilt.count(include)!=1:
+        raise SystemExit('SCOREMAX_LIVE_CANONICAL_RENDERER_INCLUDE_COUNT_INVALID')
+    print(
+        'SCOREMAX_SHARED_LEARNER_RENDERER_BUILD_PASS '
+        f'component_bytes={len(surface.encode("utf-8"))} '
+        'live_take_test=true staged_review=true same_component=true '
+        'numeric=true short_response=true matching=true ordering=true fail_closed=true',
+        flush=True,
+    )
+
+
 def _install_post_init_teacher_preview() -> None:
     path=ROOT/'scoremax_production.py'
     text=path.read_text(encoding='utf-8')
@@ -299,6 +345,7 @@ def main() -> None:
     apply_preimport_hardening(ROOT)
     _restore_delivery_reviewer()
     _install_matching_runtime()
+    _install_shared_learner_question_surface()
     apply_referral_hero_v3(ROOT)
     _assert_referral_hero_v3()
     apply_interest_admin(ROOT)
