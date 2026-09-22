@@ -847,6 +847,33 @@ def install_content_reviewer(app) -> None:
         _unsupported=[]
         _response_drift=[]
         _release_blocked=[]
+        _constructed_contracts=[]
+        for _q in _cross50:
+            _src=dict(_q.get('_source_content') or {})
+            _mark=dict(_src.get('marking') or {})
+            _tokens='|'.join((
+              str(_src.get('question_family_type') or ''),
+              str(_src.get('exam_question_type') or ''),
+              str(_src.get('pedagogical_type') or ''),
+            )).upper()
+            if 'SHORT_RESPONSE' in _tokens or 'CONSTRUCTED' in _tokens or str(_q.get('qtype') or '').lower() in {'constructed response','constructed_response','short response','short_response','extended response','extended_response'}:
+                _rubric=_mark.get('rubric')
+                _constructed_contracts.append({
+                  'membership_id':_q.get('membership_id'),
+                  'question_id':_q.get('ph_question_id'),
+                  'projected_qtype':_q.get('qtype'),
+                  'family':_src.get('question_family_type'),
+                  'exam_type':_src.get('exam_question_type'),
+                  'key_type':_mark.get('key_type'),
+                  'marks':_mark.get('marks'),
+                  'command_word':_src.get('command_word'),
+                  'rubric_type':type(_rubric).__name__,
+                  'rubric_keys':sorted(list(_rubric.keys())) if isinstance(_rubric,dict) else [],
+                  'rubric':_rubric,
+                })
+        print('SCOREMAX_CROSS50_CONSTRUCTED_MARKING_CONTRACT_DIAG '+json.dumps({
+          'count':len(_constructed_contracts),'items':_constructed_contracts
+        },sort_keys=True,separators=(',',':')),flush=True)
         with app.test_request_context('/student/content-review/staged?batch=cross50'):
             for _q in _cross50:
                 _ctx,_ok,_html=_staged_canonical_surface_probe(_q)
