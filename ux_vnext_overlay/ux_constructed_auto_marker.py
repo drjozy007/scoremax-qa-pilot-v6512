@@ -35,7 +35,7 @@ def _looks_symbolic(value):
         return True
     if math>=2 and len(letters)<=8:
         return True
-    if re.fullmatch(r'[\\s\\d,.;:+\\-*/^()]+',text):
+    if re.fullmatch(r'[\\s\\d,.;:+*/^()-]+',text):
         return True
     return False
 
