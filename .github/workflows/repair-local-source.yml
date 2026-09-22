@@ -25,7 +25,7 @@ jobs:
               for name in files:
                   p=pathlib.Path(name)
                   if not name or not p.is_file() or p.is_symlink(): continue
-                  include=(len(p.parts)==1 and p.suffix in {'.py','.json'}) or p.parts[0] in {'ux_vnext_overlay','hosted_runtime_base_v6512','runtime_overlay','runtime_payload','v6611d_bridge','scripts','.github'}
+                  include=(len(p.parts)==1 and p.suffix in {'.py','.json'}) or p.parts[0] in {'ux_vnext_overlay','hosted_runtime_base_v6512','runtime_overlay','runtime_payload','v6611d_bridge','scripts','.github','qualification'}
                   if not include or p.suffix in {'.db','.sqlite','.sqlite3'} or p.name.startswith('.env'): continue
                   archive.add(p,arcname=name,recursive=False)
                   manifest[name]=hashlib.sha256(p.read_bytes()).hexdigest()
