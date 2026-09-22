@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 import shutil
+import sys
 
 from deploy_ux_vnext_recovery import main as recovery_main
 from ux_vnext_overlay.ux_referral_hero_v3 import apply_referral_hero_v3
@@ -218,7 +219,15 @@ def _install_self_marking_release_gate() -> None:
     if _spec is None or _spec.loader is None:
         raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_LOADER_MISSING')
     _mod=importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_mod)
+    _runtime_path=str(ROOT.resolve())
+    _added_path=False
+    if _runtime_path not in sys.path:
+        sys.path.insert(0,_runtime_path); _added_path=True
+    try:
+        _spec.loader.exec_module(_mod)
+    finally:
+        if _added_path and _runtime_path in sys.path:
+            sys.path.remove(_runtime_path)
     _fixture=_mod.fixture_qualification()
     if not all(_fixture.values()):
         raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_FIXTURE_FAIL:'+repr(_fixture))
