@@ -12,6 +12,9 @@ ALIASES={
     "ordering_sequence": (
         "ordering","ordering_sequence","sequence_ordering"
     ),
+    "ordering_sequence_single_select": (
+        "ordering","ordering_sequence","sequence_ordering"
+    ),
     "cloze_single_select": (
         "cloze_single_select","cloze","standard_mcq","single_choice","mcq"
     ),
