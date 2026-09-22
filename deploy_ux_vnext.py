@@ -404,8 +404,8 @@ def _install_mastery_rigor_admin_runtime() -> None:
 def _install_post_init_teacher_preview() -> None:
     path=ROOT/'scoremax_production.py'
     text=path.read_text(encoding='utf-8')
-    old='ensure_reviewer_accounts()\napplication=scoremax.app'
-    new="ensure_reviewer_accounts()\nfrom ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()\napplication=scoremax.app"
+    old='install_mastery_rigor_admin(scoremax.app)\napplication=scoremax.app'
+    new="install_mastery_rigor_admin(scoremax.app)\nfrom ux_teacher_preview import ensure_teacher_preview\nensure_teacher_preview()\napplication=scoremax.app"
     if 'ensure_teacher_preview()' not in text:
         if old not in text:
             raise SystemExit('SCOREMAX_TEACHER_PREVIEW_POST_INIT_ANCHOR_MISSING')
