@@ -243,7 +243,7 @@ def _staged_learner_render_context(q: dict) -> dict:
 
     return {
       'qtype':qtype,'options':options,'answer_cfg':answer_cfg,'marking_cfg':marking_cfg,
-      'answers':{},'saved_struct':{},'confidence':{},'response_times':{},
+      'answers':{},'saved_struct':{},'saved_positions':{},'confidence':{},'response_times':{},
       'qa_sandbox':True,'qa_session_id':'STAGED-POWER-HOUSE',
       'qa_render_checksum':str(q.get('ph_question_checksum_sha256') or ''),
       'assessment':{'mode':'review'},'exam_meta':{},
