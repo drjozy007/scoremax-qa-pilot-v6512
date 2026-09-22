@@ -29,7 +29,7 @@ def _looks_symbolic(value):
         return False
     letters=re.findall(r'[A-Za-z]+',text)
     digits=len(re.findall(r'\\d',text))
-    math=len(re.findall(r'[=+\\-*/^<>⟨⟩²³₀-₉]',text))
+    math=len(re.findall(r'[=+*/^<>⟨⟩²³₀-₉-]',text))
     # Compact numeric/list/formula responses should not go through prose similarity.
     if digits and len(letters)<=4:
         return True
