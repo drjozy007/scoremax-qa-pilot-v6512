@@ -358,6 +358,49 @@ def live_question_clause(alias='q'):
     print('SCOREMAX_SELF_MARKING_RELEASE_GATE_V2_PASS activation_fail_closed=true constructed_auto_marker=true human_marking=false',flush=True)
 
 
+def _install_mastery_rigor_admin_runtime() -> None:
+    for rel in ('ux_mastery_rigor_admin.py','templates/admin_mastery_rigor.html'):
+        src=Path('ux_vnext_overlay')/rel
+        dst=ROOT/rel
+        if not src.is_file():
+            raise SystemExit('SCOREMAX_MASTERY_RIGOR_SOURCE_MISSING:'+rel)
+        dst.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(src,dst)
+
+    production=ROOT/'scoremax_production.py'
+    text=production.read_text(encoding='utf-8')
+    anchor='ensure_reviewer_accounts()\napplication=scoremax.app'
+    replacement=(
+      "ensure_reviewer_accounts()\n"
+      "from ux_mastery_rigor_admin import install_mastery_rigor_admin\n"
+      "install_mastery_rigor_admin(scoremax.app)\n"
+      "application=scoremax.app"
+    )
+    if 'install_mastery_rigor_admin(scoremax.app)' not in text:
+        if anchor not in text:
+            raise SystemExit('SCOREMAX_MASTERY_RIGOR_POST_INIT_ANCHOR_MISSING')
+        text=text.replace(anchor,replacement,1)
+        production.write_text(text,encoding='utf-8')
+
+    rendered=production.read_text(encoding='utf-8')
+    page=(ROOT/'templates'/'admin_mastery_rigor.html').read_text(encoding='utf-8')
+    runtime=(ROOT/'ux_mastery_rigor_admin.py').read_text(encoding='utf-8')
+    required=(
+      'install_mastery_rigor_admin(scoremax.app)',
+      "app.route('/admin/mastery-rigor'",
+      'mastery_standard_score',
+      'rigor_score',
+      'min_breadth_pct',
+      'Mastery & Rigor',
+      'type="range"',
+    )
+    combined='\n'.join((rendered,page,runtime))
+    missing=[x for x in required if x not in combined]
+    if missing:
+        raise SystemExit('SCOREMAX_MASTERY_RIGOR_POSTBUILD_MISSING:'+','.join(missing))
+    print('SCOREMAX_MASTERY_RIGOR_BUILD_PASS consolidated=true sliders=2 level_rules=true breadth=true audit=true post_init=true',flush=True)
+
+
 def _install_post_init_teacher_preview() -> None:
     path=ROOT/'scoremax_production.py'
     text=path.read_text(encoding='utf-8')
@@ -517,6 +560,7 @@ def main() -> None:
     apply_interest_admin(ROOT)
     apply_commercial_reset(ROOT)
     apply_admin_workspace(ROOT)
+    _install_mastery_rigor_admin_runtime()
     _install_post_init_teacher_preview()
     _restore_catalogue_browser()
     _install_admin_view_as()
