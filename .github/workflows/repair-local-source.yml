@@ -1,0 +1,41 @@
+name: Offline repair source
+on:
+  push:
+    branches: [repair/account-startup-20260922]
+    paths: ['.github/workflows/repair-local-source.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Export tracked build sources only
+        run: |
+          git rev-parse HEAD > /tmp/source-commit.txt
+          python - <<'PY'
+          import subprocess,tarfile,pathlib,json,hashlib
+          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          manifest={}
+          with tarfile.open('/tmp/repair-build-source.tar.gz','w:gz') as archive:
+              for name in files:
+                  p=pathlib.Path(name)
+                  if not name or not p.is_file() or p.is_symlink(): continue
+                  include=(len(p.parts)==1 and p.suffix in {'.py','.json'}) or p.parts[0] in {'ux_vnext_overlay','hosted_runtime_base_v6512','runtime_overlay','runtime_payload','v6611d_bridge','scripts','.github'}
+                  if not include or p.suffix in {'.db','.sqlite','.sqlite3'} or p.name.startswith('.env'): continue
+                  archive.add(p,arcname=name,recursive=False)
+                  manifest[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+          pathlib.Path('/tmp/source-manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: offline-repair-build-source
+          retention-days: 7
+          path: |
+            /tmp/repair-build-source.tar.gz
+            /tmp/source-commit.txt
+            /tmp/source-manifest.json
