@@ -79,7 +79,14 @@ def _ensure_reviewer_schema_and_account() -> None:
 
 def _is_reviewer(user_id=None) -> bool:
     uid=user_id or session.get('user_id')
-    if not uid or session.get('role')!='student':
+    role=str(session.get('role') or '').lower()
+    if not uid:
+        return False
+    # Platform admins may inspect governed staged content but gain no release,
+    # materialisation, mastery or learner-activation authority from this capability.
+    if role=='admin':
+        return True
+    if role!='student':
         return False
     conn=_connect()
     try:
@@ -189,6 +196,55 @@ def _staged_question(conn, membership_id: int):
     return _staged_question_dict(rows[0]) if len(rows)==1 else None
 
 
+CROSS50_RELEASE_PREFIX='REL::CROSS50-QA13::'
+
+
+def _filter_staged_rows(rows, batch: str):
+    batch=str(batch or '').strip().lower()
+    if batch=='cross50':
+        return [r for r in rows if str(r['release_id'] or '').startswith(CROSS50_RELEASE_PREFIX)]
+    return list(rows)
+
+
+def _ensure_staged_human_review_schema(conn) -> None:
+    conn.execute("""CREATE TABLE IF NOT EXISTS staged_human_review_decisions_v1(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      membership_id INTEGER NOT NULL,
+      reviewer_user_id INTEGER NOT NULL,
+      question_id TEXT NOT NULL,
+      question_version_id TEXT NOT NULL,
+      release_id TEXT NOT NULL,
+      release_version TEXT NOT NULL,
+      decision TEXT NOT NULL CHECK(decision IN ('APPROVED','REJECTED')),
+      reason_code TEXT NOT NULL DEFAULT '',
+      note TEXT NOT NULL DEFAULT '',
+      decided_at TEXT NOT NULL,
+      UNIQUE(membership_id,reviewer_user_id)
+    )""")
+    conn.execute("""CREATE INDEX IF NOT EXISTS idx_staged_human_review_v1_reviewer
+      ON staged_human_review_decisions_v1(reviewer_user_id,membership_id)""")
+
+
+def _staged_decision(conn, reviewer_user_id: int, membership_id: int):
+    row=conn.execute("""SELECT * FROM staged_human_review_decisions_v1
+      WHERE reviewer_user_id=? AND membership_id=?""",(int(reviewer_user_id),int(membership_id))).fetchone()
+    return dict(row) if row else None
+
+
+def _staged_decision_stats(conn, reviewer_user_id: int, membership_ids):
+    ids=[int(x) for x in membership_ids]
+    if not ids:
+        return {'total':0,'reviewed':0,'approved':0,'rejected':0,'remaining':0}
+    marks=','.join('?' for _ in ids)
+    rows=conn.execute(f"""SELECT membership_id,decision FROM staged_human_review_decisions_v1
+      WHERE reviewer_user_id=? AND membership_id IN ({marks})""",[int(reviewer_user_id)]+ids).fetchall()
+    by_id={int(r['membership_id']):str(r['decision']) for r in rows}
+    approved=sum(1 for v in by_id.values() if v=='APPROVED')
+    rejected=sum(1 for v in by_id.values() if v=='REJECTED')
+    reviewed=len(by_id)
+    return {'total':len(ids),'reviewed':reviewed,'approved':approved,'rejected':rejected,'remaining':max(0,len(ids)-reviewed)}
+
+
 def _staged_flags(conn, reviewer_user_id: int, question_version_id: str):
     rows=conn.execute("""SELECT * FROM pilot_feedback
       WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT'
@@ -277,6 +333,12 @@ def _reviewer_nav_patch() -> str:
 def install_content_reviewer(app) -> None:
     if getattr(app,'_ux_content_reviewer_installed',False): return
     _ensure_reviewer_schema_and_account()
+    _review_schema_conn=_connect()
+    try:
+        _ensure_staged_human_review_schema(_review_schema_conn)
+        _review_schema_conn.commit()
+    finally:
+        _review_schema_conn.close()
 
     @app.route('/student/content-review',methods=['GET'],endpoint='ux_content_review')
     def ux_content_review():
@@ -391,52 +453,146 @@ def install_content_reviewer(app) -> None:
         subject=(request.args.get('subject') or '').strip()
         chapter=(request.args.get('chapter') or '').strip()
         search=(request.args.get('q') or '').strip().lower()
+        batch=(request.args.get('batch') or '').strip().lower()
         conn=_connect()
         try:
+            batch_rows=_filter_staged_rows(_staged_rows(conn),batch)
             questions=[]
-            for row in _staged_rows(conn):
+            for row in batch_rows:
                 q=_staged_question_dict(row)
                 if subject and str(q.get('subject') or '').lower()!=subject.lower(): continue
                 if chapter and str(q.get('chapter') or '').lower()!=chapter.lower(): continue
                 if search and search not in str(q.get('public_id') or '').lower() and search not in str(q.get('question') or '').lower(): continue
+                q['review_decision']=_staged_decision(conn,session['user_id'],q['membership_id'])
                 questions.append(q)
                 if len(questions)>=120: break
-            all_q=[_staged_question_dict(r) for r in _staged_rows(conn)]
+            all_q=[_staged_question_dict(r) for r in batch_rows]
             subjects=sorted({str(q.get('subject') or '') for q in all_q if str(q.get('subject') or '')})
             chapters=sorted({str(q.get('chapter') or '') for q in all_q if str(q.get('chapter') or '')})
             snap=_staged_boundary_snapshot(conn)
+            human=_staged_decision_stats(conn,session['user_id'],[q['membership_id'] for q in all_q])
             flagged_count=conn.execute("SELECT COUNT(*) FROM pilot_feedback WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT' AND context_json LIKE '%STAGED_POWER_HOUSE%'",(session['user_id'],)).fetchone()[0]
             open_count=conn.execute("SELECT COUNT(*) FROM pilot_feedback WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT' AND context_json LIKE '%STAGED_POWER_HOUSE%' AND status NOT IN ('RESOLVED','CLOSED')",(session['user_id'],)).fetchone()[0]
         finally:
             conn.close()
         return render_template('ux_staged_content_review.html',questions=questions,subjects=subjects,chapters=chapters,
-          filters={'subject':subject,'chapter':chapter,'q':request.args.get('q') or ''},
-          stats={'staged':snap['eligible'],'membership':snap['membership'],'flagged':flagged_count,'open':open_count},
+          filters={'subject':subject,'chapter':chapter,'q':request.args.get('q') or '','batch':batch},
+          stats={'staged':len(all_q),'membership':len(all_q),'flagged':flagged_count,'open':open_count,
+                 'reviewed':human['reviewed'],'approved':human['approved'],'rejected':human['rejected'],'remaining':human['remaining']},
           boundary=snap)
 
     @app.route('/student/content-review/staged/<int:membership_id>',methods=['GET'],endpoint='ux_content_review_staged_question')
     def ux_content_review_staged_question(membership_id):
         _require_reviewer()
         mode=(request.args.get('view') or 'student').strip().lower()
+        batch=(request.args.get('batch') or '').strip().lower()
         if mode not in {'student','reviewer'}: mode='student'
         conn=_connect()
         try:
             q=_staged_question(conn,membership_id)
             if not q: abort(404)
+            rows=_filter_staged_rows(_staged_rows(conn),batch)
+            ids=[int(r['membership_id']) for r in rows]
+            if int(membership_id) not in ids:
+                abort(404)
             matching_ui=None
             if str(q.get('qtype') or '').strip().lower()=='matching':
                 from ux_matching_support import parse_matching_surface
                 matching_ui=parse_matching_surface(q.get('stimulus_data') or '',q.get('_matching_key') or q.get('answer'))
-            rows=_staged_rows(conn)
-            ids=[int(r['membership_id']) for r in rows]
             try: idx=ids.index(int(membership_id))
             except ValueError: idx=-1
             prev_id=ids[idx-1] if idx>0 else None
             next_id=ids[idx+1] if idx>=0 and idx+1<len(ids) else None
             flags=_staged_flags(conn,session['user_id'],q['ph_question_version_id'])
+            decision=_staged_decision(conn,session['user_id'],membership_id)
+            position=(idx+1) if idx>=0 else None
+            total=len(ids)
         finally:
             conn.close()
-        return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,prev_id=prev_id,next_id=next_id,matching_ui=matching_ui)
+        return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,
+          prev_id=prev_id,next_id=next_id,matching_ui=matching_ui,decision=decision,batch=batch,position=position,total=total)
+
+    @app.route('/student/content-review/staged/<int:membership_id>/decision',methods=['POST'],endpoint='ux_content_review_staged_decision')
+    def ux_content_review_staged_decision(membership_id):
+        _require_reviewer()
+        decision=(request.form.get('decision') or '').strip().upper()
+        batch=(request.form.get('batch') or '').strip().lower()
+        reason=(request.form.get('reason') or '').strip().upper()
+        note=(request.form.get('notes') or '').strip()[:3000]
+        if decision not in {'APPROVED','REJECTED'}:
+            flash('Choose Approve or Reject.','error')
+            return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+        if decision=='REJECTED' and reason not in FLAG_REASONS:
+            flash('Choose a valid rejection reason.','error')
+            return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+        conn=_connect()
+        delivery='NOT_REQUIRED'; error=''; code=''
+        try:
+            q=_staged_question(conn,membership_id)
+            if not q:
+                abort(404)
+            batch_rows=_filter_staged_rows(_staged_rows(conn),batch)
+            ids=[int(r['membership_id']) for r in batch_rows]
+            if int(membership_id) not in ids:
+                abort(404)
+            now=datetime.utcnow().replace(microsecond=0).isoformat()+'Z'
+            if decision=='REJECTED':
+                label,severity=FLAG_REASONS[reason]
+                code='CRF-'+datetime.now().strftime('%Y%m%d%H%M%S')+'-'+secrets.token_hex(2).upper()
+                page=f'/student/content-review/staged/{membership_id}'
+                context={
+                  'source':'SCOREMAX_DELIVERY_REVIEWER','review_source':'STAGED_POWER_HOUSE',
+                  'human_review_decision':'REJECTED','reason_code':reason,'reason_label':label,
+                  'staged_membership_id':membership_id,'ph_question_id':q['ph_question_id'],
+                  'ph_question_version_id':q['ph_question_version_id'],'ph_release_id':q['ph_release_id'],
+                  'ph_release_version':q['ph_release_version'],'ph_question_checksum_sha256':q['ph_question_checksum_sha256'],
+                  'requested_action':'POWER_HOUSE_EXCEPTION','withdrawal_authority':'POWER_HOUSE',
+                  'reviewer_can_withdraw':False,'reviewer_can_edit':False,'page':page,
+                }
+                description=(f'{label}. '+note).strip()
+                outbox_message_id=_queue_staged_incident(conn,q,code,reason,severity,description,context)
+                if not outbox_message_id:
+                    conn.rollback()
+                    flash('Power House rejection handoff could not establish exact staged lineage. Nothing was changed.','error')
+                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+                conn.execute("""INSERT INTO pilot_feedback(feedback_code,reporter_user_id,category,severity,description,question_id,routing_target,status,context_json,page_path)
+                  VALUES(?,?,?,?,?,NULL,'Power House','QUEUED',?,?)""",
+                  (code,session['user_id'],'ACADEMIC_CONTENT',severity,description,json.dumps(context,sort_keys=True),page))
+            conn.execute("""INSERT INTO staged_human_review_decisions_v1(
+              membership_id,reviewer_user_id,question_id,question_version_id,release_id,release_version,decision,reason_code,note,decided_at
+              ) VALUES(?,?,?,?,?,?,?,?,?,?)
+              ON CONFLICT(membership_id,reviewer_user_id) DO UPDATE SET
+                question_id=excluded.question_id,question_version_id=excluded.question_version_id,
+                release_id=excluded.release_id,release_version=excluded.release_version,
+                decision=excluded.decision,reason_code=excluded.reason_code,note=excluded.note,decided_at=excluded.decided_at""",
+              (membership_id,session['user_id'],q['ph_question_id'],q['ph_question_version_id'],
+               q['ph_release_id'],q['ph_release_version'],decision,reason if decision=='REJECTED' else '',
+               note if decision=='REJECTED' else '',now))
+            conn.commit()
+            if decision=='REJECTED':
+                import scoremax_integration_v1 as integration_v1
+                integration_v1.dispatch_due(conn,limit=20,timeout=8)
+                row=conn.execute("SELECT status,last_error_code FROM integration_outbox WHERE message_id=?",(outbox_message_id,)).fetchone()
+                delivery=str(row['status'] if row else 'UNKNOWN')
+                error=str(row['last_error_code'] if row else '')
+                local_status='DELIVERED_TO_POWER_HOUSE' if delivery=='DELIVERED' else ('QUEUED' if delivery in {'PENDING','RETRY','IN_FLIGHT'} else delivery)
+                conn.execute("UPDATE pilot_feedback SET status=? WHERE feedback_code=?",(local_status,code))
+                conn.commit()
+            try: idx=ids.index(int(membership_id))
+            except ValueError: idx=-1
+            next_id=ids[idx+1] if idx>=0 and idx+1<len(ids) else None
+        finally:
+            conn.close()
+        if decision=='APPROVED':
+            flash('Human QA decision recorded: Approved. No learner activation or release authority was conferred.','success')
+        elif delivery=='DELIVERED':
+            flash(f'Human QA decision recorded: Rejected. {code} delivered to Power House.','success')
+        else:
+            flash(f'Human QA decision recorded: Rejected. {code} queued for Power House ({delivery}{": "+error if error else ""}).','warning')
+        if next_id:
+            return redirect(url_for('ux_content_review_staged_question',membership_id=next_id,view='reviewer',batch=batch))
+        return redirect(url_for('ux_content_review_staged',batch=batch))
+
 
     @app.route('/student/content-review/staged/<int:membership_id>/flag',methods=['POST'],endpoint='ux_content_review_staged_flag')
     def ux_content_review_staged_flag(membership_id):
