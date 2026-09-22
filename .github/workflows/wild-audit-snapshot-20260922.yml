@@ -1,0 +1,47 @@
+name: Wild audit pinned runtime snapshot
+on:
+  push:
+    branches: [audit/wild-preimport-20260922]
+    paths: ['.github/workflows/wild-audit-snapshot-20260922.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9d887c42173ff561040d504cd79437f142b9e887
+          persist-credentials: false
+      - name: Reconstruct without starting application or accessing production
+        run: |
+          mkdir -p /tmp/wild-evidence
+          python deploy_ux_vnext.py > /tmp/wild-evidence/build.log 2>&1
+          python - <<'PY'
+          import hashlib,json,pathlib,tarfile
+          root=pathlib.Path('.')
+          include=['scoremax_runtime_v669b','ux_vnext_overlay','scripts','hosted_runtime_base_v6512']
+          manifest={}
+          with tarfile.open('/tmp/wild-evidence/pinned-runtime-source.tar.gz','w:gz') as archive:
+              for name in include:
+                  for p in sorted((root/name).rglob('*')):
+                      if not p.is_file() or p.suffix.lower() in {'.db','.sqlite','.sqlite3','.pyc'} or '__pycache__' in p.parts:
+                          continue
+                      if '.env' in p.name or any(x in p.parts for x in ('backups','intake','uploads','state')):
+                          continue
+                      if p.suffix.lower() not in {'.py','.html','.css','.js','.json','.md','.txt','.svg','.png','.jpg','.jpeg','.webp','.ico','.woff','.woff2','.yml','.yaml'}:
+                          continue
+                      archive.add(p,arcname=str(p))
+                      manifest[str(p)]=hashlib.sha256(p.read_bytes()).hexdigest()
+          payload={'application_commit':'9d887c42173ff561040d504cd79437f142b9e887','production_database_accessed':False,'application_started':False,'source_files':len(manifest),'sha256_by_path':manifest}
+          pathlib.Path('/tmp/wild-evidence/source-manifest.json').write_text(json.dumps(payload,indent=2))
+          print('PINNED_RUNTIME_SNAPSHOT',payload['application_commit'],'source_files',len(manifest),'production_database_accessed=false')
+          PY
+      - name: Preserve audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wild-audit-pinned-source-9d887c
+          path: /tmp/wild-evidence/
+          retention-days: 7
