@@ -805,6 +805,25 @@ def install_content_reviewer(app) -> None:
         _cross50=[_staged_question_dict(x) for x in _filter_staged_rows(_staged_rows(_render_diag_conn),'cross50')]
         _render_types={}
         _unsupported=[]
+        if len(_cross50)>=45:
+            _q45=_cross50[44]
+            _src45=dict(_q45.get('_source_content') or {})
+            _mark45=dict(_src45.get('marking') or {})
+            print('SCOREMAX_CROSS50_Q45_SOURCE_DIAG '+json.dumps({
+              'position':45,
+              'membership_id':_q45.get('membership_id'),
+              'question_id':_q45.get('ph_question_id'),
+              'projected_qtype':_q45.get('qtype'),
+              'question_family_type':_src45.get('question_family_type'),
+              'exam_question_type':_src45.get('exam_question_type'),
+              'pedagogical_type':_src45.get('pedagogical_type'),
+              'stem':_src45.get('stem'),
+              'options':_src45.get('options'),
+              'statements':_src45.get('statements'),
+              'marking_key_type':_mark45.get('key_type'),
+              'marking_key':_mark45.get('key'),
+              'accepted_answers':_mark45.get('accepted_answers'),
+            },sort_keys=True,separators=(',',':')),flush=True)
         with app.test_request_context('/student/content-review/staged?batch=cross50'):
             for _q in _cross50:
                 _ctx,_ok,_html=_staged_canonical_surface_probe(_q)
