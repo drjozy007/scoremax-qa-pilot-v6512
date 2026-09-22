@@ -26,6 +26,8 @@ from ux_vnext_overlay.ux_cross50_qa_staging_v13 import apply_cross50_qa_staging_
 from ux_vnext_overlay.ux_cross50_qa_staging_v13_qualification import assert_cross50_qa_v13
 from ux_vnext_overlay.ux_cross50_stimulus_single_select_alias_v13b import apply_cross50_stimulus_single_select_alias
 from ux_vnext_overlay.ux_cross50_stimulus_single_select_alias_v13b_qualification import assert_cross50_stimulus_single_select_alias
+from ux_vnext_overlay.ux_cross50_ph_family_registry_v13c import apply_cross50_ph_family_registry
+from ux_vnext_overlay.ux_cross50_ph_family_registry_v13c_qualification import assert_cross50_ph_family_registry
 from ux_vnext_overlay.ux_safe98_destination_verifier import apply_safe98_destination_verifier, apply_cross50_math16_destination_verifier, apply_cross50_rejection_diagnostic, apply_cross50_all_destination_verifier
 
 ROOT=Path('scoremax_runtime_v669b')
@@ -288,8 +290,10 @@ def main() -> None:
     apply_source_market_v12_receiver(ROOT)
     apply_cross50_qa_staging_v13(ROOT)
     apply_cross50_stimulus_single_select_alias(ROOT)
+    apply_cross50_ph_family_registry(ROOT)
     assert_cross50_qa_v13(ROOT)
     assert_cross50_stimulus_single_select_alias(ROOT)
+    assert_cross50_ph_family_registry(ROOT)
     apply_persistent_guard_postrelease_state(ROOT)
     apply_persistent_guard_batch_retirement(ROOT)
     apply_preimport_hardening(ROOT)
