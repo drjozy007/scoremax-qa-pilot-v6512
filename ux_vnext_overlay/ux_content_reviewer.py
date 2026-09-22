@@ -166,10 +166,10 @@ def _staged_question_dict(row):
     _exam=str(_content.get('exam_question_type') or '').upper()
     _family=str(_content.get('question_family_type') or '').upper()
     _matching=('MATCHING' in _exam or 'MATCHING' in _family)
+    q['_source_content']=_content
     if _matching:
         q['qtype']='Matching'
         q['_matching_key']=(_content.get('marking') or {}).get('key')
-        q['_source_content']=_content
     q.update({
       'membership_id':int(row['membership_id']),
       'public_id':str(row['question_id'] or ''),
@@ -220,6 +220,26 @@ def _staged_learner_render_context(q: dict) -> dict:
             answer_cfg=dict(answer_cfg)
             answer_cfg['left_items']=list(parsed.get('left') or [])
             answer_cfg['right_options']=list(parsed.get('right') or [])
+
+    # Canonical ordering renderer contract: ordering_items[{id,text}].
+    # Adapt the governed PH visible ordering surface into that existing runtime
+    # contract. This is a type adapter only; it does not alter question content.
+    if qtype=='ordering' and not answer_cfg.get('ordering_items'):
+        source=dict(q.get('_source_content') or {})
+        raw_items=[]
+        statements=source.get('statements') or []
+        if isinstance(statements,list):
+            raw_items=[str(x).strip() for x in statements if str(x).strip()]
+        if not raw_items:
+            source_options=source.get('options') or []
+            if isinstance(source_options,list):
+                raw_items=[str(x.get('text') or '').strip() for x in source_options
+                           if isinstance(x,dict) and str(x.get('text') or '').strip()]
+        if raw_items:
+            answer_cfg=dict(answer_cfg)
+            answer_cfg['ordering_items']=[
+              {'id':f'O{i+1}','text':text} for i,text in enumerate(raw_items)
+            ]
 
     return {
       'qtype':qtype,'options':options,'answer_cfg':answer_cfg,'marking_cfg':marking_cfg,
