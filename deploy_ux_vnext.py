@@ -207,16 +207,47 @@ def _install_shared_learner_question_surface() -> None:
 
 def _install_self_marking_release_gate() -> None:
     """Power House content must be deterministically self-markable before learner release."""
+    marker_src=Path('ux_vnext_overlay')/'ux_constructed_auto_marker.py'
+    marker_dst=ROOT/'ux_constructed_auto_marker.py'
+    if not marker_src.is_file():
+        raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_SOURCE_MISSING')
+    shutil.copy2(marker_src,marker_dst)
+
+    import importlib.util
+    _spec=importlib.util.spec_from_file_location('scoremax_constructed_marker_fixture',marker_dst)
+    if _spec is None or _spec.loader is None:
+        raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_LOADER_MISSING')
+    _mod=importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    _fixture=_mod.fixture_qualification()
+    if not all(_fixture.values()):
+        raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_FIXTURE_FAIL:'+repr(_fixture))
+    print('SCOREMAX_CONSTRUCTED_AUTO_MARKER_FIXTURE_PASS exact=true semantic=true fail_closed=true',flush=True)
+
     integ=ROOT/'scoremax_integration_v1.py'
     app=ROOT/'app.py'
     itext=integ.read_text(encoding='utf-8')
-    marker='SCOREMAX_SELF_MARKING_RELEASE_GATE_V1'
+    marker='SCOREMAX_SELF_MARKING_RELEASE_GATE_V2'
     if marker not in itext:
         itext += r'''
 
-# SCOREMAX_SELF_MARKING_RELEASE_GATE_V1
-_self_marking_original_authorize_product_activation = authorize_product_activation
-_self_marking_original_activate_release = _activate_release
+# SCOREMAX_SELF_MARKING_RELEASE_GATE_V2
+from ux_constructed_auto_marker import compile_contract as _compile_constructed_contract
+_self_marking_original_authorize_product_activation_v2 = authorize_product_activation
+_self_marking_original_activate_release_v2 = _activate_release
+
+def _projection_constructed_contract(proj):
+    try:
+        answer_cfg=json.loads(proj.get('answer_config') or '{}') if not isinstance(proj.get('answer_config'),dict) else dict(proj.get('answer_config') or {})
+    except Exception:
+        answer_cfg={}
+    return _compile_constructed_contract(
+      answer_cfg,
+      proj.get('answer') or '',
+      proj.get('marks') or 1,
+      proj.get('question') or '',
+      proj.get('command_word') or '',
+    )
 
 def _self_marking_release_errors(c, release_id, release_version):
     rows=c.execute("""SELECT v.question_id,v.question_version_id,v.scoremax_projection_json
@@ -233,10 +264,8 @@ def _self_marking_release_errors(c, release_id, release_version):
         except Exception: marking={}
         qtype=str(proj.get('qtype') or '').strip().lower().replace('_',' ').replace('-',' ')
         auto=bool(proj.get('ph_is_auto_markable')) and bool(marking.get('auto_markable'))
-        # Current ScoreMax policy: free constructed/extended responses are not
-        # learner-releasable because there is no qualified deterministic marker.
-        if qtype in {'constructed response','extended response'}:
-            auto=False
+        if qtype in {'constructed response','extended response','short response'}:
+            auto=_projection_constructed_contract(proj) is not None
         if not auto:
             errors.append({
               'question_id':str(row['question_id'] or ''),
@@ -251,36 +280,53 @@ def authorize_product_activation(c,release_id,release_version,package_checksum_s
     if errors:
         return {'status':'REJECTED','code':'SELF_MARKING_REQUIRED','activated_count':0,
                 'blocked_question_count':len(errors),'blocked_questions':errors[:20]}
-    return _self_marking_original_authorize_product_activation(
+    return _self_marking_original_authorize_product_activation_v2(
       c,release_id,release_version,package_checksum_sha256,actor,reason)
 
 def _activate_release(c,release_id,release_version):
     if _self_marking_release_errors(c,release_id,release_version):
         return 0
-    return _self_marking_original_activate_release(c,release_id,release_version)
+    return _self_marking_original_activate_release_v2(c,release_id,release_version)
 '''
         compile(itext,str(integ),'exec')
         integ.write_text(itext,encoding='utf-8')
 
     atext=app.read_text(encoding='utf-8')
-    app_marker='SCOREMAX_SELF_MARKING_LEARNER_FENCE_V1'
+    app_marker='SCOREMAX_CONSTRUCTED_ASSESSMENT_MARKER_V1'
     if app_marker not in atext:
         atext += r'''
 
-# SCOREMAX_SELF_MARKING_LEARNER_FENCE_V1
-_self_marking_original_live_question_clause = live_question_clause
+# SCOREMAX_CONSTRUCTED_ASSESSMENT_MARKER_V1
+from ux_constructed_auto_marker import compile_contract as _compile_constructed_contract, mark as _mark_constructed_contract
+_original_mark_question_response_constructed = mark_question_response
+
+def mark_question_response(q, selected, blueprint_marking_rules=None):
+    qtype=canonical_question_type(q)
+    if qtype in {'constructed_response','short_response','extended_response'}:
+        answer_cfg=safe_json(q['answer_config'], {}) if 'answer_config' in q.keys() else {}
+        contract=_compile_constructed_contract(
+          answer_cfg,
+          q['answer'] if 'answer' in q.keys() else '',
+          q['marks'] if 'marks' in q.keys() else 1,
+          q['question'] if 'question' in q.keys() else '',
+          q['command_word'] if 'command_word' in q.keys() else '',
+        )
+        result=_mark_constructed_contract(contract,selected)
+        if not result.get('markable'):
+            return False,0.0,'SELF_MARKING_REQUIRED'
+        return bool(result.get('is_correct')),float(result.get('marks_awarded') or 0),''
+    return _original_mark_question_response_constructed(q,selected,blueprint_marking_rules)
+
+LIVE_MARKABLE_TYPES.update({'constructed_response','short_response','extended_response'})
+
+_self_marking_original_live_question_clause_v2 = live_question_clause
 def live_question_clause(alias='q'):
-    base=_self_marking_original_live_question_clause(alias)
+    base=_self_marking_original_live_question_clause_v2(alias)
     return (
       '('+base+') AND ('
-      "COALESCE("+alias+".ph_projection_owner,'')<>'POWER_HOUSE' OR ("
-      "COALESCE("+alias+".ph_is_auto_markable,0)=1 AND "
-      "LOWER(REPLACE(REPLACE(COALESCE("+alias+".qtype,''),'_',' '),'-',' ')) "
-      "NOT IN ('constructed response','extended response')))"
+      "COALESCE("+alias+".ph_projection_owner,'')<>'POWER_HOUSE' OR "
+      "COALESCE("+alias+".ph_is_auto_markable,0)=1)"
     )
-for _blocked_type in ('constructed_response','extended_response'):
-    try: LIVE_MARKABLE_TYPES.discard(_blocked_type)
-    except Exception: pass
 '''
         compile(atext,str(app),'exec')
         app.write_text(atext,encoding='utf-8')
@@ -288,15 +334,19 @@ for _blocked_type in ('constructed_response','extended_response'):
     rendered_i=integ.read_text(encoding='utf-8')
     rendered_a=app.read_text(encoding='utf-8')
     for token in (
-      'SCOREMAX_SELF_MARKING_RELEASE_GATE_V1','SELF_MARKING_REQUIRED',
-      'def _self_marking_release_errors','blocked_question_count'
+      'SCOREMAX_SELF_MARKING_RELEASE_GATE_V2','SELF_MARKING_REQUIRED',
+      'def _projection_constructed_contract','_compile_constructed_contract'
     ):
         if token not in rendered_i:
-            raise SystemExit('SCOREMAX_SELF_MARKING_GATE_MISSING:'+token)
-    for token in ('SCOREMAX_SELF_MARKING_LEARNER_FENCE_V1','ph_is_auto_markable','constructed response'):
+            raise SystemExit('SCOREMAX_SELF_MARKING_GATE_V2_MISSING:'+token)
+    for token in (
+      'SCOREMAX_CONSTRUCTED_ASSESSMENT_MARKER_V1',
+      "LIVE_MARKABLE_TYPES.update({'constructed_response','short_response','extended_response'})",
+      '_mark_constructed_contract'
+    ):
         if token not in rendered_a:
-            raise SystemExit('SCOREMAX_SELF_MARKING_LEARNER_FENCE_MISSING:'+token)
-    print('SCOREMAX_SELF_MARKING_RELEASE_GATE_PASS activation_fail_closed=true learner_fence=true constructed_response_blocked=true human_marking=false',flush=True)
+            raise SystemExit('SCOREMAX_CONSTRUCTED_ASSESSMENT_MARKER_MISSING:'+token)
+    print('SCOREMAX_SELF_MARKING_RELEASE_GATE_V2_PASS activation_fail_closed=true constructed_auto_marker=true human_marking=false',flush=True)
 
 
 def _install_post_init_teacher_preview() -> None:
