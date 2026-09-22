@@ -44,6 +44,9 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           git rev-parse HEAD > /tmp/scoremax_qualified_commit.txt
           python deploy_ux_vnext.py
+          mkdir -p /tmp/scoremax_qualified_source
+          cp scoremax_runtime_v669b/{app.py,account_security_engine.py,scoremax_production.py} /tmp/scoremax_qualified_source/
+          sha256sum /tmp/scoremax_qualified_source/*.py > /tmp/scoremax_qualified_source/SHA256SUMS.txt
       - name: Install runtime dependencies
         id: dependencies
         run: pip install -r scoremax_runtime_v669b/requirements.txt
@@ -97,6 +100,7 @@ jobs:
           name: scoremax-preimport-full-platform-audit-v1
           path: |
             /tmp/scoremax_qualified_commit.txt
+            /tmp/scoremax_qualified_source/
             /tmp/scoremax_account_startup_repair.json
             /tmp/scoremax_preimport_audit.json
             /tmp/scoremax_preimport_governance.log
