@@ -285,11 +285,20 @@ def _staged_canonical_surface_probe(q: dict):
     return ctx,bool(interactive and not unsupported),html
 
 
-def _staged_release_markable(ctx: dict):
+def _staged_release_markable(ctx: dict, q: dict | None=None):
     qtype=str(ctx.get('qtype') or '').strip().lower().replace('_',' ').replace('-',' ')
     marking=dict(ctx.get('marking_cfg') or {})
-    if qtype in {'constructed response','extended response'}:
-        return False,'No qualified deterministic ScoreMax marker for constructed/extended response'
+    if qtype in {'constructed response','extended response','short response'}:
+        from ux_constructed_auto_marker import compile_contract
+        qq=dict(q or {})
+        contract=compile_contract(
+          dict(ctx.get('answer_cfg') or {}),
+          qq.get('answer') or '',
+          qq.get('marks') or marking.get('marks') or 1,
+          qq.get('question') or '',
+          qq.get('command_word') or '',
+        )
+        return (True,'') if contract else (False,'No governed automatic marking contract can be compiled')
     if not bool(marking.get('auto_markable')):
         return False,'Question is not deterministically auto-markable by ScoreMax'
     return True,''
@@ -608,7 +617,7 @@ def install_content_reviewer(app) -> None:
             position=(idx+1) if idx>=0 else None
             total=len(ids)
             render_ctx,render_supported,_render_probe=_staged_canonical_surface_probe(q)
-            release_markable,release_block_reason=_staged_release_markable(render_ctx)
+            release_markable,release_block_reason=_staged_release_markable(render_ctx,q)
         finally:
             conn.close()
         return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,
@@ -640,7 +649,7 @@ def install_content_reviewer(app) -> None:
                 abort(404)
             if decision=='APPROVED':
                 _ctx,_render_supported,_probe=_staged_canonical_surface_probe(q)
-                _release_markable,_release_block_reason=_staged_release_markable(_ctx)
+                _release_markable,_release_block_reason=_staged_release_markable(_ctx,q)
                 if not _render_supported:
                     flash('Cannot approve this item: the canonical ScoreMax learner renderer did not produce an interactive response control.','error')
                     return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
@@ -881,7 +890,7 @@ def install_content_reviewer(app) -> None:
                 _ctx,_ok,_html=_staged_canonical_surface_probe(_q)
                 _qt=str(_ctx.get('qtype') or '')
                 _render_types[_qt]=_render_types.get(_qt,0)+1
-                _markable,_block_reason=_staged_release_markable(_ctx)
+                _markable,_block_reason=_staged_release_markable(_ctx,_q)
                 if not _markable:
                     _release_blocked.append({'membership_id':_q.get('membership_id'),'question_id':_q.get('ph_question_id'),'qtype':_qt,'reason':_block_reason})
                 _src=dict(_q.get('_source_content') or {})
