@@ -202,12 +202,37 @@ def _staged_learner_render_context(q: dict) -> dict:
         return scoremax.safe_json(value,{})
     answer_cfg=_obj(q.get('answer_config'))
     marking_cfg=_obj(q.get('marking_config'))
+    source=dict(q.get('_source_content') or {})
+    source_options=[
+      {'id':str(x.get('option_id') or ''),'text':str(x.get('text') or '')}
+      for x in (source.get('options') or []) if isinstance(x,dict) and str(x.get('option_id') or '').strip()
+    ]
+    if source_options:
+        answer_cfg=dict(answer_cfg)
+        answer_cfg['options']=source_options
     options=answer_cfg.get('options') or [
       {'id':code,'text':q.get(key)}
       for code,key in [('A','option_a'),('B','option_b'),('C','option_c'),('D','option_d')]
       if str(q.get(key) or '').strip()
     ]
     qtype=scoremax.canonical_question_type(q)
+
+    # An immutable staged projection may predate a later-qualified response adapter.
+    # Re-derive resolvable TEXT-with-options from the immutable PH source using the
+    # current ScoreMax integration rule, without mutating the stored projection.
+    if source:
+        try:
+            import scoremax_integration_v1 as integration_v1
+            resolved_option=integration_v1._text_option_id(source)
+        except Exception:
+            resolved_option=None
+        if resolved_option:
+            qtype='single_choice'
+            answer_cfg=dict(answer_cfg)
+            answer_cfg['correct_option_ids']=[str(resolved_option)]
+            marking_cfg=dict(marking_cfg)
+            marking_cfg['key_type']='SINGLE_OPTION'
+            marking_cfg['correct_option_ids']=[str(resolved_option)]
 
     # Matching remains governed by the same canonical learner renderer. When the
     # staged projection carries the visible surface rather than materialised
@@ -805,35 +830,26 @@ def install_content_reviewer(app) -> None:
         _cross50=[_staged_question_dict(x) for x in _filter_staged_rows(_staged_rows(_render_diag_conn),'cross50')]
         _render_types={}
         _unsupported=[]
-        if len(_cross50)>=45:
-            _q45=_cross50[44]
-            _src45=dict(_q45.get('_source_content') or {})
-            _mark45=dict(_src45.get('marking') or {})
-            print('SCOREMAX_CROSS50_Q45_SOURCE_DIAG '+json.dumps({
-              'position':45,
-              'membership_id':_q45.get('membership_id'),
-              'question_id':_q45.get('ph_question_id'),
-              'projected_qtype':_q45.get('qtype'),
-              'question_family_type':_src45.get('question_family_type'),
-              'exam_question_type':_src45.get('exam_question_type'),
-              'pedagogical_type':_src45.get('pedagogical_type'),
-              'stem':_src45.get('stem'),
-              'options':_src45.get('options'),
-              'statements':_src45.get('statements'),
-              'marking_key_type':_mark45.get('key_type'),
-              'marking_key':_mark45.get('key'),
-              'accepted_answers':_mark45.get('accepted_answers'),
-            },sort_keys=True,separators=(',',':')),flush=True)
+        _response_drift=[]
         with app.test_request_context('/student/content-review/staged?batch=cross50'):
             for _q in _cross50:
                 _ctx,_ok,_html=_staged_canonical_surface_probe(_q)
                 _qt=str(_ctx.get('qtype') or '')
                 _render_types[_qt]=_render_types.get(_qt,0)+1
+                _src=dict(_q.get('_source_content') or {})
+                try:
+                    import scoremax_integration_v1 as _integration_v1
+                    _resolved_option=_integration_v1._text_option_id(_src) if _src else None
+                except Exception:
+                    _resolved_option=None
+                if _resolved_option and _qt!='single_choice':
+                    _response_drift.append({'membership_id':_q.get('membership_id'),'question_id':_q.get('ph_question_id'),'qtype':_qt,'resolved_option':_resolved_option})
                 if not _ok:
                     _unsupported.append({'membership_id':_q.get('membership_id'),'question_id':_q.get('ph_question_id'),'qtype':_qt})
         print('SCOREMAX_CROSS50_CANONICAL_RENDER_DIAG '+json.dumps({
           'total':len(_cross50),'interactive':len(_cross50)-len(_unsupported),
           'unsupported_count':len(_unsupported),'qtypes':_render_types,'unsupported':_unsupported[:20],
+          'response_mapping_drift_count':len(_response_drift),'response_mapping_drift':_response_drift[:20],
           'same_component_as_live':True,'approval_fail_closed':True,
         },sort_keys=True,separators=(',',':')),flush=True)
     finally:
