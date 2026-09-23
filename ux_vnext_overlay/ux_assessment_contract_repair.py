@@ -38,9 +38,12 @@ def apply_written_contract_repair(root):
     root=Path(root);here=Path(__file__).parent
     path=root/'written_response_engine.py';text=path.read_text()
     text=add_functions(text,donors(here/'assessment_written_response_v2.py'))
-    anchor='def mark_written_response(question, answer, policy=None):\n'
-    dispatch="    if isinstance(policy,dict) and policy.get('scoring_contract') == 'governed_clause_rubric_v1':\n        return _mark_governed_clauses(question, answer)\n"
-    if dispatch not in text:text=replace_once(text,anchor,anchor+dispatch)
+    # Replace the existing public entrypoint itself; no optional policy dispatch
+    # can leave a second route into the unsafe legacy overlap heuristic.
+    node=next(n for n in ast.parse(text).body if isinstance(n,ast.FunctionDef) and n.name=='mark_written_response')
+    fn='\n'.join(text.splitlines()[node.lineno-1:node.end_lineno])
+    if '_point_evidence' in fn or 'confirmed_confidence' in fn:
+        raise SystemExit('WRITTEN_LEGACY_SCORING_BYPASS_SURVIVED')
     compile(text,str(path),'exec');path.write_text(text)
 
 
@@ -210,6 +213,8 @@ def apply_assessment_contract_repair(root):
 """
     a=replace_once(a,marker,incident+marker)
     a=replace_once(a,"      question_id=question_id,attempt_id=attempt_id,written_attempt_id=written_attempt_id,source=context['source'],page_path=context['page'])", "      question_id=question_id,attempt_id=attempt_id,written_attempt_id=written_attempt_id,assessment_session_id=assessment_session_id,source=context['source'],page_path=context['page'])")
+    a=replace_once(a,"c.commit(); c.close(); flash('Improved version marked. Your original evidence remains unchanged.','success')",
+        "c.commit(); c.close(); flash('Revised answer saved. Your original evidence remains unchanged.','success')")
     compile(a,str(ap),'exec');ap.write_text(a)
 
     surface=root/'templates/_learner_question_surface.html';s=surface.read_text()
@@ -235,5 +240,9 @@ def apply_assessment_contract_repair(root):
     s=replace_once(s,"{% if d.marking_status=='PENDING_REVIEW' %}","{% if d.marking_status=='AUTO_UNSCORED' %}<p>Not automatically scored • Your answer: {{d.selected_answer or 'No answer'}}</p>{% elif d.marking_status=='PENDING_REVIEW' %}")
     # No incorrect-answer remediation recommendations for an unscored attempt.
     s=s.replace('{% if weak_capsules %}',"{% if weak_capsules and a.marking_status=='FINAL' %}")
+    p.write_text(s)
+    p=root/'templates/written_result.html';s=p.read_text()
+    notice="{% if a.result_state=='AUTO_UNSCORED' %}<section class=\"card\"><h2>Your answer is saved, but not scored</h2><p>This answer could not be marked reliably. It has not changed your mastery, and is not waiting for human marking.</p></section>{% endif %}"
+    s=replace_once(s,'{% if data.pages %}',notice+'{% if data.pages %}')
     p.write_text(s)
     print('SCOREMAX_ASSESSMENT_CONTRACT_REPAIR_BUILD installed=true single_adapter=true pin_integrity=true marking_result_v2=true historical_scores_unchanged=true',flush=True)

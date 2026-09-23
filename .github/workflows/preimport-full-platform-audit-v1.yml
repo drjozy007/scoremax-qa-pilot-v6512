@@ -15,6 +15,7 @@ on:
       - 'scripts/qualify_programme_mastery_browser.py'
       - 'scripts/qualify_programme_navigation_repair.py'
       - 'scripts/qualify_existing_ph_compatibility.py'
+      - 'scripts/qualify_written_entrypoints.py'
       - 'deploy_ux_vnext.py'
       - 'ux_vnext_overlay/**'
 
@@ -64,6 +65,9 @@ jobs:
       - name: Qualify native assessment contract and adversarial marking
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python scripts/qualify_assessment_contract_repair.py --report /tmp/scoremax_assessment_contract_repair.json
+      - name: Qualify every written marking entrypoint
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python scripts/qualify_written_entrypoints.py --report /tmp/scoremax_written_entrypoints.json
       - name: Qualify programme context and scoped mastery policies
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python scripts/qualify_programme_navigation_repair.py --report /tmp/scoremax_programme_mastery_repair.json
@@ -134,6 +138,7 @@ jobs:
             /tmp/scoremax_qualified_source/
             /tmp/scoremax_account_startup_repair.json
             /tmp/scoremax_assessment_contract_repair.json
+            /tmp/scoremax_written_entrypoints.json
             /tmp/scoremax_assessment_browser.json
             /tmp/scoremax_programme_mastery_repair.json
             /tmp/scoremax_existing_ph_compatibility.json
