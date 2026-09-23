@@ -14,6 +14,7 @@ on:
       - 'scripts/qualify_programme_mastery_repair.py'
       - 'scripts/qualify_programme_mastery_browser.py'
       - 'scripts/qualify_programme_navigation_repair.py'
+      - 'scripts/qualify_existing_ph_compatibility.py'
       - 'deploy_ux_vnext.py'
       - 'ux_vnext_overlay/**'
 
@@ -66,6 +67,9 @@ jobs:
       - name: Qualify programme context and scoped mastery policies
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python scripts/qualify_programme_navigation_repair.py --report /tmp/scoremax_programme_mastery_repair.json
+      - name: Qualify existing Power House scope compatibility without schema changes
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python scripts/qualify_existing_ph_compatibility.py --report /tmp/scoremax_existing_ph_compatibility.json
       - name: Real browser form journeys on isolated HTTPS WSGI
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: |
@@ -132,6 +136,7 @@ jobs:
             /tmp/scoremax_assessment_contract_repair.json
             /tmp/scoremax_assessment_browser.json
             /tmp/scoremax_programme_mastery_repair.json
+            /tmp/scoremax_existing_ph_compatibility.json
             /tmp/scoremax_programme_mastery_browser.json
             /tmp/scoremax_programme_mastery_browser.log
             /tmp/scoremax_programme_browser_screenshots/

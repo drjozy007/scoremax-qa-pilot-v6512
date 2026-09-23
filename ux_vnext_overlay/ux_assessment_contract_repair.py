@@ -51,6 +51,14 @@ def apply_assessment_contract_repair(root):
     compile(c,str(cp),'exec');cp.write_text(c)
 
     ip=root/'scoremax_integration_v1.py';i=ip.read_text()
+    i=replace_once(i,"'programme':str(disp.get('programme') or curr.get('programme_id') or '')",
+                     "'programme':question_contracts.programme_from_curriculum(curr)")
+    i=replace_once(i,"    errors=[]; path=f'payload.questions[{index}]'\n",
+        "    errors=[]; path=f'payload.questions[{index}]'\n"
+        "    try:\n"
+        "        question_contracts.programme_from_curriculum(q.get('curriculum') or {})\n"
+        "    except question_contracts.QuestionContractError as exc:\n"
+        "        errors.append({'code':str(exc),'path':path+'.curriculum','message':'Existing programme/year fields conflict or do not identify the FSc year.','retryable':False})\n")
     integration_donors=donors(here/'assessment_integration_v2.py')
     projection_source=integration_donors.pop('_projection')
     i+='\n_projection_base=_projection\n'

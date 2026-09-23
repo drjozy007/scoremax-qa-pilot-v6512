@@ -110,3 +110,70 @@ def canonical_submission(qtype,form):
     if isinstance(values,list) and len(values)>1:
         raise QuestionContractError('MULTIPLE_VALUES_FOR_SINGLE_RESPONSE')
     return str(form.get('answer') or '').strip()
+
+
+def _programme_alias_groups():
+    """Shared existing learner aliases and PH ID/display spellings, not new IDs."""
+    return {
+      'FSc Part 1':('FSc Part 1','F.Sc Part 1','FSc-I','fsc1','FSc 1','HSSC-I','HSSC Part 1','FSc Year 1','FSc Year 11','FSc Y11','FSc Part I','FSC_PART_I','FSC_PART_1','HSSC_PART_I'),
+      'FSc Part 2':('FSc Part 2','F.Sc Part 2','FSc-II','fsc2','FSc 2','HSSC-II','HSSC Part 2','FSc Year 2','FSc Year 12','FSc Y12','FSc Part II','FSC_PART_II','FSC_PART_2','HSSC_PART_II'),
+      'Grade 9':('Grade 9','Class 9','Matric 9','SSC-I','SSC Part 1'),
+      'Grade 10':('Grade 10','Class 10','Matric 10','SSC-II','SSC Part 2'),
+      'MDCAT':('MDCAT',),'ECAT':('ECAT',),
+    }
+
+
+def canonical_programme(value):
+    value=str(value or '').strip()
+    key=value.casefold()
+    return next((name for name,aliases in _programme_alias_groups().items()
+                 if key in {str(x).casefold() for x in aliases}),value)
+
+
+def programme_aliases(value):
+    value=canonical_programme(value)
+    return list(_programme_alias_groups().get(value,(value,))) if value else []
+
+
+def programme_from_curriculum(curriculum):
+    """Use the programme and grade ALREADY in PH's scope, without changing source.
+
+    Generic FSc / Intermediate + Grade 11/12 resolves the learner year. Distinct
+    admission exams do not inherit school year. Opaque/other curricula remain intact.
+    Missing or conflicting FSc year is an actual ambiguity, not an alias failure.
+    """
+    if not isinstance(curriculum,dict):
+        raise QuestionContractError('CURRICULUM_OBJECT_REQUIRED')
+    display=curriculum.get('display') or {}
+    if not isinstance(display,dict):
+        raise QuestionContractError('CURRICULUM_DISPLAY_OBJECT_REQUIRED')
+    raw=[str(display.get('programme') or '').strip(),str(curriculum.get('programme_id') or '').strip()]
+    known=set(_programme_alias_groups())
+    specific={canonical_programme(x) for x in raw if canonical_programme(x) in known}
+    if len(specific)>1:
+        raise QuestionContractError('PROGRAMME_CONTEXT_CONFLICT')
+    generic={'fsc','f.sc','f.sc.','fsc / intermediate','fsc/intermediate','fsc / intermediate science','intermediate','hssc'}
+    has_fsc=any(x.casefold() in generic for x in raw)
+    resolved=next(iter(specific),'')
+    if has_fsc and resolved and resolved not in {'FSc Part 1','FSc Part 2'}:
+        raise QuestionContractError('PROGRAMME_CONTEXT_CONFLICT')
+    if resolved and resolved not in {'FSc Part 1','FSc Part 2'}:
+        return resolved
+    if has_fsc or resolved in {'FSc Part 1','FSc Part 2'}:
+        years=set()
+        for val in (curriculum.get('grade_year_id'),display.get('grade_year')):
+            token=str(val or '').strip().casefold().replace('_',' ')
+            match=re.fullmatch(r'(?:grade\s*|year\s*|class\s*)?(9|10|11|12)',token)
+            if match:years.add(int(match.group(1)))
+        if len(years)>1:
+            raise QuestionContractError('PROGRAMME_YEAR_CONFLICT')
+        year=next(iter(years),None)
+        if resolved:
+            expected=11 if resolved=='FSc Part 1' else 12
+            if year is not None and year!=expected:
+                raise QuestionContractError('PROGRAMME_YEAR_CONFLICT')
+            return resolved
+        if year in {11,12}:
+            return 'FSc Part 1' if year==11 else 'FSc Part 2'
+        raise QuestionContractError('FSC_YEAR_UNRESOLVED')
+    return raw[0] or raw[1]

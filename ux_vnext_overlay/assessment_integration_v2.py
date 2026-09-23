@@ -4,6 +4,11 @@ def effective_projection(stored,content):
     if not isinstance(stored,dict) or not isinstance(content,dict):
         raise question_contracts.QuestionContractError('IMMUTABLE_QUESTION_OBJECT_REQUIRED')
     out=dict(stored)
+    # Reuse the existing immutable PH curriculum snapshot for older projections too.
+    raw_curriculum=out.get('ph_curriculum_snapshot_json')
+    if raw_curriculum not in (None,'','{}'):
+        curriculum=strict_json_loads(raw_curriculum) if isinstance(raw_curriculum,str) else raw_curriculum
+        out['programme']=question_contracts.programme_from_curriculum(curriculum)
     # Reuse the qualified PH projection, not a second independent mapping table.
     fresh=_projection_base({'content':content}, {})
     fields=('qtype','question','option_a','option_b','option_c','option_d','answer','marks','command_word','answer_config','marking_config','ph_is_auto_markable')

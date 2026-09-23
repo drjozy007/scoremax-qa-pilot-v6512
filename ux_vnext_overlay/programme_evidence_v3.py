@@ -1,27 +1,11 @@
 """Donor functions installed into the existing application, not an alternate reader API."""
 
 def canonical_programme(value):
-    value=str(value or '').strip()
-    key=value.casefold()
-    groups={
-      'FSc Part 1':('fsc part 1','f.sc part 1','fsc-i','fsc1','fsc 1','hssc-i','hssc part 1','fsc year 1','fsc year 11','fsc y11'),
-      'FSc Part 2':('fsc part 2','f.sc part 2','fsc-ii','fsc2','fsc 2','hssc-ii','hssc part 2','fsc year 2','fsc year 12','fsc y12'),
-      'Grade 9':('grade 9','class 9','matric 9','ssc-i','ssc part 1'),
-      'Grade 10':('grade 10','class 10','matric 10','ssc-ii','ssc part 2'),
-      'MDCAT':('mdcat',),'ECAT':('ecat',),
-    }
-    return next((name for name,aliases in groups.items() if key in aliases),value)
+    return question_contracts.canonical_programme(value)
 
 
 def _programme_aliases(value):
-    value=canonical_programme(value)
-    groups={
-      'FSc Part 1':['FSc Part 1','F.Sc Part 1','FSc-I','fsc1','FSc 1','HSSC-I','HSSC Part 1','FSc Year 1','FSc Year 11','FSc Y11'],
-      'FSc Part 2':['FSc Part 2','F.Sc Part 2','FSc-II','fsc2','FSc 2','HSSC-II','HSSC Part 2','FSc Year 2','FSc Year 12','FSc Y12'],
-      'Grade 9':['Grade 9','Class 9','Matric 9','SSC-I','SSC Part 1'],
-      'Grade 10':['Grade 10','Class 10','Matric 10','SSC-II','SSC Part 2'],
-    }
-    return list(groups.get(value,[value])) if value else []
+    return question_contracts.programme_aliases(value)
 
 
 def _programme_scope_sql(alias_values,table_alias='q'):
