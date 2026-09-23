@@ -64,9 +64,35 @@ def _patch_visible_js_fallback(root: Path) -> None:
     path.write_text(text,encoding='utf-8')
 
 
+def _preserve_native_context_controls(root: Path) -> None:
+    """A later cosmetic response overlay must not delete/rebuild academic navigation.
+
+    Preserve native forms, CSRF fields, programme state and governed subject links.
+    Keep only the old empty-surface fallback; it cannot replace a populated server nav.
+    """
+    path=Path(root)/'ux_staging_routes.py'
+    text=path.read_text(encoding='utf-8')
+    replacements=(
+        (".student-context-stack .programme-context-strip{display:none!important}", ""),
+        ("stack.querySelectorAll('.programme-context-strip').forEach(x=>x.remove());", ""),
+        ("strip.innerHTML='';subjects.forEach(s=>strip.appendChild(makeA(s.name,s.url)));",
+         "if(!strip.querySelector('a'))subjects.forEach(s=>strip.appendChild(makeA(s.name,s.url)));"),
+    )
+    for old,new in replacements:
+        if text.count(old)!=1:
+            raise SystemExit('SCOREMAX_NATIVE_CONTEXT_OVERLAY_ANCHOR_MISMATCH')
+        text=text.replace(old,new,1)
+    compile(text,str(path),'exec')
+    path.write_text(text,encoding='utf-8')
+    if any(old in text for old,_ in replacements):
+        raise SystemExit('SCOREMAX_DESTRUCTIVE_NAVIGATION_OVERLAY_SURVIVED')
+    print('SCOREMAX_NATIVE_CONTEXT_BROWSER_AUTHORITY_PASS programme_forms_preserved=true governed_subject_links_preserved=true cosmetic_replacement=false',flush=True)
+
+
 def apply_canonical_student_navigation(root: Path) -> None:
     _patch_base_template(root)
     _patch_visible_js_fallback(root)
+    _preserve_native_context_controls(root)
 
     base=(Path(root)/'templates'/'base.html').read_text(encoding='utf-8')
     batch=(Path(root)/'ux_student_batch.py').read_text(encoding='utf-8')

@@ -4,7 +4,7 @@ Isolated HTTPS WSGI, synthetic accounts and explicit synthetic feature availabil
 No real login, live rollout flags, PH transport, or public-host operations are used.
 """
 from __future__ import annotations
-import argparse,json,os,threading
+import argparse,json,os,threading,traceback
 from pathlib import Path
 from urllib.parse import urlsplit
 from werkzeug.serving import make_server
@@ -28,6 +28,8 @@ def main():
     result={'suite':'PROGRAMME_MASTERY_REAL_BROWSER_V3','cases':[],'javascript_errors':[],'external_requests_aborted':0,
       'passed':False,'production_data_modified':False,'login_flow_tested':False,'synthetic_feature_availability':True}
     out=Path(args.screenshots);out.mkdir(parents=True,exist_ok=True)
+    stage='launch_browser'
+    page=None
     try:
         with sync_playwright() as pw:
             executable=os.environ.get('CHROMIUM_EXECUTABLE','')
@@ -47,21 +49,30 @@ def main():
                 page=context.new_page();page.on('pageerror',lambda e:result['javascript_errors'].append(str(e)));page.on('dialog',lambda d:d.accept())
                 return context,page
             for width in (390,1365):
+                stage=f'create_context_{width}'
                 context,page=new_context('syn-1',width)
                 for code,programme in [('fsc1','FSc Part 1'),('fsc2','FSc Part 2'),('mdcat','MDCAT')]:
+                    stage=f'{code}_{width}_open_learn'
                     response=page.goto(base+'/student/learn-vnext');assert response.status==200,response.status
+                    stage=f'{code}_{width}_locate_programme_tab'
                     form=page.locator('.programme-context-strip form').filter(has=page.locator(f'input[name="programme_code"][value="{code}"]'))
+                    form.locator('button').wait_for(state='visible')
                     assert form.count()==1,(code,form.count())
+                    stage=f'{code}_{width}_switch_programme'
                     with page.expect_navigation(wait_until='domcontentloaded'):
                         form.locator('button').click()
                     assert test.programme()==programme,(code,test.programme())
+                    stage=f'{code}_{width}_locate_physics_card'
                     card=page.locator('a.ux-learn-card').filter(has=page.get_by_role('heading',name='Physics',exact=True))
+                    card.wait_for(state='visible')
                     assert card.count()==1,(code,card.count())
                     metrics=card.inner_text()
                     if code=='mdcat':assert '—' in metrics,metrics
                     href=card.get_attribute('href')
+                    stage=f'{code}_{width}_open_physics_card'
                     with page.expect_navigation(wait_until='domcontentloaded'):card.click()
                     assert test.programme()==programme,(code,test.programme())
+                    stage=f'{code}_{width}_assert_chapter_destination'
                     names=page.locator('.ux-chapter-card h2,.ux-syllabus-card h2').all_text_contents()
                     assert names,(code,page.url)
                     if code=='mdcat':assert '/mdcat/' in urlsplit(page.url).path,page.url
@@ -71,7 +82,9 @@ def main():
                       'card_href':href,'final_path':urlsplit(page.url).path,'chapter_or_unit_count':len(names),'chapter_titles':names,
                       'programme_preserved':True,'passed':True})
                 context.close()
+            stage='create_admin_context'
             context,page=new_context('admin',1365)
+            stage='admin_open_mastery'
             response=page.goto(base+'/admin/mastery-rigor');assert response.status==200
             form=page.locator('form.mr-policy-form')
             form.locator('[name="name"]').fill('SYN-BROWSER-GLOBAL')
@@ -82,6 +95,7 @@ def main():
             form.locator('[name="mastery_standard_score"]').focus();form.locator('[name="mastery_standard_score"]').press('End')
             assert form.locator('[name="rigor_score"]').input_value()=='0'
             assert form.locator('[name="mastery_standard_score"]').input_value()=='100'
+            stage='admin_save_draft'
             with page.expect_navigation(wait_until='domcontentloaded'):
                 form.get_by_role('button',name='Save Draft & Preview Impact',exact=True).click()
             policy=test.c.execute("SELECT * FROM assessment_assembly_policies WHERE name='SYN-BROWSER-GLOBAL'").fetchone()
@@ -90,6 +104,7 @@ def main():
             assert json.loads(policy['preview_json'])['historical_simulation']['observed_forms']==1
             row=page.locator('.mr-policy-table tbody tr').filter(has_text='SYN-BROWSER-GLOBAL')
             row.locator('[name="reason"]').fill('Synthetic explicit activation')
+            stage='admin_activate_policy'
             with page.expect_navigation(wait_until='domcontentloaded'):row.get_by_role('button',name='Activate',exact=True).click()
             assert test.status(first)=='Verification Due'
             assert test.status(other)=='Verified' # The specific MDCAT policy still takes precedence.
@@ -98,6 +113,11 @@ def main():
               'draft_did_not_change_mastery':True,'explicit_activation':True,'specific_mdcat_policy_preserved':True,'passed':True})
             result['passed']=len(result['cases'])==7 and not result['javascript_errors']
             browser.close()
+    except Exception as exc:
+        result['failure']={'stage':stage,'type':type(exc).__name__,'message':str(exc),'traceback':traceback.format_exc()}
+        # Retain the failing stage and native browser traceback without relaxing any assertion.
+        # No response bodies/cookies/credentials are logged; all fixture identities are synthetic.
+        raise
     finally:
         server.shutdown();worker.join(timeout=3);test.tearDown()
         Path(args.report).write_text(json.dumps(result,indent=2)+'\n');print('PROGRAMME_MASTERY_BROWSER_RESULT='+json.dumps(result,sort_keys=True))
