@@ -1,4 +1,4 @@
-"""Reuse the 67 programme/mastery regressions and add the native DOM authority regression.
+"""Reuse the 67 programme/mastery regressions and add native DOM authority, switching and redirect regressions.
 
 No product bootstrap or remote service is added; all fixtures are isolated and synthetic.
 """
@@ -23,6 +23,36 @@ class ProgrammeMasteryNavigationRepair(ProgrammeMasteryRepair):
         self.assertTrue(any(tag=='form' and attr.get('action')=='/student/programme' and attr.get('method')=='post' for tag,attr in tags))
         self.assertEqual(self.programme(),'FSc Part 1')
 
+    def test_native_live_programme_post_and_all_subject_card_destinations(self):
+        from qualify_assessment_contract_repair import Tags
+        # Only synthetic feature availability is changed; still exercise native POST/CSRF.
+        self.c.execute("UPDATE users SET subjects='Biology,Chemistry,Physics,Mathematics' WHERE id=?",(self.uid,))
+        self.c.execute("UPDATE feature_availability SET state='LIVE' WHERE feature_code IN ('programme_fsc2','programme_mdcat')")
+        self.c.commit()
+        for code,programme in [('fsc1','FSc Part 1'),('fsc2','FSc Part 2'),('mdcat','MDCAT')]:
+            response=self.client.post('/student/programme',data={'_csrf_token':'synthetic-csrf','programme_code':code,'return_to':'/student/learn-vnext'},base_url='https://localhost')
+            self.assertEqual(response.status_code,302)
+            self.assertEqual(response.location,'/student/learn-vnext')
+            self.assertEqual(self.programme(),programme)
+            page=self.client.get(response.location,base_url='https://localhost')
+            self.assertEqual(page.status_code,200)
+            cards=[attr for tag,attr in Tags(page.text).tags if tag=='a' and 'ux-learn-card' in attr.get('class','').split()]
+            self.assertGreaterEqual(len(cards),3)
+            for card in cards:
+                with self.subTest(programme=programme,card=card.get('href')):
+                    dest=self.client.get(card['href'],base_url='https://localhost',follow_redirects=True)
+                    self.assertEqual(dest.status_code,200)
+                    self.assertEqual(self.programme(),programme)
+
+    def test_native_programme_redirect_reuses_same_origin_security_helper(self):
+        from urllib.parse import urlsplit
+        for target in ('https://example.invalid/x','//example.invalid/x','/\\example.invalid','javascript:alert(1)','/x\r\nLocation: https://example.invalid'):
+            with self.subTest(target=repr(target)):
+                response=self.client.post('/student/programme',data={'_csrf_token':'synthetic-csrf','programme_code':'fsc1','return_to':target},base_url='https://localhost')
+                self.assertEqual(response.status_code,302)
+                self.assertFalse(urlsplit(response.location).netloc)
+                self.assertEqual(response.location,'/student')
+
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--report',default='programme_mastery_navigation_results.json');args=parser.parse_args()
@@ -34,7 +64,7 @@ if __name__=='__main__':
         ['app.py','ux_student_batch.py','ux_catalogue_browser.py','ux_mastery_rigor_admin.py','ux_staging_routes.py']},
       'production_modified':False,'deployment_triggered':False,'full_mastery_model_frozen':False,
       'actual_curriculum_delivery_qualified':False,
-      'scope':'Original 67 programme/mastery tests plus preservation of native browser navigation. No real curriculum or bulk-import clearance.'}
+      'scope':'Original 67 programme/mastery tests plus native browser navigation, POST and redirect regression. No real curriculum or bulk-import clearance.'}
     Path(args.report).write_text(json.dumps(report,indent=2)+'\n')
     print('PROGRAMME_MASTERY_REPAIR_RESULT='+json.dumps(report,sort_keys=True))
     raise SystemExit(0 if result.wasSuccessful() else 1)

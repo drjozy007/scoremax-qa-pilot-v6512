@@ -86,7 +86,18 @@ def _preserve_native_context_controls(root: Path) -> None:
     path.write_text(text,encoding='utf-8')
     if any(old in text for old,_ in replacements):
         raise SystemExit('SCOREMAX_DESTRUCTIVE_NAVIGATION_OVERLAY_SURVIVED')
-    print('SCOREMAX_NATIVE_CONTEXT_BROWSER_AUTHORITY_PASS programme_forms_preserved=true governed_subject_links_preserved=true cosmetic_replacement=false',flush=True)
+    # The native programme POST already owns access checks and the state change.
+    # Its safe redirect helper lives in the shared request-security module.
+    app_path=Path(root)/'app.py'
+    app_text=app_path.read_text(encoding='utf-8')
+    old="    target=safe_relative_path(request.form.get('return_to') or '')"
+    new="    target=request_security.safe_relative_path(request.form.get('return_to') or '')"
+    if app_text.count(old)!=1:
+        raise SystemExit('SCOREMAX_PROGRAMME_REDIRECT_HELPER_ANCHOR_MISMATCH')
+    app_text=app_text.replace(old,new,1)
+    compile(app_text,str(app_path),'exec')
+    app_path.write_text(app_text,encoding='utf-8')
+    print('SCOREMAX_NATIVE_CONTEXT_BROWSER_AUTHORITY_PASS programme_forms_preserved=true governed_subject_links_preserved=true cosmetic_replacement=false native_safe_redirect=true',flush=True)
 
 
 def apply_canonical_student_navigation(root: Path) -> None:
