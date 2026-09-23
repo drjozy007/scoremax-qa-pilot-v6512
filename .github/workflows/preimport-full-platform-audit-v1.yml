@@ -11,6 +11,8 @@ on:
       - 'scripts/qualify_build_determinism.py'
       - 'scripts/qualify_assessment_contract_repair.py'
       - 'scripts/qualify_assessment_browser.py'
+      - 'scripts/qualify_programme_mastery_repair.py'
+      - 'scripts/qualify_programme_mastery_browser.py'
       - 'deploy_ux_vnext.py'
       - 'ux_vnext_overlay/**'
 
@@ -48,7 +50,7 @@ jobs:
           git rev-parse HEAD > /tmp/scoremax_qualified_commit.txt
           python scripts/qualify_build_determinism.py --report /tmp/scoremax_build_determinism.json
           mkdir -p /tmp/scoremax_qualified_source
-          cp scoremax_runtime_v669b/{app.py,account_security_engine.py,scoremax_production.py,scoremax_integration_v1.py,question_contract_engine.py,ux_constructed_auto_marker.py,written_response_engine.py,ux_content_reviewer.py} /tmp/scoremax_qualified_source/
+          cp scoremax_runtime_v669b/{app.py,account_security_engine.py,scoremax_production.py,scoremax_integration_v1.py,question_contract_engine.py,ux_constructed_auto_marker.py,written_response_engine.py,ux_content_reviewer.py,ux_student_batch.py,ux_catalogue_browser.py,ux_mastery_rigor_admin.py} /tmp/scoremax_qualified_source/
           cp -r scoremax_runtime_v669b/templates /tmp/scoremax_qualified_source/templates
           sha256sum /tmp/scoremax_qualified_source/*.py > /tmp/scoremax_qualified_source/SHA256SUMS.txt
       - name: Install runtime dependencies
@@ -60,6 +62,9 @@ jobs:
       - name: Qualify native assessment contract and adversarial marking
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python scripts/qualify_assessment_contract_repair.py --report /tmp/scoremax_assessment_contract_repair.json
+      - name: Qualify programme context and scoped mastery policies
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python scripts/qualify_programme_mastery_repair.py --report /tmp/scoremax_programme_mastery_repair.json
       - name: Real browser form journeys on isolated HTTPS WSGI
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: |
@@ -72,6 +77,7 @@ jobs:
             python -m playwright install --with-deps chromium
           fi
           python scripts/qualify_assessment_browser.py --report /tmp/scoremax_assessment_browser.json --screenshots /tmp/scoremax_browser_screenshots
+          python scripts/qualify_programme_mastery_browser.py --report /tmp/scoremax_programme_mastery_browser.json --screenshots /tmp/scoremax_programme_browser_screenshots
       - name: Run pre-import route and template audit
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         env:
@@ -124,6 +130,9 @@ jobs:
             /tmp/scoremax_account_startup_repair.json
             /tmp/scoremax_assessment_contract_repair.json
             /tmp/scoremax_assessment_browser.json
+            /tmp/scoremax_programme_mastery_repair.json
+            /tmp/scoremax_programme_mastery_browser.json
+            /tmp/scoremax_programme_browser_screenshots/
             /tmp/scoremax_browser_screenshots/
             /tmp/scoremax_preimport_audit.json
             /tmp/scoremax_preimport_governance.log

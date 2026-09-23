@@ -1,4 +1,5 @@
 from pathlib import Path
+from ux_vnext_overlay.ux_programme_mastery_repair import apply_programme_mastery_repair
 import re
 import shutil
 import sys
@@ -584,6 +585,7 @@ def main() -> None:
     apply_cross50_rejection_diagnostic(ROOT)
     from ux_vnext_overlay.ux_assessment_contract_repair import apply_assessment_contract_repair
     apply_assessment_contract_repair(ROOT)
+    apply_programme_mastery_repair(ROOT)
 
 
 if __name__ == '__main__':
