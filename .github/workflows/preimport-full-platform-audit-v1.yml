@@ -1,152 +1,119 @@
 name: Pre-Import Full Platform Qualification v1
-
 on:
   push:
-    branches: [feature/v6611c-ux-vnext-landing, repair/account-startup-20260922]
-    paths:
-      - '.github/workflows/preimport-full-platform-audit-v1.yml'
-      - 'scripts/preimport_full_platform_audit.py'
-      - 'scripts/preimport_governance_gates.py'
-      - 'scripts/qualify_account_startup_repair.py'
-      - 'scripts/qualify_build_determinism.py'
-      - 'scripts/qualify_assessment_contract_repair.py'
-      - 'scripts/qualify_assessment_browser.py'
-      - 'scripts/qualify_programme_mastery_repair.py'
-      - 'scripts/qualify_programme_mastery_browser.py'
-      - 'scripts/qualify_programme_navigation_repair.py'
-      - 'scripts/qualify_existing_ph_compatibility.py'
-      - 'scripts/qualify_written_entrypoints.py'
-      - 'deploy_ux_vnext.py'
-      - 'ux_vnext_overlay/**'
-
+    branches: [qualification/local-followup-gates-20260924]
 permissions:
   contents: read
-
 jobs:
   qualify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     defaults:
       run:
         shell: bash
-    env:
-      SCOREMAX_ENV: production
-      SCOREMAX_SECRET: synthetic-ci-only-account-startup-repair-secret
-      SCOREMAX_STAGING_SESSION_SECRET: synthetic-ci-only-account-startup-repair-secret
-      SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD: Synthetic-Only-Qualification-2026!
-      SCOREMAX_SMTP_HOST: smtp.invalid
-      SCOREMAX_SMTP_FROM: qualification@scoremax.test
-      SCOREMAX_PUBLIC_BASE_URL: https://localhost
-      SCOREMAX_INSTANCE_COUNT: '1'
-      WEB_CONCURRENCY: '1'
-      SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
-      SCOREMAX_ENFORCE_PAYWALL: '0'
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 1
+          fetch-depth: 2
           persist-credentials: false
-      - name: Materialize exact triggering candidate
+      - name: Verify and apply the retained no-paid-API candidate in disposable checkout
         run: |
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          git rev-parse HEAD > /tmp/scoremax_qualified_commit.txt
-          python scripts/qualify_build_determinism.py --report /tmp/scoremax_build_determinism.json
-          mkdir -p /tmp/scoremax_qualified_source
-          cp scoremax_runtime_v669b/{app.py,account_security_engine.py,scoremax_production.py,scoremax_integration_v1.py,question_contract_engine.py,ux_constructed_auto_marker.py,written_response_engine.py,ux_content_reviewer.py,ux_student_batch.py,ux_catalogue_browser.py,ux_mastery_rigor_admin.py,ux_staging_routes.py} /tmp/scoremax_qualified_source/
-          cp -r scoremax_runtime_v669b/templates /tmp/scoremax_qualified_source/templates
-          sha256sum /tmp/scoremax_qualified_source/*.py > /tmp/scoremax_qualified_source/SHA256SUMS.txt
-      - name: Install runtime dependencies
+          set -euo pipefail
+          mkdir -p /tmp/scoremax_followup_evidence
+          git rev-parse HEAD > /tmp/scoremax_followup_evidence/qualification_commit.txt
+          test "$(git rev-parse HEAD^)" = 7cf0028b23aaacdde0b4db5fa03cb9953a6c7115
+          python - <<'PY'
+          import base64,hashlib,lzma,pathlib,subprocess
+          data=base64.b64decode(pathlib.Path('qualification/local_followup_v1.patch.xz.b64').read_text())
+          patch=lzma.decompress(data)
+          assert hashlib.sha256(patch).hexdigest()=='30a6e27c3c2480efc822201b1c2f8842b06489d9f04f5c3b23c293e482096490'
+          path=pathlib.Path('/tmp/scoremax_followup_evidence/retained_candidate.patch');path.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(path)],check=True)
+          subprocess.run(['git','apply',str(path)],check=True)
+          print('EXACT_RETAINED_NO_PAID_API_PATCH_VERIFIED')
+          PY
+          python scripts/qualify_build_determinism.py --report /tmp/scoremax_followup_evidence/build.json
+          python - <<'PY'
+          from pathlib import Path
+          import shutil,json,hashlib
+          src=Path('scoremax_runtime_v669b');out=Path('/tmp/scoremax_followup_evidence/runtime');manifest={}
+          for p in sorted(src.rglob('*')):
+              if not p.is_file() or '__pycache__' in p.parts or p.suffix=='.pyc':continue
+              assert p.suffix not in ('.db','.sqlite','.sqlite3')
+              dst=out/p.relative_to(src);dst.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,dst)
+              manifest[p.relative_to(src).as_posix()]=hashlib.sha256(p.read_bytes()).hexdigest()
+          Path('/tmp/scoremax_followup_evidence/runtime_manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2))
+          PY
+      - name: Install the established runtime and browser dependencies
         id: dependencies
-        run: pip install -r scoremax_runtime_v669b/requirements.txt
-      - name: Qualify account revocation and actual cold/restarted WSGI
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: python scripts/qualify_account_startup_repair.py --report /tmp/scoremax_account_startup_repair.json
-      - name: Qualify native assessment contract and adversarial marking
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: python scripts/qualify_assessment_contract_repair.py --report /tmp/scoremax_assessment_contract_repair.json
-      - name: Qualify every written marking entrypoint
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: python scripts/qualify_written_entrypoints.py --report /tmp/scoremax_written_entrypoints.json
-      - name: Qualify programme context and scoped mastery policies
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: python scripts/qualify_programme_navigation_repair.py --report /tmp/scoremax_programme_mastery_repair.json
-      - name: Qualify existing Power House scope compatibility without schema changes
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: python scripts/qualify_existing_ph_compatibility.py --report /tmp/scoremax_existing_ph_compatibility.json
-      - name: Real browser form journeys on isolated HTTPS WSGI
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: |
+          pip install -r scoremax_runtime_v669b/requirements.txt
           pip install playwright==1.57.0 cryptography==46.0.4
+          pip download --no-deps Flask==3.1.3 Werkzeug==3.1.6 blinker==1.9.0 itsdangerous==2.2.0 click==8.2.1 -d /tmp/scoremax_followup_evidence/wheels
           if command -v google-chrome >/dev/null; then
-            export CHROMIUM_EXECUTABLE="$(command -v google-chrome)"
+            echo "CHROMIUM_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
           elif command -v chromium >/dev/null; then
-            export CHROMIUM_EXECUTABLE="$(command -v chromium)"
+            echo "CHROMIUM_EXECUTABLE=$(command -v chromium)" >> "$GITHUB_ENV"
           else
             python -m playwright install --with-deps chromium
           fi
-          python scripts/qualify_assessment_browser.py --report /tmp/scoremax_assessment_browser.json --screenshots /tmp/scoremax_browser_screenshots
-          python scripts/qualify_programme_mastery_browser.py --report /tmp/scoremax_programme_mastery_browser.json --screenshots /tmp/scoremax_programme_browser_screenshots 2>&1 | tee /tmp/scoremax_programme_mastery_browser.log
-      - name: Run pre-import route and template audit
+      - name: Original 211 native regressions and retained 52 local follow-up tests
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        env:
-          SCOREMAX_DB: /tmp/scoremax_preimport_full_v1/state/scoremax.db
-          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_preimport_full_v1
-          SCOREMAX_BACKUP_DIR: /tmp/scoremax_preimport_full_v1/backup
-          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_preimport_full_v1/intake
         run: |
-          rm -rf /tmp/scoremax_preimport_full_v1
-          mkdir -p /tmp/scoremax_preimport_full_v1/{state,backup,intake}
-          cp scripts/preimport_full_platform_audit.py scoremax_runtime_v669b/preimport_full_platform_audit.py
-          cd scoremax_runtime_v669b
           python - <<'PY'
-          import socket, runpy
-          def no_network(*args, **kwargs):
-              raise RuntimeError('QUALIFICATION_NETWORK_DISABLED')
-          socket.socket.connect = no_network
-          socket.socket.connect_ex = no_network
-          runpy.run_path('preimport_full_platform_audit.py', run_name='__main__')
+          import subprocess,sys,json,pathlib
+          root=pathlib.Path('/tmp/scoremax_followup_evidence');results=[]
+          scripts=['qualify_account_startup_repair','qualify_assessment_contract_repair','qualify_written_entrypoints','qualify_programme_navigation_repair','qualify_existing_ph_compatibility','qualify_written_local_followup']
+          for name in scripts:
+              with (root/(name+'.log')).open('w') as log:
+                  p=subprocess.run([sys.executable,'scripts/'+name+'.py','--report',str(root/(name+'.json'))],stdout=log,stderr=subprocess.STDOUT)
+              results.append({'suite':name,'returncode':p.returncode});print(name,p.returncode,flush=True)
+              if p.returncode:print((root/(name+'.log')).read_text()[-12000:])
+          (root/'regression_outcomes.json').write_text(json.dumps(results,indent=2))
+          raise SystemExit(any(r['returncode'] for r in results))
           PY
-      - name: Run Power House boundary and zero-content gates
+      - name: Real Flask written follow-up and nine real browser submissions
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        env:
-          SCOREMAX_DB: /tmp/scoremax_preimport_governance_v1/state/scoremax.db
-          SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_preimport_governance_v1
-          SCOREMAX_BACKUP_DIR: /tmp/scoremax_preimport_governance_v1/backup
-          SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_preimport_governance_v1/intake
         run: |
-          rm -rf /tmp/scoremax_preimport_governance_v1
-          mkdir -p /tmp/scoremax_preimport_governance_v1/{state,backup,intake}
-          cp scripts/preimport_governance_gates.py scoremax_runtime_v669b/preimport_governance_gates.py
-          cd scoremax_runtime_v669b
-          python - <<'PY' | tee /tmp/scoremax_preimport_governance.log
-          import socket, runpy
-          def no_network(*args, **kwargs):
-              raise RuntimeError('QUALIFICATION_NETWORK_DISABLED')
-          socket.socket.connect = no_network
-          socket.socket.connect_ex = no_network
-          runpy.run_path('preimport_governance_gates.py', run_name='__main__')
+          set -o pipefail
+          python scripts/qualify_written_followup_web.py --browser --report /tmp/scoremax_followup_evidence/written_web.json --screenshots /tmp/scoremax_followup_evidence/written_screenshots 2>&1 | tee /tmp/scoremax_followup_evidence/written_web.log
+      - name: Existing real browser assessment and programme navigation regressions
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: |
+          python - <<'PY'
+          import subprocess,sys,pathlib
+          out=pathlib.Path('/tmp/scoremax_followup_evidence');failed=False
+          for name in ('qualify_assessment_browser','qualify_programme_mastery_browser'):
+              with (out/(name+'.log')).open('w') as log:
+                  p=subprocess.run([sys.executable,'scripts/'+name+'.py','--report',str(out/(name+'.json')),'--screenshots',str(out/(name+'_screenshots'))],stdout=log,stderr=subprocess.STDOUT)
+              print(name,p.returncode,flush=True);failed|=bool(p.returncode)
+              if p.returncode:print((out/(name+'.log')).read_text()[-12000:])
+          raise SystemExit(failed)
           PY
-      - name: Publish revision-bound qualification evidence
+      - name: Established route and Power House boundary gates
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: |
+          python - <<'PY'
+          import subprocess,sys,pathlib,os,shutil
+          out=pathlib.Path('/tmp/scoremax_followup_evidence');failed=False
+          for name in ('preimport_full_platform_audit','preimport_governance_gates'):
+              state=pathlib.Path('/tmp')/('followup_'+name)
+              for part in ('state','backup','intake'):(state/part).mkdir(parents=True,exist_ok=True)
+              env=dict(os.environ,SCOREMAX_ENV='production',SCOREMAX_DB=str(state/'state/scoremax.db'),SCOREMAX_PERSISTENT_ROOT=str(state),SCOREMAX_BACKUP_DIR=str(state/'backup'),SCOREMAX_CONTENT_INTAKE_DIR=str(state/'intake'),SCOREMAX_SECRET='synthetic-ci-only-followup-no-live',SCOREMAX_STAGING_SESSION_SECRET='synthetic-ci-only-followup-no-live',SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD='Synthetic-Only-Qualification-2026!',SCOREMAX_SMTP_HOST='smtp.invalid',SCOREMAX_SMTP_FROM='qualification@scoremax.test',SCOREMAX_PUBLIC_BASE_URL='https://localhost',SCOREMAX_INSTANCE_COUNT='1',WEB_CONCURRENCY='1',SCOREMAX_REQUIRE_EMAIL_VERIFICATION='0',SCOREMAX_ENFORCE_PAYWALL='0')
+              shutil.copyfile('scripts/'+name+'.py','scoremax_runtime_v669b/'+name+'.py')
+              wrapper="import socket,runpy\ndef deny(*a,**k):raise RuntimeError('QUALIFICATION_NETWORK_DISABLED')\nsocket.socket.connect=deny;socket.socket.connect_ex=deny\nrunpy.run_path('"+name+".py',run_name='__main__')"
+              with (out/(name+'.log')).open('w') as log:p=subprocess.run([sys.executable,'-c',wrapper],cwd='scoremax_runtime_v669b',env=env,stdout=log,stderr=subprocess.STDOUT)
+              print(name,p.returncode,flush=True);failed|=bool(p.returncode)
+              if p.returncode:print((out/(name+'.log')).read_text()[-12000:])
+          for p in pathlib.Path('/tmp').glob('scoremax_preimport*.json'):shutil.copyfile(p,out/p.name)
+          raise SystemExit(failed)
+          PY
+      - name: Retain exact revision-bound evidence (no live records or runtime databases)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scoremax-preimport-full-platform-audit-v1
-          path: |
-            /tmp/scoremax_qualified_commit.txt
-            /tmp/scoremax_build_determinism.json
-            /tmp/scoremax_qualified_source/
-            /tmp/scoremax_account_startup_repair.json
-            /tmp/scoremax_assessment_contract_repair.json
-            /tmp/scoremax_written_entrypoints.json
-            /tmp/scoremax_assessment_browser.json
-            /tmp/scoremax_programme_mastery_repair.json
-            /tmp/scoremax_existing_ph_compatibility.json
-            /tmp/scoremax_programme_mastery_browser.json
-            /tmp/scoremax_programme_mastery_browser.log
-            /tmp/scoremax_programme_browser_screenshots/
-            /tmp/scoremax_browser_screenshots/
-            /tmp/scoremax_preimport_audit.json
-            /tmp/scoremax_preimport_governance.log
+          name: scoremax-no-paid-api-followup-gates-20260924
+          path: /tmp/scoremax_followup_evidence/
           if-no-files-found: error
           retention-days: 14
