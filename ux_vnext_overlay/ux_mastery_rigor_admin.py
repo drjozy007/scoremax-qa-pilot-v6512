@@ -54,6 +54,7 @@ def ensure_mastery_rigor_schema(scoremax):
           reason TEXT NOT NULL DEFAULT '',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
+        scoremax.ensure_mastery_launch_policy_v1(conn)
         conn.commit()
     finally:
         conn.close()
