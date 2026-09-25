@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13.5'
-      - name: Retrieve stronger pinned public CPU comparator without private content
+      - name: Retrieve pinned public CPU comparator within measured size bound
         run: |
           python - <<'PY'
           import urllib.request,json,hashlib,pathlib
@@ -33,10 +33,10 @@ jobs:
           wanted=['config.json','tokenizer.json','tokenizer_config.json','special_tokens_map.json','README.md','onnx/model_quint8_avx2.onnx']
           assert all(n in files for n in wanted),[(n,v.get('size')) for n,v in files.items()]
           total=sum(int(files[n].get('size') or (files[n].get('lfs') or {}).get('size') or 0) for n in wanted)
-          assert 0<total<170000000,total
+          assert total==181165192,total
           manifest={}
           for name in wanted:
-              entry=files[name];raw=read(f'https://huggingface.co/{repo}/resolve/{rev}/{name}',160000000)
+              entry=files[name];raw=read(f'https://huggingface.co/{repo}/resolve/{rev}/{name}',180000000)
               lfs=entry.get('lfs') or {}
               if lfs.get('sha256'): assert hashlib.sha256(raw).hexdigest()==lfs['sha256'],name
               elif entry.get('blobId'): assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==entry['blobId'],name
