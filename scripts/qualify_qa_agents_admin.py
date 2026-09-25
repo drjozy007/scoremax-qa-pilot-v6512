@@ -71,8 +71,8 @@ class QAAdminQualification(unittest.TestCase):
           semantic_checksum_sha256,release_status,local_status,effective_at,generated_at,market_id,programme_id,
           subject_id,chapter_id,question_count,stimulus_count,readiness_policy_version,supersedes_release_version,
           source_system_version,immutable_payload_json,admitted_at,schema_version,release_operation)
-          VALUES('REL-QA','V1',?,?,?,?,?,'STAGED','STAGED',NULL,NULL,'PK','FSC1','CHEM','CH1',2,0,'',NULL,'','{}',
-          CURRENT_TIMESTAMP,'1.3.0','QA_STAGE')""",("1"*64,"2"*64,"3"*64,"4"*64,"STAGED"))
+          VALUES('REL-QA','V1',?,?,?,?,'STAGED','STAGED',NULL,NULL,'PK','FSC1','CHEM','CH1',2,0,'',NULL,'','{}',
+          CURRENT_TIMESTAMP,'1.3.0','QA_STAGE')""",("1"*64,"2"*64,"3"*64,"4"*64))
         insert_fixture(cls.c,"Q-CLEAN","QV-CLEAN",[("A","one"),("B","two")],"B",1)
         insert_fixture(cls.c,"Q-DUP","QV-DUP",[("A","same"),("B","same")],"B",2)
         cls.c.commit()
