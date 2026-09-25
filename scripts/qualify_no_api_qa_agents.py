@@ -16,8 +16,8 @@ for key in tuple(os.environ):
         del os.environ[key]
 os.environ.update({
     "SCOREMAX_ENV":"production",
-    "SCOREMAX_SECRET":"synthetic-no-api-qa-secret",
-    "SCOREMAX_STAGING_SESSION_SECRET":"synthetic-no-api-qa-secret",
+    "SCOREMAX_SECRET":"synthetic-no-api-qa-secret-0123456789abcdef",
+    "SCOREMAX_STAGING_SESSION_SECRET":"synthetic-no-api-qa-secret-0123456789abcdef",
     "SCOREMAX_DB":str(BASE/"qa.db"),
     "SCOREMAX_PERSISTENT_ROOT":str(BASE),
     "SCOREMAX_BACKUP_DIR":str(BASE/"backup"),
