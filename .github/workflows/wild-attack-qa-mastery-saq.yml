@@ -35,3 +35,5 @@ jobs:
         run: python scripts/wild_attack_qa_admin.py
       - name: Wild attack mastery
         run: python scripts/wild_attack_mastery.py
+      - name: Wild attack SAQ marking
+        run: python scripts/wild_attack_saq_marking.py
