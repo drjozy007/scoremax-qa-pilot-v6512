@@ -33,3 +33,5 @@ jobs:
         run: python deploy_ux_vnext.py
       - name: Wild attack QA Admin
         run: python scripts/wild_attack_qa_admin.py
+      - name: Wild attack mastery
+        run: python scripts/wild_attack_mastery.py
