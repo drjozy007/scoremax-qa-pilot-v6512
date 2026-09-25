@@ -10,10 +10,10 @@ from flask import flash, redirect, render_template, request, session, url_for
 
 POLICY_VERSION="SCOREMAX-NO-API-FOUR-LANE-QA-ADMIN-1"
 AGENTS={
- "STUDENT_A":{"label":"Student A","purpose":"Learner structure & self-containment","short":"Checks visible structure, options, matching/ordering and referenced stimulus."},
- "STUDENT_B":{"label":"Student B","purpose":"Answer & marking execution","short":"Executes governed correct/wrong responses and keeps unsupported semantics fail-closed."},
- "REVIEWER_A":{"label":"Reviewer A","purpose":"Key, rubric & marking contract","short":"Checks response cardinality, keys, rubrics, mark totals and deterministic contract integrity."},
- "REVIEWER_B":{"label":"Reviewer B","purpose":"Identity, governance & release safety","short":"Checks immutable version identity, staged/active release fences and activation authority."},
+ "STUDENT_A":{"label":"Student A","purpose":"Learner structure & self-containment","short":"Checks visible structure, options, matching/ordering and referenced stimulus.","not_scope":"Does not judge arbitrary academic correctness, rewrite questions or approve release."},
+ "STUDENT_B":{"label":"Student B","purpose":"Answer & marking execution","short":"Executes governed correct/wrong responses and keeps unsupported semantics fail-closed.","not_scope":"Does not guess unseen semantic answers or turn uncertainty into zero/mastery."},
+ "REVIEWER_A":{"label":"Reviewer A","purpose":"Key, rubric & marking contract","short":"Checks response cardinality, keys, rubrics, mark totals and deterministic contract integrity.","not_scope":"Does not invent rubrics, marks, curriculum mappings or textbook truth."},
+ "REVIEWER_B":{"label":"Reviewer B","purpose":"Identity, governance & release safety","short":"Checks immutable version identity, staged/active release fences and activation authority.","not_scope":"Does not activate, release, amend source, approve R2 or award mastery."},
 }
 VALID_STATUSES={"PASS","HOLD","NOT_EVALUATED"}
 
@@ -96,7 +96,8 @@ def _population(c,scope):
     elif str(scope).startswith("release:"):
         rid=int(str(scope).split(":",1)[1]);clauses=["r.id=?"];params=[rid];scope_type="RELEASE";scope_key=str(rid)
     rows=c.execute(f"""SELECT v.*,m.release_id,m.release_version,m.ordinal,
-      r.id release_db_id,r.local_status release_local_status,r.market_id,r.programme_id,r.subject_id,r.chapter_id
+      r.id release_db_id,r.local_status release_local_status,r.market_id,r.programme_id,r.subject_id,r.chapter_id,
+      r.package_checksum_sha256
       FROM integration_ph_release_question_membership m
       JOIN integration_ph_question_version_store v
         ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
@@ -111,7 +112,8 @@ def _population(c,scope):
         item["memberships"].append({
           "release_db_id":row["release_db_id"],"release_id":row["release_id"],"release_version":row["release_version"],
           "local_status":row["release_local_status"],"market_id":row["market_id"],"programme_id":row["programme_id"],
-          "subject_id":row["subject_id"],"chapter_id":row["chapter_id"],"ordinal":row["ordinal"]})
+          "subject_id":row["subject_id"],"chapter_id":row["chapter_id"],"ordinal":row["ordinal"],
+          "package_checksum_sha256":row["package_checksum_sha256"]})
     return list(grouped.values()),scope_type,scope_key
 
 def _question(group):
@@ -267,8 +269,8 @@ def _reviewer_b(scoremax,c,group):
             if active:findings.append(_finding("STAGED_CONTENT_LEARNER_ACTIVE","RELEASE_GOVERNANCE",f"{m['release_id']} {m['release_version']}"))
         elif local=="ACTIVE":
             auth=c.execute("""SELECT 1 FROM integration_ph_product_activation_authorizations
-              WHERE release_id=? AND release_version=? AND activation_status='ACTIVATED' LIMIT 1""",
-              (m["release_id"],m["release_version"])).fetchone()
+              WHERE release_id=? AND release_version=? AND package_checksum_sha256=? AND activation_status='ACTIVATED' LIMIT 1""",
+              (m["release_id"],m["release_version"],m["package_checksum_sha256"])).fetchone()
             if not auth:findings.append(_finding("ACTIVE_WITHOUT_ACTIVATION_AUTHORITY","RELEASE_GOVERNANCE",f"{m['release_id']} {m['release_version']}"))
     return ("HOLD" if findings else "PASS"),findings
 
@@ -337,15 +339,14 @@ def dashboard_data(scoremax):
               WHERE agent_code=? AND severity<>'INFO')""",(code,)).fetchone()["n"]
             current=[r for r in latest if r["agent_code"]==code]
             held=sum(r["status"]=="HOLD" for r in current);not_eval=sum(r["status"]=="NOT_EVALUATED" for r in current)
-            cleared=c.execute("""SELECT COUNT(*) n FROM (
-              SELECT question_id,question_version_id FROM qa_agent_results WHERE agent_code=? GROUP BY question_id,question_version_id
-              HAVING SUM(CASE WHEN status='HOLD' THEN 1 ELSE 0 END)>0
-                AND MAX(CASE WHEN id=(SELECT MAX(r2.id) FROM qa_agent_results r2 WHERE r2.agent_code=? AND r2.question_id=qa_agent_results.question_id AND r2.question_version_id=qa_agent_results.question_version_id) AND status='PASS' THEN 1 ELSE 0 END)=1)""",(code,code)).fetchone()["n"]
+            histories={}
+            for r in all_rows:histories.setdefault((r["question_id"],r["question_version_id"]),[]).append(r)
+            cleared=sum(1 for rows in histories.values() if any(x["status"]=="HOLD" for x in rows) and rows[-1]["status"]=="PASS")
             last=c.execute("SELECT completed_at FROM qa_agent_runs WHERE agent_code=? AND status='COMPLETED' ORDER BY id DESC LIMIT 1",(code,)).fetchone()
             top=c.execute("""SELECT finding_code,COUNT(*) n FROM qa_agent_findings WHERE agent_code=? AND severity<>'INFO'
               GROUP BY finding_code ORDER BY n DESC,finding_code LIMIT 5""",(code,)).fetchall()
             stats[code]={**meta,"code":code,"unique_questions":len(unique),"executions":len(all_rows),"affected_questions":int(affected or 0),
-              "findings":int(findings or 0),"current_holds":held,"not_evaluated":not_eval,"cleared_after_hold":int(cleared or 0),
+              "findings":int(findings or 0),"current_holds":held,"not_evaluated":not_eval,"cleared_after_hold":int(cleared),
               "last_run":last["completed_at"] if last else "Never","top_findings":top}
         recent=c.execute("SELECT * FROM qa_agent_runs ORDER BY id DESC LIMIT 20").fetchall()
         problems=c.execute("""SELECT r.* FROM qa_agent_results r JOIN (
@@ -381,7 +382,7 @@ def install_qa_agents_admin(app):
 
     @app.context_processor
     def qa_agents_admin_context():
-        if session.get("role")=="admin" and request.endpoint in {"admin_mastery_lab","admin_qa_agent_problems"}:
+        if session.get("role")=="admin" and request.endpoint=="admin_mastery_lab":
             return {"qa_agent_admin":dashboard_data(scoremax)}
         return {"qa_agent_admin":None}
 
