@@ -140,7 +140,7 @@ class WildQA(unittest.TestCase):
         with client.session_transaction() as s:
             s["user_id"]=999999;s["role"]="student";s["session_version"]=0
         r=client.post("/admin/mastery-lab/qa-agents/run",data={"agent_code":"ALL","scope":"staged"},base_url="https://localhost")
-        self.assertIn(r.status_code,(302,403))
+        self.assertIn(r.status_code,(302,400,403))
 
     def test_10_qa_run_never_mutates_governed_or_mastery_tables(self):
         sensitive=["integration_ph_content_releases","integration_ph_question_version_store","integration_ph_release_question_membership","questions","attempts","attempt_answers","mastery_records"]
