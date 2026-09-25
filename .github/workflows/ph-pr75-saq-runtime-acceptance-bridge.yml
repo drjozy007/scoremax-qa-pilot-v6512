@@ -30,6 +30,7 @@ jobs:
           test "$(git hash-object .qualification/ph_pr75_snapshot/cross50_short_response_structure_v015l9cm.py)" = "a3fa004ce780c47c3a5383616407b08f9f85b375"
           test "$(git hash-object .qualification/ph_pr75_snapshot/apply_overlay.py)" = "060e0381d7700c8ee1f382a0b38dc899bef83598"
           test "$(git hash-object .qualification/ph_pr75_snapshot/cross50_qa_staging_contract_v015l9bt.py)" = "6e367f25fbe6ef53276faf6310c266150c45f170"
+          test "$(git hash-object .qualification/ph_pr75_snapshot/apply_numeric_overlay_v015l9cg.py)" = "767c8095565987ced9f57d2615a990e60267bce2"
           python - <<'PY'
           import json
           m=json.load(open('.qualification/ph_pr75_snapshot/MANIFEST.json'))
@@ -49,8 +50,10 @@ jobs:
           cp .qualification/ph_pr75_snapshot/cross50_qa_staging_contract_v015l9bt.py "$ROOT/powerhouse_operator/"
           cp .qualification/ph_pr75_snapshot/question_source_fidelity_v015l9bi.py "$ROOT/powerhouse_operator/"
           cp .qualification/ph_pr75_snapshot/cross50_short_response_structure_v015l9cm.py "$ROOT/powerhouse_operator/"
+          python .qualification/ph_pr75_snapshot/apply_numeric_overlay_v015l9cg.py "$ROOT"
           python .qualification/ph_pr75_snapshot/apply_overlay.py "$ROOT"
           python -m py_compile             "$ROOT/powerhouse_operator/question_source_fidelity_v015l9bi.py"             "$ROOT/powerhouse_operator/cross50_short_response_structure_v015l9cm.py"             "$ROOT/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py"
+          grep -q 'PH-CROSS50-NUMERIC-MARKING-OVERLAY-V015L9CG-1' "$ROOT/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py"
           grep -q 'source_row=source_row,effective=eff' "$ROOT/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py"
           grep -q 'PH-CROSS50-SHORT-RESPONSE-PROJECTION-V015L9CM-1' "$ROOT/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py"
           echo 'PH_PR75_RUNTIME_SURFACE_ASSEMBLY_PASS'
