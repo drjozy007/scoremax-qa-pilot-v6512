@@ -597,6 +597,12 @@ def main() -> None:
     if 'install_qa_agents_admin(scoremax.app)' not in text:
         if old not in text: raise SystemExit('SCOREMAX_QA_AGENTS_ADMIN_POST_INIT_ANCHOR_MISSING')
         text=text.replace(old,new,1);production.write_text(text,encoding='utf-8')
+    base=ROOT/'templates'/'base.html'; base_text=base.read_text(encoding='utf-8')
+    old_nav="<a href=\"{{url_for('admin_mastery_lab')}}\">Mastery Laboratory</a>"
+    new_nav="<a href=\"{{url_for('admin_mastery_lab')}}\">QA &amp; Mastery</a>"
+    if old_nav not in base_text: raise SystemExit('SCOREMAX_QA_ADMIN_NAV_ANCHOR_MISSING')
+    base.write_text(base_text.replace(old_nav,new_nav,1),encoding='utf-8')
+    print('SCOREMAX_QA_ADMIN_NAV_LABEL_PASS label=QA_AND_MASTERY',flush=True)
     print('SCOREMAX_QA_AGENTS_ADMIN_BUILD_PASS existing_mastery_lab=true release_authority=false mastery_authority=false',flush=True)
 
 
