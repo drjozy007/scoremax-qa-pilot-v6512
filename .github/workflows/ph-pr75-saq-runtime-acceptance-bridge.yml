@@ -1,0 +1,149 @@
+name: Power House PR75 SAQ Runtime Acceptance Bridge
+
+on:
+  push:
+    branches: [repair/account-startup-20260922]
+    paths:
+      - '.github/workflows/ph-pr75-saq-runtime-acceptance-bridge.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ph-pr75-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact Power House PR75 head
+        uses: actions/checkout@v4
+        with:
+          repository: drjozy007/power-house-reviewer-service
+          ref: bfe23b7cc7060dd668ca6dcf081d377350779a15
+          path: ph
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact PH revision and narrow surface source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ph
+          test "$(git rev-parse HEAD)" = "bfe23b7cc7060dd668ca6dcf081d377350779a15"
+          python -m py_compile             runtime_support_v015l9g/question_source_fidelity_v015l9bi.py             runtime_support_v015l9g/cross50_short_response_structure_v015l9cm.py             qualification_runtime_overlay_v015l9cm/apply_overlay.py
+          sha256sum             runtime_support_v015l9g/question_source_fidelity_v015l9bi.py             runtime_support_v015l9g/cross50_short_response_structure_v015l9cm.py             qualification_runtime_overlay_v015l9cm/apply_overlay.py | tee /tmp/ph_pr75_source_sha256.txt
+          echo "PH_PR75_SOURCE_PASS head=$(git rev-parse HEAD)"
+
+      - name: Build exact Power House PR75 image
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ph
+          docker build --pull=false -t ph-pr75-saq .
+          echo "PH_PR75_IMAGE_BUILD_PASS"
+
+      - name: Execute assembled-runtime SAQ contract checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint python ph-pr75-saq - <<'PY'
+          import json, hashlib
+          from powerhouse_operator.question_source_fidelity_v015l9bi import source_marking_evidence
+          from powerhouse_operator.cross50_short_response_structure_v015l9cm import canonicalize_short_response_structure, assert_short_response_structure
+
+          source={
+            "Question_ID":"SYN-SAQ-1",
+            "Marks":2,
+            "Explanation / Marking Rubric":"1 mark: identifies the first required evidence. 1 mark: identifies the second required evidence."
+          }
+          evidence=source_marking_evidence(source,{})
+          assert evidence["status"]=="SOURCE_ALLOCATION_RESOLVED", evidence
+          assert evidence["maximum_marks"]==2.0, evidence
+          assert len(evidence["required_mark_points"])==2, evidence
+          assert sum(float(x["marks"]) for x in evidence["required_mark_points"])==2.0
+
+          material={"content":{
+            "question_family_type":"SHORT_CONSTRUCTED_RESPONSE",
+            "exam_question_type":"SAQ",
+            "marking":{"key_type":"TEXT","marks":1,"rubric":None},
+            "options":[]
+          }}
+          canonicalize_short_response_structure(
+            material,subject="Chemistry",source_question_id="SYN-SAQ-1",
+            source_row=source,effective={}
+          )
+          marking=material["content"]["marking"]
+          assert marking["key_type"]=="RUBRIC_ONLY", marking
+          assert marking["marks"]==2.0, marking
+          rubric=marking["rubric"]
+          assert rubric["version"]=="PH-SAQ-SCORING-CONTRACT-1", rubric
+          assert rubric["maximum_marks"]==2.0, rubric
+          assert rubric["auto_marking_eligibility"]=="RUBRIC_SEMANTICALLY_SCORABLE", rubric
+          assert rubric["scoring_type"]=="SEMANTIC_MARK_POINT", rubric
+          assert len(rubric["required_mark_points"])==2
+          assert_short_response_structure(material,subject="Chemistry",source_question_id="SYN-SAQ-1")
+
+          deterministic={
+            "version":"PH-SAQ-SCORING-CONTRACT-1",
+            "maximum_marks":2,
+            "auto_marking_eligibility":"DETERMINISTICALLY_SCORABLE",
+            "scoring_type":"EXACT_BOUNDED",
+            "required_mark_points":[
+              {"id":"P1","description":"first","marks":1,
+               "accepted_expressions":["alpha"],"accepted_synonyms":[],"contradictions":["not alpha"]},
+              {"id":"P2","description":"second","marks":1,
+               "accepted_expressions":["beta"],"accepted_synonyms":[],"contradictions":[]}
+            ],
+            "academic_approval_conferred":False
+          }
+          unsigned=dict(deterministic)
+          deterministic["contract_sha256"]=hashlib.sha256(
+            json.dumps(unsigned,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()
+          ).hexdigest()
+          source2=dict(source)
+          source2["SAQ_Scoring_Contract_JSON"]=json.dumps(deterministic,sort_keys=True)
+          material2={"content":{
+            "question_family_type":"SHORT_CONSTRUCTED_RESPONSE",
+            "exam_question_type":"SAQ",
+            "marking":{"key_type":"TEXT","marks":1,"rubric":None},
+            "options":[]
+          }}
+          canonicalize_short_response_structure(
+            material2,subject="Chemistry",source_question_id="SYN-SAQ-2",
+            source_row=source2,effective={}
+          )
+          out=material2["content"]["marking"]["rubric"]
+          assert out["auto_marking_eligibility"]=="DETERMINISTICALLY_SCORABLE"
+          assert out["maximum_marks"]==2
+          assert len(out["required_mark_points"])==2
+          assert isinstance(out["contract_sha256"],str) and len(out["contract_sha256"])==64
+
+          unresolved={"Question_ID":"SYN-SAQ-3","Explanation / Marking Rubric":"A model answer without an explicit mark allocation."}
+          trial={"content":{"question_family_type":"SAQ","exam_question_type":"SAQ",
+                            "marking":{"key_type":"TEXT","marks":1,"rubric":None},"options":[]}}
+          try:
+            canonicalize_short_response_structure(
+              trial,subject="Physics",source_question_id="SYN-SAQ-3",
+              source_row=unresolved,effective={}
+            )
+          except ValueError as exc:
+            assert "SOURCE_MARK_ALLOCATION_REQUIRED" in str(exc)
+          else:
+            raise AssertionError("unresolved source marks did not fail closed")
+
+          print("PH_PR75_ASSEMBLED_RUNTIME_SAQ_PASS marks=2 atomic_points=2 deterministic_preserved=true unresolved_fail_closed=true")
+          PY
+
+      - name: Verify source immutability and no resend authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint /bin/sh ph-pr75-saq -lc "
+            grep -q 'source_truth_inferred.*False' /opt/powerhouse/app/powerhouse_operator/question_source_fidelity_v015l9bi.py &&
+            grep -q 'release_conferred.*False' /opt/powerhouse/app/powerhouse_operator/question_source_fidelity_v015l9bi.py &&
+            grep -q 'source_immutable=true' /opt/powerhouse/app/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py
+          "
+          echo "PH_PR75_GOVERNANCE_FENCES_PASS source_immutable=true release=false resend=false"
+
+      - name: Final acceptance
+        run: echo 'PH_PR75_SAQ_RUNTIME_ACCEPTANCE_PASS deployment=false learner_release=false resend=false'
