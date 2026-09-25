@@ -115,7 +115,8 @@ class WildQA(unittest.TestCase):
     def test_04_unknown_qtype_must_not_false_pass_student_a(self):
         pop,_,_=qa._population(self.c,f"release:{self.release_id}")
         g=next(x for x in pop if x["row"]["question_id"]=="Q-UNKNOWN")
-        self.assertNotEqual(qa._student_a(sm,g)[0],"PASS")
+        status=qa._student_a(sm,g)[0]; q=qa._question(g); resolved=sm.canonical_question_type(q)
+        self.assertNotEqual(status,"PASS",f"stored_qtype={q.get('qtype')!r} canonical={resolved!r} keys={sorted(q.keys())}")
 
     def test_05_invalid_key_reviewer_a_hold(self):
         pop,_,_=qa._population(self.c,f"release:{self.release_id}")
