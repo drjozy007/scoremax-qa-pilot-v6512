@@ -598,10 +598,11 @@ def main() -> None:
         if old not in text: raise SystemExit('SCOREMAX_QA_AGENTS_ADMIN_POST_INIT_ANCHOR_MISSING')
         text=text.replace(old,new,1);production.write_text(text,encoding='utf-8')
     base=ROOT/'templates'/'base.html'; base_text=base.read_text(encoding='utf-8')
-    pattern=r"<a href=\\"{{url_for\\('admin_mastery_lab'\\)}}\\">.*?</a>"
-    replacement="<a href=\"{{url_for('admin_mastery_lab')}}\">QA &amp; Mastery</a>"
-    base_text,count=re.subn(pattern,replacement,base_text,count=1)
-    if count!=1: raise SystemExit('SCOREMAX_QA_ADMIN_NAV_ENDPOINT_MISSING')
+    token="{{url_for('admin_mastery_lab')}}"; pos=base_text.find(token)
+    if pos<0: raise SystemExit('SCOREMAX_QA_ADMIN_NAV_ENDPOINT_MISSING')
+    start=base_text.rfind('<a',0,pos); gt=base_text.find('>',pos); end=base_text.find('</a>',gt)
+    if min(start,gt,end)<0: raise SystemExit('SCOREMAX_QA_ADMIN_NAV_LINK_MALFORMED')
+    base_text=base_text[:gt+1]+'QA &amp; Mastery'+base_text[end:]
     base.write_text(base_text,encoding='utf-8')
     print('SCOREMAX_QA_ADMIN_NAV_LABEL_PASS label=QA_AND_MASTERY endpoint_reused=true',flush=True)
     print('SCOREMAX_QA_AGENTS_ADMIN_BUILD_PASS existing_mastery_lab=true release_authority=false mastery_authority=false',flush=True)
