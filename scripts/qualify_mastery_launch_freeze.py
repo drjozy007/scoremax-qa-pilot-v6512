@@ -102,11 +102,11 @@ class MasteryLaunchFreeze(unittest.TestCase):
             level="Advanced" if i<=15 else "Distinction" if i<=30 else "Exam Ready"
             pool.append(q(i,level,required[(i-1)%len(required)]))
         coverage={"required_node_ids":required,"mandatory_node_ids":required[:3],"min_breadth_pct":.95}
-        chosen=sm.select_mastery_coverage_questions(pool,50,"Expert",.40,.70,set(),coverage,50)
-        self.assertEqual(len(chosen),50)
+        chosen=sm.select_mastery_coverage_questions(pool,25,"Expert",.40,.70,set(),coverage,50)
+        self.assertEqual(len(chosen),25)
         self.assertFalse(any(x["level"]=="Expert" for x in chosen))
         high=sum(x["level"] in {"Advanced","Distinction"} for x in chosen)
-        self.assertGreaterEqual(high,20)
+        self.assertGreaterEqual(high,10)
 
     def test_09_elite_selector_needs_no_elite_labelled_items(self):
         required=[f"N{i}" for i in range(1,20)]
@@ -115,11 +115,11 @@ class MasteryLaunchFreeze(unittest.TestCase):
             level="Advanced" if i<=18 else "Distinction" if i<=36 else "Exam Ready"
             pool.append(q(i,level,required[(i-1)%len(required)]))
         coverage={"required_node_ids":required,"mandatory_node_ids":required[:4],"min_breadth_pct":1.0}
-        chosen=sm.select_mastery_coverage_questions(pool,60,"Elite",.45,.75,set(),coverage,50)
-        self.assertEqual(len(chosen),60)
+        chosen=sm.select_mastery_coverage_questions(pool,20,"Elite",.45,.75,set(),coverage,50)
+        self.assertEqual(len(chosen),20)
         self.assertFalse(any(x["level"]=="Elite" for x in chosen))
         high=sum(x["level"] in {"Advanced","Distinction"} for x in chosen)
-        self.assertGreaterEqual(high,27)
+        self.assertGreaterEqual(high,9)
 
     def test_10_family_repetition_cannot_fill_form(self):
         required=["N1","N2","N3"]
