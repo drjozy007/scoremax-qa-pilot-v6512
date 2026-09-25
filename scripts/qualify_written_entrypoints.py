@@ -15,6 +15,23 @@ ALTERNATIVE='The particle is struck by surrounding molecules. The particle moves
 NEGATED='Molecules do not collide with the particle because unequal molecular impacts do not cause irregular motion.'
 
 
+def ph_saq_contract(eligibility='DETERMINISTICALLY_SCORABLE'):
+    body={
+      'version':'PH-SAQ-SCORING-CONTRACT-1','maximum_marks':2,
+      'auto_marking_eligibility':eligibility,'scoring_type':'EXACT_BOUNDED',
+      'required_mark_points':[
+        {'id':'P1','description':'classification','marks':1,
+         'accepted_expressions':['aldehyde'],'accepted_synonyms':[],'contradictions':['ketone']},
+        {'id':'P2','description':'structural feature','marks':1,
+         'accepted_expressions':['carbonyl carbon is bonded to hydrogen'],
+         'accepted_synonyms':['carbonyl carbon bonded to H'],'contradictions':[]}
+      ],
+      'academic_approval_conferred':False
+    }
+    unsigned=dict(body)
+    body['contract_sha256']=hashlib.sha256(json.dumps(unsigned,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+    return body
+
 def rubric():
     return {**copy.deepcopy(RUBRIC),'maximum_marks':2,'question_id':'SYN-WR-1','question_family_id':'SYN-WR-F1',
             'question_type':'SHORT_RESPONSE','question_text':'[SYNTHETIC] Explain irregular particle motion.',
@@ -199,6 +216,27 @@ class WrittenEntryPoints(AssessmentRepair):
     def test_no_automatic_human_exemplar_task_created(self):
         aid,vid=self.legacy_attempt();sm.written_evaluate_attempt(self.c,aid,vid)
         self.assertEqual(self.counts()['written_exemplar_candidates'],0)
+    def test_ph_saq_deterministic_contract_compiles(self):
+        ph=ph_saq_contract()
+        contract=marker.compile_contract({},'',2,marking_cfg={'rubric':ph})
+        self.assertIsNotNone(contract);self.assertEqual(contract['maximum_marks'],2)
+        self.assertEqual(contract['mode'],'governed_clause_rubric_v1')
+
+    def test_ph_saq_semantic_contract_fails_closed(self):
+        ph=ph_saq_contract('RUBRIC_SEMANTICALLY_SCORABLE')
+        self.assertIsNone(marker.compile_contract({},'',2,marking_cfg={'rubric':ph}))
+
+    def test_ph_saq_tampered_contract_fails_closed(self):
+        ph=ph_saq_contract();ph['required_mark_points'][0]['marks']=2
+        self.assertIsNone(marker.compile_contract({},'',2,marking_cfg={'rubric':ph}))
+
+    def test_ph_saq_missing_finite_evidence_fails_closed(self):
+        ph=ph_saq_contract();ph['required_mark_points'][0]['accepted_expressions']=[]
+        ph['required_mark_points'][0]['accepted_synonyms']=[]
+        ph.pop('contract_sha256',None)
+        ph['contract_sha256']=hashlib.sha256(json.dumps(ph,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+        self.assertIsNone(marker.compile_contract({},'',2,marking_cfg={'rubric':ph}))
+
     def test_no_input_rubric_or_answer_history_rewritten(self):
         q=rubric();before=copy.deepcopy(q);engine.mark_written_response(q,ANSWER);self.assertEqual(q,before)
         aid,vid=self.legacy_attempt(payload=q)
