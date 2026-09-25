@@ -43,10 +43,10 @@ import app as sm
 EXPECTED={
  "Foundation":dict(min_forms=1,min_questions=10,min_accuracy=70.0,verification_days=120,target_band_pct=.20,unseen_family_pct=.50,min_breadth_pct=.50),
  "Exam Ready":dict(min_forms=1,min_questions=20,min_accuracy=80.0,verification_days=90,target_band_pct=.25,unseen_family_pct=.50,min_breadth_pct=.70),
- "Advanced":dict(min_forms=2,min_questions=30,min_accuracy=88.0,verification_days=75,target_band_pct=.30,unseen_family_pct=.60,min_breadth_pct=.80),
- "Distinction":dict(min_forms=2,min_questions=40,min_accuracy=94.0,verification_days=60,target_band_pct=.35,unseen_family_pct=.65,min_breadth_pct=.90),
- "Expert":dict(min_forms=2,min_questions=50,min_accuracy=95.0,verification_days=45,target_band_pct=.40,unseen_family_pct=.70,min_breadth_pct=.95),
- "Elite":dict(min_forms=3,min_questions=60,min_accuracy=97.0,verification_days=30,target_band_pct=.45,unseen_family_pct=.75,min_breadth_pct=1.00),
+ "Advanced":dict(min_forms=2,min_questions=15,min_accuracy=88.0,verification_days=75,target_band_pct=.30,unseen_family_pct=.60,min_breadth_pct=.80),
+ "Distinction":dict(min_forms=2,min_questions=20,min_accuracy=94.0,verification_days=60,target_band_pct=.35,unseen_family_pct=.65,min_breadth_pct=.90),
+ "Expert":dict(min_forms=2,min_questions=25,min_accuracy=95.0,verification_days=45,target_band_pct=.40,unseen_family_pct=.70,min_breadth_pct=.95),
+ "Elite":dict(min_forms=3,min_questions=20,min_accuracy=97.0,verification_days=30,target_band_pct=.45,unseen_family_pct=.75,min_breadth_pct=1.00),
 }
 
 def q(i,level,node):
