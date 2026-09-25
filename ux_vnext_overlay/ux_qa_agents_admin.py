@@ -89,12 +89,19 @@ def _release_rows(c):
       ORDER BY CASE local_status WHEN 'STAGED' THEN 0 WHEN 'ACTIVE' THEN 1 ELSE 2 END,admitted_at DESC,id DESC""").fetchall()
 
 def _population(c,scope):
+    scope=str(scope or "").strip()
     clauses=["r.local_status IN ('STAGED','ACTIVE')"];params=[]
     scope_type="ALL_GOVERNED";scope_key=""
-    if scope=="staged":
+    if scope=="all":
+        pass
+    elif scope=="staged":
         clauses=["r.local_status='STAGED'"];scope_type="STAGED_ONLY"
-    elif str(scope).startswith("release:"):
-        rid=int(str(scope).split(":",1)[1]);clauses=["r.id=?"];params=[rid];scope_type="RELEASE";scope_key=str(rid)
+    elif scope.startswith("release:"):
+        raw=scope.split(":",1)[1]
+        if not raw.isdigit():raise ValueError("Invalid QA release scope.")
+        rid=int(raw);clauses=["r.id=?"];params=[rid];scope_type="RELEASE";scope_key=str(rid)
+    else:
+        raise ValueError("Unknown QA scope.")
     rows=c.execute(f"""SELECT v.*,m.release_id,m.release_version,m.ordinal,
       r.id release_db_id,r.local_status release_local_status,r.market_id,r.programme_id,r.subject_id,r.chapter_id,
       r.package_checksum_sha256
@@ -129,7 +136,11 @@ def _student_a(scoremax,group):
     findings=[];stem=str(q.get("question") or "").strip()
     if not stem:findings.append(_finding("EMPTY_LEARNER_STEM","STRUCTURE"))
     try:qtype=scoremax.canonical_question_type(q)
-    except Exception:qtype=""
+    except Exception:
+        return "NOT_EVALUATED",[_finding("UNSUPPORTED_RESPONSE_TYPE","CAPABILITY","Learner structure lane cannot classify this response contract.",severity="INFO")]
+    supported={"single_choice","multiple_select","true_false","fill_blank","numerical","matching","ordering","constructed_response"}
+    if qtype not in supported:
+        return "NOT_EVALUATED",[_finding("UNSUPPORTED_RESPONSE_TYPE","CAPABILITY",f"Unsupported response contract: {qtype}",severity="INFO")]
     ac=_safe_json(q.get("answer_config"),{})
     choice={"single_choice","multiple_select","true_false"}
     if qtype in choice:
@@ -259,6 +270,36 @@ def _reviewer_b(scoremax,c,group):
     qid=str(row["question_id"] or "");qvid=str(row["question_version_id"] or "");chk=str(row["question_checksum_sha256"] or "")
     if not qid or not qvid or not re.fullmatch(r"[A-Fa-f0-9]{64}",chk):
         findings.append(_finding("IMMUTABLE_IDENTITY_INCOMPLETE","IDENTITY"))
+    projection=_safe_json(row["scoremax_projection_json"],None)
+    if not isinstance(projection,dict):
+        findings.append(_finding("PROJECTION_INVALID","IDENTITY"))
+    else:
+        identity=(str(projection.get("ph_question_id") or ""),str(projection.get("ph_question_version_id") or ""),str(projection.get("ph_question_checksum_sha256") or ""))
+        if identity!=(qid,qvid,chk):
+            findings.append(_finding("PROJECTION_IDENTITY_DRIFT","IDENTITY","Learner projection identity does not match immutable question-version store."))
+        try:
+            def j(name):
+                value=_safe_json(row[name],{})
+                return value if isinstance(value,dict) else {}
+            content=j("content_json")
+            stimuli={}
+            ref=str(content.get("stimulus_ref") or "")
+            if ref:
+                st=c.execute("SELECT immutable_payload_json FROM integration_ph_stimulus_version_store WHERE stimulus_id=? ORDER BY id DESC LIMIT 1",(ref,)).fetchone()
+                if st:
+                    payload=_safe_json(st["immutable_payload_json"],{})
+                    if isinstance(payload,dict):stimuli[ref]=payload
+            source={
+              "question_id":qid,"question_version_id":qvid,"question_version_number":int(row["question_version_number"] or 1),
+              "question_checksum_sha256":chk,"supersedes_question_version_id":row["supersedes_question_version_id"],
+              "effective_from":row["effective_from"],"curriculum":j("curriculum_json"),"content":content,
+              "architecture":j("architecture_json"),"governance":j("governance_json"),"provenance":j("provenance_json")}
+            expected=scoremax.integration_v1._projection(source,stimuli)
+            comparable=lambda p:{k:v for k,v in p.items() if not str(k).startswith("_")}
+            if _canon(comparable(projection))!=_canon(comparable(expected)):
+                findings.append(_finding("PROJECTION_PAYLOAD_DRIFT","IDENTITY","Stored learner projection differs from deterministic projection of immutable governed source."))
+        except Exception as exc:
+            findings.append(_finding("PROJECTION_REPLAY_FAILED","IDENTITY",str(exc)))
     if not group["memberships"]:findings.append(_finding("RELEASE_MEMBERSHIP_MISSING","IDENTITY"))
     for m in group["memberships"]:
         local=str(m["local_status"] or "").upper()
@@ -326,13 +367,17 @@ def _latest_results(c):
       SELECT agent_code,question_id,question_version_id,MAX(id) id FROM qa_agent_results
       GROUP BY agent_code,question_id,question_version_id) x ON x.id=r.id""").fetchall()
 
-def dashboard_data(scoremax):
+def dashboard_data(scoremax,problem_limit=20,run_limit=20):
+    try:
+        problem_limit=max(1,min(int(problem_limit),1000));run_limit=max(1,min(int(run_limit),1000))
+    except (TypeError,ValueError):
+        raise ValueError("Invalid QA history limit.")
     c=scoremax.db()
     try:
         ensure_schema(c)
         latest=_latest_results(c);stats={}
         for code,meta in AGENTS.items():
-            all_rows=c.execute("SELECT * FROM qa_agent_results WHERE agent_code=?",(code,)).fetchall()
+            all_rows=c.execute("SELECT * FROM qa_agent_results WHERE agent_code=? ORDER BY id",(code,)).fetchall()
             unique={(r["question_id"],r["question_version_id"]) for r in all_rows}
             findings=c.execute("SELECT COUNT(*) n FROM qa_agent_findings WHERE agent_code=? AND severity<>'INFO'",(code,)).fetchone()["n"]
             affected=c.execute("""SELECT COUNT(*) n FROM (SELECT DISTINCT question_id,question_version_id FROM qa_agent_findings
@@ -348,10 +393,13 @@ def dashboard_data(scoremax):
             stats[code]={**meta,"code":code,"unique_questions":len(unique),"executions":len(all_rows),"affected_questions":int(affected or 0),
               "findings":int(findings or 0),"current_holds":held,"not_evaluated":not_eval,"cleared_after_hold":int(cleared),
               "last_run":last["completed_at"] if last else "Never","top_findings":top}
-        recent=c.execute("SELECT * FROM qa_agent_runs ORDER BY id DESC LIMIT 20").fetchall()
+        recent=c.execute("SELECT * FROM qa_agent_runs ORDER BY id DESC LIMIT ?",(run_limit,)).fetchall()
         problems=c.execute("""SELECT r.* FROM qa_agent_results r JOIN (
           SELECT agent_code,question_id,question_version_id,MAX(id) id FROM qa_agent_results GROUP BY agent_code,question_id,question_version_id
-          ) x ON x.id=r.id WHERE r.status IN ('HOLD','NOT_EVALUATED') ORDER BY r.id DESC LIMIT 20""").fetchall()
+          ) x ON x.id=r.id WHERE r.status IN ('HOLD','NOT_EVALUATED') ORDER BY r.id DESC LIMIT ?""",(problem_limit,)).fetchall()
+        problem_count=c.execute("""SELECT COUNT(*) n FROM qa_agent_results r JOIN (
+          SELECT agent_code,question_id,question_version_id,MAX(id) id FROM qa_agent_results GROUP BY agent_code,question_id,question_version_id
+          ) x ON x.id=r.id WHERE r.status IN ('HOLD','NOT_EVALUATED')""").fetchone()["n"]
         releases=_release_rows(c)
         overall={
           "unique_questions":len({(r["question_id"],r["question_version_id"]) for r in c.execute("SELECT question_id,question_version_id FROM qa_agent_results")}),
@@ -369,7 +417,7 @@ def dashboard_data(scoremax):
           "REVIEWER_B":"50 checked · 50 identity/governance PASS",
           "harness":"Four-lane adversarial harness: 20/20 PASS (5 checks per lane); assessment regression: 48/48 PASS.",
         }
-        return {"agents":stats,"recent_runs":recent,"problems":problems,"releases":releases,"overall":overall,"historical":historical,
+        return {"agents":stats,"recent_runs":recent,"problems":problems,"problem_count":int(problem_count or 0),"releases":releases,"overall":overall,"historical":historical,
           "policy_version":POLICY_VERSION}
     finally:c.close()
 
@@ -401,7 +449,7 @@ def install_qa_agents_admin(app):
     @app.route("/admin/mastery-lab/qa-agents/problems",endpoint="admin_qa_agent_problems")
     def admin_qa_agent_problems():
         if not scoremax.require("admin"):return redirect(url_for("login"))
-        data=dashboard_data(scoremax)
+        data=dashboard_data(scoremax,problem_limit=500,run_limit=200)
         return render_template("admin_qa_agent_problems.html",qa_agent_admin=data)
 
     app._scoremax_qa_agents_admin_installed=True
