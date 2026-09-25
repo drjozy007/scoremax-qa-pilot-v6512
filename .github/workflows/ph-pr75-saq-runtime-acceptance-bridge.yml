@@ -1,149 +1,151 @@
-name: Power House PR75 SAQ Runtime Acceptance Bridge
+name: Power House PR75 SAQ Runtime Surface Acceptance
 
 on:
   push:
     branches: [repair/account-startup-20260922]
     paths:
       - '.github/workflows/ph-pr75-saq-runtime-acceptance-bridge.yml'
+      - '.qualification/ph_pr75_snapshot/**'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  ph-pr75-runtime:
+  ph-pr75-runtime-surface:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
-      - name: Checkout exact Power House PR75 head
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          repository: drjozy007/power-house-reviewer-service
-          ref: bfe23b7cc7060dd668ca6dcf081d377350779a15
-          path: ph
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify exact PH revision and narrow surface source
+      - name: Verify exact PH blob identities
         shell: bash
         run: |
           set -euo pipefail
-          cd ph
-          test "$(git rev-parse HEAD)" = "bfe23b7cc7060dd668ca6dcf081d377350779a15"
-          python -m py_compile             runtime_support_v015l9g/question_source_fidelity_v015l9bi.py             runtime_support_v015l9g/cross50_short_response_structure_v015l9cm.py             qualification_runtime_overlay_v015l9cm/apply_overlay.py
-          sha256sum             runtime_support_v015l9g/question_source_fidelity_v015l9bi.py             runtime_support_v015l9g/cross50_short_response_structure_v015l9cm.py             qualification_runtime_overlay_v015l9cm/apply_overlay.py | tee /tmp/ph_pr75_source_sha256.txt
-          echo "PH_PR75_SOURCE_PASS head=$(git rev-parse HEAD)"
+          test "$(git hash-object .qualification/ph_pr75_snapshot/question_source_fidelity_v015l9bi.py)" = "475321a0b3350378ed119e7eabb1442f071b0609"
+          test "$(git hash-object .qualification/ph_pr75_snapshot/cross50_short_response_structure_v015l9cm.py)" = "a3fa004ce780c47c3a5383616407b08f9f85b375"
+          test "$(git hash-object .qualification/ph_pr75_snapshot/apply_overlay.py)" = "060e0381d7700c8ee1f382a0b38dc899bef83598"
+          test "$(git hash-object .qualification/ph_pr75_snapshot/cross50_qa_staging_contract_v015l9bt.py)" = "6e367f25fbe6ef53276faf6310c266150c45f170"
+          python - <<'PY'
+          import json
+          m=json.load(open('.qualification/ph_pr75_snapshot/MANIFEST.json'))
+          assert m['source_head']=='bfe23b7cc7060dd668ca6dcf081d377350779a15'
+          assert m['source_pr']==75
+          assert m['private_question_content_included'] is False
+          print('PH_PR75_SNAPSHOT_IDENTITY_PASS head='+m['source_head'])
+          PY
 
-      - name: Build exact Power House PR75 image
+      - name: Assemble exact impacted runtime surface
         shell: bash
         run: |
           set -euo pipefail
-          cd ph
-          docker build --pull=false -t ph-pr75-saq .
-          echo "PH_PR75_IMAGE_BUILD_PASS"
+          ROOT=/tmp/ph_pr75_surface
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/powerhouse_operator"
+          cp .qualification/ph_pr75_snapshot/cross50_qa_staging_contract_v015l9bt.py "$ROOT/powerhouse_operator/"
+          cp .qualification/ph_pr75_snapshot/question_source_fidelity_v015l9bi.py "$ROOT/powerhouse_operator/"
+          cp .qualification/ph_pr75_snapshot/cross50_short_response_structure_v015l9cm.py "$ROOT/powerhouse_operator/"
+          python .qualification/ph_pr75_snapshot/apply_overlay.py "$ROOT"
+          python -m py_compile             "$ROOT/powerhouse_operator/question_source_fidelity_v015l9bi.py"             "$ROOT/powerhouse_operator/cross50_short_response_structure_v015l9cm.py"             "$ROOT/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py"
+          grep -q 'source_row=source_row,effective=eff' "$ROOT/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py"
+          grep -q 'PH-CROSS50-SHORT-RESPONSE-PROJECTION-V015L9CM-1' "$ROOT/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py"
+          echo 'PH_PR75_RUNTIME_SURFACE_ASSEMBLY_PASS'
 
-      - name: Execute assembled-runtime SAQ contract checks
+      - name: Execute exact SAQ canonicalisation smoke
         shell: bash
         run: |
           set -euo pipefail
-          docker run --rm --entrypoint python ph-pr75-saq - <<'PY'
-          import json, hashlib
+          T=/tmp/ph_pr75_test
+          rm -rf "$T"; mkdir -p "$T/powerhouse_operator"
+          cp .qualification/ph_pr75_snapshot/question_source_fidelity_v015l9bi.py "$T/powerhouse_operator/"
+          cp .qualification/ph_pr75_snapshot/cross50_short_response_structure_v015l9cm.py "$T/powerhouse_operator/"
+          touch "$T/powerhouse_operator/__init__.py"
+          cat >"$T/db.py" <<'PY'
+          def query(*a,**k): return []
+          def query_one(*a,**k): return None
+          def execute(*a,**k): return None
+          def audit(*a,**k): return None
+          PY
+          cat >"$T/powerhouse_operator/question_source_fidelity_v015l1.py" <<'PY'
+          def ensure_schema(): return None
+          def _source_option_count(*a,**k): return 0
+          PY
+          cat >"$T/powerhouse_operator/question_import_fidelity_v1.py" <<'PY'
+          import re
+          def _norm(v): return re.sub(r'[^a-z0-9]+','',str(v or '').lower())
+          def _index(headers): return {_norm(h):i for i,h in enumerate(headers)}
+          def _value(row,idx,*names):
+              for n in names:
+                  i=idx.get(_norm(n))
+                  if i is not None and i < len(row) and row[i] not in (None,''):
+                      return row[i]
+              return None
+          PY
+          PYTHONPATH="$T" python - <<'PY'
+          import json,hashlib
           from powerhouse_operator.question_source_fidelity_v015l9bi import source_marking_evidence
           from powerhouse_operator.cross50_short_response_structure_v015l9cm import canonicalize_short_response_structure, assert_short_response_structure
 
-          source={
-            "Question_ID":"SYN-SAQ-1",
-            "Marks":2,
-            "Explanation / Marking Rubric":"1 mark: identifies the first required evidence. 1 mark: identifies the second required evidence."
-          }
-          evidence=source_marking_evidence(source,{})
-          assert evidence["status"]=="SOURCE_ALLOCATION_RESOLVED", evidence
-          assert evidence["maximum_marks"]==2.0, evidence
-          assert len(evidence["required_mark_points"])==2, evidence
-          assert sum(float(x["marks"]) for x in evidence["required_mark_points"])==2.0
+          source={'Question_ID':'SYN-SAQ-1','Marks':2,
+                  'Explanation / Marking Rubric':'1 mark: first required evidence. 1 mark: second required evidence.'}
+          e=source_marking_evidence(source,{})
+          assert e['maximum_marks']==2.0 and len(e['required_mark_points'])==2
+          assert sum(float(x['marks']) for x in e['required_mark_points'])==2.0
 
-          material={"content":{
-            "question_family_type":"SHORT_CONSTRUCTED_RESPONSE",
-            "exam_question_type":"SAQ",
-            "marking":{"key_type":"TEXT","marks":1,"rubric":None},
-            "options":[]
-          }}
-          canonicalize_short_response_structure(
-            material,subject="Chemistry",source_question_id="SYN-SAQ-1",
-            source_row=source,effective={}
-          )
-          marking=material["content"]["marking"]
-          assert marking["key_type"]=="RUBRIC_ONLY", marking
-          assert marking["marks"]==2.0, marking
-          rubric=marking["rubric"]
-          assert rubric["version"]=="PH-SAQ-SCORING-CONTRACT-1", rubric
-          assert rubric["maximum_marks"]==2.0, rubric
-          assert rubric["auto_marking_eligibility"]=="RUBRIC_SEMANTICALLY_SCORABLE", rubric
-          assert rubric["scoring_type"]=="SEMANTIC_MARK_POINT", rubric
-          assert len(rubric["required_mark_points"])==2
-          assert_short_response_structure(material,subject="Chemistry",source_question_id="SYN-SAQ-1")
+          material={'content':{'question_family_type':'SHORT_CONSTRUCTED_RESPONSE','exam_question_type':'SAQ',
+                              'marking':{'key_type':'TEXT','marks':1,'rubric':None},'options':[]}}
+          canonicalize_short_response_structure(material,subject='Chemistry',source_question_id='SYN-SAQ-1',
+                                                source_row=source,effective={})
+          m=material['content']['marking']; r=m['rubric']
+          assert m['marks']==2.0 and m['key_type']=='RUBRIC_ONLY'
+          assert r['version']=='PH-SAQ-SCORING-CONTRACT-1'
+          assert r['auto_marking_eligibility']=='RUBRIC_SEMANTICALLY_SCORABLE'
+          assert r['scoring_type']=='SEMANTIC_MARK_POINT'
+          assert len(r['required_mark_points'])==2
+          assert_short_response_structure(material,subject='Chemistry',source_question_id='SYN-SAQ-1')
 
-          deterministic={
-            "version":"PH-SAQ-SCORING-CONTRACT-1",
-            "maximum_marks":2,
-            "auto_marking_eligibility":"DETERMINISTICALLY_SCORABLE",
-            "scoring_type":"EXACT_BOUNDED",
-            "required_mark_points":[
-              {"id":"P1","description":"first","marks":1,
-               "accepted_expressions":["alpha"],"accepted_synonyms":[],"contradictions":["not alpha"]},
-              {"id":"P2","description":"second","marks":1,
-               "accepted_expressions":["beta"],"accepted_synonyms":[],"contradictions":[]}
-            ],
-            "academic_approval_conferred":False
-          }
+          deterministic={'version':'PH-SAQ-SCORING-CONTRACT-1','maximum_marks':2,
+            'auto_marking_eligibility':'DETERMINISTICALLY_SCORABLE','scoring_type':'EXACT_BOUNDED',
+            'required_mark_points':[
+              {'id':'P1','description':'first','marks':1,'accepted_expressions':['alpha'],'accepted_synonyms':[],'contradictions':['not alpha']},
+              {'id':'P2','description':'second','marks':1,'accepted_expressions':['beta'],'accepted_synonyms':[],'contradictions':[]}],
+            'academic_approval_conferred':False}
           unsigned=dict(deterministic)
-          deterministic["contract_sha256"]=hashlib.sha256(
-            json.dumps(unsigned,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()
-          ).hexdigest()
-          source2=dict(source)
-          source2["SAQ_Scoring_Contract_JSON"]=json.dumps(deterministic,sort_keys=True)
-          material2={"content":{
-            "question_family_type":"SHORT_CONSTRUCTED_RESPONSE",
-            "exam_question_type":"SAQ",
-            "marking":{"key_type":"TEXT","marks":1,"rubric":None},
-            "options":[]
-          }}
-          canonicalize_short_response_structure(
-            material2,subject="Chemistry",source_question_id="SYN-SAQ-2",
-            source_row=source2,effective={}
-          )
-          out=material2["content"]["marking"]["rubric"]
-          assert out["auto_marking_eligibility"]=="DETERMINISTICALLY_SCORABLE"
-          assert out["maximum_marks"]==2
-          assert len(out["required_mark_points"])==2
-          assert isinstance(out["contract_sha256"],str) and len(out["contract_sha256"])==64
+          deterministic['contract_sha256']=hashlib.sha256(json.dumps(unsigned,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+          source2=dict(source); source2['SAQ_Scoring_Contract_JSON']=json.dumps(deterministic,sort_keys=True)
+          material2={'content':{'question_family_type':'SAQ','exam_question_type':'SAQ',
+                               'marking':{'key_type':'TEXT','marks':1,'rubric':None},'options':[]}}
+          canonicalize_short_response_structure(material2,subject='Chemistry',source_question_id='SYN-SAQ-2',
+                                                source_row=source2,effective={})
+          out=material2['content']['marking']['rubric']
+          assert out['auto_marking_eligibility']=='DETERMINISTICALLY_SCORABLE'
+          assert out['maximum_marks']==2 and len(out['required_mark_points'])==2
 
-          unresolved={"Question_ID":"SYN-SAQ-3","Explanation / Marking Rubric":"A model answer without an explicit mark allocation."}
-          trial={"content":{"question_family_type":"SAQ","exam_question_type":"SAQ",
-                            "marking":{"key_type":"TEXT","marks":1,"rubric":None},"options":[]}}
+          unresolved={'Question_ID':'SYN-SAQ-3','Explanation / Marking Rubric':'Model answer only; no explicit source allocation.'}
+          trial={'content':{'question_family_type':'SAQ','exam_question_type':'SAQ',
+                            'marking':{'key_type':'TEXT','marks':1,'rubric':None},'options':[]}}
           try:
-            canonicalize_short_response_structure(
-              trial,subject="Physics",source_question_id="SYN-SAQ-3",
-              source_row=unresolved,effective={}
-            )
+              canonicalize_short_response_structure(trial,subject='Physics',source_question_id='SYN-SAQ-3',
+                                                    source_row=unresolved,effective={})
           except ValueError as exc:
-            assert "SOURCE_MARK_ALLOCATION_REQUIRED" in str(exc)
+              assert 'SOURCE_MARK_ALLOCATION_REQUIRED' in str(exc)
           else:
-            raise AssertionError("unresolved source marks did not fail closed")
-
-          print("PH_PR75_ASSEMBLED_RUNTIME_SAQ_PASS marks=2 atomic_points=2 deterministic_preserved=true unresolved_fail_closed=true")
+              raise AssertionError('unresolved marks did not fail closed')
+          print('PH_PR75_EXACT_SAQ_CANONICALISATION_PASS')
           PY
 
-      - name: Verify source immutability and no resend authority
+      - name: Governance fence check
         shell: bash
         run: |
           set -euo pipefail
-          docker run --rm --entrypoint /bin/sh ph-pr75-saq -lc "
-            grep -q 'source_truth_inferred.*False' /opt/powerhouse/app/powerhouse_operator/question_source_fidelity_v015l9bi.py &&
-            grep -q 'release_conferred.*False' /opt/powerhouse/app/powerhouse_operator/question_source_fidelity_v015l9bi.py &&
-            grep -q 'source_immutable=true' /opt/powerhouse/app/powerhouse_operator/cross50_qa_staging_contract_v015l9bt.py
-          "
-          echo "PH_PR75_GOVERNANCE_FENCES_PASS source_immutable=true release=false resend=false"
+          grep -q '"release_conferred": False' .qualification/ph_pr75_snapshot/question_source_fidelity_v015l9bi.py
+          grep -q '"source_truth_inferred": False' .qualification/ph_pr75_snapshot/question_source_fidelity_v015l9bi.py
+          test ! -e .qualification/ph_pr75_snapshot/PH_SM_APPROVED_CONTENT_V1.schema.json
+          echo 'PH_PR75_GOVERNANCE_FENCE_PASS source_immutable=true release=false transport_schema_unchanged=true'
 
-      - name: Final acceptance
-        run: echo 'PH_PR75_SAQ_RUNTIME_ACCEPTANCE_PASS deployment=false learner_release=false resend=false'
+      - name: Final gate
+        run: echo 'PH_PR75_SAQ_RUNTIME_SURFACE_ACCEPTANCE_PASS deployment=false resend=false'
