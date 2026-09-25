@@ -8,7 +8,8 @@ from __future__ import annotations
 import copy, json, os, socket, sys, tempfile, unittest, hashlib, re
 from pathlib import Path
 
-REPO=Path(__file__).resolve().parents[1]\nROOT=REPO/"scoremax_runtime_v669b"
+REPO=Path(__file__).resolve().parents[1]
+ROOT=REPO/"scoremax_runtime_v669b"
 STATE=tempfile.TemporaryDirectory(prefix="scoremax-no-api-qa-")
 BASE=Path(STATE.name)
 for key in tuple(os.environ):
