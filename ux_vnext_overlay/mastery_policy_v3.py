@@ -334,10 +334,10 @@ def ensure_mastery_launch_policy_v1(c):
     rules=[
       ('Foundation',1,10,70.0,120,None,0.20,0.50,0.50),
       ('Exam Ready',1,20,80.0,90,None,0.25,0.50,0.70),
-      ('Advanced',2,30,88.0,75,None,0.30,0.60,0.80),
-      ('Distinction',2,40,94.0,60,None,0.35,0.65,0.90),
-      ('Expert',2,50,95.0,45,None,0.40,0.70,0.95),
-      ('Elite',3,60,97.0,30,None,0.45,0.75,1.00),
+      ('Advanced',2,15,88.0,75,None,0.30,0.60,0.80),
+      ('Distinction',2,20,94.0,60,None,0.35,0.65,0.90),
+      ('Expert',2,25,95.0,45,None,0.40,0.70,0.95),
+      ('Elite',3,20,97.0,30,None,0.45,0.75,1.00),
     ]
     for level,min_forms,min_questions,min_accuracy,verification_days,external_percentile,target_band,unseen,breadth in rules:
         row=c.execute("SELECT * FROM mastery_policies WHERE mastery_level=?",(level,)).fetchone()
