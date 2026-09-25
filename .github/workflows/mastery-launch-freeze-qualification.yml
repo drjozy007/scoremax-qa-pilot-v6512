@@ -34,6 +34,10 @@ jobs:
         env:
           MASTERY_FREEZE_EVIDENCE: /tmp/mastery_launch_freeze.json
         run: python scripts/qualify_mastery_launch_freeze.py
+      - name: Run QA agents Admin qualification
+        env:
+          QA_ADMIN_EVIDENCE: /tmp/qa_agents_admin.json
+        run: python scripts/qualify_qa_agents_admin.py
       - name: Run existing assessment regression
         run: python scripts/qualify_assessment_contract_repair.py
       - name: Upload evidence
@@ -41,5 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mastery-launch-freeze
-          path: /tmp/mastery_launch_freeze.json
+          path: |
+            /tmp/mastery_launch_freeze.json
+            /tmp/qa_agents_admin.json
           if-no-files-found: warn
