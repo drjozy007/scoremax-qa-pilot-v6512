@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block title %}QA Problems & History · Admin{% endblock %}{% block content %}
+<section class="page-shell">
+<div class="page-heading"><div><p class="eyebrow">ADMIN · QA EVIDENCE</p><h1>Problems & History</h1><p>Current holds and not-evaluated results from the four deterministic QA agents. Question content remains immutable here.</p></div><a class="btn alt" href="{{url_for('admin_mastery_lab')}}">Back to QA & Mastery Laboratory</a></div>
+<section class="warning-panel"><strong>Routing:</strong> HOLD identifies a deterministic defect or governance problem. NOT_EVALUATED means the lane cannot prove a decision safely. Neither status authorises correction or release.</section>
+{% if qa_agent_admin.problems %}<div class="table-wrap"><table><thead><tr><th>Agent</th><th>Question/version</th><th>Programme</th><th>Subject/chapter</th><th>Status</th><th>Findings</th><th>Checked</th></tr></thead><tbody>
+{% for p in qa_agent_admin.problems %}<tr><td>{{qa_agent_admin.agents[p.agent_code].label}}</td><td><strong>{{p.question_id}}</strong><br><small>{{p.question_version_id}}</small></td><td>{{p.programme}}</td><td>{{p.subject}} · {{p.chapter}}</td><td><strong>{{p.status}}</strong></td><td><code>{{p.findings_json}}</code></td><td>{{p.evaluated_at}}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<section class="card"><p>No current unresolved QA results.</p></section>{% endif %}
+<section class="card"><h2>Recent run history</h2>{% if qa_agent_admin.recent_runs %}<div class="table-wrap"><table><thead><tr><th>Agent</th><th>Scope</th><th>Population</th><th>Pass</th><th>Hold</th><th>Not evaluated</th><th>Findings</th><th>Run</th></tr></thead><tbody>{% for r in qa_agent_admin.recent_runs %}<tr><td>{{qa_agent_admin.agents[r.agent_code].label}}</td><td>{{r.scope_type}} {{r.scope_key}}</td><td>{{r.population_count}}</td><td>{{r.pass_count}}</td><td>{{r.hold_count}}</td><td>{{r.not_evaluated_count}}</td><td>{{r.finding_count}}</td><td>{{r.completed_at or r.started_at}}</td></tr>{% endfor %}</tbody></table></div>{% endif %}</section>
+</section>
+{% endblock %}
