@@ -12,7 +12,7 @@ STATE=tempfile.TemporaryDirectory(prefix="scoremax-wild-qa-"); BASE=Path(STATE.n
 for key in tuple(os.environ):
     if key.startswith(("SCOREMAX_","POWER_HOUSE_","GROWTH_ENGINE_")): del os.environ[key]
 os.environ.update({
- "SCOREMAX_ENV":"production","SCOREMAX_SECRET":"wild-qa-secret-0123456789abcdef",
+ "SCOREMAX_ENV":"production","SCOREMAX_SECRET":"wild-qa-secret-0123456789abcdef-0123456789abcdef",
  "SCOREMAX_STAGING_SESSION_SECRET":"wild-qa-secret-0123456789abcdef",
  "SCOREMAX_DB":str(BASE/"wild.db"),"SCOREMAX_PERSISTENT_ROOT":str(BASE),
  "SCOREMAX_BACKUP_DIR":str(BASE/"backup"),"SCOREMAX_CONTENT_INTAKE_DIR":str(BASE/"intake"),
