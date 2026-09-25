@@ -597,14 +597,6 @@ def main() -> None:
     if 'install_qa_agents_admin(scoremax.app)' not in text:
         if old not in text: raise SystemExit('SCOREMAX_QA_AGENTS_ADMIN_POST_INIT_ANCHOR_MISSING')
         text=text.replace(old,new,1);production.write_text(text,encoding='utf-8')
-    base=ROOT/'templates'/'base.html'; base_text=base.read_text(encoding='utf-8')
-    token="{{url_for('admin_mastery_lab')}}"; pos=base_text.find(token)
-    if pos<0: raise SystemExit('SCOREMAX_QA_ADMIN_NAV_ENDPOINT_MISSING')
-    start=base_text.rfind('<a',0,pos); gt=base_text.find('>',pos); end=base_text.find('</a>',gt)
-    if min(start,gt,end)<0: raise SystemExit('SCOREMAX_QA_ADMIN_NAV_LINK_MALFORMED')
-    base_text=base_text[:gt+1]+'QA &amp; Mastery'+base_text[end:]
-    base.write_text(base_text,encoding='utf-8')
-    print('SCOREMAX_QA_ADMIN_NAV_LABEL_PASS label=QA_AND_MASTERY endpoint_reused=true',flush=True)
     print('SCOREMAX_QA_AGENTS_ADMIN_BUILD_PASS existing_mastery_lab=true release_authority=false mastery_authority=false',flush=True)
 
 
