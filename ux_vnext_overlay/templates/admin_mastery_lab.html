@@ -25,7 +25,7 @@
     <div class="qa-agent-grid">
       {% for code,a in qa_agent_admin.agents.items() %}
       <article class="card qa-agent-card">
-        <p class="eyebrow">{{code.replace('_',' ')}}</p><h3>{{a.label}}</h3><strong>{{a.purpose}}</strong><p class="muted qa-mini">{{a.short}}</p>
+        <p class="eyebrow">{{code.replace('_',' ')}}</p><h3>{{a.label}}</h3><strong>{{a.purpose}}</strong><p class="muted qa-mini">{{a.short}}</p><p class="qa-mini"><strong>Does not:</strong> {{a.not_scope}}</p>
         <div class="qa-kpis">
           <div><strong>{{a.unique_questions}}</strong><span>unique checked</span></div>
           <div><strong>{{a.executions}}</strong><span>executions</span></div>
