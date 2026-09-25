@@ -1,0 +1,43 @@
+name: No-API Four-Lane QA Qualification
+
+on:
+  push:
+    branches: [qualification/no-api-qa-agents-20260925]
+    paths:
+      - 'scripts/qualify_no_api_qa_agents.py'
+      - '.github/workflows/no-api-four-lane-qa-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install qualification dependencies
+        run: python -m pip install --quiet -r hosted_runtime_base_v6512/requirements.txt
+      - name: Assemble exact ScoreMax runtime
+        run: python deploy_ux_vnext.py
+      - name: Run no-API four-lane QA
+        env:
+          NO_API_QA_EVIDENCE: /tmp/no_api_qa_agents.json
+        run: python scripts/qualify_no_api_qa_agents.py
+      - name: Run existing assessment regression
+        run: python scripts/qualify_assessment_contract_repair.py
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: no-api-four-lane-qa
+          path: /tmp/no_api_qa_agents.json
+          if-no-files-found: warn
