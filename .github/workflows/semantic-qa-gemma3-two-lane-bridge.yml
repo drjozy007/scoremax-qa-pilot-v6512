@@ -1,0 +1,93 @@
+name: Semantic QA Gemma3 Two-Lane Bridge
+
+on:
+  push:
+    branches: [feature/v6611c-ux-vnext-landing]
+    paths:
+      - '.github/workflows/semantic-qa-gemma3-two-lane-bridge.yml'
+      - '.qualification/semantic_qa_gemma/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: semantic-qa-gemma3-two-lane-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discriminator:
+    strategy:
+      fail-fast: false
+      matrix:
+        agent: [STUDENT_A, REVIEWER_A]
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact PH semantic-QA blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object .qualification/semantic_qa_gemma/scripts/run_semantic_qa_twelve_case_qwen25vl_v2_9.py)" = "d06dda9a28ae1f37d906f5afb607bd652e10b0ac"
+          test "$(git hash-object .qualification/semantic_qa_gemma/scripts/run_semantic_qa_seeded_visual_diagnostic_v2_1.py)" = "8d6d69ae82c9407e504a71f277de3be12a7c83d6"
+          test "$(git hash-object .qualification/semantic_qa_gemma/scripts/run_semantic_qa_seeded_visual_diagnostic_v2.py)" = "f85eeab795180d742745496c08ace56ab759844a"
+          test "$(git hash-object .qualification/semantic_qa_gemma/config/semantic_qa_agent_prompts_v2.json)" = "3a9c2c3ee3408760062530c8181d523449e3a705"
+          echo "SEMANTIC_QA_GEMMA_BRIDGE_IDENTITY_PASS"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare exact discriminator workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/semantic-qa-gemma
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/scripts" "$ROOT/config"
+          cp .qualification/semantic_qa_gemma/scripts/*.py "$ROOT/scripts/"
+          cp .qualification/semantic_qa_gemma/config/*.json "$ROOT/config/"
+          touch "$ROOT/scripts/__init__.py"
+          python -m py_compile "$ROOT"/scripts/*.py
+          python -m pip install --quiet pillow
+
+      - name: Install and start Ollama with Gemma3 4B
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://ollama.com/install.sh | sh
+          nohup ollama serve >/tmp/ollama.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull gemma3:4b
+          ollama list
+
+      - name: Run governed two-lane discriminator
+        shell: bash
+        env:
+          PYTHONPATH: /tmp/semantic-qa-gemma
+          SEMANTIC_QA_AGENT_ID: ${{ matrix.agent }}
+          SEMANTIC_QA_MODEL: gemma3:4b
+          SEMANTIC_QA_OLLAMA_BASE: http://127.0.0.1:11434
+          SEMANTIC_QA_PROMPT_FILE: /tmp/semantic-qa-gemma/config/semantic_qa_agent_prompts_v2.json
+          SEMANTIC_QA_DIAGNOSTIC_DIR: /tmp/semantic-qa-gemma/evidence/${{ matrix.agent }}
+        run: |
+          cd /tmp/semantic-qa-gemma
+          python scripts/run_semantic_qa_twelve_case_qwen25vl_v2_9.py
+
+      - name: Upload discriminator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-qa-gemma3-two-lane-${{ matrix.agent }}
+          path: /tmp/semantic-qa-gemma/evidence/${{ matrix.agent }}/
+          if-no-files-found: warn
