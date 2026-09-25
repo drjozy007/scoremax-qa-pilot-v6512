@@ -6,7 +6,8 @@
     ".qualification/ph_pr75_snapshot/question_source_fidelity_v015l9bi.py": "475321a0b3350378ed119e7eabb1442f071b0609",
     ".qualification/ph_pr75_snapshot/cross50_short_response_structure_v015l9cm.py": "a3fa004ce780c47c3a5383616407b08f9f85b375",
     ".qualification/ph_pr75_snapshot/apply_overlay.py": "060e0381d7700c8ee1f382a0b38dc899bef83598",
-    ".qualification/ph_pr75_snapshot/cross50_qa_staging_contract_v015l9bt.py": "6e367f25fbe6ef53276faf6310c266150c45f170"
+    ".qualification/ph_pr75_snapshot/cross50_qa_staging_contract_v015l9bt.py": "6e367f25fbe6ef53276faf6310c266150c45f170",
+    ".qualification/ph_pr75_snapshot/apply_numeric_overlay_v015l9cg.py": "767c8095565987ced9f57d2615a990e60267bce2"
   },
   "private_question_content_included": false,
   "purpose": "isolated exact runtime-surface acceptance only"
