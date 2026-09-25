@@ -586,6 +586,16 @@ def main() -> None:
     from ux_vnext_overlay.ux_assessment_contract_repair import apply_assessment_contract_repair
     apply_assessment_contract_repair(ROOT)
     apply_programme_mastery_repair(ROOT)
+    from ux_vnext_overlay.ux_qa_agents_admin import install_qa_agents_admin as _install_qa_agents_admin_source
+    src=Path('ux_vnext_overlay')/'ux_qa_agents_admin.py'; dst=ROOT/'ux_qa_agents_admin.py'
+    shutil.copy2(src,dst)
+    production=ROOT/'scoremax_production.py'; text=production.read_text(encoding='utf-8')
+    old="install_mastery_rigor_admin(scoremax.app)\nfrom ux_teacher_preview import ensure_teacher_preview"
+    new="install_mastery_rigor_admin(scoremax.app)\nfrom ux_qa_agents_admin import install_qa_agents_admin\ninstall_qa_agents_admin(scoremax.app)\nfrom ux_teacher_preview import ensure_teacher_preview"
+    if 'install_qa_agents_admin(scoremax.app)' not in text:
+        if old not in text: raise SystemExit('SCOREMAX_QA_AGENTS_ADMIN_POST_INIT_ANCHOR_MISSING')
+        text=text.replace(old,new,1);production.write_text(text,encoding='utf-8')
+    print('SCOREMAX_QA_AGENTS_ADMIN_BUILD_PASS existing_mastery_lab=true release_authority=false mastery_authority=false',flush=True)
 
 
 if __name__ == '__main__':
