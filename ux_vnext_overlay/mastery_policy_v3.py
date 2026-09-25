@@ -275,6 +275,22 @@ def question_coverage_nodes(row):
     return {x for x in vals if isinstance(x,str) and x.strip()} if isinstance(vals,list) else set()
 
 
+def mastery_evidence_band_levels(target_level):
+    """Map learner mastery targets onto the governed Power House item-level evidence bands.
+
+    Power House questions are classified only as Foundation, Exam Ready, Advanced or
+    Distinction. ScoreMax Expert (subject) and Elite (programme) are aggregate learner
+    achievements, not new question labels. They therefore consume high-tier Advanced /
+    Distinction evidence without inventing Expert/Elite item metadata.
+    """
+    target=str(target_level or '').strip()
+    if target in ('Expert','Elite'):
+        return {'Advanced','Distinction'}
+    if target in ('Foundation','Exam Ready','Advanced','Distinction'):
+        return {target}
+    return set()
+
+
 def attach_mastery_coverage(c,chosen,meta):
     if meta.get('mastery_demo_only'):return chosen,meta
     cfg=mastery_coverage_contract(c,meta['programme'],meta.get('subject',''),meta.get('chapters',''),meta['mastery_scope_type'])
@@ -285,12 +301,60 @@ def attach_mastery_coverage(c,chosen,meta):
     threshold=float(meta['mastery_effective_policy'].get('min_breadth_pct',0))
     if ratio+1e-12<threshold or not mandatory:
         raise ValueError(f'The mastery form covers {len(covered)}/{len(required)} required curriculum nodes; its governed breadth/mandatory-node rule is not met.')
-    target=meta['mastery_target_level'];target_ratio=sum((q['level'] or '')==target for q in chosen)/len(chosen)
+    target=meta['mastery_target_level'];band=mastery_evidence_band_levels(target)
+    if not band:raise ValueError('Unknown mastery evidence band')
+    target_ratio=sum((q['level'] or 'Foundation') in band for q in chosen)/len(chosen)
     meta.update(mastery_breadth_ok=True,mastery_breadth_ratio=ratio,mastery_breadth_required_pct=threshold,
       mastery_breadth_unit='governed curriculum knowledge node',mastery_breadth_covered=len(covered),mastery_breadth_required=len(required),
-      mastery_mandatory_covered=mandatory,mastery_coverage_snapshot=cfg,mastery_target_band_ratio=target_ratio)
+      mastery_mandatory_covered=mandatory,mastery_coverage_snapshot=cfg,mastery_target_band_ratio=target_ratio,
+      mastery_evidence_band_levels=sorted(band))
     meta['mastery_effective_policy']=dict(meta['mastery_effective_policy'],coverage_contract_checksum=cfg['checksum_sha256'])
     return chosen,meta
+
+
+def ensure_mastery_launch_policy_v1(c):
+    """Apply the launch mastery baseline exactly once, with an auditable migration.
+
+    This changes future evidence requirements only. Historical attempts are immutable;
+    any existing verified record affected by a stricter baseline becomes Verification
+    Due through the existing governance path rather than being silently downgraded.
+    """
+    marker='SCOREMAX_MASTERY_LAUNCH_POLICY_V1'
+    c.execute("""CREATE TABLE IF NOT EXISTS mastery_policy_change_audit_v1(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mastery_level TEXT NOT NULL,
+      actor_user_id INTEGER,
+      previous_json TEXT NOT NULL DEFAULT '{}',
+      new_json TEXT NOT NULL DEFAULT '{}',
+      reason TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""")
+    if c.execute("SELECT 1 FROM mastery_policy_change_audit_v1 WHERE reason=? LIMIT 1",(marker,)).fetchone():
+        return False
+    rules=[
+      ('Foundation',1,10,70.0,120,None,0.20,0.50,0.50),
+      ('Exam Ready',1,20,80.0,90,None,0.25,0.50,0.70),
+      ('Advanced',2,15,88.0,75,None,0.30,0.60,0.80),
+      ('Distinction',2,20,94.0,60,None,0.35,0.65,0.90),
+      ('Expert',2,25,95.0,45,None,0.40,0.70,0.95),
+      ('Elite',3,20,97.0,30,None,0.45,0.75,1.00),
+    ]
+    for level,min_forms,min_questions,min_accuracy,verification_days,external_percentile,target_band,unseen,breadth in rules:
+        row=c.execute("SELECT * FROM mastery_policies WHERE mastery_level=?",(level,)).fetchone()
+        if not row:raise ValueError(f'Missing mastery policy: {level}')
+        before=dict(row)
+        c.execute("""UPDATE mastery_policies SET min_forms=?,min_questions=?,min_accuracy=?,
+          verification_days=?,external_percentile_target=?,target_band_pct=?,
+          unseen_family_pct=?,min_breadth_pct=?,updated_at=CURRENT_TIMESTAMP
+          WHERE mastery_level=?""",(min_forms,min_questions,min_accuracy,verification_days,
+          external_percentile,target_band,unseen,breadth,level))
+        after=dict(c.execute("SELECT * FROM mastery_policies WHERE mastery_level=?",(level,)).fetchone())
+        c.execute("""INSERT INTO mastery_policy_change_audit_v1(
+          mastery_level,actor_user_id,previous_json,new_json,reason)
+          VALUES(?,NULL,?,?,?)""",(level,json.dumps(before,sort_keys=True,default=str),
+          json.dumps(after,sort_keys=True,default=str),marker))
+        mark_baseline_changes_for_verification(c,level,before,marker)
+    return True
 
 
 def validate_mastery_policy_values(values):
@@ -320,6 +384,8 @@ def select_mastery_coverage_questions(pool,count,target,target_fraction,unseen_f
     """
     import math
     required=set(coverage['required_node_ids']);mandatory=set(coverage['mandatory_node_ids'])
+    band=mastery_evidence_band_levels(target)
+    if not band:raise ValueError('Unknown mastery evidence band')
     threshold=float(coverage.get('min_breadth_pct',0))
     needed=int(math.ceil(len(required)*threshold-1e-12))
     target_needed=int(math.ceil(count*target_fraction-1e-12))
@@ -331,10 +397,10 @@ def select_mastery_coverage_questions(pool,count,target,target_fraction,unseen_f
     chosen=[];families=set();covered=set()
     for _ in range(count):
         slots=count-len(chosen)
-        t_need=max(0,target_needed-sum(q['level']==target for q in chosen))
+        t_need=max(0,target_needed-sum((q['level'] or 'Foundation') in band for q in chosen))
         u_need=max(0,unseen_needed-sum(family(q) not in previous for q in chosen))
         candidates=[q for q in pool if family(q) not in families
-          and (t_need<slots or q['level']==target) and (u_need<slots or family(q) not in previous)]
+          and (t_need<slots or (q['level'] or 'Foundation') in band) and (u_need<slots or family(q) not in previous)]
         if not candidates:break
         missing=mandatory-covered
         def rank(q):
@@ -342,13 +408,13 @@ def select_mastery_coverage_questions(pool,count,target,target_fraction,unseen_f
             urgent=missing&gain
             return (bool(urgent),sum(1/max(1,freq[n]) for n in urgent),
               len(gain) if len(covered)<needed else 0,
-              int(t_need>0 and q['level']==target)+int(u_need>0 and family(q) not in previous),
+              int(t_need>0 and (q['level'] or 'Foundation') in band)+int(u_need>0 and family(q) not in previous),
               -difficulty_order.get(normalize_difficulty(q['difficulty'] or q['level']),1),-int(q['id']))
         q=max(candidates,key=rank)
         chosen.append(q);families.add(family(q));covered.update(question_coverage_nodes(q)&required)
     if len(chosen)<count or len(covered)<needed or not mandatory<=covered:
         raise ValueError('The independent question bank cannot meet the frozen curriculum coverage requirement with this form size.')
-    if sum(q['level']==target for q in chosen)<target_needed or sum(family(q) not in previous for q in chosen)<unseen_needed:
+    if sum((q['level'] or 'Foundation') in band for q in chosen)<target_needed or sum(family(q) not in previous for q in chosen)<unseen_needed:
         raise ValueError('The independent question bank cannot meet the target-level and unseen-evidence requirements.')
     return chosen
 

@@ -1,0 +1,53 @@
+name: Mastery Launch Freeze Qualification
+
+on:
+  push:
+    branches: [qualification/mastery-launch-freeze-20260925]
+  pull_request:
+    branches: [qualification/mastery-live-base-20260925]
+    paths:
+      - 'ux_vnext_overlay/mastery_policy_v3.py'
+      - 'ux_vnext_overlay/ux_mastery_rigor_admin.py'
+      - 'scripts/qualify_mastery_launch_freeze.py'
+      - '.github/workflows/mastery-launch-freeze-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install qualification dependencies
+        run: python -m pip install --quiet -r hosted_runtime_base_v6512/requirements.txt
+      - name: Assemble exact ScoreMax runtime
+        run: python deploy_ux_vnext.py
+      - name: Run mastery launch freeze qualification
+        env:
+          MASTERY_FREEZE_EVIDENCE: /tmp/mastery_launch_freeze.json
+        run: python scripts/qualify_mastery_launch_freeze.py
+      - name: Run QA agents Admin qualification
+        env:
+          QA_ADMIN_EVIDENCE: /tmp/qa_agents_admin.json
+        run: python scripts/qualify_qa_agents_admin.py
+      - name: Run existing assessment regression
+        run: python scripts/qualify_assessment_contract_repair.py
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mastery-launch-freeze
+          path: |
+            /tmp/mastery_launch_freeze.json
+            /tmp/qa_agents_admin.json
+          if-no-files-found: warn
