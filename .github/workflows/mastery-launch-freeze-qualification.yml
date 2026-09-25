@@ -3,6 +3,8 @@ name: Mastery Launch Freeze Qualification
 on:
   push:
     branches: [qualification/mastery-launch-freeze-20260925]
+  pull_request:
+    branches: [qualification/mastery-live-base-20260925]
     paths:
       - 'ux_vnext_overlay/mastery_policy_v3.py'
       - 'ux_vnext_overlay/ux_mastery_rigor_admin.py'
