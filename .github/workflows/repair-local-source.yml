@@ -1,41 +1,64 @@
-name: Offline repair source
+name: Offline marking assets - isolated public qualification
 on:
   push:
-    branches: [repair/account-startup-20260922]
+    branches: [qualification/marking-semantic-assets-20260925]
     paths: ['.github/workflows/repair-local-source.yml']
 permissions:
   contents: read
 jobs:
   source:
+    if: github.event.repository.private == false
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-      - name: Export tracked build sources only
+          python-version: '3.13.5'
+      - name: Retrieve exact public CPU model and validate upstream identities
         run: |
-          git rev-parse HEAD > /tmp/source-commit.txt
           python - <<'PY'
-          import subprocess,tarfile,pathlib,json,hashlib
-          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          import urllib.request,json,hashlib,pathlib
+          root=pathlib.Path('/tmp/marking-assets');root.mkdir()
+          repo='cross-encoder/nli-MiniLM2-L6-H768'
+          rev='b95119ce93d3e065de6214e38cd4a97b0f2f2c6d'
+          def read(url, limit):
+              with urllib.request.urlopen(url,timeout=60) as response:
+                  data=response.read(limit+1)
+              if len(data)>limit: raise RuntimeError('public asset size bound exceeded')
+              return data
+          meta=json.loads(read(f'https://huggingface.co/api/models/{repo}/revision/{rev}?blobs=true',2000000))
+          assert meta['sha']==rev
+          (root/'upstream_manifest.json').write_text(json.dumps(meta,sort_keys=True,indent=2))
+          files={x['rfilename']:x for x in meta['siblings']}
+          wanted=['config.json','tokenizer.json','tokenizer_config.json','special_tokens_map.json','README.md','onnx/model_quint8_avx2.onnx']
+          assert all(n in files for n in wanted),sorted(files)
           manifest={}
-          with tarfile.open('/tmp/repair-build-source.tar.gz','w:gz') as archive:
-              for name in files:
-                  p=pathlib.Path(name)
-                  if not name or not p.is_file() or p.is_symlink(): continue
-                  include=(len(p.parts)==1 and p.suffix in {'.py','.json'}) or p.parts[0] in {'ux_vnext_overlay','hosted_runtime_base_v6512','runtime_overlay','runtime_payload','v6611d_bridge','scripts','.github','qualification'}
-                  if not include or p.suffix in {'.db','.sqlite','.sqlite3'} or p.name.startswith('.env'): continue
-                  archive.add(p,arcname=name,recursive=False)
-                  manifest[name]=hashlib.sha256(p.read_bytes()).hexdigest()
-          pathlib.Path('/tmp/source-manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2))
+          for name in wanted:
+              entry=files[name];raw=read(f'https://huggingface.co/{repo}/resolve/{rev}/{name}',120000000)
+              lfs=entry.get('lfs') or {}
+              if lfs.get('sha256'): assert hashlib.sha256(raw).hexdigest()==lfs['sha256'],name
+              elif entry.get('blobId'): assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==entry['blobId'],name
+              else: raise RuntimeError('missing upstream identity for '+name)
+              path=root/'model'/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
+              manifest[name]={'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)}
+          (root/'model_manifest.json').write_text(json.dumps({'repository':repo,'revision':rev,'files':manifest,'qualification':'NOT_QUALIFIED_FOR_MARKING'},sort_keys=True,indent=2))
+          print('PINNED_PUBLIC_MODEL_ASSETS_VERIFIED',json.dumps(manifest,sort_keys=True))
+          PY
+      - name: Fetch binary-only CPU inference dependencies for offline tests
+        run: |
+          python -m pip download --only-binary=:all: --dest /tmp/marking-assets/wheels onnxruntime==1.22.1 tokenizers==0.21.4 numpy==2.3.3
+          python - <<'PY'
+          import pathlib,hashlib,json
+          root=pathlib.Path('/tmp/marking-assets');files=[p for p in root.rglob('*') if p.is_file()]
+          total=sum(p.stat().st_size for p in files)
+          assert total<200000000,total
+          (root/'artifact_manifest.json').write_text(json.dumps({str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files},sort_keys=True,indent=2))
+          print('OFFLINE_ASSETS_READY',len(files),total,'NO_PRIVATE_DATA_NO_MODEL_INFERENCE_NO_DEPLOYMENT')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: offline-repair-build-source
-          retention-days: 7
-          path: |
-            /tmp/repair-build-source.tar.gz
-            /tmp/source-commit.txt
-            /tmp/source-manifest.json
+          name: scoremax-pinned-local-marking-assets
+          retention-days: 1
+          compression-level: 0
+          path: /tmp/marking-assets/
+          if-no-files-found: error
