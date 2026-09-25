@@ -1,4 +1,4 @@
-"""Launch mastery freeze qualification.
+"""Launch mastery freeze qualification.\n\nCandidate policy: SCOREMAX-MASTERY-LAUNCH-FREEZE-1.
 
 Qualification only. Runs against a disposable database assembled from the exact live
 ScoreMax base plus the candidate overlay. It never enables learner release/mastery
