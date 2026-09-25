@@ -8,7 +8,7 @@ from __future__ import annotations
 import copy, json, os, socket, sys, tempfile, unittest, hashlib, re
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]/"scoremax_runtime_v669b"
+REPO=Path(__file__).resolve().parents[1]\nROOT=REPO/"scoremax_runtime_v669b"
 STATE=tempfile.TemporaryDirectory(prefix="scoremax-no-api-qa-")
 BASE=Path(STATE.name)
 for key in tuple(os.environ):
@@ -186,7 +186,7 @@ class NoApiFourLaneQA(unittest.TestCase):
 
     # REVIEWER B — governance / fidelity / replay safety
     def test_reviewer_b_qa_staging_never_carries_mastery_or_release_authority(self):
-        path=ROOT/"ux_cross50_qa_staging_v13.py"
+        path=REPO/"ux_vnext_overlay/ux_cross50_qa_staging_v13.py"
         text=path.read_text(encoding="utf-8")
         self.assertIn("independent_mastery_weight",text)
         self.assertIn("release_authority_conferred",text)
@@ -205,12 +205,12 @@ class NoApiFourLaneQA(unittest.TestCase):
     def test_reviewer_b_question_version_conflict_fails_closed(self):
         # Static assertion on existing qualified staging runtime seam: immutable
         # question-version identity must conflict rather than overwrite.
-        text=(ROOT/"ux_cross50_qa_staging_v13.py").read_text(encoding="utf-8")
+        text=(REPO/"ux_vnext_overlay/ux_cross50_qa_staging_v13.py").read_text(encoding="utf-8")
         self.assertIn("QUESTION_VERSION_CHECKSUM_CONFLICT",text)
         record("REVIEWER_B","question_version_immutability","PASS")
 
     def test_reviewer_b_no_human_marking_fallback(self):
-        text=(ROOT/"assessment_marking_v2.py").read_text(encoding="utf-8")
+        text=(REPO/"ux_vnext_overlay/assessment_marking_v2.py").read_text(encoding="utf-8")
         self.assertIn("HUMAN_MARKING_NOT_AVAILABLE",text)
         self.assertIn("AUTO_UNSCORED",text)
         record("REVIEWER_B","no_human_marking_fallback","PASS")
