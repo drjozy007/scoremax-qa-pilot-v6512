@@ -5,6 +5,7 @@ import sqlite3
 from pathlib import Path
 
 from werkzeug.security import generate_password_hash
+from ux_teacher_preview import resolve_preview_identity
 
 REVIEWER_ACCOUNTS = (
     {'n':1,'system_user_id':'REVIEWER-01','username':'reviewer01','email':'reviewer01@scoremax.test','name':'ScoreMax Content Reviewer 01','env':'SCOREMAX_STAGING_REVIEWER_01_PASSWORD'},
@@ -34,30 +35,27 @@ def _cols(conn,table):
 def ensure_reviewer_accounts() -> None:
     conn=_connect()
     try:
+        conn.execute('BEGIN IMMEDIATE')
         if 'users' not in {r['name'] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}:
             raise RuntimeError('SCOREMAX_USERS_TABLE_MISSING_BEFORE_REVIEWER_SEED')
         if 'content_reviewer_enabled' not in _cols(conn,'users'):
             conn.execute('ALTER TABLE users ADD COLUMN content_reviewer_enabled INTEGER DEFAULT 0')
         for account in REVIEWER_ACCOUNTS:
+            row=resolve_preview_identity(conn,account['email'],account['username'],account['system_user_id'],'student')
+            if row:
+                # Existing reviewer access, password and revocation state belong to the owner.
+                continue
             password=os.environ.get(account['env'],'').strip()
             if not password:
                 continue
-            identity=(account['email'].lower(),account['username'].lower(),account['system_user_id'].lower())
-            row=conn.execute("""SELECT id FROM users
-              WHERE lower(COALESCE(email,''))=? OR lower(COALESCE(username,''))=? OR lower(COALESCE(system_user_id,''))=?
-              ORDER BY id LIMIT 1""",identity).fetchone()
             ph=generate_password_hash(password)
-            values=(account['system_user_id'],account['username'],account['email'],account['name'],ph)
-            if row:
-                conn.execute("""UPDATE users SET system_user_id=?,username=?,email=?,full_name=?,password_hash=?,role='student',
-                  province='Punjab',board='Punjab Board',academic_level='FSc Part 1',subjects='Biology,Chemistry,Physics',
-                  account_status='active',active_programme='FSc Part 1',login_provider='password',content_reviewer_enabled=1
-                  WHERE id=?""",values+(row['id'],))
-            else:
-                conn.execute("""INSERT INTO users(system_user_id,role,full_name,email,username,password_hash,province,board,academic_level,subjects,
-                  account_status,active_programme,login_provider,content_reviewer_enabled)
-                  VALUES(?,'student',?,?,?,?,?,?,?,'Biology,Chemistry,Physics','active','FSc Part 1','password',1)""",
-                  (account['system_user_id'],account['name'],account['email'],account['username'],ph,'Punjab','Punjab Board','FSc Part 1'))
+            conn.execute("""INSERT INTO users(system_user_id,role,full_name,email,username,password_hash,province,board,academic_level,subjects,
+              account_status,active_programme,login_provider,content_reviewer_enabled)
+              VALUES(?,'student',?,?,?,?,?,?,?,'Biology,Chemistry,Physics','active','FSc Part 1','password',1)""",
+              (account['system_user_id'],account['name'],account['email'],account['username'],ph,'Punjab','Punjab Board','FSc Part 1'))
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()

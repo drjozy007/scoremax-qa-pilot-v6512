@@ -1,4 +1,5 @@
 from pathlib import Path
+from ux_vnext_overlay.ux_programme_mastery_repair import apply_programme_mastery_repair
 import re
 import shutil
 import sys
@@ -213,6 +214,8 @@ def _install_self_marking_release_gate() -> None:
     if not marker_src.is_file():
         raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_SOURCE_MISSING')
     shutil.copy2(marker_src,marker_dst)
+    from ux_vnext_overlay.ux_assessment_contract_repair import apply_written_contract_repair
+    apply_written_contract_repair(ROOT)
 
     import importlib.util
     _spec=importlib.util.spec_from_file_location('scoremax_constructed_marker_fixture',marker_dst)
@@ -231,7 +234,7 @@ def _install_self_marking_release_gate() -> None:
     _fixture=_mod.fixture_qualification()
     if not all(_fixture.values()):
         raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_FIXTURE_FAIL:'+repr(_fixture))
-    print('SCOREMAX_CONSTRUCTED_AUTO_MARKER_FIXTURE_PASS exact=true semantic=true fail_closed=true',flush=True)
+    print('SCOREMAX_CONSTRUCTED_AUTO_MARKER_FIXTURE_PASS exact=true governed_clauses=true arbitrary_semantics=false fail_closed=true',flush=True)
 
     integ=ROOT/'scoremax_integration_v1.py'
     app=ROOT/'app.py'
@@ -580,6 +583,10 @@ def main() -> None:
     apply_cross50_math16_destination_verifier(ROOT)
     apply_cross50_all_destination_verifier(ROOT)
     apply_cross50_rejection_diagnostic(ROOT)
+    from ux_vnext_overlay.ux_assessment_contract_repair import apply_assessment_contract_repair
+    apply_assessment_contract_repair(ROOT)
+    apply_programme_mastery_repair(ROOT)
+
 
 if __name__ == '__main__':
     main()

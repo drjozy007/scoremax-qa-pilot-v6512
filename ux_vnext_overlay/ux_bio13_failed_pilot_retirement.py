@@ -83,15 +83,17 @@ def _normalize_completed(c,b,rows,done):
 
 
 def run(scoremax):
+    if not _armed():
+        print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT disabled=true',flush=True)
+        return
     c=scoremax.db()
     try:
+        c.execute('BEGIN IMMEDIATE') if not getattr(c,'in_transaction',False) else None
         _ensure(c)
         b=_batch(c); bid=int(b['id']); rows=_rows(c,bid)
         done=c.execute('SELECT * FROM bio13_failed_pilot_retirement_v1 WHERE batch_id=?',(bid,)).fetchone()
         if _normalize_completed(c,b,rows,done):
             print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT PASS idempotent=true questions=100 active=0 batch_evidence=true historical_attempts_preserved=true',flush=True); return
-        if not _armed():
-            print('SCOREMAX_BIO13_FAILED_PILOT_RETIREMENT disabled=true',flush=True); return
         active=sum(1 for r in rows if int(r['active'] or 0)==1); inactive=100-active
         if active!=98 or inactive!=2:
             raise RuntimeError(f'BIO13_RETIRE_PRESTATE_MISMATCH:active={active}:inactive={inactive}')

@@ -5,6 +5,7 @@ import sqlite3
 from pathlib import Path
 
 from flask import abort, flash, redirect, render_template, request, session, url_for
+from ux_teacher_preview import resolve_preview_identity
 
 POLICY='SCOREMAX-ADMIN-VIEW-AS-V1'
 PREVIEW_STUDENT_EMAIL='ux-teacher-student-1@scoremax.test'
@@ -64,14 +65,14 @@ def _update_user(conn: sqlite3.Connection, user_id: int, values: dict) -> None:
     )
 
 
-def _preview_user(conn: sqlite3.Connection, role: str):
-    email=PREVIEW_STUDENT_EMAIL if role=='student' else PREVIEW_TEACHER_EMAIL
-    row=conn.execute(
-        "SELECT * FROM users WHERE lower(COALESCE(email,''))=lower(?) AND role=?",
-        (email,role),
-    ).fetchone()
+def _preview_user(conn: sqlite3.Connection, role: str, *, require_active: bool = True):
+    identity = ((PREVIEW_STUDENT_EMAIL, 'ux-teacher-student-1', 'STU-910001')
+                if role == 'student' else (PREVIEW_TEACHER_EMAIL, 'ux-teacher', 'TCH-900001'))
+    row = resolve_preview_identity(conn, *identity, role)
     if not row:
         raise RuntimeError(f'{role}_preview_fixture_missing')
+    if require_active and row['account_status'] not in (None, '', 'active'):
+        abort(409, description='This preview identity is disabled. Its access state has not been changed.')
     return row
 
 
@@ -86,7 +87,6 @@ def _configure_preview_fixture(conn: sqlite3.Connection, role: str, programme_co
         'academic_level':profile['academic_level'],
         'subjects':profile['subjects'],
         'active_programme':profile['active_programme'],
-        'account_status':'active',
     }
     _update_user(conn,int(preview['id']),common)
 
@@ -108,28 +108,48 @@ def _configure_preview_fixture(conn: sqlite3.Connection, role: str, programme_co
                     tuple(payload.values())+(int(row['id']),),
                 )
         # Keep the existing representative synthetic students coherent with the teacher fixture.
-        synthetic=conn.execute(
-            "SELECT id FROM users WHERE lower(COALESCE(email,'')) LIKE 'ux-teacher-student-%@scoremax.test'"
-        ).fetchall()
-        for s in synthetic:
-            _update_user(conn,int(s['id']),common)
+        for suffix in range(1, 7):
+            synthetic = resolve_preview_identity(conn,
+                f'ux-teacher-student-{suffix}@scoremax.test', f'ux-teacher-student-{suffix}',
+                f'STU-91{suffix:04d}', 'student')
+            if synthetic and synthetic['account_status'] in (None, '', 'active'):
+                _update_user(conn, int(synthetic['id']), common)
+
 
     conn.commit()
     return conn.execute('SELECT * FROM users WHERE id=?',(int(preview['id']),)).fetchone()
 
 
-def _restore_admin_session():
-    origin_id=session.get('admin_view_as_origin_user_id')
-    token=session.get('_csrf_token')
-    if not origin_id:
-        session.clear()
-        return redirect(url_for('login'))
+def _origin_admin(conn):
+    # Pin the admin's authentication generation on entry. Never restore a revoked session
+    # by copying the NEW current version into an OLD preview cookie.
+    try:
+        origin_id = int(session.get('admin_view_as_origin_user_id'))
+        origin_version = int(session.get('admin_view_as_origin_session_version'))
+    except (TypeError, ValueError):
+        return None
+    row = conn.execute("SELECT * FROM users WHERE id=?", (origin_id,)).fetchone()
+    if (not row or row['role'] != 'admin' or row['account_status'] not in (None, '', 'active')
+            or int(row['session_version'] or 0) != origin_version):
+        return None
+    return row
+
+
+def _guard_preview_authority():
+    if not session.get('admin_view_as_mode'):
+        return None
     with _connect() as conn:
-        admin=conn.execute(
-            "SELECT id,role,full_name,COALESCE(session_version,0) session_version,account_status FROM users WHERE id=?",
-            (int(origin_id),),
-        ).fetchone()
-    if not admin or admin['role']!='admin' or (admin['account_status'] and admin['account_status']!='active'):
+        if _origin_admin(conn):
+            return None
+    session.clear()
+    return redirect(url_for('login'))
+
+
+def _restore_admin_session():
+    token=session.get('_csrf_token')
+    with _connect() as conn:
+        admin=_origin_admin(conn)
+    if not admin:
         session.clear()
         return redirect(url_for('login'))
     session.clear()
@@ -173,10 +193,12 @@ def _view_as_start():
     token=session.get('_csrf_token')
     with _connect() as conn:
         origin=conn.execute(
-            "SELECT id,role,account_status FROM users WHERE id=?",
+            "SELECT id,role,account_status,COALESCE(session_version,0) session_version FROM users WHERE id=?",
             (origin_id,),
         ).fetchone()
         if not origin or origin['role']!='admin' or (origin['account_status'] and origin['account_status']!='active'):
+            abort(403)
+        if int(origin['session_version']) != int(session.get('session_version', -1)):
             abort(403)
         preview=_configure_preview_fixture(conn,role,programme_code)
 
@@ -189,6 +211,7 @@ def _view_as_start():
         session_version=int(preview['session_version'] or 0),
         admin_view_as_mode=1,
         admin_view_as_origin_user_id=origin_id,
+        admin_view_as_origin_session_version=int(origin['session_version']),
         admin_view_as_profile=key,
         admin_view_as_label=label,
         admin_view_as_policy=POLICY,
@@ -209,11 +232,15 @@ def _view_as_exit():
 def install_admin_view_as(app) -> None:
     # The preview fixtures must already exist from ux_teacher_preview startup.
     with _connect() as conn:
-        student=_preview_user(conn,'student')
-        teacher=_preview_user(conn,'teacher')
+        student=_preview_user(conn,'student',require_active=False)
+        teacher=_preview_user(conn,'teacher',require_active=False)
         if int(student['id'])==int(teacher['id']):
             raise RuntimeError('preview_role_identity_collision')
 
+    if 'admin_view_as' in app.view_functions:
+        return
+    # Run before early programme routing, not just before the final view function.
+    app.before_request_funcs.setdefault(None, []).insert(0, _guard_preview_authority)
     app.add_url_rule('/admin/view-as','admin_view_as',_view_as_home,methods=['GET'])
     app.add_url_rule('/admin/view-as/start','admin_view_as_start',_view_as_start,methods=['POST'])
     app.add_url_rule('/admin/view-as/exit','admin_view_as_exit',_view_as_exit,methods=['GET','POST'])

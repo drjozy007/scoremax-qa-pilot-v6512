@@ -1,127 +1,209 @@
+"""Compile only explicit, auditable automatic marking contracts.
+
+A model answer is not a rubric. No semantic mark points or synthetic confidence
+are inferred from word overlap. The existing written-response engine handles the
+bounded governed-clause lane; unsupported language is unscored, never sent to a human.
+"""
 from __future__ import annotations
 
+import copy
+from decimal import Decimal, InvalidOperation
+import hashlib
 import json
+import math
 import re
-from written_response_engine import mark_written_response
 
-_MARKER='SCOREMAX_CONSTRUCTED_AUTO_MARKER_V1'
+from written_response_engine import mark_written_response, validate_automatic_rubric
 
+MARKER_VERSION = 'SM-CONSTRUCTED-AUTO-3'
+PH_SAQ_CONTRACT_VERSION = 'PH-SAQ-SCORING-CONTRACT-1'
 
-def _norm(value):
-    return re.sub(r'\s+',' ',str(value or '').strip()).casefold()
-
-
-def _accepted_from_cfg(answer_cfg, fallback=''):
-    vals=[]
-    for value in (answer_cfg or {}).get('accepted_answers') or []:
-        token=str(value or '').strip()
-        if token and token not in vals:
-            vals.append(token)
-    fb=str(fallback or '').strip()
-    if fb and fb not in vals:
-        vals.insert(0,fb)
-    return vals
-
-
-def _looks_symbolic(value):
-    text=str(value or '').strip()
-    if not text:
-        return False
-    letters=re.findall(r'[A-Za-z]+',text)
-    digits=len(re.findall(r'\d',text))
-    math=len(re.findall(r'[=+*/^<>⟨⟩²³₀-₉-]',text))
-    # Compact numeric/list/formula responses should not go through prose similarity.
-    if digits and len(letters)<=4:
-        return True
-    if math>=2 and len(letters)<=8:
-        return True
-    if re.fullmatch(r'[\s\d,.;:+*/^()-]+',text):
-        return True
-    return False
-
-
-def compile_contract(answer_cfg, fallback_answer='', marks=1.0, stem='', command_word=''):
-    accepted=_accepted_from_cfg(answer_cfg,fallback_answer)
-    if not accepted:
+def _ph_saq_to_runtime_rubric(rubric, maximum):
+    """Compile an explicit Power House SAQ contract without inventing marks or phrases."""
+    if not isinstance(rubric, dict) or rubric.get('version') != PH_SAQ_CONTRACT_VERSION:
+        return rubric
+    try:
+        if float(rubric.get('maximum_marks')) != float(maximum):
+            return None
+    except (TypeError, ValueError, OverflowError):
         return None
-    maximum=float(marks or 1.0)
-    symbolic=all(_looks_symbolic(x) for x in accepted)
-    mode='EXACT' if symbolic else 'SEMANTIC'
-    command=str(command_word or '').strip().lower()
-    if not command:
-        first=(str(stem or '').strip().split() or [''])[0].strip('?:,.').lower()
-        if first in {'explain','describe','state','identify','calculate','determine','compare','justify','evaluate','predict','define'}:
-            command=first
-    return {
-      'version':'SM-CONSTRUCTED-AUTO-1',
-      'mode':mode,
-      'accepted_answers':accepted,
-      'maximum_marks':maximum,
-      'command_verb':command,
-    }
+    supplied_hash = rubric.get('contract_sha256')
+    if supplied_hash is not None:
+        if not isinstance(supplied_hash, str) or not re.fullmatch(r'[0-9a-f]{64}', supplied_hash):
+            return None
+        unsigned = copy.deepcopy(rubric); unsigned.pop('contract_sha256', None)
+        actual = hashlib.sha256(json.dumps(unsigned, sort_keys=True, separators=(',',':'),
+                                           ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+        if supplied_hash != actual:
+            return None
+    if str(rubric.get('auto_marking_eligibility') or '').strip().upper() != 'DETERMINISTICALLY_SCORABLE':
+        return None
+    scoring = str(rubric.get('scoring_type') or '').strip().upper()
+    if scoring not in {'EXACT_BOUNDED','ANY_N_FROM_VALID_SET','REQUIRED_COMBINATION',
+                       'CONTRAST_PAIR','LABEL_PLUS_FUNCTION'}:
+        return None
+    points = rubric.get('required_mark_points')
+    if not isinstance(points, list) or not points:
+        return None
+    out = []; contradictions = []; total = Decimal('0')
+    for point in points:
+        if not isinstance(point, dict):
+            return None
+        pid = point.get('id'); marks = point.get('marks')
+        try:
+            mv = Decimal(str(marks))
+            if not mv.is_finite() or mv <= 0:
+                return None
+            total += mv
+        except (InvalidOperation, ValueError, TypeError):
+            return None
+        accepted = point.get('accepted_expressions') or []
+        synonyms = point.get('accepted_synonyms') or []
+        if not isinstance(accepted, list) or not isinstance(synonyms, list):
+            return None
+        phrases = []
+        for phrase in accepted + synonyms:
+            if not isinstance(phrase, str) or not phrase.strip():
+                return None
+            if phrase not in phrases:
+                phrases.append(phrase)
+        if not phrases:
+            return None
+        out.append({'id':pid, 'description':str(point.get('description') or ''),
+                    'marks':marks, 'accepted_phrases':phrases, 'acceptable_paraphrases':[]})
+        blocked = point.get('contradictions') or []
+        if not isinstance(blocked, list):
+            return None
+        for phrase in blocked:
+            if not isinstance(phrase, str) or not phrase.strip():
+                return None
+            contradictions.append({'phrase':phrase, 'point_ids':[pid]})
+    if total != Decimal(str(maximum)):
+        return None
+    return {'version':'SM-RUBRIC-CLAUSES-1','maximum_marks':float(maximum),
+            'required_mark_points':out,'contradictions':contradictions,
+            'case_sensitive':bool(rubric.get('case_sensitive', False)),
+            'ph_saq_contract_sha256':supplied_hash}
+
+_NUMERIC = re.compile(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d{1,4})?\Z')
 
 
-def is_markable(answer_cfg, fallback_answer='', marks=1.0, stem='', command_word=''):
-    return compile_contract(answer_cfg,fallback_answer,marks,stem,command_word) is not None
+def _decimal(value):
+    text = str(value).strip()
+    if len(text) > 256 or not _NUMERIC.fullmatch(text):
+        return None
+    try:
+        result = Decimal(text)
+        return result if result.is_finite() and abs(result.adjusted()) <= 1000 else None
+    except (InvalidOperation, ValueError, OverflowError):
+        return None
+
+
+def _normalise(value, case_sensitive=True):
+    text = ' '.join(str(value).strip().split())
+    return text if case_sensitive else text.casefold()
+
+
+def compile_contract(answer_cfg, fallback_answer='', marks=1.0, stem='', command_word='', marking_cfg=None):
+    """Return a versioned contract or None. Input is immutable PH-derived metadata.
+
+    The only implicit legacy compatibility is a one-mark, finite numeric answer.
+    Formula/exact-text comparison requires an explicit governed scoring contract.
+    Conceptual/multi-point answers require the original structured rubric.
+    """
+    try:
+        ac = dict(answer_cfg or {}); mc = dict(marking_cfg or {})
+        maximum = float(marks)
+        if isinstance(marks, bool) or not math.isfinite(maximum) or maximum <= 0:
+            return None
+        accepted = ac.get('accepted_answers') or []
+        if not isinstance(accepted, list) or any(not isinstance(x, str) or not x.strip() for x in accepted):
+            return None
+        accepted = list(dict.fromkeys(accepted))
+        if str(fallback_answer or '').strip() and str(fallback_answer) not in accepted:
+            accepted.insert(0, str(fallback_answer))
+        rubric = mc.get('rubric')
+        mode = str(mc.get('scoring_contract') or ac.get('scoring_contract') or '')
+        if isinstance(rubric, dict) and rubric.get('version') == PH_SAQ_CONTRACT_VERSION:
+            rubric = _ph_saq_to_runtime_rubric(rubric, maximum)
+            if rubric is None:
+                return None
+        if rubric is not None:
+            if not isinstance(rubric, dict) or not validate_automatic_rubric(rubric, maximum)['valid']:
+                return None
+            mode = 'governed_clause_rubric_v1'
+            material = {'rubric':copy.deepcopy(rubric)}
+        elif (mode == 'numeric_decimal_v1' or (not mode and maximum == 1.0)) and accepted and all(_decimal(x) is not None for x in accepted):
+            mode = 'numeric_decimal_v1'
+            material = {'accepted_answers':accepted}
+        elif mode in {'normalised_text_exact','case_sensitive_exact'} and mc.get('auto_markable') is True and accepted:
+            sensitive = ac.get('case_sensitive', True)
+            if not isinstance(sensitive, bool):
+                return None
+            material = {'accepted_answers':accepted, 'case_sensitive':sensitive if mode != 'case_sensitive_exact' else True}
+        else:
+            return None
+        contract = {'version':MARKER_VERSION, 'mode':mode, 'maximum_marks':maximum,
+                    'command_verb':str(command_word or ''), **material}
+        raw = json.dumps(contract,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False)
+        contract['contract_sha256'] = hashlib.sha256(raw.encode()).hexdigest()
+        return contract
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def is_markable(answer_cfg, fallback_answer='', marks=1.0, stem='', command_word='', marking_cfg=None):
+    return compile_contract(answer_cfg,fallback_answer,marks,stem,command_word,marking_cfg) is not None
 
 
 def mark(contract, response):
     if not contract:
-        return {'markable':False,'marks_awarded':0.0,'maximum_marks':0.0,'is_correct':False,
-                'confidence':0.0,'status':'NO_MARKING_CONTRACT','feedback':[]}
-    answer=str(response or '').strip()
-    maximum=float(contract.get('maximum_marks') or 1.0)
+        return {'markable':False,'marks_awarded':None,'maximum_marks':0.0,'is_correct':False,
+                'confidence':0.0,'status':'NO_MARKING_CONTRACT','evidence_eligible':False,'feedback':[]}
+    unsigned = dict(contract); expected_hash = unsigned.pop('contract_sha256', None)
+    actual_hash = hashlib.sha256(json.dumps(unsigned,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+    if expected_hash != actual_hash or contract.get('version') != MARKER_VERSION:
+        return {'markable':False,'marks_awarded':None,'maximum_marks':0.0,'is_correct':False,
+                'confidence':0.0,'status':'INVALID_MARKING_CONTRACT','evidence_eligible':False,'feedback':[]}
+    maximum = float(contract['maximum_marks']); answer = str(response or '').strip()
+    base = {'markable':True, 'maximum_marks':maximum, 'marker_version':MARKER_VERSION,
+            'contract_sha256':expected_hash, 'evidence_eligible':True, 'confidence':1.0,
+            'status':'MARK_CONFIRMED', 'feedback':[]}
     if not answer:
-        return {'markable':True,'marks_awarded':0.0,'maximum_marks':maximum,'is_correct':False,
-                'confidence':1.0,'status':'RESPONSE_INCOMPLETE','feedback':['No response was submitted.']}
-    accepted=list(contract.get('accepted_answers') or [])
-    if contract.get('mode')=='EXACT':
-        ok=_norm(answer) in {_norm(x) for x in accepted}
-        return {'markable':True,'marks_awarded':maximum if ok else 0.0,'maximum_marks':maximum,
-                'is_correct':ok,'confidence':1.0,'status':'MARK_CONFIRMED',
-                'feedback':[] if ok else ['Check the required value, expression or ordered result.']}
-
-    model=accepted[0]
-    question={
-      'maximum_marks':maximum,
-      'command_verb':contract.get('command_verb') or '',
-      'required_mark_points':[{
-        'id':'P1','description':model,'marks':maximum,
-        'required_terms':[],
-        'acceptable_paraphrases':accepted[1:],
-        'accepted_phrases':accepted,
-        'causal_link_required':str(contract.get('command_verb') or '').lower() in {'explain','analyse','justify','predict'},
-        'improvement_instruction':'Include the essential scientific idea expressed in the approved answer.'
-      }],
-      'contradictions':[],
-      'misconceptions':[],
-    }
-    result=mark_written_response(question,answer,{
-      'confirmed_confidence':0.72,
-      'grader_a_version':'local-rubric-a-1',
-      'grader_b_version':'local-rubric-b-1',
-      'reconciliation_policy_version':'local-conservative-1',
-    })
-    awarded=float(result.get('proposed_mark') or 0)
-    return {
-      'markable':True,'marks_awarded':awarded,'maximum_marks':maximum,
-      'is_correct':awarded>=maximum-1e-9,
-      'confidence':float(result.get('confidence') or 0),
-      'status':str(result.get('status') or ''),
-      'feedback':list(result.get('feedback') or []),
-      'result':result,
-    }
+        return {**base, 'marks_awarded':0.0,'is_correct':False,'response_present':False}
+    if len(answer) > 10000:
+        return {**base,'marks_awarded':None,'is_correct':False,'status':'RESPONSE_LIMIT_EXCEEDED',
+                'confidence':0.0,'evidence_eligible':False,'feedback':['Please use a shorter answer.']}
+    if contract['mode'] == 'numeric_decimal_v1':
+        candidate = _decimal(answer)
+        ok = candidate is not None and any(candidate == _decimal(x) for x in contract['accepted_answers'])
+    elif contract['mode'] in {'normalised_text_exact','case_sensitive_exact'}:
+        ok = _normalise(answer,contract['case_sensitive']) in {_normalise(x,contract['case_sensitive']) for x in contract['accepted_answers']}
+    elif contract['mode'] == 'governed_clause_rubric_v1':
+        result = mark_written_response({**contract['rubric'],'maximum_marks':maximum}, answer,
+                                       {'scoring_contract':'governed_clause_rubric_v1'})
+        final = result.get('status') == 'MARK_CONFIRMED'
+        awarded = result['proposed_mark'] if final else None
+        return {**base,'marks_awarded':awarded,'is_correct':bool(final and awarded >= maximum),
+                'confidence':result['confidence'],'status':result['status'], 'evidence_eligible':final,
+                'feedback':result['feedback'],'result':result}
+    else:
+        return {**base,'markable':False,'marks_awarded':None,'is_correct':False,
+                'status':'UNSUPPORTED_MARKER_VERSION','confidence':0.0,'evidence_eligible':False}
+    return {**base, 'marks_awarded':maximum if ok else 0.0, 'is_correct':ok, 'response_present':True}
 
 
 def fixture_qualification():
-    exact=compile_contract({'accepted_answers':['-314']},'-314',1,'Calculate the value.','calculate')
-    if not mark(exact,'-314')['is_correct'] or mark(exact,'314')['is_correct']:
-        raise RuntimeError('CONSTRUCTED_EXACT_FIXTURE_FAIL')
-    semantic=compile_contract(
-      {'accepted_answers':['Irregular motion arises from repeated microscopic collisions.']},
-      '',1,'Explain why a suspended particle shows irregular Brownian motion.','explain')
-    good=mark(semantic,'The particle moves irregularly because repeated microscopic collisions strike it from different directions.')
-    bad=mark(semantic,'The particle is stationary because gravity prevents molecular collisions.')
-    if not good['markable'] or good['marks_awarded']<=bad['marks_awarded']:
-        raise RuntimeError('CONSTRUCTED_SEMANTIC_FIXTURE_FAIL')
-    return {'exact':True,'semantic':True,'fail_closed':compile_contract({},'',1,'','') is None}
+    exact=compile_contract({'accepted_answers':['-314']},'-314',1)
+    assert mark(exact,'-314.0')['is_correct'] and not mark(exact,'314')['is_correct']
+    rubric={'version':'SM-RUBRIC-CLAUSES-1','required_mark_points':[{
+        'id':'P1','description':'A causal explanation.', 'marks':1,
+        'accepted_phrases':['The particle moves irregularly because molecules collide with it.'],
+        'acceptable_paraphrases':['Unequal molecular impacts cause irregular motion.']}],
+        'contradictions':[{'phrase':'No molecules collide with the particle.', 'point_ids':['P1']}]}
+    contract=compile_contract({},'',1,marking_cfg={'rubric':rubric})
+    assert mark(contract,'Unequal molecular impacts cause irregular motion.')['is_correct']
+    assert mark(contract,'No molecules collide with the particle.')['marks_awarded']==0
+    assert not mark(contract,'The particle does not move irregularly because molecules collide with it.')['evidence_eligible']
+    assert compile_contract({'accepted_answers':['Molecules cause irregular movement.']},'',1) is None
+    return {'exact':True,'semantic':True,'fail_closed':True}

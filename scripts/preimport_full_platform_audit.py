@@ -8,6 +8,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from scoremax_production import application
 import app as sm
 
 REPORT={"gates":{},"findings":[],"metrics":{},"inventory":{}}
@@ -79,22 +80,9 @@ def setup_fixtures():
 
 
 def install_post_init_runtime_extensions():
-    """Mirror post-init route installers used by scoremax_production.py.
-
-    The exhaustive audit imports app.py directly so it can run against disposable local
-    storage.  Reviewer delivery QA and the learner catalogue are intentionally installed
-    after app.init() by the production entrypoint.  Install their route layers here too
-    before route/template integrity checks so the audit evaluates the deployable app,
-    rather than whitelisting endpoint names.
-    """
-    from ux_content_reviewer import install_content_reviewer
-    install_content_reviewer(sm.app)
-    try:
-        from ux_catalogue_browser import install_catalogue_browser
-    except ModuleNotFoundError:
-        install_catalogue_browser=None
-    if install_catalogue_browser:
-        install_catalogue_browser(sm.app)
+    """Execute the actual hosted startup chain; never mirror a subset of installers."""
+    if application is not sm.app:
+        raise RuntimeError('QUALIFICATION_APPLICATION_IDENTITY_MISMATCH')
 
 
 def audit_database(roles):
@@ -116,7 +104,19 @@ def audit_database(roles):
         packages=[]
         if table_exists(c,"coverage_packages"):
             packages=[dict(r) for r in c.execute("SELECT code,name,programme,price_minor,status FROM coverage_packages ORDER BY id").fetchall()]
-        gate("commercial_catalogue_empty",len(packages)==0,{"coverage_packages":packages})
+        # The approved catalogue was restored; empty packages is no longer the contract.
+        expected={
+          'fsc1_biology':('FSc Part 1','ACTIVE',79900),
+          'fsc1_two_subjects':('FSc Part 1','ACTIVE',129900),
+          'fsc1_science_bundle':('FSc Part 1','ACTIVE',169900),
+          'fsc1_full':('FSc Part 1','ACTIVE',199900),
+          'grade9_full':('Grade 9','COMING_SOON',None),
+          'grade10_full':('Grade 10','COMING_SOON',None),
+          'fsc2_full':('FSc Part 2','COMING_SOON',None),
+          'mdcat_full':('MDCAT','COMING_SOON',None),
+        }
+        actual={p['code']:(p['programme'],p['status'],p['price_minor']) for p in packages}
+        gate("approved_commercial_catalogue",actual==expected and len(packages)==8,{"coverage_packages":packages})
         if table_exists(c,"plans"):
             priced=[dict(r) for r in c.execute("SELECT code,name,audience,price_minor,active FROM plans WHERE COALESCE(price_minor,0)>0 ORDER BY code").fetchall()]
             gate("no_seeded_plan_prices",len(priced)==0,{"priced_plans":priced})
@@ -211,6 +211,7 @@ def audit_routes(roles):
     for role in roles_to_probe:
         client=make_client(role,roles)
         for r in parameterless:
+            client=make_client(role,roles)  # Logout/redirect probes cannot de-authenticate later role tests.
             try:
                 resp=client.get(r.rule,follow_redirects=False)
                 statuses[role][str(resp.status_code)]+=1
@@ -228,7 +229,7 @@ def audit_routes(roles):
             client=make_client(role,roles)
             for path in paths:
                 resp=client.get(path,follow_redirects=False)
-                leak=resp.status_code==200 and ("SCOREMAX ADMIN" in resp.get_data(as_text=True) or "Interest & Demand" in resp.get_data(as_text=True))
+                leak=resp.status_code not in (302,303,401,403)
                 checks.append({"owner":owner,"role":role,"path":path,"status":resp.status_code,"leak":leak})
     gate("role_isolation",not any(x["leak"] for x in checks),checks)
 
@@ -241,6 +242,7 @@ def audit_routes(roles):
             path=queue.popleft()
             if path in seen: continue
             seen.add(path)
+            client=make_client(role,roles)
             try: resp=client.get(path,follow_redirects=False)
             except Exception as e:
                 crawl_fail.append({"role":role,"path":path,"exception":repr(e)}); continue
@@ -274,8 +276,8 @@ def audit_security_source():
 
 
 def main():
-    roles=setup_fixtures()
     install_post_init_runtime_extensions()
+    roles=setup_fixtures()
     audit_database(roles)
     audit_templates()
     audit_routes(roles)

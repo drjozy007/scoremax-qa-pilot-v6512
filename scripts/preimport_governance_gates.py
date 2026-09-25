@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from scoremax_production import application
 import app as sm
 
 REPORT={'gates':{},'evidence':{}}
@@ -19,15 +20,9 @@ def table_columns(c,table):
 
 
 def install_post_init_runtime_extensions():
-    """Mirror route/schema installers that production applies only after app.init()."""
-    from ux_content_reviewer import install_content_reviewer
-    install_content_reviewer(sm.app)
-    try:
-        from ux_catalogue_browser import install_catalogue_browser
-    except ModuleNotFoundError:
-        install_catalogue_browser=None
-    if install_catalogue_browser:
-        install_catalogue_browser(sm.app)
+    """Execute the actual hosted startup chain; never mirror a subset of installers."""
+    if application is not sm.app:
+        raise RuntimeError('QUALIFICATION_APPLICATION_IDENTITY_MISMATCH')
 
 
 def add_user(c,role,username,system_id):
@@ -39,7 +34,6 @@ def add_user(c,role,username,system_id):
 
 
 def main():
-    sm.init()
     install_post_init_runtime_extensions()
     c=sm.db()
     try:
@@ -72,8 +66,10 @@ def main():
             r=client.get(path,follow_redirects=False)
             body=r.get_data(as_text=True)
             probes[(role,path)]={'status':r.status_code,'location':r.headers.get('Location',''),'review_content':('Reviewer Workspace' in body or 'Review Questions' in body or 'Review questions as learners see them.' in body)}
-    leaks=[{'role':role,'path':path,**e} for (role,path),e in probes.items() if e['status']==200 and e['review_content']]
+    leaks=[{'role':role,'path':path,**e} for (role,path),e in probes.items() if role!='admin' and e['status']==200 and e['review_content']]
     gate('reviewer_role_boundary',not leaks,{'leaks':leaks,'probes':{f'{k[0]} {k[1]}':v for k,v in probes.items()}})
+    gate('admin_delivery_review_available',probes[('admin','/student/content-review')]['status']==200,probes[('admin','/student/content-review')])
+    gate('historical_academic_workspace_fenced',probes[('admin','/admin/reviewer-workspace')]['status'] in (302,303) and '/admin/integration-health' in probes[('admin','/admin/reviewer-workspace')]['location'],probes[('admin','/admin/reviewer-workspace')])
 
     gate('power_house_academic_authority_preserved','/admin/reviewer-workspace' in route_rules,{'admin_workspace_fenced_by_runtime':True,'scoremax_release_authority':False})
     gate('learner_catalogue_is_display_only','/student/catalogue' in route_rules,{'catalogue_route_installed':'/student/catalogue' in route_rules,'governed_catalogue_rows':0,'scoremax_release_authority':False})

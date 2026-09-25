@@ -1,18 +1,23 @@
 (() => {
   'use strict';
   const INSTALLED_KEY='scoremax-app-installed-v1';
-  let deferredPrompt=null;
+  const LATER_KEY='scoremax-app-install-later-v1';
+  let deferredPrompt=null, postponed=false;
   const nudge=document.getElementById('scoremaxInstallNudge');
   const button=document.getElementById('scoremaxInstallButton');
   const help=document.getElementById('scoremaxInstallHelp');
   const steps=document.getElementById('scoremaxInstallSteps');
   const done=document.getElementById('scoremaxInstallDone');
   const close=document.getElementById('scoremaxInstallClose');
+  const later=document.getElementById('scoremaxInstallLater');
 
   if(!nudge || !button) return;
 
   const standalone=()=>window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone===true;
   const installedFlag=()=>{try{return localStorage.getItem(INSTALLED_KEY)==='1'}catch(_){return false}};
+  const laterFlag=()=>{try{return postponed || sessionStorage.getItem(LATER_KEY)==='1'}catch(_){return postponed}};
+  const showOffer=()=>{nudge.hidden=installedFlag() || standalone() || laterFlag()};
+  const closeHelp=()=>{if(help)help.hidden=true;if(!nudge.hidden)button.focus()};
   const hideAll=()=>{nudge.hidden=true;if(help)help.hidden=true};
   const markInstalled=()=>{try{localStorage.setItem(INSTALLED_KEY,'1')}catch(_){} hideAll()};
 
@@ -46,7 +51,7 @@
   window.addEventListener('beforeinstallprompt',(event)=>{
     event.preventDefault();
     deferredPrompt=event;
-    nudge.hidden=false;
+    showOffer();
   });
 
   window.addEventListener('appinstalled',()=>{
@@ -75,9 +80,23 @@
   });
 
   done?.addEventListener('click',markInstalled);
-  close?.addEventListener('click',()=>{if(help)help.hidden=true});
-  help?.addEventListener('click',(e)=>{if(e.target===help)help.hidden=true});
-  document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&help&&!help.hidden)help.hidden=true});
+  close?.addEventListener('click',closeHelp);
+  later?.addEventListener('click',()=>{
+    postponed=true;
+    try{sessionStorage.setItem(LATER_KEY,'1')}catch(_){}
+    hideAll();
+  });
+  help?.addEventListener('click',(e)=>{if(e.target===help)closeHelp()});
+  document.addEventListener('keydown',(e)=>{
+    if(!help || help.hidden)return;
+    if(e.key==='Escape'){e.preventDefault();closeHelp();return;}
+    if(e.key==='Tab'){
+      const controls=[...help.querySelectorAll('button:not([disabled])')];
+      const first=controls[0],last=controls[controls.length-1];
+      if(e.shiftKey && document.activeElement===first){e.preventDefault();last?.focus();}
+      else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first?.focus();}
+    }
+  });
 
-  nudge.hidden=false;
+  showOffer();
 })();

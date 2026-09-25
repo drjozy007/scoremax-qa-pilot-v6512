@@ -37,7 +37,8 @@ def apply_admin_rejection_reason_guard(root: Path) -> None:
         old=("    action=request.form.get('action','').strip(); reason=request.form.get('reason_code','').strip(); note=request.form.get('note','').strip()\n"
              "    status_map={'ready':'Ready for Review','start':'Under Review','approve':'Approved','changes':'Changes Required','reject':'Rejected','retire':'Retired','restore':'Approved'}\n"
              "    if action not in status_map: flash('Unknown review action.','error'); return redirect(url_for('admin_question_detail',qid=qid))")
-        allowed_repr=repr(set(REASONS))
+        # Stable source bytes across Python hash seeds; runtime membership stays a set.
+        allowed_repr='{' + ', '.join(repr(reason) for reason in REASONS) + '}'
         new=("    # SCOREMAX_ADMIN_REJECTION_REASON_GUARD_V1\n"
              "    action=request.form.get('action','').strip(); reason=request.form.get('reason_code','').strip(); note=request.form.get('note','').strip()\n"
              "    status_map={'ready':'Ready for Review','start':'Under Review','approve':'Approved','changes':'Changes Required','reject':'Rejected','retire':'Retired','restore':'Approved'}\n"
