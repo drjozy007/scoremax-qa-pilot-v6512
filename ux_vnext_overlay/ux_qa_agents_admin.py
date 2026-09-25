@@ -188,8 +188,11 @@ def _responses(scoremax,q):
         mapping=mc.get("correct_mapping")
         if not isinstance(mapping,dict) or not mapping:return None,None
         wrong=dict(mapping);keys=list(wrong);rights=[str(x.get("id")) for x in (ac.get("right_options") or []) if isinstance(x,dict)]
-        if keys and len(rights)>1:
-            current=str(wrong[keys[0]]);wrong[keys[0]]=next((x for x in rights if x!=current),current)
+        if not keys or len(rights)<2:return None,None
+        current=str(wrong[keys[0]]);replacement=next((x for x in rights if x!=current),None)
+        if replacement is None:return None,None
+        wrong[keys[0]]=replacement
+        if wrong==mapping:return None,None
         return _canon(mapping),_canon(wrong)
     if qt=="ordering":
         order=mc.get("correct_order")
@@ -203,7 +206,8 @@ def _responses(scoremax,q):
             candidates=(p.get("accepted_phrases") or [])+(p.get("acceptable_paraphrases") or [])
             if not candidates:return None,None
             phrases.append(str(candidates[0]))
-        return " ".join(phrases),"__QA_UNRELATED_RESPONSE__" if phrases else (None,None)
+        if not phrases:return None,None
+        return " ".join(phrases),"__QA_UNRELATED_RESPONSE__"
     return None,None
 
 def _student_b(scoremax,group):
