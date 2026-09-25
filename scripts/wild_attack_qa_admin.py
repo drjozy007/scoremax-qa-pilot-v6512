@@ -85,7 +85,7 @@ class WildQA(unittest.TestCase):
         for i,q in enumerate(fixtures,1): insert(cls.c,q,ordinal=i)
         # Unknown runtime family: learner lane must never silently PASS it.
         p=json.loads(cls.c.execute("SELECT scoremax_projection_json FROM integration_ph_question_version_store WHERE question_id='Q-UNKNOWN'").fetchone()[0])
-        p["qtype"]="ALIEN_RESPONSE"; cls.c.execute("UPDATE integration_ph_question_version_store SET scoremax_projection_json=? WHERE question_id='Q-UNKNOWN'",(canon(p),))
+        p["qtype"]="ALIEN_RESPONSE";p["ph_response_contract"]="alien_response"; cls.c.execute("UPDATE integration_ph_question_version_store SET scoremax_projection_json=? WHERE question_id='Q-UNKNOWN'",(canon(p),))
         # Learner projection drift with unchanged immutable source.
         p=json.loads(cls.c.execute("SELECT scoremax_projection_json FROM integration_ph_question_version_store WHERE question_id='Q-DRIFT'").fetchone()[0])
         p["question"]="Tampered learner stem"; cls.c.execute("UPDATE integration_ph_question_version_store SET scoremax_projection_json=? WHERE question_id='Q-DRIFT'",(canon(p),))
