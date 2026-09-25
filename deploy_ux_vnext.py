@@ -586,7 +586,6 @@ def main() -> None:
     from ux_vnext_overlay.ux_assessment_contract_repair import apply_assessment_contract_repair
     apply_assessment_contract_repair(ROOT)
     apply_programme_mastery_repair(ROOT)
-    from ux_vnext_overlay.ux_qa_agents_admin import install_qa_agents_admin as _install_qa_agents_admin_source
     for rel in ('ux_qa_agents_admin.py','templates/admin_mastery_lab.html','templates/admin_qa_agent_problems.html'):
         src=Path('ux_vnext_overlay')/rel; dst=ROOT/rel
         if not src.is_file(): raise SystemExit('SCOREMAX_QA_AGENTS_ADMIN_SOURCE_MISSING:'+rel)

@@ -28,6 +28,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Render-order build preflight
+        run: |
+          rm -rf /tmp/scoremax-render-order
+          mkdir -p /tmp/scoremax-render-order
+          cp -a . /tmp/scoremax-render-order/source
+          python -m venv /tmp/scoremax-render-order/venv
+          cd /tmp/scoremax-render-order/source
+          /tmp/scoremax-render-order/venv/bin/python deploy_ux_vnext.py
       - name: Install qualification dependencies
         run: python -m pip install --quiet -r hosted_runtime_base_v6512/requirements.txt
       - name: Assemble exact ScoreMax runtime
