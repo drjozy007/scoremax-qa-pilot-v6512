@@ -15,7 +15,76 @@ import re
 
 from written_response_engine import mark_written_response, validate_automatic_rubric
 
-MARKER_VERSION = 'SM-CONSTRUCTED-AUTO-2'
+MARKER_VERSION = 'SM-CONSTRUCTED-AUTO-3'
+PH_SAQ_CONTRACT_VERSION = 'PH-SAQ-SCORING-CONTRACT-1'
+
+def _ph_saq_to_runtime_rubric(rubric, maximum):
+    """Compile an explicit Power House SAQ contract without inventing marks or phrases."""
+    if not isinstance(rubric, dict) or rubric.get('version') != PH_SAQ_CONTRACT_VERSION:
+        return rubric
+    try:
+        if float(rubric.get('maximum_marks')) != float(maximum):
+            return None
+    except (TypeError, ValueError, OverflowError):
+        return None
+    supplied_hash = rubric.get('contract_sha256')
+    if supplied_hash is not None:
+        if not isinstance(supplied_hash, str) or not re.fullmatch(r'[0-9a-f]{64}', supplied_hash):
+            return None
+        unsigned = copy.deepcopy(rubric); unsigned.pop('contract_sha256', None)
+        actual = hashlib.sha256(json.dumps(unsigned, sort_keys=True, separators=(',',':'),
+                                           ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+        if supplied_hash != actual:
+            return None
+    if str(rubric.get('auto_marking_eligibility') or '').strip().upper() != 'DETERMINISTICALLY_SCORABLE':
+        return None
+    scoring = str(rubric.get('scoring_type') or '').strip().upper()
+    if scoring not in {'EXACT_BOUNDED','ANY_N_FROM_VALID_SET','REQUIRED_COMBINATION',
+                       'CONTRAST_PAIR','LABEL_PLUS_FUNCTION'}:
+        return None
+    points = rubric.get('required_mark_points')
+    if not isinstance(points, list) or not points:
+        return None
+    out = []; contradictions = []; total = Decimal('0')
+    for point in points:
+        if not isinstance(point, dict):
+            return None
+        pid = point.get('id'); marks = point.get('marks')
+        try:
+            mv = Decimal(str(marks))
+            if not mv.is_finite() or mv <= 0:
+                return None
+            total += mv
+        except (InvalidOperation, ValueError, TypeError):
+            return None
+        accepted = point.get('accepted_expressions') or []
+        synonyms = point.get('accepted_synonyms') or []
+        if not isinstance(accepted, list) or not isinstance(synonyms, list):
+            return None
+        phrases = []
+        for phrase in accepted + synonyms:
+            if not isinstance(phrase, str) or not phrase.strip():
+                return None
+            if phrase not in phrases:
+                phrases.append(phrase)
+        if not phrases:
+            return None
+        out.append({'id':pid, 'description':str(point.get('description') or ''),
+                    'marks':marks, 'accepted_phrases':phrases, 'acceptable_paraphrases':[]})
+        blocked = point.get('contradictions') or []
+        if not isinstance(blocked, list):
+            return None
+        for phrase in blocked:
+            if not isinstance(phrase, str) or not phrase.strip():
+                return None
+            contradictions.append({'phrase':phrase, 'point_ids':[pid]})
+    if total != Decimal(str(maximum)):
+        return None
+    return {'version':'SM-RUBRIC-CLAUSES-1','maximum_marks':float(maximum),
+            'required_mark_points':out,'contradictions':contradictions,
+            'case_sensitive':bool(rubric.get('case_sensitive', False)),
+            'ph_saq_contract_sha256':supplied_hash}
+
 _NUMERIC = re.compile(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d{1,4})?\Z')
 
 
@@ -55,6 +124,10 @@ def compile_contract(answer_cfg, fallback_answer='', marks=1.0, stem='', command
             accepted.insert(0, str(fallback_answer))
         rubric = mc.get('rubric')
         mode = str(mc.get('scoring_contract') or ac.get('scoring_contract') or '')
+        if isinstance(rubric, dict) and rubric.get('version') == PH_SAQ_CONTRACT_VERSION:
+            rubric = _ph_saq_to_runtime_rubric(rubric, maximum)
+            if rubric is None:
+                return None
         if rubric is not None:
             if not isinstance(rubric, dict) or not validate_automatic_rubric(rubric, maximum)['valid']:
                 return None
