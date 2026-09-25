@@ -4,12 +4,7 @@ on:
   push:
     branches: [qualification/mastery-launch-freeze-20260925]
   pull_request:
-    branches: [qualification/mastery-live-base-20260925]
-    paths:
-      - 'ux_vnext_overlay/mastery_policy_v3.py'
-      - 'ux_vnext_overlay/ux_mastery_rigor_admin.py'
-      - 'scripts/qualify_mastery_launch_freeze.py'
-      - '.github/workflows/mastery-launch-freeze-qualification.yml'
+    branches: [qualification/mastery-live-base-20260925, feature/v6611c-ux-vnext-landing]
   workflow_dispatch:
 
 permissions:
@@ -50,6 +45,15 @@ jobs:
         run: python scripts/qualify_qa_agents_admin.py
       - name: Run existing assessment regression
         run: python scripts/qualify_assessment_contract_repair.py
+      - name: Run optional QA wild attack
+        if: ${{ hashFiles('scripts/wild_attack_qa_admin.py') != '' }}
+        run: python scripts/wild_attack_qa_admin.py
+      - name: Run optional mastery wild attack
+        if: ${{ hashFiles('scripts/wild_attack_mastery.py') != '' }}
+        run: python scripts/wild_attack_mastery.py
+      - name: Run optional SAQ wild attack
+        if: ${{ hashFiles('scripts/wild_attack_saq_marking.py') != '' }}
+        run: python scripts/wild_attack_saq_marking.py
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
