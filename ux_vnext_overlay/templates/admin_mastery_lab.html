@@ -1,0 +1,79 @@
+{% extends 'base.html' %}{% block title %}QA & Mastery Laboratory · Admin{% endblock %}{% block content %}
+<style>
+.qa-agent-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.qa-agent-card{display:flex;flex-direction:column;gap:8px}.qa-agent-card h3{margin:0}.qa-agent-card .qa-kpis{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qa-kpis div,.qa-summary-grid div{padding:9px;border:1px solid #e3e8e3;border-radius:10px}.qa-kpis strong,.qa-summary-grid strong{display:block;font-size:1.15rem}
+.qa-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.qa-status-hold{font-weight:800}.qa-agent-actions{margin-top:auto}.qa-agent-actions form{display:flex;gap:6px;flex-wrap:wrap}
+.qa-history-note{border-left:4px solid #8b96a1;padding-left:12px}.qa-mini{font-size:.82rem}
+@media(max-width:1000px){.qa-agent-grid{grid-template-columns:repeat(2,1fr)}.qa-summary-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.qa-agent-grid,.qa-summary-grid{grid-template-columns:1fr}}
+</style>
+<section class="page-shell">
+  <div class="page-heading"><div><p class="eyebrow">ADMIN · QA SANDBOX · PRE-LAUNCH ASSURANCE</p><h1>QA & Mastery Laboratory</h1><p>Run deterministic QA agents, inspect cumulative quality evidence, and retain the existing mastery/synthetic assurance tools in one governed workspace.</p></div><a class="btn alt" href="{{url_for('admin_mastery_lab_sample')}}">Download technical sample</a></div>
+  <section class="warning-panel"><strong>Hard boundary:</strong> QA agents can inspect and record evidence only. They cannot edit a question, activate a release, create learner attempts or award mastery.</section>
+
+  {% if qa_agent_admin %}
+  <section class="card" id="qa-agents">
+    <div class="split"><div><p class="eyebrow">SECTION 1</p><h2>QA Agents</h2><p class="muted">Run one agent or all four against governed staged/active Power House question versions.</p></div><span class="status-pill">Policy {{qa_agent_admin.policy_version}}</span></div>
+    <form method="post" action="{{url_for('admin_qa_agents_run')}}" class="compact-row">
+      <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+      <input type="hidden" name="agent_code" value="ALL">
+      <label>Scope<select name="scope"><option value="staged">All staged releases</option><option value="all">All staged + active governed releases</option>{% for r in qa_agent_admin.releases %}<option value="release:{{r.id}}">{{r.subject_id}} · {{r.chapter_id}} · {{r.release_id}} · {{r.local_status}}</option>{% endfor %}</select></label>
+      <button class="btn">Run all QA agents</button>
+    </form>
+    <div class="qa-agent-grid">
+      {% for code,a in qa_agent_admin.agents.items() %}
+      <article class="card qa-agent-card">
+        <p class="eyebrow">{{code.replace('_',' ')}}</p><h3>{{a.label}}</h3><strong>{{a.purpose}}</strong><p class="muted qa-mini">{{a.short}}</p>
+        <div class="qa-kpis">
+          <div><strong>{{a.unique_questions}}</strong><span>unique checked</span></div>
+          <div><strong>{{a.executions}}</strong><span>executions</span></div>
+          <div><strong>{{a.affected_questions}}</strong><span>questions flagged</span></div>
+          <div><strong>{{a.findings}}</strong><span>defect findings</span></div>
+          <div><strong>{{a.current_holds}}</strong><span>current holds</span></div>
+          <div><strong>{{a.not_evaluated}}</strong><span>not evaluated</span></div>
+          <div><strong>{{a.cleared_after_hold}}</strong><span>cleared after hold</span></div>
+          <div><strong>{{a.last_run}}</strong><span>last run</span></div>
+        </div>
+        {% if a.top_findings %}<details><summary>Top defect types</summary>{% for x in a.top_findings %}<div class="compact-row"><span>{{x.finding_code.replace('_',' ').title()}}</span><strong>{{x.n}}</strong></div>{% endfor %}</details>{% endif %}
+        <div class="qa-agent-actions"><form method="post" action="{{url_for('admin_qa_agents_run')}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="agent_code" value="{{code}}"><input type="hidden" name="scope" value="staged"><button class="btn alt small">Run on staged</button></form></div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card" id="qa-performance">
+    <div class="split"><div><p class="eyebrow">SECTION 2</p><h2>QA Performance</h2><p class="muted">Operational history is accumulated from Admin runs. Unique question versions and reruns are deliberately counted separately.</p></div><a class="btn alt small" href="{{url_for('admin_qa_agent_problems')}}">View Problems & History</a></div>
+    <div class="qa-summary-grid">
+      <div><strong>{{qa_agent_admin.overall.unique_questions}}</strong><span>unique governed versions checked</span></div>
+      <div><strong>{{qa_agent_admin.overall.executions}}</strong><span>agent executions</span></div>
+      <div><strong>{{qa_agent_admin.overall.findings}}</strong><span>defect findings</span></div>
+      <div><strong>{{qa_agent_admin.overall.current_holds}}</strong><span>current holds</span></div>
+      <div><strong>{{qa_agent_admin.overall.not_evaluated}}</strong><span>not evaluated</span></div>
+    </div>
+    <h3>Recent agent runs</h3>
+    {% if qa_agent_admin.recent_runs %}<div class="table-wrap"><table><thead><tr><th>Agent</th><th>Scope</th><th>Population</th><th>Pass</th><th>Hold</th><th>Not evaluated</th><th>Findings</th><th>Completed</th></tr></thead><tbody>{% for r in qa_agent_admin.recent_runs %}<tr><td>{{qa_agent_admin.agents[r.agent_code].label}}</td><td>{{r.scope_type}} {{r.scope_key}}</td><td>{{r.population_count}}</td><td>{{r.pass_count}}</td><td>{{r.hold_count}}</td><td>{{r.not_evaluated_count}}</td><td>{{r.finding_count}}</td><td>{{r.completed_at or r.started_at}}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p>No Admin operational QA runs yet.</p>{% endif %}
+    <div class="qa-history-note"><strong>{{qa_agent_admin.historical.label}}</strong><p>{{qa_agent_admin.historical.population}}</p><p>{{qa_agent_admin.historical.STUDENT_A}} · {{qa_agent_admin.historical.STUDENT_B}}</p><p>{{qa_agent_admin.historical.REVIEWER_A}} · {{qa_agent_admin.historical.REVIEWER_B}}</p><p class="muted">{{qa_agent_admin.historical.harness}}</p></div>
+  </section>
+
+  <section class="card" id="qa-problems">
+    <div class="split"><div><p class="eyebrow">SECTION 3</p><h2>Problems & History</h2><p class="muted">Latest unresolved holds/not-evaluated results. QA records evidence; correction remains in the governed Power House lifecycle.</p></div><a class="btn" href="{{url_for('admin_qa_agent_problems')}}">Open full history</a></div>
+    {% if qa_agent_admin.problems %}<div class="table-wrap"><table><thead><tr><th>Agent</th><th>Question/version</th><th>Scope</th><th>Status</th><th>Findings</th><th>Checked</th></tr></thead><tbody>{% for p in qa_agent_admin.problems[:10] %}<tr><td>{{qa_agent_admin.agents[p.agent_code].label}}</td><td>{{p.question_id}}<br><small>{{p.question_version_id}}</small></td><td>{{p.subject}} · {{p.chapter}}</td><td><strong>{{p.status}}</strong></td><td>{{p.findings_json}}</td><td>{{p.evaluated_at}}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p>No current QA problems recorded by Admin operational runs.</p>{% endif %}
+  </section>
+  {% endif %}
+
+  <section class="warning-panel"><strong>Existing Mastery Laboratory retained:</strong> every laboratory record is {{release_flags.content_environment}}, {{release_flags.student_release_status}}, {{release_flags.bank_approval_status}} and {{release_flags.mastery_validity}}.</section>
+  <div class="grid3">
+    <section class="card"><p class="eyebrow">FEATURE STATE</p><h2>{{control.state}}</h2><p>Admin-only. No student route, live bank write or formal mastery write.</p></section>
+    <section class="card"><p class="eyebrow">SUPPORTED FAMILIES</p><h2>{{family_support|length}}</h2><p>Candidate metadata remains family-specific rather than being collapsed into MCQ.</p></section>
+    <section class="card"><p class="eyebrow">EXPLICIT STATES</p><h2>{{state_support|length}}</h2><p>Provisional, verified, verification, recovery and reconfirmation states are preserved internally.</p></section>
+  </div>
+  <div class="grid2">
+    <section class="card"><h2>Import Chapter candidate corpus</h2><form method="post" action="{{url_for('admin_mastery_lab_import')}}" enctype="multipart/form-data"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="action" value="upload"><label>Candidate file<input type="file" name="candidate_file" accept=".json,.csv,.xlsx,.xlsm" required></label><label>Source reference<input name="source_reference" placeholder="Power House batch / Chapter 1 corpus reference"></label><button class="btn">Validate and import to QA sandbox</button></form><p class="muted">The whole batch is rejected on structural errors. Warnings remain unresolved and visible.</p></section>
+    <section class="card"><h2>Technical family sample</h2><p>Use the sample to challenge scoring, evidence identity and the synthetic simulator before importing a candidate corpus.</p><form method="post" action="{{url_for('admin_mastery_lab_import')}}"><input type="hidden" name="_csrf_token" value="{{csrf_token()}}"><input type="hidden" name="action" value="sample"><button class="btn alt">Import technical sample</button></form><details><summary>Supported families</summary><p>{{family_support|join(' · ')}}</p></details></section>
+  </div>
+  <section class="card"><div class="split"><div><h2>QA batches</h2><p class="muted">A batch appearing here does not mean it is approved for student release.</p></div></div>{% if batches %}<div class="table-wrap"><table><thead><tr><th>Batch</th><th>Scope</th><th>Candidates</th><th>Warnings</th><th>Runs</th><th>Blockers</th><th>Status</th></tr></thead><tbody>{% for b in batches %}<tr><td><a href="{{url_for('admin_mastery_lab_batch',batch_id=b.id)}}"><strong>{{b.batch_code}}</strong></a><br><small>{{b.filename}}</small></td><td>{{b.programme}}<br>{{b.subject}} · {{b.chapter}}</td><td>{{b.imported_count}}</td><td>{{b.unresolved_warning_count}}</td><td>{{b.run_count}}</td><td>{{b.open_blockers}}</td><td><span class="status-chip">{{b.status}}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<p>No Mastery Laboratory batches yet.</p>{% endif %}</section>
+  <section class="card"><h2>Blocker register summary</h2>{% if blocker_counts %}{% for row in blocker_counts %}<div class="compact-row"><span>{{row.severity}} · {{row.status}}</span><strong>{{row.n}}</strong></div>{% endfor %}{% else %}<p>No laboratory blockers have been created.</p>{% endif %}</section>
+</section>
+{% endblock %}
