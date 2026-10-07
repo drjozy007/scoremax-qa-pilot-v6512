@@ -25,6 +25,7 @@ from ux_vnext_overlay.ux_emergency_return_recovery import apply_emergency_return
 from ux_vnext_overlay.ux_bio13_identity_crosswalk_audit import apply_bio13_identity_crosswalk_audit
 from ux_vnext_overlay.ux_bio13_failed_pilot_retirement import apply_bio13_failed_pilot_retirement
 from ux_vnext_overlay.ux_source_market_v12_receiver import apply_source_market_v12_receiver
+from ux_vnext_overlay.ux_ph_admission_exam_release_scope import apply_ph_admission_exam_release_scope
 from ux_vnext_overlay.ux_cross50_qa_staging_v13 import apply_cross50_qa_staging_v13
 from ux_vnext_overlay.ux_cross50_qa_staging_v13_qualification import assert_cross50_qa_v13
 from ux_vnext_overlay.ux_cross50_stimulus_single_select_alias_v13b import apply_cross50_stimulus_single_select_alias
@@ -546,6 +547,9 @@ def _assert_referral_hero_v3() -> None:
 def main() -> None:
     recovery_main()
     apply_source_market_v12_receiver(ROOT)
+    apply_ph_admission_exam_release_scope(ROOT)
+    subprocess.run([sys.executable,'scripts/qualify_ph_admission_exam_release_scope.py',str(ROOT)],check=True)
+    print('SCOREMAX_PH_ADMISSION_EXAM_SCOPE_BUILD_GATE_PASS fsc_to_mdcat=true fsc_to_ecat=true fail_closed=true',flush=True)
     apply_cross50_qa_staging_v13(ROOT)
     apply_cross50_stimulus_single_select_alias(ROOT)
     apply_cross50_ph_family_registry(ROOT)
