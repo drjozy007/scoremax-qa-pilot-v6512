@@ -48,7 +48,7 @@ def apply_programme_mastery_repair(root):
     a=replace_function(a,'init',init)
     submit=fn(a,'submit_assessment_v4')
     submit=replace_once(submit,'        marking_results={}','        marking_results={}\n        evidence_contexts={}')
-    submit=replace_once(submit,"            marking_results[qid]=marking_result","            marking_results[qid]=marking_result\n            evidence_contexts[qid]=evidence_context(q,submission_meta.get('programme',''),qid)")
+    submit=replace_once(submit,"            marking_results[qid]=marking_result","            marking_results[qid]=marking_result\n            evidence_contexts[qid]=evidence_context(c,q,submission_meta.get('programme',''),qid)")
     pos=submit.index('        # Commit the one-and-only')
     submit=submit[:pos]+'''        for qid,context in evidence_contexts.items():
             c.execute('UPDATE attempt_answers SET evidence_context_json=? WHERE attempt_id=? AND question_db_id=?',
@@ -166,8 +166,8 @@ def apply_programme_mastery_repair(root):
     a=replace_function(a,'process_mastery_result',m)
     # Chapter page topic inventory and evidence use exact active programme too.
     m=fn(a,'chapter_page')
-    m=replace_once(m,'    topics=[]',"    programme=student_programme(c,session['user_id'])\n    scope_sql,scope_args=_programme_scope_sql(_programme_aliases(programme),'q')\n    evidence=learner_answer_evidence(c,session['user_id'],programme,subject,chapter)\n    topics=[]")
-    m=replace_once(m,"AND q.subject=? AND q.chapter=? AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",(subject,chapter)","AND q.subject=? AND q.chapter=? AND {scope_sql} AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",[subject,chapter]+scope_args")
+    m=replace_once(m,'    topics=[]',"    programme=student_programme(c,session['user_id'])\n    chapter_scope_sql,chapter_scope_args=_programme_chapter_scope_sql(programme,chapter,'q')\n    evidence=learner_answer_evidence(c,session['user_id'],programme,subject,chapter)\n    topics=[]")
+    m=replace_once(m,"AND q.subject=? AND q.chapter=? AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",(subject,chapter)","AND q.subject=? AND {chapter_scope_sql} AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",[subject]+chapter_scope_args")
     start=m.index('        r=c.execute(');end=m.index("        topics.append",start)
     m=m[:start]+"        stats=evidence_summary([r for r in evidence if r['topic']==topic]);answered=stats['answered'];accuracy=stats['accuracy']\n"+m[end:]
     start=m.index('    cr=c.execute(');end=m.index('    weak=',start)

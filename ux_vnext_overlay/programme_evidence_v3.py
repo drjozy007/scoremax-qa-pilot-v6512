@@ -14,11 +14,78 @@ def _programme_scope_sql(alias_values,table_alias='q'):
     vals=sorted({str(x).strip().casefold() for x in alias_values or [] if str(x).strip()})
     if not vals:return '0=1',[]
     marks=','.join('?' for _ in vals)
-    # A populated programme is authoritative. Qualification is only legacy fallback,
-    # never a second route by which an explicitly different programme can match.
+    # Legacy/local questions continue to use their canonical programme field.
+    # Power House questions use ACTIVE release membership instead: one canonical
+    # question may therefore be available in FSc and MDCAT simultaneously.
     expression=f"lower(COALESCE(NULLIF(trim({table_alias}.programme),''),trim({table_alias}.qualification),''))"
-    return f'{expression} IN ({marks})',vals
+    legacy=f"(COALESCE({table_alias}.ph_projection_owner,'')<>'POWER_HOUSE' AND {expression} IN ({marks}))"
+    ph=f"""(COALESCE({table_alias}.ph_projection_owner,'')='POWER_HOUSE' AND EXISTS(
+      SELECT 1
+      FROM integration_ph_question_version_store pv
+      JOIN integration_ph_release_question_membership pm
+        ON pm.question_id=pv.question_id AND pm.question_version_id=pv.question_version_id
+      JOIN integration_ph_content_releases pr
+        ON pr.release_id=pm.release_id AND pr.release_version=pm.release_version
+      WHERE pv.local_question_db_id={table_alias}.id
+        AND pr.local_status='ACTIVE'
+        AND lower(trim(pr.programme_id)) IN ({marks})
+    ))"""
+    return f'({legacy} OR {ph})',vals+vals
 
+
+def _ph_programme_scope_context(c,question_db_id,programme):
+    """Resolve one active PH release scope for the selected learner programme.
+
+    Fail closed on no membership or conflicting active scopes. Source question
+    identity/content is never rewritten; this returns only the learner programme view.
+    """
+    aliases=_programme_aliases(programme)
+    vals=sorted({str(x).strip().casefold() for x in aliases if str(x).strip()})
+    if not vals:return None
+    marks=','.join('?' for _ in vals)
+    rows=c.execute(f"""SELECT DISTINCT pr.programme_id,pr.subject_id,pr.chapter_id
+      FROM integration_ph_question_version_store pv
+      JOIN integration_ph_release_question_membership pm
+        ON pm.question_id=pv.question_id AND pm.question_version_id=pv.question_version_id
+      JOIN integration_ph_content_releases pr
+        ON pr.release_id=pm.release_id AND pr.release_version=pm.release_version
+      WHERE pv.local_question_db_id=?
+        AND pr.local_status='ACTIVE'
+        AND lower(trim(pr.programme_id)) IN ({marks})
+      ORDER BY pr.subject_id,pr.chapter_id""",[int(question_db_id)]+vals).fetchall()
+    scopes={(str(r['programme_id'] or ''),str(r['subject_id'] or ''),str(r['chapter_id'] or '')) for r in rows}
+    if len(scopes)!=1:return None
+    raw_programme,subject_id,chapter_id=next(iter(scopes))
+    subject=str(subject_id or '').replace('_',' ').strip().title()
+    return {
+      'programme':canonical_programme(raw_programme),
+      'subject':subject,
+      'chapter_id':chapter_id,
+    }
+
+
+
+def _programme_chapter_scope_sql(programme,chapter,table_alias='q'):
+    """Scope one learner chapter/unit without duplicating canonical PH questions."""
+    aliases=_programme_aliases(programme)
+    programme_sql,params=_programme_scope_sql(aliases,table_alias)
+    vals=sorted({str(x).strip().casefold() for x in aliases if str(x).strip()})
+    if not vals:return '0=1',[]
+    marks=','.join('?' for _ in vals)
+    ph_chapter=f"""(COALESCE({table_alias}.ph_projection_owner,'')='POWER_HOUSE' AND EXISTS(
+      SELECT 1
+      FROM integration_ph_question_version_store cv
+      JOIN integration_ph_release_question_membership cm
+        ON cm.question_id=cv.question_id AND cm.question_version_id=cv.question_version_id
+      JOIN integration_ph_content_releases cr
+        ON cr.release_id=cm.release_id AND cr.release_version=cm.release_version
+      WHERE cv.local_question_db_id={table_alias}.id
+        AND cr.local_status='ACTIVE'
+        AND lower(trim(cr.programme_id)) IN ({marks})
+        AND lower(trim(cr.chapter_id))=lower(?)
+    ))"""
+    chapter_clause=f"(lower(COALESCE({table_alias}.chapter,''))=lower(?) OR {ph_chapter})"
+    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or '')]
 
 def student_programme(c,user_id):
     row=c.execute("SELECT academic_level,active_programme FROM users WHERE id=?",(user_id,)).fetchone()
@@ -38,12 +105,24 @@ def eligible_attempts(c,student_id,programme=None):
       ORDER BY created_at DESC,id DESC""",[student_id]+[x.casefold() for x in aliases]).fetchall()
 
 
-def evidence_context(question,programme,question_db_id):
+def evidence_context(c,question,programme,question_db_id):
     import hashlib
     q=dict(question)
     fields=('subject','chapter','topic','subtopic','learning_outcome','level','difficulty','command_word','cognitive_skill','family_id','question_version')
     context={key:q.get(key) for key in fields}
-    context.update(schema='SM-EVIDENCE-CONTEXT-1',programme=canonical_programme(programme),question_db_id=int(question_db_id),
+    selected_programme=canonical_programme(programme)
+    if str(q.get('ph_projection_owner') or '')=='POWER_HOUSE':
+        scope=_ph_programme_scope_context(c,question_db_id,selected_programme)
+        if not scope or canonical_programme(scope.get('programme'))!=selected_programme:
+            raise question_contracts.QuestionContractError('PH_PROGRAMME_MEMBERSHIP_REQUIRED')
+        context['ph_release_chapter_id']=scope.get('chapter_id') or ''
+        # Preserve established FSc evidence labels exactly. Admission-exam views
+        # (MDCAT/ECAT) use the governed release destination because the canonical
+        # question row intentionally remains FSc-shaped.
+        if selected_programme not in {'FSc Part 1','FSc Part 2'}:
+            context['subject']=scope.get('subject') or context.get('subject') or ''
+            context['chapter']=scope.get('chapter_id') or ''
+    context.update(schema='SM-EVIDENCE-CONTEXT-1',programme=selected_programme,question_db_id=int(question_db_id),
                    question_id=q.get('question_id',''),ph_question_id=q.get('ph_question_id',''),
                    ph_question_version_id=q.get('ph_question_version_id',''))
     raw=integration_v1.canonical_json(context)
