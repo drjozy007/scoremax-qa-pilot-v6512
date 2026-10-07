@@ -166,8 +166,8 @@ def apply_programme_mastery_repair(root):
     a=replace_function(a,'process_mastery_result',m)
     # Chapter page topic inventory and evidence use exact active programme too.
     m=fn(a,'chapter_page')
-    m=replace_once(m,'    topics=[]',"    programme=student_programme(c,session['user_id'])\n    scope_sql,scope_args=_programme_scope_sql(_programme_aliases(programme),'q')\n    evidence=learner_answer_evidence(c,session['user_id'],programme,subject,chapter)\n    topics=[]")
-    m=replace_once(m,"AND q.subject=? AND q.chapter=? AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",(subject,chapter)","AND q.subject=? AND q.chapter=? AND {scope_sql} AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",[subject,chapter]+scope_args")
+    m=replace_once(m,'    topics=[]',"    programme=student_programme(c,session['user_id'])\n    chapter_scope_sql,chapter_scope_args=_programme_chapter_scope_sql(programme,chapter,'q')\n    evidence=learner_answer_evidence(c,session['user_id'],programme,subject,chapter)\n    topics=[]")
+    m=replace_once(m,"AND q.subject=? AND q.chapter=? AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",(subject,chapter)","AND q.subject=? AND {chapter_scope_sql} AND COALESCE(q.topic,'')<>'' ORDER BY q.topic\",[subject]+chapter_scope_args")
     start=m.index('        r=c.execute(');end=m.index("        topics.append",start)
     m=m[:start]+"        stats=evidence_summary([r for r in evidence if r['topic']==topic]);answered=stats['answered'];accuracy=stats['accuracy']\n"+m[end:]
     start=m.index('    cr=c.execute(');end=m.index('    weak=',start)
