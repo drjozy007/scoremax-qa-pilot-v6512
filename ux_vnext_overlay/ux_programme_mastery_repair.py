@@ -48,7 +48,7 @@ def apply_programme_mastery_repair(root):
     a=replace_function(a,'init',init)
     submit=fn(a,'submit_assessment_v4')
     submit=replace_once(submit,'        marking_results={}','        marking_results={}\n        evidence_contexts={}')
-    submit=replace_once(submit,"            marking_results[qid]=marking_result","            marking_results[qid]=marking_result\n            evidence_contexts[qid]=evidence_context(q,submission_meta.get('programme',''),qid)")
+    submit=replace_once(submit,"            marking_results[qid]=marking_result","            marking_results[qid]=marking_result\n            evidence_contexts[qid]=evidence_context(c,q,submission_meta.get('programme',''),qid)")
     pos=submit.index('        # Commit the one-and-only')
     submit=submit[:pos]+'''        for qid,context in evidence_contexts.items():
             c.execute('UPDATE attempt_answers SET evidence_context_json=? WHERE attempt_id=? AND question_db_id=?',
