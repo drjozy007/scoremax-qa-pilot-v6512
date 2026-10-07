@@ -38,8 +38,12 @@ def _ph_release_scope_compatible(curr,rel):
     dest=norm(rel.get('programme_id'))
     admission=dest in {'MDCAT','ECAT'}
     same_market=norm(curr.get('market_id'))==norm(rel.get('market_id')) and bool(norm(rel.get('market_id')))
-    same_subject=norm(curr.get('subject_id') or display.get('subject'))==norm(rel.get('subject_id')) and bool(norm(rel.get('subject_id')))
-    return bool(source_fsc and admission and same_market and same_subject)
+    # Power House is the governed allocation authority for admission-exam destination
+    # subject/unit. Cross-subject allocation is valid when PH has deliberately mapped
+    # a canonical FSc construct into an admission-exam subject (for example thermal
+    # gas questions into MDCAT Chemistry/Gases). ScoreMax verifies source class +
+    # market + signed governed release; it does not re-derive the academic mapping.
+    return bool(source_fsc and admission and same_market)
 
 
 def _ph_release_scope_mismatch(curr,rel):
@@ -48,7 +52,7 @@ def _ph_release_scope_mismatch(curr,rel):
     for rk in ('market_id','programme_id','subject_id','chapter_id'):
         if str(curr.get(rk) or '')==str(rel.get(rk) or ''):
             continue
-        if cross and rk in {'programme_id','chapter_id'}:
+        if cross and rk in {'programme_id','subject_id','chapter_id'}:
             continue
         errors.append(rk)
     return errors
@@ -73,4 +77,4 @@ def _ph_release_scope_mismatch(curr,rel):
     text+="\n# "+MARKER+"\n"
     compile(text,str(p),'exec')
     p.write_text(text,encoding="utf-8")
-    print(MARKER+" fsc_to_admission_exam_only=true market_same=true subject_same=true canonical_curriculum_immutable=true fail_closed=true",flush=True)
+    print(MARKER+" fsc_to_admission_exam_only=true market_same=true ph_destination_authoritative=true canonical_curriculum_immutable=true fail_closed=true",flush=True)

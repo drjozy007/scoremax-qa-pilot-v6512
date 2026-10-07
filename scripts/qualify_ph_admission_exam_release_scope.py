@@ -25,19 +25,19 @@ def main():
          "qualification_id":"FSC","display":{"programme":"FSc Part 1","subject":"Chemistry"}}
     mdcat={"market_id":"PK","programme_id":"MDCAT","subject_id":"CHEMISTRY","chapter_id":"MDCAT::CHEMISTRY::UNIT::03"}
     ecat={"market_id":"PK","programme_id":"ECAT","subject_id":"CHEMISTRY","chapter_id":"ECAT::CHEMISTRY::UNIT::03"}
-    bad_subject=dict(mdcat,subject_id="PHYSICS")
+    cross_subject=dict(mdcat,subject_id="PHYSICS")
     bad_market=dict(mdcat,market_id="IN")
     other={"market_id":"PK","programme_id":"GRADE_10","subject_id":"CHEMISTRY","chapter_id":"CH10"}
     normal_bad={"market_id":"PK","programme_id":"FSC_PART_I","subject_id":"CHEMISTRY","chapter_id":"OTHER_CHAPTER"}
 
     if mismatch(fsc,mdcat)!=[]:raise RuntimeError("FSC_MDCAT_NOT_ALLOWED")
     if mismatch(fsc,ecat)!=[]:raise RuntimeError("FSC_ECAT_NOT_ALLOWED")
-    if "subject_id" not in mismatch(fsc,bad_subject):raise RuntimeError("CROSS_SUBJECT_NOT_BLOCKED")
+    if mismatch(fsc,cross_subject)!=[]:raise RuntimeError("PH_CROSS_SUBJECT_ALLOCATION_NOT_ALLOWED")
     if "market_id" not in mismatch(fsc,bad_market):raise RuntimeError("CROSS_MARKET_NOT_BLOCKED")
     if "programme_id" not in mismatch(other,mdcat):raise RuntimeError("NON_FSC_TO_MDCAT_NOT_BLOCKED")
     if "chapter_id" not in mismatch(fsc,normal_bad):raise RuntimeError("ORDINARY_CHAPTER_MISMATCH_NOT_BLOCKED")
 
-    emit("PASS",fsc_to_mdcat=True,fsc_to_ecat=True,cross_subject_blocked=True,cross_market_blocked=True,
+    emit("PASS",fsc_to_mdcat=True,fsc_to_ecat=True,ph_cross_subject_allocation=True,cross_market_blocked=True,
          non_fsc_source_blocked=True,ordinary_chapter_mismatch_blocked=True,production_mutation=False,learner_release=False)
     return 0
 
