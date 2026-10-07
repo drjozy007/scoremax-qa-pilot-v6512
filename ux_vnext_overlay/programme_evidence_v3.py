@@ -64,6 +64,29 @@ def _ph_programme_scope_context(c,question_db_id,programme):
     }
 
 
+
+def _programme_chapter_scope_sql(programme,chapter,table_alias='q'):
+    """Scope one learner chapter/unit without duplicating canonical PH questions."""
+    aliases=_programme_aliases(programme)
+    programme_sql,params=_programme_scope_sql(aliases,table_alias)
+    vals=sorted({str(x).strip().casefold() for x in aliases if str(x).strip()})
+    if not vals:return '0=1',[]
+    marks=','.join('?' for _ in vals)
+    ph_chapter=f"""(COALESCE({table_alias}.ph_projection_owner,'')='POWER_HOUSE' AND EXISTS(
+      SELECT 1
+      FROM integration_ph_question_version_store cv
+      JOIN integration_ph_release_question_membership cm
+        ON cm.question_id=cv.question_id AND cm.question_version_id=cv.question_version_id
+      JOIN integration_ph_content_releases cr
+        ON cr.release_id=cm.release_id AND cr.release_version=cm.release_version
+      WHERE cv.local_question_db_id={table_alias}.id
+        AND cr.local_status='ACTIVE'
+        AND lower(trim(cr.programme_id)) IN ({marks})
+        AND lower(trim(cr.chapter_id))=lower(?)
+    ))"""
+    chapter_clause=f"(lower(COALESCE({table_alias}.chapter,''))=lower(?) OR {ph_chapter})"
+    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or '')]
+
 def student_programme(c,user_id):
     row=c.execute("SELECT academic_level,active_programme FROM users WHERE id=?",(user_id,)).fetchone()
     return canonical_programme((row['active_programme'] or '').strip() or row['academic_level']) if row else ''
