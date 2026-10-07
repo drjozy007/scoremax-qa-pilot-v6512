@@ -52,7 +52,7 @@ def _ph_release_scope_mismatch(curr,rel):
     for rk in ('market_id','programme_id','subject_id','chapter_id'):
         if str(curr.get(rk) or '')==str(rel.get(rk) or ''):
             continue
-        if cross and rk in {'programme_id','chapter_id'}:
+        if cross and rk in {'programme_id','subject_id','chapter_id'}:
             continue
         errors.append(rk)
     return errors
