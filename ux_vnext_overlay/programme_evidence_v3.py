@@ -115,11 +115,13 @@ def evidence_context(c,question,programme,question_db_id):
         scope=_ph_programme_scope_context(c,question_db_id,selected_programme)
         if not scope or canonical_programme(scope.get('programme'))!=selected_programme:
             raise question_contracts.QuestionContractError('PH_PROGRAMME_MEMBERSHIP_REQUIRED')
-        context['subject']=scope.get('subject') or context.get('subject') or ''
-        # Preserve the governed destination ID in evidence. Human-readable unit/chapter
-        # labels are resolved by the learner catalogue; opaque IDs are never inferred.
-        context['chapter']=scope.get('chapter_id') or ''
         context['ph_release_chapter_id']=scope.get('chapter_id') or ''
+        # Preserve established FSc evidence labels exactly. Admission-exam views
+        # (MDCAT/ECAT) use the governed release destination because the canonical
+        # question row intentionally remains FSc-shaped.
+        if selected_programme not in {'FSc Part 1','FSc Part 2'}:
+            context['subject']=scope.get('subject') or context.get('subject') or ''
+            context['chapter']=scope.get('chapter_id') or ''
     context.update(schema='SM-EVIDENCE-CONTEXT-1',programme=selected_programme,question_db_id=int(question_db_id),
                    question_id=q.get('question_id',''),ph_question_id=q.get('ph_question_id',''),
                    ph_question_version_id=q.get('ph_question_version_id',''))
