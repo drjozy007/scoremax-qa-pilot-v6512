@@ -78,12 +78,22 @@ def main():
             return e
         for subject,(programme,chapter,questions) in sources.items():
             admit("REL::PK::"+programme+"::"+subject+"::"+chapter,programme,subject,chapter,questions)
+        mapped_cursors={subject:0 for subject in sources}
+        mdcat_unique_ids=set()
         for src,dest,unit,n in MD:
-            q=sources[src][2][:n]
+            first=mapped_cursors[src]
+            q=sources[src][2][first:first+n]
+            mapped_cursors[src]=first+n
+            verify(len(q)==n,"MDCAT_SOURCE_SELECTION_SHORT")
+            selected_ids={item["question_id"] for item in q}
+            verify(not (mdcat_unique_ids & selected_ids),"MDCAT_DUPLICATE_CROSS_UNIT_ID")
+            mdcat_unique_ids.update(selected_ids)
             rid="REL::PK::MDCAT::"+dest+"::U"+unit+"::SRC::"+src
             admit(rid,"MDCAT",dest,"MDCAT::"+dest+"::UNIT::"+unit,q)
             verify(count(c,"SELECT COUNT(*) FROM integration_ph_release_question_membership WHERE release_id=?",(rid,))==n,
                    "MDCAT_RELEASE_MEMBERSHIPS_WRONG "+rid)
+        verify(len(mdcat_unique_ids)==971,"MDCAT_UNIQUE_CANONICAL_IDS_NOT_971")
+        verify(count(c,"SELECT COUNT(DISTINCT question_id) FROM integration_ph_release_question_membership WHERE release_id LIKE 'REL::PK::MDCAT::%'")==971,"PERSISTED_MDCAT_UNIQUE_IDS_NOT_971")
         verify(count(c,"SELECT COUNT(*) FROM integration_ph_question_version_store")==2180,"CANONICAL_VERSION_DUPLICATED")
         verify(count(c,"SELECT COUNT(*) FROM integration_ph_release_question_membership")==3151,"PROGRAMME_MEMBERSHIP_TOTAL_WRONG")
         verify(count(c,"SELECT COUNT(*) FROM integration_ph_content_releases")==9,"RELEASE_GROUP_COUNT_WRONG")
