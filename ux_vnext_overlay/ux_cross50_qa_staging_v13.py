@@ -135,6 +135,18 @@ def _qa_v13_governance_errors(q,index):
         errors.append({'code':'RIGHTS_NOT_ELIGIBLE','path':path+'.governance.rights_status','message':'QA staging still requires eligible rights','retryable':False})
     return errors
 
+def _qa_v13_scope_mismatches(curr,rel):
+    """Reuse the existing native PH allocation decision; never invent a second policy.
+
+    A missing helper preserves the prior strict check. QA admission cannot
+    confer release, mastery or learner activation authority.
+    """
+    helper=globals().get('_ph_release_scope_mismatch')
+    if callable(helper):
+        return helper(curr,rel)
+    return [rk for rk in ('market_id','programme_id','subject_id','chapter_id')
+            if str(curr.get(rk) or '')!=str(rel.get(rk) or '')]
+
 def _qa_v13_projection(q,stimuli):
     proj=dict(_smqa_v13_projection(q,stimuli))
     proj.update({
@@ -194,18 +206,7 @@ def admit_content_envelope(c,envelope,content_sha_header=''):
         seen.add(ident)
         errors.extend(_qa_v13_governance_errors(q,i))
         curr=q.get('curriculum') or {}
-        # Reuse the existing governed admission-exam allocation policy from the
-        # v1.2 receiver. QA staging may hold the same canonical FSc question in
-        # MDCAT (including verified cross-subject allocations), but remains
-        # non-activatable and never rewrites the canonical source curriculum.
-        # An absent policy helper is NOT permission to relax scope checking.
-        scope_policy=globals().get('_ph_release_scope_mismatch')
-        if callable(scope_policy):
-            mismatches=scope_policy(curr,rel)
-        else:
-            mismatches=[rk for rk in ('market_id','programme_id','subject_id','chapter_id')
-                        if str(curr.get(rk) or '')!=str(rel.get(rk) or '')]
-        for rk in mismatches:
+        for rk in _qa_v13_scope_mismatches(curr,rel):
             errors.append({'code':'SCOPE_MISMATCH','path':f'payload.questions[{i}].curriculum.{rk}','message':'Question scope differs from release scope','retryable':False})
     # Content/marking semantics are exactly the qualified 1.2 source-market semantics.
     errors.extend(_semantic_content_errors(questions,stimuli,'1.2.0'))
