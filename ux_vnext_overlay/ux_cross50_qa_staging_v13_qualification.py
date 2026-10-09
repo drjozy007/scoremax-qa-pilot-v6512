@@ -42,6 +42,45 @@ def assert_cross50_qa_v13(root: Path) -> None:
     if failed:
         raise SystemExit("SCOREMAX_QA_V13_QUAL_FAIL:"+",".join(failed))
 
+    # Assert the QA 1.3 path delegates to exactly the same *native* governed
+    # FSc->admission allocation rule already qualified in the v1.2 receiver.
+    # No sample fixture is permitted to substitute for the assembled runtime.
+    tree=ast.parse(text)
+    helper_names={"_ph_release_scope_mismatch","_ph_release_scope_compatible","_qa_v13_scope_mismatches"}
+    funcs={n.name:n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in helper_names}
+    if set(funcs)!=helper_names:
+        raise SystemExit("SCOREMAX_QA13_ACCEPTED_SCOPE_HELPER_MISSING:"+repr(sorted(helper_names-set(funcs))))
+    ns={}
+    nodes=[funcs[n] for n in ("_ph_release_scope_compatible","_ph_release_scope_mismatch","_qa_v13_scope_mismatches")]
+    # AST extraction isolates the three pure policy helpers, not startup code.
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(runtime),"exec"),ns)
+    native,qa=ns["_ph_release_scope_mismatch"],ns["_qa_v13_scope_mismatches"]
+    fsc={"market_id":"PK","programme_id":"FSC_PART_I","subject_id":"PHYSICS",
+         "chapter_id":"CHAPTER::PHYSICS::12::13","qualification_id":"FSC"}
+    cases={
+      "FSC_SAME":(fsc,dict(fsc),True),
+      "FSC_TO_MDCAT_CHEMISTRY":(fsc,{"market_id":"PK","programme_id":"MDCAT",
+        "subject_id":"CHEMISTRY","chapter_id":"MDCAT::CHEMISTRY::UNIT::03"},True),
+      "CROSS_MARKET_REJECT":(fsc,{"market_id":"IN","programme_id":"MDCAT",
+        "subject_id":"CHEMISTRY","chapter_id":"MDCAT::CHEMISTRY::UNIT::03"},False),
+      "NON_FSC_REJECT":(dict(fsc,programme_id="GRADE_10"),{"market_id":"PK",
+        "programme_id":"MDCAT","subject_id":"CHEMISTRY",
+        "chapter_id":"MDCAT::CHEMISTRY::UNIT::03"},False),
+      "ORDINARY_SCOPE_REJECT":(fsc,dict(fsc,chapter_id="OTHER_CHAPTER"),False)
+    }
+    for name,(source,dest,expected_ok) in cases.items():
+        orig=native(source,dest)
+        derived=qa(source,dest)
+        if orig!=derived or (not bool(derived))!=expected_ok:
+            raise SystemExit("SCOREMAX_QA13_SCOPE_PARITY_FAIL:"+name+":"+repr((orig,derived)))
+    # Absence of shared native helper fails closed on cross-programme membership.
+    saved=ns.pop("_ph_release_scope_mismatch")
+    try:
+        if not qa(fsc,cases["FSC_TO_MDCAT_CHEMISTRY"][1]):
+            raise SystemExit("SCOREMAX_QA13_SCOPE_ABSENT_HELPER_FAIL_OPEN")
+    finally:
+        ns["_ph_release_scope_mismatch"]=saved
+
     # Backward contracts must still be present in the assembled runtime.
     backward=[
       root/"integration_contracts"/"PH_SM_APPROVED_CONTENT_V1.schema.json",
