@@ -136,11 +136,8 @@ def _qa_v13_governance_errors(q,index):
     return errors
 
 def _qa_v13_scope_mismatches(curr,rel):
-    """Reuse the existing native PH allocation decision; never invent a second policy.
-
-    A missing helper preserves the prior strict check. QA admission cannot
-    confer release, mastery or learner activation authority.
-    """
+    # Reuse the native PH allocation policy, never invent a second rule.
+    # If missing, keep the strict scope check. QA has no release authority.
     helper=globals().get('_ph_release_scope_mismatch')
     if callable(helper):
         return helper(curr,rel)
