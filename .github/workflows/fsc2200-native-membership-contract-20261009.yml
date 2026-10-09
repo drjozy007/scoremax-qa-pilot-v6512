@@ -1,0 +1,22 @@
+name: FSc2200 native receiver membership qualification
+on:
+  push:
+    branches: [test/ph-fsc2200-native-contract-20261009]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Render-order existing runtime build
+        run: python deploy_ux_vnext.py
+      - name: Install existing receiver test dependencies
+        run: python -m pip install -q -r hosted_runtime_base_v6512/requirements.txt
+      - name: Exercise 2180 canonical questions and 971 MDCAT membership placements
+        run: python scripts/qualify_fsc2200_native_destination_20261009.py
