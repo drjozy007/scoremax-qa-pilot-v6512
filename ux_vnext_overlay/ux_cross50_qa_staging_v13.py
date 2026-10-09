@@ -135,6 +135,15 @@ def _qa_v13_governance_errors(q,index):
         errors.append({'code':'RIGHTS_NOT_ELIGIBLE','path':path+'.governance.rights_status','message':'QA staging still requires eligible rights','retryable':False})
     return errors
 
+def _qa_v13_scope_mismatches(curr,rel):
+    # Reuse the native PH allocation policy, never invent a second rule.
+    # If missing, keep the strict scope check. QA has no release authority.
+    helper=globals().get('_ph_release_scope_mismatch')
+    if callable(helper):
+        return helper(curr,rel)
+    return [rk for rk in ('market_id','programme_id','subject_id','chapter_id')
+            if str(curr.get(rk) or '')!=str(rel.get(rk) or '')]
+
 def _qa_v13_projection(q,stimuli):
     proj=dict(_smqa_v13_projection(q,stimuli))
     proj.update({
@@ -194,9 +203,8 @@ def admit_content_envelope(c,envelope,content_sha_header=''):
         seen.add(ident)
         errors.extend(_qa_v13_governance_errors(q,i))
         curr=q.get('curriculum') or {}
-        for rk in ('market_id','programme_id','subject_id','chapter_id'):
-            if str(curr.get(rk) or '')!=str(rel.get(rk) or ''):
-                errors.append({'code':'SCOPE_MISMATCH','path':f'payload.questions[{i}].curriculum.{rk}','message':'Question scope differs from release scope','retryable':False})
+        for rk in _qa_v13_scope_mismatches(curr,rel):
+            errors.append({'code':'SCOPE_MISMATCH','path':f'payload.questions[{i}].curriculum.{rk}','message':'Question scope differs from release scope','retryable':False})
     # Content/marking semantics are exactly the qualified 1.2 source-market semantics.
     errors.extend(_semantic_content_errors(questions,stimuli,'1.2.0'))
     if errors:
