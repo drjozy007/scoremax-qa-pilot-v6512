@@ -63,7 +63,7 @@ def assert_cross50_qa_v13(root: Path) -> None:
         "subject_id":"CHEMISTRY","chapter_id":"MDCAT::CHEMISTRY::UNIT::03"},True),
       "CROSS_MARKET_REJECT":(fsc,{"market_id":"IN","programme_id":"MDCAT",
         "subject_id":"CHEMISTRY","chapter_id":"MDCAT::CHEMISTRY::UNIT::03"},False),
-      "NON_FSC_REJECT":(dict(fsc,programme_id="GRADE_10"),{"market_id":"PK",
+      "NON_FSC_REJECT":(dict(fsc,programme_id="GRADE_10",qualification_id="GRADE_10"),{"market_id":"PK",
         "programme_id":"MDCAT","subject_id":"CHEMISTRY",
         "chapter_id":"MDCAT::CHEMISTRY::UNIT::03"},False),
       "ORDINARY_SCOPE_REJECT":(fsc,dict(fsc,chapter_id="OTHER_CHAPTER"),False)
