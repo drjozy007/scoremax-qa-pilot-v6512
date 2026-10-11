@@ -1219,8 +1219,33 @@ def admit_content_envelope(c,envelope,content_sha_header=''):
             if str(curr.get(rk) or '')!=str(rel.get(rk) or ''):
                 errors.append({'code':'SCOPE_MISMATCH','path':f'payload.questions[{i}].curriculum.{rk}','message':'Question scope differs from release scope','retryable':False})
     errors.extend(_semantic_content_errors(questions,stimuli,schema_version))
+    # Compile the same effective projection used by staging and the learner before
+    # starting any immutable release/version writes. Business contract failures
+    # must produce a durable rejection, not a mid-transaction HTTP 500.
+    stim_lookup={str(st.get('stimulus_id')):st for st in stimuli if st.get('stimulus_id')}
+    for i,q in enumerate(questions):
+        try:
+            projection=_projection(q,stim_lookup)
+            question_contracts.validate_assessment_contract(projection)
+        except (question_contracts.QuestionContractError,KeyError,TypeError) as exc:
+            errors.append({'code':'QUESTION_RESPONSE_CONTRACT','path':f'payload.questions[{i}].content',
+              'message':f"{q.get('question_id')}|{q.get('question_version_id')}|{q.get('question_checksum_sha256')}: {exc}",
+              'retryable':False})
     if errors:
-        _begin_immediate(c); rec=_receipt(c,envelope,'REJECTED',errors); c.commit(); return rec,422
+        _begin_immediate(c)
+        state,row=_register_inbound(c,envelope)
+        if state=='DUPLICATE':
+            rec=_durable_replay_receipt(c,row)
+            if rec:
+                c.commit(); return rec,422 if rec['status']=='REJECTED' else 200
+        if state=='CONFLICT':
+            rec=_quarantine(c,envelope,f"{rel.get('release_id')}|{rel.get('release_version')}",
+              envelope['payload_checksum_sha256'],row['payload_checksum_sha256'] if row else '',
+              'INBOUND_IDEMPOTENCY_CONFLICT')
+            c.commit(); return rec,409
+        rec=_receipt(c,envelope,'REJECTED',errors)
+        _record_inbound(c,envelope,rec,'REJECTED')
+        c.commit(); return rec,422
 
     semantic=release_semantic_checksum(rel,questions,stimuli,operation)
     _begin_immediate(c)
