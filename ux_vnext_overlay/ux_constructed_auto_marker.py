@@ -124,11 +124,23 @@ def compile_contract(answer_cfg, fallback_answer='', marks=1.0, stem='', command
             accepted.insert(0, str(fallback_answer))
         rubric = mc.get('rubric')
         mode = str(mc.get('scoring_contract') or ac.get('scoring_contract') or '')
+        semantic_candidate = None
         if isinstance(rubric, dict) and rubric.get('version') == PH_SAQ_CONTRACT_VERSION:
-            rubric = _ph_saq_to_runtime_rubric(rubric, maximum)
-            if rubric is None:
-                return None
-        if rubric is not None:
+            if rubric.get('auto_marking_eligibility') == 'RUBRIC_SEMANTICALLY_SCORABLE':
+                from semantic_math_marker_v1 import prepare_candidate, qualified, local_predicates
+                semantic_candidate = prepare_candidate(rubric, maximum, str(stem or ''), str(fallback_answer or ''))
+                if semantic_candidate is None or not qualified(semantic_candidate) or local_predicates(semantic_candidate) is None:
+                    return None
+                mode = 'math_semantic_v1'
+                material = {'semantic_candidate':semantic_candidate}
+                rubric = None
+            else:
+                rubric = _ph_saq_to_runtime_rubric(rubric, maximum)
+                if rubric is None:
+                    return None
+        if mode == 'math_semantic_v1' and semantic_candidate is not None:
+            pass
+        elif rubric is not None:
             if not isinstance(rubric, dict) or not validate_automatic_rubric(rubric, maximum)['valid']:
                 return None
             mode = 'governed_clause_rubric_v1'
@@ -165,6 +177,13 @@ def mark(contract, response):
     if expected_hash != actual_hash or contract.get('version') != MARKER_VERSION:
         return {'markable':False,'marks_awarded':None,'maximum_marks':0.0,'is_correct':False,
                 'confidence':0.0,'status':'INVALID_MARKING_CONTRACT','evidence_eligible':False,'feedback':[]}
+    if contract.get('mode') == 'math_semantic_v1':
+        from semantic_math_marker_v1 import qualified, valid_candidate_pin
+        candidate = contract.get('semantic_candidate')
+        if not valid_candidate_pin(candidate) or not qualified(candidate):
+            return {'markable':False,'marks_awarded':None,'maximum_marks':0.0,'is_correct':False,
+                    'confidence':0.0,'status':'SEMANTIC_QUALIFICATION_MISSING',
+                    'evidence_eligible':False,'feedback':[]}
     maximum = float(contract['maximum_marks']); answer = str(response or '').strip()
     base = {'markable':True, 'maximum_marks':maximum, 'marker_version':MARKER_VERSION,
             'contract_sha256':expected_hash, 'evidence_eligible':True, 'confidence':1.0,
@@ -187,6 +206,10 @@ def mark(contract, response):
         return {**base,'marks_awarded':awarded,'is_correct':bool(final and awarded >= maximum),
                 'confidence':result['confidence'],'status':result['status'], 'evidence_eligible':final,
                 'feedback':result['feedback'],'result':result}
+    elif contract['mode'] == 'math_semantic_v1':
+        from semantic_math_marker_v1 import assess_local
+        result = assess_local(candidate, answer)
+        return {**base, **result, 'contract_sha256':expected_hash}
     else:
         return {**base,'markable':False,'marks_awarded':None,'is_correct':False,
                 'status':'UNSUPPORTED_MARKER_VERSION','confidence':0.0,'evidence_eligible':False}
