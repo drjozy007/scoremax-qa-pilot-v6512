@@ -47,4 +47,17 @@ class OperationPrimitives(unittest.TestCase):
         row['Required_Produced_Representation']='NONE';row['Learner_Question']='Rank synthetic categories.'
         self.assertIsNone(ops.derive_controlled_operations(row))
 
+    def test_context_labels_are_required_and_never_interchanged(self):
+        row,b,c=synthetic();row['Canonical_Accepted_Evidence']='A1: Alpha forces. | B2: Beta forces.'
+        row['Model_Answer']='A1: Alpha forces. B2: Beta forces.'
+        raw=copy.deepcopy(b);raw.pop('native_scoring');raw.pop('contract_sha256')
+        for p,e in zip(raw['required_mark_points'],row['Canonical_Accepted_Evidence'].split(' | ')):
+            p['description']=e;p['accepted_expressions']=[e]
+        raw['contract_sha256']=ops.stable_hash(raw);bound=ops.attach_native_operations(raw,row)
+        c=marker.compile_contract({},row['Model_Answer'],2,row['Learner_Question'],marking_cfg={'rubric':bound})
+        for response,expected in [('B2: Beta forces; A1: Alpha forces',2),('A1: Beta forces; B2: Alpha forces',None),
+                                 ('Alpha forces; Beta forces',None),('a1: Alpha forces',None),
+                                 ('A1: Alpha forces; B2: Beta forces; A1: not Alpha forces',1)]:
+            self.assertEqual(marker.mark(c,response)['marks_awarded'],expected)
+
 if __name__=='__main__':unittest.main()

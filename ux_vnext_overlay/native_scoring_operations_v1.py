@@ -354,10 +354,16 @@ def derive_controlled_operations(source):
         if re.search(r'\b(rank|order|sequence|ascending|descending)\b',source['Learner_Question'],re.I):return None
         operations=[];all_terms=set()
         for i,clause in enumerate(clauses,1):
-            text=_text(clause)
-            # Only unlabelled category names, not explanation or assignment prose.
+            canonical=_text(clause);text=canonical;label=''
+            numbered=re.fullmatch(r'(\([a-z]\))\s+(.+)',text)
+            if numbered:label,text=numbered.groups()
+            elif ':' in text:
+                label,text=text.split(':',1);label=label.strip()+':';text=text.strip()
+                if not re.fullmatch(r'[A-Za-z0-9 .()^-]+:',label) or len(label)>100:return None
+            # Context labels remain mandatory and case-sensitive: an answer for
+            # one molecule/subpart can never earn another molecule's mark.
             if not re.fullmatch(r'[A-Za-z -]+(?:\([A-Za-z -]+\))?(?: forces)?',text):return None
-            if not text.lower().endswith(('forces','bonding')):return None
+            if not re.sub(r' \([^)]*\)','',text).lower().endswith(('forces','bonding')):return None
             if any(x in text.lower().split() for x in ['not','no','and','or','because','is','are']):return None
             forms=[text];parenthesis=re.fullmatch(r'(.+?) \((.+)\)(.*)',text)
             if parenthesis:forms.extend([parenthesis[1]+parenthesis[3],parenthesis[2]+parenthesis[3]])
@@ -370,9 +376,10 @@ def derive_controlled_operations(source):
                         if form.casefold().startswith(am[2].casefold()):
                             forms.extend([am[1]+form[len(am[2]):],am[1],am[2]])
             terms=sorted({_text(s).casefold() for s in forms})
-            if all_terms.intersection(terms):return None
-            all_terms.update(terms)
-            operations.append({'point_id':f'p{i}','kind':'SOURCE_TERM_SET','accepted':terms,'canonical':text})
+            claims={(label,t) for t in terms}
+            if all_terms.intersection(claims):return None
+            all_terms.update(claims)
+            operations.append({'point_id':f'p{i}','kind':'SOURCE_TERM_SET','accepted':terms,'canonical':canonical,'source_label':label})
         return operations
     except (KeyError,ValueError,TypeError,OverflowError):return None
 
@@ -395,7 +402,16 @@ def _controlled_observations(binding,answer):
                 if same_units:
                     (awarded if any(value==Fraction(x['value']) for x in same_units) else denied).add(pid);matched=True
             elif op['kind']=='SOURCE_TERM_SET':
-                if norm.casefold() in op['accepted']:awarded.add(pid);matched=True
-                elif norm.casefold().startswith('not ') and norm[4:].casefold() in op['accepted']:denied.add(pid);matched=True
+                term=norm;negated=False
+                if term.casefold().startswith('not '):term=term[4:];negated=True
+                label=op.get('source_label','')
+                if label:
+                    if not term.startswith(label):continue
+                    term=term[len(label):].strip()
+                if term.casefold().startswith('not '):
+                    if negated:continue  # Double-negation semantics are not inferred.
+                    term=term[4:];negated=True
+                if term.casefold() in op['accepted']:
+                    (denied if negated else awarded).add(pid);matched=True
         if not matched:unknown.append(text)
     return awarded,denied,unknown
