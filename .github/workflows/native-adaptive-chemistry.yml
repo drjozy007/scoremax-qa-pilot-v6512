@@ -1,0 +1,29 @@
+name: Native adaptive Chemistry qualification
+on:
+  pull_request:
+    paths:
+      - 'ux_vnext_overlay/native_scoring_operations_v1.py'
+      - 'ux_vnext_overlay/assessment_written_response_v2.py'
+      - 'ux_vnext_overlay/ux_constructed_auto_marker.py'
+      - 'scripts/qualify_native_adaptive_chemistry.py'
+      - 'scripts/fixtures/pr174_chemistry_adaptive.json'
+      - '.github/workflows/native-adaptive-chemistry.yml'
+permissions:
+  contents: read
+jobs:
+  portable-operations:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/qualify_native_adaptive_chemistry.py --portable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-chemistry-${{ matrix.os }}
+          path: native_adaptive_qualification.json

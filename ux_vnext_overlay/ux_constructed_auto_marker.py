@@ -16,6 +16,7 @@ import re
 from written_response_engine import mark_written_response, validate_automatic_rubric
 
 MARKER_VERSION = 'SM-CONSTRUCTED-AUTO-3'
+NATIVE_MARKER_VERSION = 'SM-CONSTRUCTED-AUTO-4'
 PH_SAQ_CONTRACT_VERSION = 'PH-SAQ-SCORING-CONTRACT-1'
 
 def _ph_saq_to_runtime_rubric(rubric, maximum):
@@ -124,7 +125,12 @@ def compile_contract(answer_cfg, fallback_answer='', marks=1.0, stem='', command
             accepted.insert(0, str(fallback_answer))
         rubric = mc.get('rubric')
         mode = str(mc.get('scoring_contract') or ac.get('scoring_contract') or '')
-        if isinstance(rubric, dict) and rubric.get('version') == PH_SAQ_CONTRACT_VERSION:
+        if isinstance(rubric, dict) and rubric.get('version') == PH_SAQ_CONTRACT_VERSION and 'native_scoring' in rubric:
+            from native_scoring_operations_v1 import compile_native_rubric
+            rubric = compile_native_rubric(rubric, maximum, stem, fallback_answer)
+            if rubric is None:
+                return None
+        elif isinstance(rubric, dict) and rubric.get('version') == PH_SAQ_CONTRACT_VERSION:
             rubric = _ph_saq_to_runtime_rubric(rubric, maximum)
             if rubric is None:
                 return None
@@ -143,7 +149,8 @@ def compile_contract(answer_cfg, fallback_answer='', marks=1.0, stem='', command
             material = {'accepted_answers':accepted, 'case_sensitive':sensitive if mode != 'case_sensitive_exact' else True}
         else:
             return None
-        contract = {'version':MARKER_VERSION, 'mode':mode, 'maximum_marks':maximum,
+        version = NATIVE_MARKER_VERSION if isinstance(rubric,dict) and rubric.get('version') == 'SM-RUBRIC-NATIVE-1' else MARKER_VERSION
+        contract = {'version':version, 'mode':mode, 'maximum_marks':maximum,
                     'command_verb':str(command_word or ''), **material}
         raw = json.dumps(contract,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False)
         contract['contract_sha256'] = hashlib.sha256(raw.encode()).hexdigest()
@@ -162,11 +169,17 @@ def mark(contract, response):
                 'confidence':0.0,'status':'NO_MARKING_CONTRACT','evidence_eligible':False,'feedback':[]}
     unsigned = dict(contract); expected_hash = unsigned.pop('contract_sha256', None)
     actual_hash = hashlib.sha256(json.dumps(unsigned,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
-    if expected_hash != actual_hash or contract.get('version') != MARKER_VERSION:
+    native = isinstance(contract.get('rubric'),dict) and contract['rubric'].get('version') == 'SM-RUBRIC-NATIVE-1'
+    required_version = NATIVE_MARKER_VERSION if native else MARKER_VERSION
+    if expected_hash != actual_hash or contract.get('version') != required_version:
         return {'markable':False,'marks_awarded':None,'maximum_marks':0.0,'is_correct':False,
                 'confidence':0.0,'status':'INVALID_MARKING_CONTRACT','evidence_eligible':False,'feedback':[]}
-    maximum = float(contract['maximum_marks']); answer = str(response or '').strip()
-    base = {'markable':True, 'maximum_marks':maximum, 'marker_version':MARKER_VERSION,
+    maximum = float(contract['maximum_marks'])
+    if native and not isinstance(response,str):
+        return {'markable':True,'marks_awarded':None,'maximum_marks':maximum,'is_correct':False,
+                'confidence':0.0,'status':'MORE_EVIDENCE_REQUIRED','evidence_eligible':False,'feedback':[]}
+    answer = str(response or '').strip()
+    base = {'markable':True, 'maximum_marks':maximum, 'marker_version':required_version,
             'contract_sha256':expected_hash, 'evidence_eligible':True, 'confidence':1.0,
             'status':'MARK_CONFIRMED', 'feedback':[]}
     if not answer:
