@@ -127,9 +127,9 @@ def compile_contract(answer_cfg, fallback_answer='', marks=1.0, stem='', command
         semantic_candidate = None
         if isinstance(rubric, dict) and rubric.get('version') == PH_SAQ_CONTRACT_VERSION:
             if rubric.get('auto_marking_eligibility') == 'RUBRIC_SEMANTICALLY_SCORABLE':
-                from semantic_math_marker_v1 import prepare_candidate, qualified, configured_judges
+                from semantic_math_marker_v1 import prepare_candidate, qualified, local_judges
                 semantic_candidate = prepare_candidate(rubric, maximum, str(stem or ''), str(fallback_answer or ''))
-                if semantic_candidate is None or not qualified(semantic_candidate) or configured_judges() is None:
+                if semantic_candidate is None or not qualified(semantic_candidate) or local_judges(semantic_candidate) is None:
                     return None
                 mode = 'math_semantic_v1'
                 material = {'semantic_candidate':semantic_candidate}
@@ -207,8 +207,8 @@ def mark(contract, response):
                 'confidence':result['confidence'],'status':result['status'], 'evidence_eligible':final,
                 'feedback':result['feedback'],'result':result}
     elif contract['mode'] == 'math_semantic_v1':
-        from semantic_math_marker_v1 import assess_candidate, configured_judges
-        result = assess_candidate(candidate, answer, configured_judges())
+        from semantic_math_marker_v1 import assess_candidate, local_judges
+        result = assess_candidate(candidate, answer, local_judges(candidate))
         return {**base, **result, 'contract_sha256':expected_hash}
     else:
         return {**base,'markable':False,'marks_awarded':None,'is_correct':False,
