@@ -43,7 +43,7 @@ class Primitives(unittest.TestCase):
 
     def test_equation_and_working_allocation(self):
         _,_,contract=fixture(['X = YZ.','Rearranging gives Y = X/Z.'])
-        for equations,expected in [(['X=YZ','Y=X/Z'],2),(['X=YZ','X=YZ'],1),(['X=-YZ'],None),(['X=Y'],None),(['X=YZ','X=Y'],None)]:
+        for equations,expected in [(['X=YZ','Y=X/Z'],2),(['X=YZ','X/Z=Y'],2),(['X=YZ','X=YZ'],1),(['X=-YZ'],None),(['X=Y'],None),(['X=YZ','X=Y'],None)]:
             self.assertEqual(marker.mark(contract,response(equations=equations))['marks_awarded'],expected)
 
     def test_unrecognised_source_is_not_executable(self):

@@ -65,7 +65,8 @@ def affine_quantity(source):
     if _fraction(original)+_fraction(alt_offset)!=_fraction(alternative):return None
     return [{'point_id':'p1','kind':'SOURCE_AFFINE_QUANTITY',
              'canonical':source['Canonical_Accepted_Evidence'],'input':original,
-             'standard':standard,'offset':offset,'alternative':alternative,'alternate_offset':alt_offset,'unit':'K'}]
+             'standard':standard,'offset':offset,'alternative':alternative,'alternate_offset':alt_offset,'unit':'K',
+             'named_unit':'kelvin' if 'kelvin' in source['Learner_Question'].lower() else None}]
 
 
 def affine_working(expression,original,offset):
@@ -276,7 +277,7 @@ def observations(binding,answer):
                     sig,_=_polynomial_equation(value,op['symbols'],op['allowed_denominators'])
                     expected,_=_polynomial_equation(op['equation'],op['symbols'],op['allowed_denominators'])
                     isolated=op['isolated_target']
-                    if sig==expected and (not isolated or value.split('=')[0].strip()==isolated):
+                    if sig==expected and (not isolated or isolated in [side.strip() for side in value.split('=')]):
                         recognised=True
                         if 'point_id' in op:matched.append(op['point_id'])
                 except (ValueError,SyntaxError,OverflowError):pass
@@ -316,7 +317,10 @@ def observations(binding,answer):
             if not isinstance(value,dict) or set(value)!={'value','unit','working'}:raise ValueError('VALUE_FIELDS')
             number=_fraction(value['value']);matched=False
             for op in binding['operations']:
-                if op['kind']!='SOURCE_AFFINE_QUANTITY' or value['unit']!=op['unit']:continue
+                if op['kind']!='SOURCE_AFFINE_QUANTITY':continue
+                unit=value['unit']
+                if not isinstance(unit,str):raise ValueError('UNIT_TYPE')
+                if unit!=op['unit'] and (not op.get('named_unit') or unit.casefold()!=op['named_unit']):continue
                 matched=True;pid=op['point_id']
                 working=value['working']
                 if not isinstance(working,str):raise ValueError('WORKING_TYPE')
