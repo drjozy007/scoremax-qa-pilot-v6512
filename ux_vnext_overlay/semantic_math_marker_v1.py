@@ -112,62 +112,65 @@ def valid_candidate_pin(candidate):
         return False
 
 
-def _validate_verdict(verdict, candidate, answer):
-    if not isinstance(verdict, dict) or verdict.get('version') != VERSION or verdict.get('candidate_sha256') != candidate['candidate_sha256']:
-        raise ValueError('VERDICT_CONTRACT_MISMATCH')
-    if verdict.get('uncertain') is not False or verdict.get('contradiction') is not False:
-        raise ValueError('UNCERTAIN_OR_CONTRADICTORY')
-    provided = verdict.get('points')
-    if not isinstance(provided, list) or len(provided) != len(candidate['points']):
-        raise ValueError('VERDICT_POINT_COUNT')
-    vector = []; evidence = []
-    for source, decision in zip(candidate['points'], provided):
-        if not isinstance(decision, dict) or decision.get('id') != source['id']:
-            raise ValueError('VERDICT_POINT_ID')
-        awarded = decision.get('marks_awarded')
-        if isinstance(awarded, bool):
-            raise ValueError('VERDICT_BOOLEAN_MARKS')
+
+_POINT_EQ = re.compile(r'(?:for\s+)?(?P<lhs>Re\(z\)|Im\(z\)|[a-zA-Z][a-zA-Z0-9_]{0,4})\s*=\s*(?P<rhs>.+)\Z')
+
+
+def local_predicates(candidate):
+    """Compile only explicit equations in the original weighted criteria."""
+    from local_math_equivalence_v1 import parse_expression
+    if not valid_candidate_pin(candidate):
+        return None
+    out=[]
+    for point in candidate['points']:
+        match=_POINT_EQ.fullmatch(point['description'].strip())
+        if not match:
+            return None
         try:
-            value = Decimal(str(awarded)); maximum = Decimal(source['marks']); unit = Decimal(source['unit'])
-        except (InvalidOperation, TypeError, ValueError):
-            raise ValueError('VERDICT_INVALID_MARKS')
-        if not value.is_finite() or value < 0 or value > maximum or value / unit != int(value / unit):
-            raise ValueError('VERDICT_ALLOCATION_CONFLICT')
-        quote = decision.get('learner_quote')
-        if not isinstance(quote, str) or (value > 0 and (not quote.strip() or quote not in answer)):
-            raise ValueError('VERDICT_UNGROUNDED_EVIDENCE')
-        if len(quote) > 500:
-            raise ValueError('VERDICT_EVIDENCE_LIMIT')
-        vector.append(value); evidence.append({'id':source['id'], 'marks_awarded':str(value),
-                                                'learner_quote':quote})
-    return vector, evidence
+            if parse_expression(match['rhs']).free_symbols:
+                return None
+        except (ValueError,SyntaxError,TypeError,OverflowError,RecursionError):
+            return None
+        out.append({'id':point['id'],'lhs':match['lhs'],'rhs':match['rhs'],
+                    'marks':point['marks']})
+    if len({p['lhs'] for p in out})!=len(out):
+        return None
+    return out
 
 
-def assess_candidate(candidate, answer, judges):
-    """Two independent judges must agree; any failure abstains without evidence."""
-    base = {'markable':False, 'marks_awarded':None, 'maximum_marks':float(candidate['maximum_marks']),
-            'is_correct':False, 'confidence':0.0, 'evidence_eligible':False,
-            'status':'SEMANTIC_MARK_UNRESOLVED', 'marker_version':VERSION, 'feedback':[]}
-    if not isinstance(answer, str) or not answer.strip() or len(answer) > 10000:
+def assess_local(candidate,answer):
+    """Score a fully parsed set of source-backed equations or abstain."""
+    from local_math_equivalence_v1 import statement_equivalent
+    base={'markable':False,'marks_awarded':None,'maximum_marks':float(candidate['maximum_marks']),
+          'is_correct':False,'confidence':0.0,'evidence_eligible':False,
+          'status':'LOCAL_MATH_UNRESOLVED','marker_version':VERSION,'feedback':[]}
+    predicates=local_predicates(candidate)
+    if not predicates or not isinstance(answer,str) or not answer.strip() or len(answer)>10000:
         return base
-    if not isinstance(judges, (tuple, list)) or len(judges) != 2 or judges[0] is judges[1]:
+    statements=[s.strip() for s in re.split(r'[,;\n]+',answer) if s.strip()]
+    if not statements or len(statements)>30:
         return base
-    try:
-        results = [_validate_verdict(judge(candidate, answer), candidate, answer) for judge in judges]
-        if results[0][0] != results[1][0]:
+    by_lhs={p['lhs']:[] for p in predicates}
+    for statement in statements:
+        match=_POINT_EQ.fullmatch(statement)
+        if not match or match['lhs'] not in by_lhs:
             return base
-        earned = sum(results[0][0], Decimal(0)); maximum = Decimal(candidate['maximum_marks'])
-        return {**base, 'markable':True, 'marks_awarded':float(earned),
-                'is_correct':earned == maximum, 'confidence':None,
-                'evidence_eligible':True, 'status':'MARK_CONFIRMED',
-                'candidate_sha256':candidate['candidate_sha256'],
-                'response_sha256':hashlib.sha256(answer.encode()).hexdigest(),
-                'point_evidence':results[0][1]}
-    except Exception:  # Backend failure, timeout or malformed judgement cannot award marks.
+        by_lhs[match['lhs']].append(statement)
+    if any(len(values)>1 for values in by_lhs.values()):
         return base
-
-
-
-def local_judges(candidate):
-    """Local scorer must be qualified before it can supply independent checks."""
-    return None
+    evidence=[];total=Decimal(0)
+    for point in predicates:
+        matches=by_lhs[point['lhs']]
+        result=statement_equivalent(point['lhs']+'='+point['rhs'],matches[0]) if matches else False
+        if result is None:
+            return base
+        awarded=Decimal(point['marks']) if result else Decimal(0)
+        total+=awarded
+        evidence.append({'id':point['id'],'marks_awarded':str(awarded),
+                         'learner_quote':matches[0] if matches else ''})
+    maximum=Decimal(candidate['maximum_marks'])
+    return {**base,'markable':True,'marks_awarded':float(total),
+            'is_correct':total==maximum,'confidence':None,'evidence_eligible':True,
+            'status':'MARK_CONFIRMED','candidate_sha256':candidate['candidate_sha256'],
+            'response_sha256':hashlib.sha256(answer.encode()).hexdigest(),
+            'point_evidence':evidence}
