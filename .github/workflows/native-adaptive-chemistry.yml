@@ -6,6 +6,7 @@ on:
       - 'ux_vnext_overlay/assessment_written_response_v2.py'
       - 'ux_vnext_overlay/ux_constructed_auto_marker.py'
       - 'scripts/qualify_native_adaptive_chemistry.py'
+      - 'scripts/qualify_native_operation_primitives.py'
       - 'scripts/fixtures/pr174_chemistry_adaptive.json'
       - '.github/workflows/native-adaptive-chemistry.yml'
 permissions:
@@ -23,6 +24,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python scripts/qualify_native_adaptive_chemistry.py --portable
+      - run: python scripts/qualify_native_operation_primitives.py --portable
       - uses: actions/upload-artifact@v4
         with:
           name: native-chemistry-${{ matrix.os }}

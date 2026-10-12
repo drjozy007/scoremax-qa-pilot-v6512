@@ -12,6 +12,7 @@ import json
 import re
 
 VERSION = 'PH-NATIVE-OPERATIONS-1'
+EXTENDED_VERSION = 'PH-NATIVE-OPERATIONS-2'
 RUNTIME_VERSION = 'SM-RUBRIC-NATIVE-1'
 
 
@@ -229,16 +230,18 @@ def derive_operations(source):
 
 def attach_native_operations(rubric, source):
     operations=derive_operations(source)
+    version=VERSION
+    if not operations:
+        operations=derive_controlled_operations(source)
+        version=EXTENDED_VERSION
     if not operations: return None
     body=copy.deepcopy(rubric)
     if body.get('version')!='PH-SAQ-SCORING-CONTRACT-1': return None
-    if len(body.get('required_mark_points',[]))!=1: return None
-    p=body['required_mark_points'][0]
-    if p.get('id')!='p1' or _fraction(p['marks'])!=_fraction(source['Marks']): return None
-    if p.get('accepted_expressions')!=[source['Canonical_Accepted_Evidence']]: return None
+    if not _original_points_match(body,source,operations): return None
+    if 'native_scoring' in body: return body if compile_native_rubric(body,source['Marks'],source['Learner_Question'],source['Model_Answer']) else None
     original=body.pop('contract_sha256',None)
     if original!=stable_hash(body): return None
-    body['native_scoring']={'version':VERSION,'original_contract_sha256':original,
+    body['native_scoring']={'version':version,'original_contract_sha256':original,
         'source_row_sha256':stable_hash(source),'source_row':copy.deepcopy(source),'operations':operations}
     # A capability binding does not erase the source's eligibility/policy declaration.
     body['contract_sha256']=stable_hash(body)
@@ -248,18 +251,17 @@ def attach_native_operations(rubric, source):
 def compile_native_rubric(rubric, maximum, stem, answer):
     try:
         binding=rubric['native_scoring'];source=binding['source_row']
-        if binding['version']!=VERSION or binding['source_row_sha256']!=stable_hash(source): return None
+        if binding['version'] not in (VERSION,EXTENDED_VERSION) or binding['source_row_sha256']!=stable_hash(source): return None
         unsigned=copy.deepcopy(rubric);supplied=unsigned.pop('contract_sha256')
         if supplied!=stable_hash(unsigned): return None
         original=copy.deepcopy(unsigned);original.pop('native_scoring')
         if stable_hash(original)!=binding['original_contract_sha256']: return None
         if _text(stem)!=_text(source['Learner_Question']) or _text(answer)!=_text(source['Model_Answer']): return None
         if _fraction(maximum)!=_fraction(source['Marks']) or _fraction(maximum)!=_fraction(rubric['maximum_marks']): return None
-        expected=derive_operations(source)
+        expected=derive_operations(source) if binding['version']==VERSION else derive_controlled_operations(source)
         if not expected or binding['operations']!=expected: return None
         points=rubric['required_mark_points']
-        if len(points)!=1 or points[0]['id']!='p1' or _fraction(points[0]['marks'])!=_fraction(maximum): return None
-        if points[0]['accepted_expressions']!=[source['Canonical_Accepted_Evidence']]: return None
+        if not _original_points_match(rubric,source,expected): return None
         return {'version':RUNTIME_VERSION,'maximum_marks':float(maximum),'required_mark_points':copy.deepcopy(points),
                 'native_contract':copy.deepcopy(rubric),'question_text':stem,'model_answer':answer}
     except (KeyError,ValueError,TypeError,OverflowError): return None
@@ -275,7 +277,9 @@ def validate_native_rubric(rubric, maximum):
 
 def native_observations(rubric, answer):
     """Return point evidence to the existing aggregation path; never award marks here."""
-    binding=rubric['native_contract']['native_scoring'];op=binding['operations'][0]
+    binding=rubric['native_contract']['native_scoring']
+    if binding['version']==EXTENDED_VERSION: return _controlled_observations(binding,answer)
+    op=binding['operations'][0]
     pid=op['point_id'];awarded=set();denied=set();unknown=[]
     # Decimal-aware splitting; the canonical full quantity is tried atomically.
     chunks=[x.strip() for x in re.split(r';|\n|(?<!\d)\.(?=\s|$)|\.(?=\s+[A-Za-z])',answer) if x.strip()]
@@ -303,4 +307,111 @@ def native_observations(rubric, answer):
                 else: unknown.append(text)
             else: unknown.append(text)
         except (ValueError,TypeError,SyntaxError,OverflowError,RecursionError): unknown.append(text)
+    return awarded,denied,unknown
+
+
+def _original_points_match(rubric,source,operations):
+    """No new points, weights, criteria or cross-question authority."""
+    try:
+        points=rubric['required_mark_points'];values=source['Mark_Point_Values'].split(';')
+        evidence=source['Canonical_Accepted_Evidence'].split(' | ')
+        if not len(points)==len(values)==len(evidence)==len(operations)==int(source['Mark_Point_Count']): return False
+        if sum(_fraction(v) for v in values)!=_fraction(source['Marks']):return False
+        return all(p['id']==op['point_id']==f'p{i}' and _fraction(p['marks'])==_fraction(v)
+                   and p['accepted_expressions']==[e] for i,(p,op,v,e) in enumerate(zip(points,operations,values,evidence),1))
+    except (KeyError,ValueError,TypeError):return False
+
+
+def derive_controlled_operations(source):
+    """Project closed, explicitly authored evidence; retain original eligibility.
+
+    This compiler recognises source evidence shapes, never IDs or keyword overlap.
+    Narrative explanations, conditional methods and contextual term assignments
+    are excluded. No source status or policy is rewritten.
+    """
+    try:
+        if source['Required_Produced_Representation']!='NONE':return None
+        if source['Numerical_Tolerance_Rule']!='NOT_APPLICABLE' or source['Significant_Figures_Rule']!='NOT_APPLICABLE':return None
+        clauses=source['Canonical_Accepted_Evidence'].split(' | ')
+        if len(clauses)!=int(source['Mark_Point_Count']):return None
+        if len(clauses)==1:
+            text=_text(clauses[0]);m=re.fullmatch(r'([A-Za-z])\s*=\s*(.+)',text)
+            if not m or _text(source['Model_Answer'])!=text:return None
+            label=m[1];forms=[text]
+            alias=re.fullmatch(r'(.+?)\s+\(equivalently (.+)\)',text)
+            if alias: forms=[alias[1],label+' = '+alias[2]]
+            accepted=[]
+            for form in forms:
+                value,units,_=_quantity(form,label);accepted.append({'value':str(value),'units':units})
+            return [{'point_id':'p1','kind':'SOURCE_QUANTITY','label':label,'canonical':text,'accepted':accepted}]
+        if source['SAQ_Demand_Archetype']!='ARCH-NAME':return None
+        if source['Partial_Credit_Rule']!='Award 1 mark for each independently satisfied mark point.':return None
+        if any(_fraction(v)!=1 for v in source['Mark_Point_Values'].split(';')):return None
+        if not source['Contradiction_Rule'].startswith('A direct contradiction of a credited proposition removes credit for that proposition;'):return None
+        if source['Order_Sensitivity'] not in {
+            'NO unless the response itself states a directional relationship; equivalent sentence order is accepted.',
+            'YES only where a ranking/order is explicitly demanded; otherwise equivalent sentence order is accepted.'}:return None
+        if re.search(r'\b(rank|order|sequence|ascending|descending)\b',source['Learner_Question'],re.I):return None
+        operations=[];all_terms=set()
+        for i,clause in enumerate(clauses,1):
+            canonical=_text(clause);text=canonical;label=''
+            numbered=re.fullmatch(r'(\([a-z]\))\s+(.+)',text)
+            if numbered:label,text=numbered.groups()
+            elif ':' in text:
+                label,text=text.split(':',1);label=label.strip()+':';text=text.strip()
+                if not re.fullmatch(r'[A-Za-z0-9 .()^-]+:',label) or len(label)>100:return None
+            # Context labels remain mandatory and case-sensitive: an answer for
+            # one molecule/subpart can never earn another molecule's mark.
+            if not re.fullmatch(r'[A-Za-z -]+(?:\([A-Za-z -]+\))?(?: forces)?',text):return None
+            if not re.sub(r' \([^)]*\)','',text).lower().endswith(('forces','bonding')):return None
+            if any(x in text.lower().split() for x in ['not','no','and','or','because','is','are']):return None
+            forms=[text];parenthesis=re.fullmatch(r'(.+?) \((.+)\)(.*)',text)
+            if parenthesis:forms.extend([parenthesis[1]+parenthesis[3],parenthesis[2]+parenthesis[3]])
+            # An explicit 'Accept X for Y' declaration only changes this row's
+            # authored term, preserving any authored suffix.
+            for alternative in str(source['Acceptable_Alternatives']).strip('.').split(';'):
+                am=re.fullmatch(r'\s*[Aa]ccept ([A-Za-z -]+) for ([A-Za-z -]+)\s*',alternative)
+                if am:
+                    for form in list(forms):
+                        if form.casefold().startswith(am[2].casefold()):
+                            forms.extend([am[1]+form[len(am[2]):],am[1],am[2]])
+            terms=sorted({_text(s).casefold() for s in forms})
+            claims={(label,t) for t in terms}
+            if all_terms.intersection(claims):return None
+            all_terms.update(claims)
+            operations.append({'point_id':f'p{i}','kind':'SOURCE_TERM_SET','accepted':terms,'canonical':canonical,'source_label':label})
+        return operations
+    except (KeyError,ValueError,TypeError,OverflowError):return None
+
+
+def _controlled_observations(binding,answer):
+    operations=binding['operations'];awarded=set();denied=set();unknown=[]
+    if all(op['kind']=='SOURCE_TERM_SET' for op in operations):
+        answer=re.sub(r',|\band\b',';',answer,flags=re.I)
+    chunks=[s.strip() for s in re.split(r';|\n|(?<!\d)\.(?=\s|$)|\.(?=\s+[A-Za-z])',answer) if s.strip()]
+    if len(chunks)>50:return set(),set(),['RESPONSE_LIMIT']
+    for text in chunks:
+        norm=_text(text);matched=False
+        for op in operations:
+            pid=op['point_id']
+            if op['kind']=='SOURCE_QUANTITY':
+                if norm==op['canonical']:awarded.add(pid);matched=True;continue
+                try:value,units,_=_quantity(norm,op['label'])
+                except ValueError:continue
+                same_units=[x for x in op['accepted'] if x['units']==units]
+                if same_units:
+                    (awarded if any(value==Fraction(x['value']) for x in same_units) else denied).add(pid);matched=True
+            elif op['kind']=='SOURCE_TERM_SET':
+                term=norm;negated=False
+                if term.casefold().startswith('not '):term=term[4:];negated=True
+                label=op.get('source_label','')
+                if label:
+                    if not term.startswith(label):continue
+                    term=term[len(label):].strip()
+                if term.casefold().startswith('not '):
+                    if negated:continue  # Double-negation semantics are not inferred.
+                    term=term[4:];negated=True
+                if term.casefold() in op['accepted']:
+                    (denied if negated else awarded).add(pid);matched=True
+        if not matched:unknown.append(text)
     return awarded,denied,unknown
