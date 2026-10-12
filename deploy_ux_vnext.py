@@ -590,6 +590,8 @@ def main() -> None:
     apply_cross50_rejection_diagnostic(ROOT)
     from ux_vnext_overlay.ux_assessment_contract_repair import apply_assessment_contract_repair
     apply_assessment_contract_repair(ROOT)
+    from ux_vnext_overlay.structured_practice_surfaces import apply as apply_structured_practice
+    apply_structured_practice(ROOT)
     apply_programme_mastery_repair(ROOT)
     subprocess.run(
         [sys.executable,'scripts/qualify_ph_multi_programme_projection.py',str(ROOT)],

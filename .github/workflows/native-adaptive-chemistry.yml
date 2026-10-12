@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'ux_vnext_overlay/native_scoring_operations_v1.py'
+      - 'ux_vnext_overlay/native_structured_practice.py'
+      - 'scripts/qualify_structured_practice_primitives.py'
       - 'ux_vnext_overlay/assessment_written_response_v2.py'
       - 'ux_vnext_overlay/ux_constructed_auto_marker.py'
       - 'scripts/qualify_native_adaptive_chemistry.py'
@@ -25,6 +27,7 @@ jobs:
           python-version: '3.12'
       - run: python scripts/qualify_native_adaptive_chemistry.py --portable
       - run: python scripts/qualify_native_operation_primitives.py --portable
+      - run: python scripts/qualify_structured_practice_primitives.py
       - uses: actions/upload-artifact@v4
         with:
           name: native-chemistry-${{ matrix.os }}

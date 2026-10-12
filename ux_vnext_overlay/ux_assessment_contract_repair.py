@@ -38,6 +38,7 @@ def apply_written_contract_repair(root):
     root=Path(root);here=Path(__file__).parent
     import shutil
     shutil.copy2(here/'native_scoring_operations_v1.py',root/'native_scoring_operations_v1.py')
+    shutil.copy2(here/'native_structured_practice.py',root/'native_structured_practice.py')
     path=root/'written_response_engine.py';text=path.read_text()
     text=add_functions(text,donors(here/'assessment_written_response_v2.py'))
     # Replace the existing public entrypoint itself; no optional policy dispatch
@@ -178,15 +179,16 @@ def apply_assessment_contract_repair(root):
     start=fn.index('        if pending_reviews:\n')
     end=fn.index('        # Commit the one-and-only',start)
     fn=fn[:start]+'''        all_confirmed=not auto_unscored
+        formal_evidence=all_confirmed and all(r['evidence_eligible'] for r in marking_results.values())
         c.execute("UPDATE attempts SET maximum_marks=?,total_marks_awarded=?,question_accuracy_pct=?,marking_result_version='SM-MARK-RESULT-2',marking_status=?,pending_review_count=0,mastery_evidence_eligible=? WHERE id=?",
           (total_possible_marks,total_awarded_marks if all_confirmed else None,round(100.0*correct/len(ids),1) if all_confirmed else None,
-           'FINAL' if all_confirmed else 'AUTO_UNSCORED',1 if all_confirmed and not is_science_genius else 0,attempt_id))
+           'FINAL' if all_confirmed else 'AUTO_UNSCORED',1 if formal_evidence and not is_science_genius else 0,attempt_id))
         for qid,result in marking_results.items():
             c.execute("UPDATE attempt_answers SET maximum_marks=?,marker_confidence=?,marking_result_json=?,marking_status=?,mastery_evidence_eligible=? WHERE attempt_id=? AND question_db_id=?",
               (result['maximum_marks'],result['confidence'],integration_v1.canonical_json(result),
                'FINAL' if result['confirmed'] else 'AUTO_UNSCORED',1 if all_confirmed and result['evidence_eligible'] and not is_science_genius else 0,attempt_id,qid))
 '''+fn[end:]
-    fn=replace_once(fn,'        if not pending_reviews:\n','        if not auto_unscored:\n')
+    fn=replace_once(fn,'        if not pending_reviews:\n','        if formal_evidence:\n')
     a=replace_function(a,'submit_assessment_v4',fn)
     diagnostic="""    if 'marking_status' in attempt.keys() and attempt['marking_status']=='AUTO_UNSCORED':
         return dict(attempt=attempt,rows=rows,by_topic=[],by_lo=[],by_difficulty=[],by_skill=[],by_command=[],

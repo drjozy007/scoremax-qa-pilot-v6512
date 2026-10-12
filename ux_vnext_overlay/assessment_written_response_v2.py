@@ -193,7 +193,9 @@ def mark_written_response(question, answer, policy=None):
     points=[{**pt,'evidence':[answer] if pt['status'] in {'awarded','contradicted'} else [],
              'improvement_instruction':'Point demonstrated.' if pt['status']=='awarded' else 'Review this approved mark point.',
              'grader_a_status':pt['status'],'grader_b_status':'NOT_USED'} for pt in result['mark_points']]
-    return {**base,**result,'mark_points':points,'evidence_eligible':True,'command_verb_met':True,
+    from native_structured_practice import practice_contract
+    practice=practice_contract(question)
+    return {**base,**result,'mark_points':points,'evidence_eligible':not practice,'practice_score_confirmed':practice,'assessment_purpose':'STRUCTURED_PRACTICE' if practice else 'ORIGINAL','command_verb_met':True,
             'grader_a':{'score':awarded,'version':result.get('marker_version','governed-clause-1')},'grader_b':{'score':None,'version':'NOT_USED'},
             'validation_boundary':result.get('validation_boundary',base['validation_boundary'])}
 
