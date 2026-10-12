@@ -17,6 +17,15 @@ REGISTRY = Path(__file__).with_name('semantic_math_qualification_v1.json')
 _SHA = re.compile(r'[0-9a-f]{64}\Z')
 
 
+def implementation_sha256():
+    """Bind receiver qualification to the exact local marking implementation."""
+    digest = hashlib.sha256()
+    for name in ('local_math_equivalence_v1.py', 'semantic_math_marker_v1.py'):
+        data = Path(__file__).with_name(name).read_bytes()
+        digest.update(name.encode('utf-8') + b'\0' + str(len(data)).encode() + b'\0' + data)
+    return digest.hexdigest()
+
+
 def _hash(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),
                                      ensure_ascii=False, allow_nan=False).encode()).hexdigest()
@@ -96,6 +105,7 @@ def qualified(candidate, registry_path=REGISTRY):
         return (isinstance(entry, dict) and entry.get('status') == 'QUALIFIED' and
                 entry.get('source_contract_sha256') == candidate['source_contract_sha256'] and
                 entry.get('source_marking_evidence_sha256') == candidate['source_marking_evidence_sha256'] and
+                entry.get('evaluator_sha256') == implementation_sha256() and
                 isinstance(entry.get('qualification_evidence_sha256'), str) and
                 bool(_SHA.fullmatch(entry['qualification_evidence_sha256'])))
     except (OSError, ValueError, TypeError, KeyError, AttributeError):
