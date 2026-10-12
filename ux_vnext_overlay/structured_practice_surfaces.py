@@ -7,8 +7,7 @@ def apply(root):
     from ux_vnext_overlay.ux_assessment_contract_repair import replace_once as checked_replace, replace_function
     import ast
     def replace_once(text,old,new):
-        # Some accepted overlays restore a previously assembled template. Only
-        # an exact already-installed block is idempotent; drift still fails.
+        # Only an exact already-installed block is idempotent; drift fails.
         return text if new in text else checked_replace(text,old,new)
     root=Path(root);here=Path(__file__).parent
     for name in ('templates/_structured_practice.html','static/structured_practice.js'):

@@ -32,3 +32,25 @@ jobs:
         with:
           name: native-chemistry-${{ matrix.os }}
           path: native_adaptive_qualification.json
+
+  structured-response-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.57.0 jinja2==3.1.6
+      - name: Exercise blank response fields and saved work
+        shell: bash
+        run: |
+          if command -v google-chrome >/dev/null; then
+            export CHROMIUM_EXECUTABLE="$(command -v google-chrome)"
+          else
+            python -m playwright install --with-deps chromium
+          fi
+          python scripts/qualify_structured_practice_browser.py

@@ -42,13 +42,14 @@
     } else if (value.value.trim()) {
       status.textContent = 'The saved response uses a different format. It has not been replaced.';
       root.querySelectorAll('button').forEach(button => button.disabled = true);
-      root.closest('form').addEventListener('submit', event => event.preventDefault());
+      root.closest('form')?.addEventListener('submit', event => event.preventDefault());
       continue;
     } else add(statements, ['subject','relation','object']);
     root.querySelector('[data-add-statement]').addEventListener('click', () => add(statements, ['subject','relation','object']));
     root.querySelector('[data-add-equation]').addEventListener('click', () => add(equations, ['equation']));
     root.querySelector('[data-add-value]').addEventListener('click', () => add(quantities, ['value','unit','working']));
-    root.closest('form').addEventListener('submit', event => {
+    root.closest('form')?.addEventListener('submit', event => {
+      if (event.submitter?.name === 'action' && event.submitter?.value === 'clear') {value.value='';return;}
       if (!serialize()) {event.preventDefault();status.textContent='Complete all three fields of each statement or remove that statement.';}
     });
   }
