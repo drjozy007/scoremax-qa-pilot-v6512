@@ -216,11 +216,16 @@ def _install_self_marking_release_gate() -> None:
     if not marker_src.is_file():
         raise SystemExit('SCOREMAX_CONSTRUCTED_AUTO_MARKER_SOURCE_MISSING')
     shutil.copy2(marker_src,marker_dst)
-    for name in ('semantic_math_marker_v1.py','semantic_math_qualification_v1.json'):
+    for name in ('semantic_math_marker_v1.py','semantic_math_qualification_v1.json',
+                 'local_math_equivalence_v1.py'):
         source=Path('ux_vnext_overlay')/name
         if not source.is_file():
             raise SystemExit('SCOREMAX_MATH_SEMANTIC_SOURCE_MISSING::'+name)
         shutil.copy2(source,ROOT/name)
+    requirements=ROOT/'requirements.txt'
+    req=requirements.read_text(encoding='utf-8')
+    if 'sympy==' not in req:
+        requirements.write_text(req.rstrip()+'\nsympy==1.14.0\n',encoding='utf-8')
     from ux_vnext_overlay.ux_assessment_contract_repair import apply_written_contract_repair
     apply_written_contract_repair(ROOT)
 
