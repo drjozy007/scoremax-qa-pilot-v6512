@@ -16,6 +16,9 @@ def validate_automatic_rubric(rubric, maximum):
         if isinstance(maximum,bool) or not math.isfinite(value) or value<=0: raise ValueError()
     except (TypeError,ValueError,OverflowError):
         return {'valid':False,'errors':['INVALID_MAXIMUM_MARKS']}
+    if isinstance(rubric,dict) and rubric.get('version') == 'SM-RUBRIC-NATIVE-1':
+        from native_scoring_operations_v1 import validate_native_rubric
+        return validate_native_rubric(rubric,maximum)
     if not isinstance(rubric,dict) or rubric.get('version') != 'SM-RUBRIC-CLAUSES-1':
         return {'valid':False,'errors':['EXPLICIT_RUBRIC_VERSION_REQUIRED']}
     if not isinstance(rubric.get('case_sensitive',True),bool): errors.append('RUBRIC_CASE_POLICY_INVALID')
@@ -116,19 +119,23 @@ def _mark_governed_clauses(question, answer):
         return {'status':'NO_MARKING_CONTRACT','proposed_mark':None,'maximum_mark':maximum,
                 'percentage':None,'confidence':0.0,'mark_points':[],'feedback':[], 'errors':check['errors']}
     points=question['required_mark_points']; text=str(answer or '').strip()
-    positive={}; negative={}
-    sensitive=question.get('case_sensitive',True)
-    for pt in points:
-        for phrase in pt.get('accepted_phrases',[])+pt.get('acceptable_paraphrases',[]):
-            positive.setdefault(_clause_normalise(phrase,sensitive),set()).add(pt['id'])
-    for item in question.get('contradictions',[]) or []:
-        negative.setdefault(_clause_normalise(item['phrase'],sensitive),set()).update(item['point_ids'])
-    chunks=_governed_clause_chunks(text,positive,negative,sensitive)
-    awarded=set(); denied=set(); unknown=[] if chunks is not None else [text]
-    for chunk in chunks or []:
-        if chunk in negative: denied.update(negative[chunk])
-        elif chunk in positive: awarded.update(positive[chunk])
-        else: unknown.append(chunk)
+    if question.get('version') == 'SM-RUBRIC-NATIVE-1':
+        from native_scoring_operations_v1 import native_observations
+        awarded,denied,unknown=native_observations(question,text)
+    else:
+        positive={}; negative={}
+        sensitive=question.get('case_sensitive',True)
+        for pt in points:
+            for phrase in pt.get('accepted_phrases',[])+pt.get('acceptable_paraphrases',[]):
+                positive.setdefault(_clause_normalise(phrase,sensitive),set()).add(pt['id'])
+        for item in question.get('contradictions',[]) or []:
+            negative.setdefault(_clause_normalise(item['phrase'],sensitive),set()).update(item['point_ids'])
+        chunks=_governed_clause_chunks(text,positive,negative,sensitive)
+        awarded=set(); denied=set(); unknown=[] if chunks is not None else [text]
+        for chunk in chunks or []:
+            if chunk in negative: denied.update(negative[chunk])
+            elif chunk in positive: awarded.update(positive[chunk])
+            else: unknown.append(chunk)
     awarded-=denied
     outputs=[{'point_id':pt['id'],'description':pt['description'],'available_marks':float(pt['marks']),
               'awarded_marks':float(pt['marks']) if pt['id'] in awarded else 0.0,
@@ -140,7 +147,8 @@ def _mark_governed_clauses(question, answer):
             'confidence':1.0 if final else 0.0,'mark_points':outputs,
             'feedback':([] if final else ['This response could not be marked reliably. It has not changed your mastery.']),
             'contradictions':[p for p in outputs if p['status']=='contradicted'],
-            'marker_version':'governed-clause-1', 'validation_boundary':'Governed complete-clause matching only; unknown paraphrases are not graded.'}
+            'marker_version':'native-operations-1' if question.get('version')=='SM-RUBRIC-NATIVE-1' else 'governed-clause-1',
+            'validation_boundary':'Source-bound native operations; unknown responses are unscored.' if question.get('version')=='SM-RUBRIC-NATIVE-1' else 'Governed complete-clause matching only; unknown paraphrases are not graded.'}
 
 
 
@@ -186,6 +194,6 @@ def mark_written_response(question, answer, policy=None):
              'improvement_instruction':'Point demonstrated.' if pt['status']=='awarded' else 'Review this approved mark point.',
              'grader_a_status':pt['status'],'grader_b_status':'NOT_USED'} for pt in result['mark_points']]
     return {**base,**result,'mark_points':points,'evidence_eligible':True,'command_verb_met':True,
-            'grader_a':{'score':awarded,'version':'governed-clause-1'},'grader_b':{'score':None,'version':'NOT_USED'},
-            'validation_boundary':base['validation_boundary']}
+            'grader_a':{'score':awarded,'version':result.get('marker_version','governed-clause-1')},'grader_b':{'score':None,'version':'NOT_USED'},
+            'validation_boundary':result.get('validation_boundary',base['validation_boundary'])}
 

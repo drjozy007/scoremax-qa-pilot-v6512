@@ -36,6 +36,8 @@ def add_functions(text,functions):
 
 def apply_written_contract_repair(root):
     root=Path(root);here=Path(__file__).parent
+    import shutil
+    shutil.copy2(here/'native_scoring_operations_v1.py',root/'native_scoring_operations_v1.py')
     path=root/'written_response_engine.py';text=path.read_text()
     text=add_functions(text,donors(here/'assessment_written_response_v2.py'))
     # Replace the existing public entrypoint itself; no optional policy dispatch
