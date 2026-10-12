@@ -60,6 +60,55 @@ def validate_automatic_rubric(rubric, maximum):
     return {'valid':not errors,'errors':errors}
 
 
+def _governed_clause_chunks(text, positive, negative, sensitive):
+    """Segment only complete authored clauses; punctuation inside them is literal.
+
+    Consume the entire response. Unknown text and ambiguous point attribution stay
+    unscored. A decimal point cannot act as a clause separator.
+    """
+    whole = _clause_normalise(text, sensitive)
+    if whole in positive or whole in negative:
+        return [whole]
+    if not text.strip():
+        return []
+    text = text if sensitive else text.casefold()
+    patterns = [(phrase, re.compile(re.escape(phrase).replace(r'\ ', r'\s+')))
+                for phrase in positive.keys() | negative.keys()]
+    separator = re.compile(r'[^\S\n]*(?:(?:[;\n]|(?<!\d)\.|\.(?!\d))[^\S\n]*)+')
+    states = {0: (frozenset(), frozenset(), None, None)}
+    for start in range(len(text)):
+        if start not in states:
+            continue
+        awarded, denied = states[start][:2]
+        for phrase, pattern in patterns:
+            match = pattern.match(text, start)
+            if match is None:
+                continue
+            end = match.end()
+            if text[end:].strip():
+                boundary = separator.match(text, end)
+                if boundary is None:
+                    continue
+                end = boundary.end()
+            else:
+                end = len(text)
+            new_awarded = awarded | frozenset(positive.get(phrase, ()))
+            new_denied = denied | frozenset(negative.get(phrase, ()))
+            prior = states.get(end)
+            if prior is not None and prior[:2] != (new_awarded, new_denied):
+                return None
+            states[end] = (new_awarded, new_denied, start, phrase)
+    if len(text) not in states:
+        return None
+    chunks = []
+    end = len(text)
+    while end:
+        _, _, start, phrase = states[end]
+        chunks.append(phrase)
+        end = start
+    return list(reversed(chunks))
+
+
 def _mark_governed_clauses(question, answer):
     maximum=float(question.get('maximum_marks') or 0)
     check=validate_automatic_rubric(question,maximum)
@@ -74,11 +123,9 @@ def _mark_governed_clauses(question, answer):
             positive.setdefault(_clause_normalise(phrase,sensitive),set()).add(pt['id'])
     for item in question.get('contradictions',[]) or []:
         negative.setdefault(_clause_normalise(item['phrase'],sensitive),set()).update(item['point_ids'])
-    # First try the whole approved clause (including any internal punctuation).
-    whole=_clause_normalise(text,sensitive)
-    chunks=[whole] if whole in positive or whole in negative else [_clause_normalise(x,sensitive) for x in re.split(r'[.;\n]+',text) if x.strip()]
-    awarded=set(); denied=set(); unknown=[]
-    for chunk in chunks:
+    chunks=_governed_clause_chunks(text,positive,negative,sensitive)
+    awarded=set(); denied=set(); unknown=[] if chunks is not None else [text]
+    for chunk in chunks or []:
         if chunk in negative: denied.update(negative[chunk])
         elif chunk in positive: awarded.update(positive[chunk])
         else: unknown.append(chunk)
@@ -141,3 +188,4 @@ def mark_written_response(question, answer, policy=None):
     return {**base,**result,'mark_points':points,'evidence_eligible':True,'command_verb_met':True,
             'grader_a':{'score':awarded,'version':'governed-clause-1'},'grader_b':{'score':None,'version':'NOT_USED'},
             'validation_boundary':base['validation_boundary']}
+
