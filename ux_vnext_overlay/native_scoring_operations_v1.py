@@ -47,7 +47,7 @@ def _polynomial_equation(text, symbols, allowed_denominators=()):
     text = _text(text).replace('−', '-').replace('×', '*').replace('·', '*').replace('÷', '/').replace('^', '**')
     if len(text) > 500 or text.count('=') != 1 or not 1 <= len(symbols) <= 8:
         raise ValueError('EQUATION_GRAMMAR')
-    if any(not re.fullmatch('[A-Za-z]', s) for s in symbols) or len(set(symbols)) != len(symbols):
+    if any(not re.fullmatch('[A-Za-z](?:[0-9]{1,2})?', s) for s in symbols) or len(set(symbols)) != len(symbols):
         raise ValueError('SYMBOLS_INVALID')
     zero = (0,) * len(symbols)
     one = {zero: Fraction(1)}
@@ -75,9 +75,15 @@ def _polynomial_equation(text, symbols, allowed_denominators=()):
         return clean(p)
 
     def parse(value):
-        # Implicit products only between declared single-letter symbols or brackets.
+        # Indexed symbols are atomic and must be explicitly declared by the source.
+        # An undeclared x between spaced operands is the source's multiplication sign.
+        value=value.replace('[','(').replace(']',')')
+        if 'x' not in symbols:value=re.sub(r'(?<=\s)x(?=\s)','*',value)
         if re.search(r'[^A-Za-z0-9+*/().\s-]', value): raise ValueError('EXPRESSION_GRAMMAR')
-        tokens = re.findall(r'\d+(?:\.\d*)?|\.\d+|\*\*|[A-Za-z]|[+*/()-]', value)
+        indexed=any(len(s)>1 for s in symbols)
+        declared='|'.join(re.escape(s)+(r'(?![0-9])' if indexed else '') for s in sorted(symbols,key=len,reverse=True))
+        fallback=r'[A-Za-z][0-9]*' if indexed else r'[A-Za-z]'
+        tokens = re.findall(declared+r'|\d+(?:\.\d*)?|\.\d+|\*\*|'+fallback+r'|[+*/()-]', value)
         if len(tokens) > 100: raise ValueError('EXPRESSION_LIMIT')
         if ''.join(tokens) != re.sub(r'\s+', '', value): raise ValueError('EXPRESSION_GRAMMAR')
         out = []
@@ -103,6 +109,19 @@ def _polynomial_equation(text, symbols, allowed_denominators=()):
             if isinstance(n,ast.BinOp):
                 a,b=walk(n.left,depth+1)
                 if isinstance(n.op,ast.Pow):
+                    # Source numerical working uses scientific notation such as 10^-3.
+                    # This does not admit reciprocal variable powers or new domains.
+                    exponent=n.right
+                    sign=1
+                    if isinstance(exponent,ast.UnaryOp) and isinstance(exponent.op,(ast.USub,ast.UAdd)):
+                        sign=-1 if isinstance(exponent.op,ast.USub) else 1
+                        exponent=exponent.operand
+                    if isinstance(n.left,ast.Constant) and type(n.left.value) in (int,float) and isinstance(exponent,ast.Constant) and type(exponent.value) is int:
+                        power=sign*exponent.value
+                        if not -12<=power<=12:raise ValueError('POWER_LIMIT')
+                        base=_fraction(ast.get_source_segment(value,n.left))
+                        if base==0 and power<=0:raise ValueError('UNDEFINED_POWER')
+                        return clean({zero:base**power}),one
                     if not isinstance(n.right,ast.Constant) or type(n.right.value) is not int or not 0 <= n.right.value <= 4:
                         raise ValueError('POWER_LIMIT')
                     if not a and n.right.value==0: raise ValueError('UNDEFINED_POWER')
@@ -251,17 +270,17 @@ def attach_native_operations(rubric, source):
 def compile_native_rubric(rubric, maximum, stem, answer):
     try:
         binding=rubric['native_scoring'];source=binding['source_row']
-        if binding['version'] not in (VERSION,EXTENDED_VERSION,'PH-NATIVE-OPERATIONS-3-PRACTICE') or binding['source_row_sha256']!=stable_hash(source): return None
+        if binding['version'] not in (VERSION,EXTENDED_VERSION,'PH-NATIVE-OPERATIONS-3-PRACTICE','PH-NATIVE-OPERATIONS-4-PRACTICE') or binding['source_row_sha256']!=stable_hash(source): return None
         unsigned=copy.deepcopy(rubric);supplied=unsigned.pop('contract_sha256')
         if supplied!=stable_hash(unsigned): return None
         original=copy.deepcopy(unsigned);original.pop('native_scoring')
         if stable_hash(original)!=binding['original_contract_sha256']: return None
         if _text(stem)!=_text(source['Learner_Question']) or _text(answer)!=_text(source['Model_Answer']): return None
         if _fraction(maximum)!=_fraction(source['Marks']) or _fraction(maximum)!=_fraction(rubric['maximum_marks']): return None
-        if binding['version']=='PH-NATIVE-OPERATIONS-3-PRACTICE':
-            from native_structured_practice import derive, AUTHORITY, RESPONSE_VERSION
+        if binding['version'] in ('PH-NATIVE-OPERATIONS-3-PRACTICE','PH-NATIVE-OPERATIONS-4-PRACTICE'):
+            from native_structured_practice import derive, derive_extended, AUTHORITY, RESPONSE_VERSION
             if binding.get('practice_authority')!=AUTHORITY or binding.get('response_contract')!=RESPONSE_VERSION:return None
-            expected=derive(source)
+            expected=(derive if binding['version']=='PH-NATIVE-OPERATIONS-3-PRACTICE' else derive_extended)(source)
         else:
             expected=derive_operations(source) if binding['version']==VERSION else derive_controlled_operations(source)
         if not expected or binding['operations']!=expected: return None
@@ -283,7 +302,7 @@ def validate_native_rubric(rubric, maximum):
 def native_observations(rubric, answer):
     """Return point evidence to the existing aggregation path; never award marks here."""
     binding=rubric['native_contract']['native_scoring']
-    if binding['version']=='PH-NATIVE-OPERATIONS-3-PRACTICE':
+    if binding['version'] in ('PH-NATIVE-OPERATIONS-3-PRACTICE','PH-NATIVE-OPERATIONS-4-PRACTICE'):
         from native_structured_practice import observations
         return observations(binding,answer)
     if binding['version']==EXTENDED_VERSION: return _controlled_observations(binding,answer)
