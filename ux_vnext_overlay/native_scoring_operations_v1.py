@@ -251,14 +251,19 @@ def attach_native_operations(rubric, source):
 def compile_native_rubric(rubric, maximum, stem, answer):
     try:
         binding=rubric['native_scoring'];source=binding['source_row']
-        if binding['version'] not in (VERSION,EXTENDED_VERSION) or binding['source_row_sha256']!=stable_hash(source): return None
+        if binding['version'] not in (VERSION,EXTENDED_VERSION,'PH-NATIVE-OPERATIONS-3-PRACTICE') or binding['source_row_sha256']!=stable_hash(source): return None
         unsigned=copy.deepcopy(rubric);supplied=unsigned.pop('contract_sha256')
         if supplied!=stable_hash(unsigned): return None
         original=copy.deepcopy(unsigned);original.pop('native_scoring')
         if stable_hash(original)!=binding['original_contract_sha256']: return None
         if _text(stem)!=_text(source['Learner_Question']) or _text(answer)!=_text(source['Model_Answer']): return None
         if _fraction(maximum)!=_fraction(source['Marks']) or _fraction(maximum)!=_fraction(rubric['maximum_marks']): return None
-        expected=derive_operations(source) if binding['version']==VERSION else derive_controlled_operations(source)
+        if binding['version']=='PH-NATIVE-OPERATIONS-3-PRACTICE':
+            from native_structured_practice import derive, AUTHORITY, RESPONSE_VERSION
+            if binding.get('practice_authority')!=AUTHORITY or binding.get('response_contract')!=RESPONSE_VERSION:return None
+            expected=derive(source)
+        else:
+            expected=derive_operations(source) if binding['version']==VERSION else derive_controlled_operations(source)
         if not expected or binding['operations']!=expected: return None
         points=rubric['required_mark_points']
         if not _original_points_match(rubric,source,expected): return None
@@ -278,6 +283,9 @@ def validate_native_rubric(rubric, maximum):
 def native_observations(rubric, answer):
     """Return point evidence to the existing aggregation path; never award marks here."""
     binding=rubric['native_contract']['native_scoring']
+    if binding['version']=='PH-NATIVE-OPERATIONS-3-PRACTICE':
+        from native_structured_practice import observations
+        return observations(binding,answer)
     if binding['version']==EXTENDED_VERSION: return _controlled_observations(binding,answer)
     op=binding['operations'][0]
     pid=op['point_id'];awarded=set();denied=set();unknown=[]

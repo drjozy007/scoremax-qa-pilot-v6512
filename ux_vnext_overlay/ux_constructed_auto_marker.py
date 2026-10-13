@@ -14,6 +14,7 @@ import math
 import re
 
 from written_response_engine import mark_written_response, validate_automatic_rubric
+from native_structured_practice import practice_contract
 
 MARKER_VERSION = 'SM-CONSTRUCTED-AUTO-3'
 NATIVE_MARKER_VERSION = 'SM-CONSTRUCTED-AUTO-4'
@@ -175,13 +176,16 @@ def mark(contract, response):
         return {'markable':False,'marks_awarded':None,'maximum_marks':0.0,'is_correct':False,
                 'confidence':0.0,'status':'INVALID_MARKING_CONTRACT','evidence_eligible':False,'feedback':[]}
     maximum = float(contract['maximum_marks'])
+    from native_structured_practice import practice_contract
+    practice=practice_contract(contract.get('rubric',{}))
     if native and not isinstance(response,str):
         return {'markable':True,'marks_awarded':None,'maximum_marks':maximum,'is_correct':False,
                 'confidence':0.0,'status':'MORE_EVIDENCE_REQUIRED','evidence_eligible':False,'feedback':[]}
     answer = str(response or '').strip()
     base = {'markable':True, 'maximum_marks':maximum, 'marker_version':required_version,
-            'contract_sha256':expected_hash, 'evidence_eligible':True, 'confidence':1.0,
-            'status':'MARK_CONFIRMED', 'feedback':[]}
+            'contract_sha256':expected_hash, 'evidence_eligible':not practice, 'confidence':1.0,
+            'status':'MARK_CONFIRMED', 'feedback':[], 'practice_score_confirmed':practice,
+            'assessment_purpose':'STRUCTURED_PRACTICE' if practice else 'ORIGINAL'}
     if not answer:
         return {**base, 'marks_awarded':0.0,'is_correct':False,'response_present':False}
     if len(answer) > 10000:
@@ -198,7 +202,8 @@ def mark(contract, response):
         final = result.get('status') == 'MARK_CONFIRMED'
         awarded = result['proposed_mark'] if final else None
         return {**base,'marks_awarded':awarded,'is_correct':bool(final and awarded >= maximum),
-                'confidence':result['confidence'],'status':result['status'], 'evidence_eligible':final,
+                'confidence':result['confidence'],'status':result['status'], 'evidence_eligible':final and not practice,'practice_score_confirmed':final and practice,
+                'assessment_purpose':'STRUCTURED_PRACTICE' if practice else 'ORIGINAL',
                 'feedback':result['feedback'],'result':result}
     else:
         return {**base,'markable':False,'marks_awarded':None,'is_correct':False,

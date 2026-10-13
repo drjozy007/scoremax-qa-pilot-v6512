@@ -8,7 +8,7 @@ if '--portable' in sys.argv:
     sys.argv.remove('--portable')
     TEMP=tempfile.TemporaryDirectory(prefix='scoremax-native-portable-')
     RUNTIME=Path(TEMP.name)
-    for name in ['ux_constructed_auto_marker.py','native_scoring_operations_v1.py']:
+    for name in ['ux_constructed_auto_marker.py','native_scoring_operations_v1.py','native_structured_practice.py']:
         shutil.copy2(ROOT/'ux_vnext_overlay'/name,RUNTIME/name)
     (RUNTIME/'written_response_engine.py').write_text('import re\n'+
         (ROOT/'ux_vnext_overlay/assessment_written_response_v2.py').read_text(encoding='utf-8'),encoding='utf-8')

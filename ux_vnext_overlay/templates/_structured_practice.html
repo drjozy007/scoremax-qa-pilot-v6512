@@ -1,0 +1,15 @@
+<section data-structured-practice>
+  <h3>Structured practice</h3>
+  <p>Write your own scientific statements and working. This practice format does not provide examination-format or exam-readiness evidence.</p>
+  <p>Each statement has a subject, a relationship and an object. Write any negation in the relationship. Add your own equations where needed.</p>
+  <textarea name="{{ structured_field|default('answer') }}" data-structured-value hidden>{{ structured_saved|default('') }}</textarea>
+  <div data-statements></div>
+  <button type="button" data-add-statement>Add statement</button>
+  <div data-equations></div>
+  <button type="button" data-add-equation>Add equation</button>
+  <div data-values></div>
+  <button type="button" data-add-value>Add value and unit</button>
+  <p role="status" data-structured-status></p>
+  <noscript>Enable JavaScript to enter this structured response. No answer has been supplied for you.</noscript>
+</section>
+<script src="{{url_for('static',filename='structured_practice.js')}}" defer></script>

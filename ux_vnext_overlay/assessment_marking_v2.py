@@ -25,7 +25,7 @@ def mark_question_result(q,selected,blueprint_marking_rules=None):
     if qt=='constructed_response':
         from ux_constructed_auto_marker import mark
         result=mark(validated['constructed_contract'],text)
-        final=result.get('status')=='MARK_CONFIRMED' and result.get('evidence_eligible') is True
+        final=result.get('status')=='MARK_CONFIRMED' and (result.get('evidence_eligible') is True or result.get('practice_score_confirmed') is True)
         earned=None
         if final:
             fraction=float(result['marks_awarded'])/maximum
@@ -36,7 +36,7 @@ def mark_question_result(q,selected,blueprint_marking_rules=None):
             elif fraction<=0:earned=incorrect
             else:earned=correct_max*fraction if partial else incorrect
         return {**result,'marks_awarded':earned,'maximum_marks':correct_max,'source_maximum_marks':maximum,'confirmed':final,
-                'evidence_eligible':final,'response_type':qt,'result_contract_version':'SM-MARK-RESULT-2','misconception':''}
+                'evidence_eligible':final and result.get('evidence_eligible') is True,'response_type':qt,'result_contract_version':'SM-MARK-RESULT-2','misconception':''}
     # Existing objective marker remains authoritative; do not duplicate its scoring logic.
     q['answer_config']=json.dumps(ac);q['marking_config']=json.dumps(mc)
     ok,earned,misconception=_mark_objective_response(q,text,rules)
@@ -79,7 +79,7 @@ def written_evaluate_attempt(c,attempt_id,answer_version_id,creates_formal_evide
             stored=safe_json(prior['output_json'],{})
             return stored['result'],stored.get('marking_run_id')
         result=mark_written_response(payload,answer)
-        if result.get('status')!='MARK_CONFIRMED' or result.get('evidence_eligible') is not True:
+        if result.get('status')!='MARK_CONFIRMED' or not (result.get('evidence_eligible') is True or result.get('practice_score_confirmed') is True):
             c.execute("UPDATE written_attempts SET status='AUTO_UNSCORED',result_state='AUTO_UNSCORED',current_mark=NULL,marking_confidence=0,completed_at=? WHERE id=?",
                       (datetime.now().isoformat(timespec='seconds'),attempt_id))
             c.execute("""INSERT INTO written_processing_jobs(attempt_id,job_type,state,provider,provider_version,idempotency_key,input_json,output_json)
@@ -89,7 +89,7 @@ def written_evaluate_attempt(c,attempt_id,answer_version_id,creates_formal_evide
                       (attempt['student_id'],attempt_id,'written_marking',json.dumps({'result_state':'AUTO_UNSCORED'})))
             return result,None
         # Feedback-led versions cannot become independent evidence via a caller flag.
-        creates_formal_evidence=bool(creates_formal_evidence and version['version_type'] in {'ORIGINAL_TYPED','CONFIRMED_TRANSCRIPT'})
+        creates_formal_evidence=bool(creates_formal_evidence and result.get('evidence_eligible') is True and version['version_type'] in {'ORIGINAL_TYPED','CONFIRMED_TRANSCRIPT'})
         cur=c.execute("""INSERT INTO written_marking_runs(attempt_id,answer_version_id,proposed_mark,maximum_mark,percentage,
           confidence,result_state,command_verb_met,grader_a_json,grader_b_json,reconciliation_json,feedback_json,
           contradictions_json,misconceptions_json,validation_boundary) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
