@@ -593,6 +593,8 @@ def main() -> None:
     from ux_vnext_overlay.structured_practice_surfaces import apply as apply_structured_practice
     apply_structured_practice(ROOT)
     apply_programme_mastery_repair(ROOT)
+    from ux_vnext_overlay.guided_assessment_surfaces import apply as apply_guided_self_assessment
+    apply_guided_self_assessment(ROOT)
     subprocess.run(
         [sys.executable,'scripts/qualify_ph_multi_programme_projection.py',str(ROOT)],
         check=True,

@@ -1,0 +1,62 @@
+name: Guided self-assessment qualification
+on:
+  pull_request:
+    paths:
+      - 'ux_vnext_overlay/guided_*.py'
+      - 'ux_vnext_overlay/templates/guided_self_review.html'
+      - 'scripts/qualify_guided_self_assessment.py'
+      - 'scripts/qualify_guided_browser.py'
+      - '.github/workflows/guided-self-assessment.yml'
+permissions:
+  contents: read
+jobs:
+  portable:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/qualify_guided_self_assessment.py --portable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guided-${{ matrix.os }}
+          path: guided_qualification.json
+  assembled-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python deploy_ux_vnext.py
+      - run: pip install -r scoremax_runtime_v669b/requirements.txt playwright==1.57.0 cryptography
+      - run: python scripts/qualify_guided_self_assessment.py
+      - name: Qualify mobile and desktop journey
+        shell: bash
+        run: |
+          if command -v google-chrome >/dev/null; then
+            export CHROMIUM_EXECUTABLE="$(command -v google-chrome)"
+          else
+            python -m playwright install --with-deps chromium
+          fi
+          python scripts/qualify_guided_browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guided-browser
+          path: |
+            guided_browser.json
+            guided_qualification.json
+            guided_browser_screenshots/
