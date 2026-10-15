@@ -224,7 +224,7 @@ def apply_assessment_contract_repair(root):
     surface=root/'templates/_learner_question_surface.html';s=surface.read_text()
     line=next(x for x in s.splitlines() if 'pilot_report_issue' in x)
     s=replace_once(s,line,'''{% if qa_sandbox|default(false) and q.membership_id %}
-<a class="question-report-link" href="{{url_for('ux_content_review_staged_question',membership_id=q.membership_id,view='reviewer',batch=batch|default(''))}}#staged-report">⚑ Report this question</a>
+<a class="question-report-link" href="{{url_for('ux_content_review_staged_question',membership_id=q.membership_id,view='reviewer',**(review_filters|default({})))}}#staged-report">⚑ Report this question</a>
 {% else %}
 <a class="question-report-link" href="{{url_for('pilot_report_issue',question_id=q.id,assessment_session_id=assessment_id|default(''),source='assessment_question',page=request.path)}}">⚑ Report this question</a>
 {% endif %}
