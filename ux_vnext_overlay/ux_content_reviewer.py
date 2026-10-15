@@ -129,6 +129,7 @@ def _table_exists(conn, name: str) -> bool:
 
 
 def _staged_rows(conn):
+    receipt = "(SELECT i.receipt_id FROM integration_receipts i WHERE i.payload_checksum_sha256=r.payload_checksum_sha256 AND i.status='ACCEPTED' ORDER BY i.received_at,i.receipt_id LIMIT 1)" if _table_exists(conn,'integration_receipts') else "''"
     exclusion = """
       AND NOT EXISTS (
         SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
@@ -136,13 +137,13 @@ def _staged_rows(conn):
           AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id
       )
     """ if _table_exists(conn,'ph_bridge_staged_withdrawal_exclusions_v6611e') else ""
-    sql = """SELECT m.id membership_id,m.ordinal,m.release_id,m.release_version,
+    sql = f"""SELECT m.id membership_id,m.ordinal,m.release_id,m.release_version,
                     v.question_id,v.question_version_id,v.question_version_number,
                     v.question_checksum_sha256,v.scoremax_projection_json,v.content_json,
                     r.package_checksum_sha256 release_checksum_sha256,
                     r.market_id release_market_id,r.programme_id release_programme_id,
                     r.subject_id release_subject_id,r.chapter_id release_chapter_id,
-                    r.local_status
+                    r.local_status,{receipt} accepted_receipt_id
              FROM integration_ph_release_question_membership m
              JOIN integration_ph_question_version_store v
                ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
@@ -180,10 +181,14 @@ def _staged_question_dict(row):
       'ph_release_id':str(row['release_id'] or ''),
       'ph_release_version':str(row['release_version'] or ''),
       'ph_release_checksum_sha256':str(row['release_checksum_sha256'] or '').lower(),
-      'ph_market_id':str(q.get('ph_market_id') or row['release_market_id'] or ''),
-      'ph_programme_id':str(q.get('ph_programme_id') or row['release_programme_id'] or ''),
-      'ph_subject_id':str(q.get('ph_subject_id') or row['release_subject_id'] or ''),
-      'ph_chapter_id':str(q.get('ph_chapter_id') or row['release_chapter_id'] or ''),
+      # Destination authority belongs to this release membership, not the shared
+      # canonical projection (which can originate in another subject/programme).
+      'ph_market_id':str(row['release_market_id'] or ''),
+      'ph_programme_id':str(row['release_programme_id'] or ''),
+      'ph_subject_id':str(row['release_subject_id'] or ''),
+      'ph_chapter_id':str(row['release_chapter_id'] or ''),
+      'accepted_receipt_id':str(row['accepted_receipt_id'] or ''),
+      'destination_label':_staged_destination_label(row),
       'review_source':'STAGED_POWER_HOUSE',
       'is_withdrawn':False,
       'status':'Staged',
@@ -317,6 +322,49 @@ def _filter_staged_rows(rows, batch: str):
     if batch=='cross50':
         return [r for r in rows if str(r['release_id'] or '').startswith(CROSS50_RELEASE_PREFIX)]
     return list(rows)
+
+
+def _staged_destination_label(row):
+    """Display existing catalogue names only; never infer or assign membership."""
+    programme=str(row['release_programme_id'] or '')
+    subject=str(row['release_subject_id'] or '')
+    chapter=str(row['release_chapter_id'] or '')
+    if programme.upper()=='MDCAT':
+        from ux_catalogue_data import CATALOGUES
+        items=CATALOGUES['mdcat']['subjects'].get(subject.title(),())
+        number=chapter.rsplit('::',1)[-1]
+        for item in items:
+            if str(item['number']).lstrip('0')==number.lstrip('0'):
+                return f"Unit {number} — {item['name']}"
+    return chapter
+
+
+def _staged_review_filters(values):
+    return {k:str(values.get(k) or '').strip() for k in
+            ('batch','programme','destination_subject','destination_chapter','subject','chapter','q')
+            if str(values.get(k) or '').strip()}
+
+
+def _staged_scoped_rows(rows, filters):
+    rows=_filter_staged_rows(rows,filters.get('batch',''))
+    out=[]
+    for row in rows:
+        if any(str(row[col] or '').casefold()!=filters[key].casefold()
+               for key,col in (('programme','release_programme_id'),
+                               ('destination_subject','release_subject_id'),
+                               ('destination_chapter','release_chapter_id')) if filters.get(key)):
+            continue
+        # Preserve old source-filter URLs without confusing them with destination filters.
+        if any(filters.get(k) for k in ('subject','chapter','q')):
+            q=_staged_question_dict(row)
+            if any(str(q.get(k) or '').casefold()!=filters[k].casefold()
+                   for k in ('subject','chapter') if filters.get(k)):
+                continue
+            search=filters.get('q','').casefold()
+            if search and not any(search in str(q.get(k) or '').casefold() for k in ('public_id','question')):
+                continue
+        out.append(row)
+    return out
 
 
 def _ensure_staged_human_review_schema(conn) -> None:
@@ -563,34 +611,39 @@ def install_content_reviewer(app) -> None:
     @app.route('/student/content-review/staged',methods=['GET'],endpoint='ux_content_review_staged')
     def ux_content_review_staged():
         _require_reviewer()
-        subject=(request.args.get('subject') or '').strip()
-        chapter=(request.args.get('chapter') or '').strip()
-        search=(request.args.get('q') or '').strip().lower()
-        batch=(request.args.get('batch') or '').strip().lower()
+        filters=_staged_review_filters(request.args)
+        try: page=max(1,int(request.args.get('page','1')))
+        except (ValueError,TypeError): page=1
         conn=_connect()
         try:
-            batch_rows=_filter_staged_rows(_staged_rows(conn),batch)
+            all_rows=_filter_staged_rows(_staged_rows(conn),filters.get('batch',''))
+            rows=_staged_scoped_rows(all_rows,filters)
+            programmes=sorted({str(r['release_programme_id']) for r in all_rows})
+            programme_rows=_staged_scoped_rows(all_rows,{k:v for k,v in filters.items() if k=='programme'})
+            subjects=sorted({str(r['release_subject_id']) for r in programme_rows})
+            subject_rows=_staged_scoped_rows(programme_rows,{k:v for k,v in filters.items() if k=='destination_subject'})
+            chapters=sorted({(str(r['release_chapter_id']),_staged_destination_label(r)) for r in subject_rows})
+            page_size=120
+            pages=max(1,(len(rows)+page_size-1)//page_size)
+            page=min(page,pages)
             questions=[]
-            for row in batch_rows:
+            for row in rows[(page-1)*page_size:page*page_size]:
                 q=_staged_question_dict(row)
-                if subject and str(q.get('subject') or '').lower()!=subject.lower(): continue
-                if chapter and str(q.get('chapter') or '').lower()!=chapter.lower(): continue
-                if search and search not in str(q.get('public_id') or '').lower() and search not in str(q.get('question') or '').lower(): continue
                 q['review_decision']=_staged_decision(conn,session['user_id'],q['membership_id'])
                 questions.append(q)
-                if len(questions)>=120: break
-            all_q=[_staged_question_dict(r) for r in batch_rows]
-            subjects=sorted({str(q.get('subject') or '') for q in all_q if str(q.get('subject') or '')})
-            chapters=sorted({str(q.get('chapter') or '') for q in all_q if str(q.get('chapter') or '')})
+            human=_staged_decision_stats(conn,session['user_id'],[r['membership_id'] for r in rows])
+            unique=len({r['question_id'] for r in rows})
+            accepted=sum(bool(r['accepted_receipt_id']) for r in rows)
             snap=_staged_boundary_snapshot(conn)
-            human=_staged_decision_stats(conn,session['user_id'],[q['membership_id'] for q in all_q])
             flagged_count=conn.execute("SELECT COUNT(*) FROM pilot_feedback WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT' AND context_json LIKE '%STAGED_POWER_HOUSE%'",(session['user_id'],)).fetchone()[0]
             open_count=conn.execute("SELECT COUNT(*) FROM pilot_feedback WHERE reporter_user_id=? AND category='ACADEMIC_CONTENT' AND context_json LIKE '%STAGED_POWER_HOUSE%' AND status NOT IN ('RESOLVED','CLOSED')",(session['user_id'],)).fetchone()[0]
         finally:
             conn.close()
-        return render_template('ux_staged_content_review.html',questions=questions,subjects=subjects,chapters=chapters,
-          filters={'subject':subject,'chapter':chapter,'q':request.args.get('q') or '','batch':batch},
-          stats={'staged':len(all_q),'membership':len(all_q),'flagged':flagged_count,'open':open_count,
+        return render_template('ux_staged_content_review.html',questions=questions,programmes=programmes,
+          subjects=subjects,chapters=chapters,filters=filters,review_filters=filters,
+          page=page,pages=pages,
+          stats={'staged':len(rows),'all_staged':len(all_rows),'unique':unique,'accepted':accepted,
+                 'membership':len(rows),'flagged':flagged_count,'open':open_count,
                  'reviewed':human['reviewed'],'approved':human['approved'],'rejected':human['rejected'],'remaining':human['remaining']},
           boundary=snap)
 
@@ -598,13 +651,14 @@ def install_content_reviewer(app) -> None:
     def ux_content_review_staged_question(membership_id):
         _require_reviewer()
         mode=(request.args.get('view') or 'student').strip().lower()
-        batch=(request.args.get('batch') or '').strip().lower()
+        filters=_staged_review_filters(request.args)
+        batch=filters.get('batch','')
         if mode not in {'student','reviewer'}: mode='student'
         conn=_connect()
         try:
             q=_staged_question(conn,membership_id)
             if not q: abort(404)
-            rows=_filter_staged_rows(_staged_rows(conn),batch)
+            rows=_staged_scoped_rows(_staged_rows(conn),filters)
             ids=[int(r['membership_id']) for r in rows]
             if int(membership_id) not in ids:
                 abort(404)
@@ -621,29 +675,30 @@ def install_content_reviewer(app) -> None:
         finally:
             conn.close()
         return render_template('ux_staged_content_review_question.html',q=q,mode=mode,flags=flags,reasons=FLAG_REASONS,
-          prev_id=prev_id,next_id=next_id,decision=decision,batch=batch,position=position,total=total,
+          prev_id=prev_id,next_id=next_id,decision=decision,batch=batch,review_filters=filters,position=position,total=total,
           render_supported=render_supported,release_markable=release_markable,release_block_reason=release_block_reason,**render_ctx)
 
     @app.route('/student/content-review/staged/<int:membership_id>/decision',methods=['POST'],endpoint='ux_content_review_staged_decision')
     def ux_content_review_staged_decision(membership_id):
         _require_reviewer()
         decision=(request.form.get('decision') or '').strip().upper()
-        batch=(request.form.get('batch') or '').strip().lower()
+        filters=_staged_review_filters(request.form)
+        batch=filters.get('batch','')
         reason=(request.form.get('reason') or '').strip().upper()
         note=(request.form.get('notes') or '').strip()[:3000]
         if decision not in {'APPROVED','REJECTED'}:
             flash('Choose Approve or Reject.','error')
-            return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+            return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',**filters))
         if decision=='REJECTED' and reason not in FLAG_REASONS:
             flash('Choose a valid rejection reason.','error')
-            return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+            return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',**filters))
         conn=_connect()
         delivery='NOT_REQUIRED'; error=''; code=''
         try:
             q=_staged_question(conn,membership_id)
             if not q:
                 abort(404)
-            batch_rows=_filter_staged_rows(_staged_rows(conn),batch)
+            batch_rows=_staged_scoped_rows(_staged_rows(conn),filters)
             ids=[int(r['membership_id']) for r in batch_rows]
             if int(membership_id) not in ids:
                 abort(404)
@@ -652,10 +707,10 @@ def install_content_reviewer(app) -> None:
                 _release_markable,_release_block_reason=_staged_release_markable(_ctx,q)
                 if not _render_supported:
                     flash('Cannot approve this item: the canonical ScoreMax learner renderer did not produce an interactive response control.','error')
-                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',**filters))
                 if not _release_markable:
                     flash('Cannot approve this item for ScoreMax release: '+_release_block_reason+'.','error')
-                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',**filters))
             now=datetime.utcnow().replace(microsecond=0).isoformat()+'Z'
             if decision=='REJECTED':
                 label,severity=FLAG_REASONS[reason]
@@ -675,7 +730,7 @@ def install_content_reviewer(app) -> None:
                 if not outbox_message_id:
                     conn.rollback()
                     flash('Power House rejection handoff could not establish exact staged lineage. Nothing was changed.','error')
-                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',batch=batch))
+                    return redirect(url_for('ux_content_review_staged_question',membership_id=membership_id,view='reviewer',**filters))
                 conn.execute("""INSERT INTO pilot_feedback(feedback_code,reporter_user_id,category,severity,description,question_id,routing_target,status,context_json,page_path)
                   VALUES(?,?,?,?,?,NULL,'Power House','QUEUED',?,?)""",
                   (code,session['user_id'],'ACADEMIC_CONTENT',severity,description,json.dumps(context,sort_keys=True),page))
@@ -711,8 +766,8 @@ def install_content_reviewer(app) -> None:
         else:
             flash(f'Human QA decision recorded: Rejected. {code} queued for Power House ({delivery}{": "+error if error else ""}).','warning')
         if next_id:
-            return redirect(url_for('ux_content_review_staged_question',membership_id=next_id,view='reviewer',batch=batch))
-        return redirect(url_for('ux_content_review_staged',batch=batch))
+            return redirect(url_for('ux_content_review_staged_question',membership_id=next_id,view='reviewer',**filters))
+        return redirect(url_for('ux_content_review_staged',**filters))
 
 
     @app.route('/student/content-review/staged/<int:membership_id>/flag',methods=['POST'],endpoint='ux_content_review_staged_flag')
