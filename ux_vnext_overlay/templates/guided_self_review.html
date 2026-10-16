@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Review your answer · ScoreMax{% endblock %}
+{% block content %}
+<section class="card"><p class="eyebrow">GUIDED PRACTICE</p><h1>Compare and improve</h1>
+<p>Your answer is saved. This practice has no score and does not change your mastery.</p>
+{% if after_guidance %}<p>This attempt was made after you viewed the approved answer.</p><a href="{{url_for('guided_session_review',assessment_id=parent_session_id)}}">View your earlier attempt</a>{% endif %}</section>
+<form method="post">
+{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}
+{% for view in views %}{% set qi=loop.index0 %}
+<section class="card"><h2>{{view.question}}</h2><p>Original maximum: {{view.maximum_marks|int if view.maximum_marks==view.maximum_marks|int else view.maximum_marks}} marks</p>
+<h3>Your saved answer</h3><p style="white-space:pre-wrap;overflow-wrap:anywhere">{{view.answer}}</p>
+<h3>Approved answer</h3><p style="white-space:pre-wrap;overflow-wrap:anywhere">{{view.model_answer}}</p>
+{% if view.source_guidance %}<details><summary>Original marking guidance</summary>{% for note in view.source_guidance %}<p>{{note}}</p>{% endfor %}</details>{% endif %}
+<h3>Your self-review</h3><p>For each point, choose how well your answer demonstrated it. These choices are your reflections, not awarded marks.</p>
+{% for point in view.points %}{% set field='review_'~qi~'_'~loop.index0 %}
+<fieldset style="min-width:0;margin:1rem 0"><legend>{{point.description}} ({{point.marks|int if point.marks==point.marks|int else point.marks}} original mark{% if point.marks!=1 %}s{% endif %})</legend>
+{% for value,label in [('demonstrated','Demonstrated'),('not_demonstrated','Not demonstrated'),('unsure','Unsure')] %}
+<label class="option"><input type="radio" name="{{field}}" value="{{value}}" required {% if reviews.get(field)==value %}checked{% endif %}>{{label}}</label>
+{% endfor %}</fieldset>{% endfor %}</section>{% endfor %}
+<button class="btn" type="submit">Save self-review</button></form>
+<section class="card"><h2>Try again</h2><p>Write an improved answer in a new attempt. Your earlier answer and self-review stay saved.</p>
+<form method="post" action="{{url_for('guided_retry_session',assessment_id=assessment_id)}}">{% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{csrf_token()}}">{% endif %}<button class="btn" type="submit">Write an improved answer</button></form></section>
+{% endblock %}
