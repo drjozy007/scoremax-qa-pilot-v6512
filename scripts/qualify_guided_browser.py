@@ -23,7 +23,8 @@ def main():
         with sync_playwright() as pw:
             browser=pw.chromium.launch(headless=True,executable_path=os.environ.get('CHROMIUM_EXECUTABLE') or None,args=['--no-sandbox'])
             report['browser']=browser.version
-            question=fixture();question['level']='Foundation';test.insert(question)
+            qid=test.insert(fixture())
+            test.c.execute("UPDATE questions SET level='Foundation' WHERE id=?",(qid,));test.c.commit()
             for width in (390,1365):
                 context=browser.new_context(ignore_https_errors=True,viewport={'width':width,'height':900})
                 user=test.c.execute('SELECT * FROM users WHERE id=?',(test.uid,)).fetchone()
