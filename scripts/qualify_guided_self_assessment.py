@@ -116,6 +116,7 @@ def runtime_suite():
             self.assertIn('Physics',contexts[-1]['subjects'])
             self.assertEqual(contexts[-1]['programmes'],['FSc Part 1'])
             self.assertIn('name="response_mode"',response.text)
+            self.assertIn('aria-label="Practice type"',response.text)
             self.assertIn('GUIDED_SELF_ASSESSMENT" selected',response.text)
             self.assertTrue(any(ch['chapter']=='Measurements' for ch in contexts[-1]['chapters']))
             self.c.execute("UPDATE questions SET active=0 WHERE id=?",(qid,));self.c.commit()

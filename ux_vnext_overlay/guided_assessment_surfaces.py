@@ -161,7 +161,7 @@ def apply(root):
         "{% if assessment.mode=='practice' %}", "{% if assessment.mode=='practice' and exam_meta.get('response_mode')!='GUIDED_SELF_ASSESSMENT' %}"),
         '<div class="question-card">', '''{% if exam_meta.get('response_mode')=='GUIDED_SELF_ASSESSMENT' %}<p>Write your answer first. After you submit, compare it with the approved answer. This practice has no score.</p>{% if exam_meta.get('guided_parent_session_id') %}<p>This is an improvement attempt after viewing the answer.</p>{% endif %}{% endif %}<div class="question-card">'''))
     old_setup='<div class="form-grid"><label>Exam / programme'
-    new_setup="""<div class="form-grid"><label>Practice type<select name="response_mode"><option value="SCORED">Scored practice</option><option value="GUIDED_SELF_ASSESSMENT" {% if prefill.response_mode=='GUIDED_SELF_ASSESSMENT' %}selected{% endif %}>Guided written practice · no score</option></select></label><label>Exam / programme"""
+    new_setup="""<div class="form-grid"><label>Practice type<select name="response_mode" aria-label="Practice type"><option value="SCORED">Scored practice</option><option value="GUIDED_SELF_ASSESSMENT" {% if prefill.response_mode=='GUIDED_SELF_ASSESSMENT' %}selected{% endif %}>Guided written practice · no score</option></select></label><label>Exam / programme"""
     # The accepted materializer can retain templates on a repeat build. Only the
     # exact completed insertion is idempotent; every other anchor drift fails.
     edit('templates/test_setup.html', lambda s: s if s.count(new_setup)==1 else replace_once(s,old_setup,new_setup))
