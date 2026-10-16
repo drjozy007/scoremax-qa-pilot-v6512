@@ -593,6 +593,8 @@ def main() -> None:
     from ux_vnext_overlay.structured_practice_surfaces import apply as apply_structured_practice
     apply_structured_practice(ROOT)
     apply_programme_mastery_repair(ROOT)
+    from ux_vnext_overlay.guided_assessment_surfaces import apply as apply_guided_self_assessment
+    apply_guided_self_assessment(ROOT)
     subprocess.run(
         [sys.executable,'scripts/qualify_ph_multi_programme_projection.py',str(ROOT)],
         check=True,
@@ -609,6 +611,16 @@ def main() -> None:
         if old not in text: raise SystemExit('SCOREMAX_QA_AGENTS_ADMIN_POST_INIT_ANCHOR_MISSING')
         text=text.replace(old,new,1);production.write_text(text,encoding='utf-8')
     print('SCOREMAX_QA_AGENTS_ADMIN_BUILD_PASS existing_mastery_lab=true release_authority=false mastery_authority=false',flush=True)
+    for name in ('PH_SM_APPROVED_CONTENT_V1.schema.json', 'PH_SM_APPROVED_CONTENT_PACKAGE_V1.schema.json', 'PH_SM_APPROVED_CONTENT_MANIFEST_V1.schema.json'):
+        governed=Path('ux_vnext_overlay/source_market_v1_2_contracts')/name
+        assembled=ROOT/'integration_contracts/v1_2_0'/name
+        # The source-market contracts own this version. Install them after every
+        # runtime overlay so a clean build cannot reintroduce richer-market
+        # lineage/interaction requirements into an existing source-market release.
+        shutil.copy2(governed,assembled)
+        if governed.read_bytes()!=assembled.read_bytes():
+            raise SystemExit('SCOREMAX_SOURCE_MARKET_SCHEMA_DRIFT:'+name)
+    print('SCOREMAX_SOURCE_MARKET_SCHEMA_FINAL_GATE_PASS source=1.2.0 package=true manifest=true envelope=true',flush=True)
 
 
 if __name__ == '__main__':

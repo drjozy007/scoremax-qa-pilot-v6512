@@ -28,6 +28,10 @@ def fn(text,name):
 
 def apply_programme_mastery_repair(root):
     root=Path(root);here=Path(__file__).parent
+    commercial=root/'commercial_access_engine.py'
+    coverage=replace_function(commercial.read_text(),'programme_subjects',
+        donors(here/'programme_commercial_scope_v2.py')['programme_subjects'])
+    compile(coverage,str(commercial),'exec');commercial.write_text(coverage)
     ap=root/'app.py';a=ap.read_text()
     a=add_functions(a,donors(here/'programme_evidence_v3.py'))
     a=add_functions(a,donors(here/'mastery_policy_v3.py'))
