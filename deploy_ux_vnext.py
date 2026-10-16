@@ -621,6 +621,8 @@ def main() -> None:
         if governed.read_bytes()!=assembled.read_bytes():
             raise SystemExit('SCOREMAX_SOURCE_MARKET_SCHEMA_DRIFT:'+name)
     print('SCOREMAX_SOURCE_MARKET_SCHEMA_FINAL_GATE_PASS source=1.2.0 package=true manifest=true envelope=true',flush=True)
+    from ux_vnext_overlay.native_manifest_pull_v1 import apply as apply_native_manifest_pull
+    apply_native_manifest_pull(ROOT)
 
 
 if __name__ == '__main__':
