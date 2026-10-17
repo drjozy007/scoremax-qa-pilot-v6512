@@ -128,6 +128,152 @@ class ExistingPHCompatibility(unittest.TestCase):
         current=self.c.execute('SELECT * FROM questions WHERE id=?',(q['id'],)).fetchone()
         self.assertEqual(integration.pinned_question(session,q['id'],current)['programme'],'FSc Part 2')
         self.assertEqual(session['ph_question_pins_json'],pins)
+    def shared_memberships(self):
+        """One immutable school question, separately governed exam destinations."""
+        source=self.envelope();self.admit(source);self.assertEqual(self.activate(source)['status'],'ACTIVE')
+        releases={'FSc Part 2':source}
+        for programme in ('MDCAT','ECAT'):
+            e=copy.deepcopy(source);e['message_id']+='::'+programme;e['idempotency_key']+='::'+programme
+            e['payload']['release'].update(release_id=source['payload']['release']['release_id']+'::'+programme,
+                programme_id=programme,chapter_id=programme+'::CHEMISTRY::UNIT::02')
+            self.rehash(e);self.admit(e);self.assertEqual(self.activate(e)['status'],'ACTIVE')
+            releases[programme]=e
+        self.assertEqual(self.c.execute('SELECT COUNT(*) FROM questions').fetchone()[0],1)
+        self.assertEqual(self.c.execute('SELECT COUNT(*) FROM integration_ph_question_version_store').fetchone()[0],1)
+        return releases,self.c.execute('SELECT * FROM questions').fetchone()
+    def test_shared_question_pins_the_selected_governed_release_and_saves_submits(self):
+        releases,q=self.shared_memberships();before=dict(self.qversion(releases['FSc Part 2']))
+        receipts=[tuple(r) for r in self.c.execute('SELECT * FROM integration_inbound_messages ORDER BY message_id')]
+        for programme,e in releases.items():
+            with self.subTest(programme=programme):
+                sql,args=sm._programme_scope_sql(sm._programme_aliases(programme),'q')
+                self.assertEqual([r[0] for r in self.c.execute('SELECT q.id FROM questions q WHERE '+sql,args)],[q['id']])
+                aid=sm.create_assessment_session(self.c,self.case.uid,'practice',None,[q['id']],{'programme':programme,'subject':'Chemistry'})
+                session=self.c.execute('SELECT * FROM assessment_sessions WHERE id=?',(aid,)).fetchone()
+                pin=json.loads(session['ph_question_pins_json'])[str(q['id'])]
+                self.assertEqual(pin['release_id'],e['payload']['release']['release_id'])
+                self.assertEqual(pin['release_checksum_sha256'],e['payload']['release']['package_checksum_sha256'])
+                self.assertEqual(self.case.client.get(f'/test/session/{aid}',base_url='https://localhost').status_code,200)
+                self.assertEqual(self.case.post(aid,{'answer':'B'}).status_code,302)
+                self.assertEqual(self.case.saved(aid)[str(q['id'])],'B')
+                self.assertEqual(self.case.client.get(f'/test/session/{aid}',base_url='https://localhost').status_code,200)
+                self.assertEqual(self.case.submit(aid).status_code,302)
+                self.assertEqual(self.case.submit(aid).status_code,302)
+                attempt=self.case.attempt(aid);self.assertEqual(attempt['programme'],programme);self.assertEqual(attempt['score'],100)
+                self.assertEqual(self.c.execute('SELECT COUNT(*) FROM attempts WHERE assessment_session_id=?',(aid,)).fetchone()[0],1)
+                answers=sm.learner_answer_evidence(self.c,self.case.uid,programme,attempt_id=attempt['id'])
+                self.assertEqual(len(answers),1);self.assertEqual(answers[0]['ph_release_id'],pin['release_id'])
+        after=dict(self.qversion(releases['FSc Part 2']))
+        for k in ('content_json','curriculum_json','scoremax_projection_json','question_checksum_sha256'):
+            self.assertEqual(before[k],after[k],k)
+        self.assertEqual(receipts,[tuple(r) for r in self.c.execute('SELECT * FROM integration_inbound_messages ORDER BY message_id')])
+    def test_native_scored_selection_and_subject_shortcut_use_selected_membership(self):
+        releases,q=self.shared_memberships()
+        # Availability is enabled only in this disposable fixture. Live gates
+        # are independently preserved by the programme-navigation regressions.
+        self.c.execute("UPDATE feature_availability SET state='LIVE' WHERE feature_code IN ('programme_fsc2','programme_mdcat')")
+        self.c.execute("UPDATE users SET access_override_code='full_access' WHERE id=?",(self.case.uid,))
+        for programme,e in releases.items():
+            self.c.execute("UPDATE users SET academic_level=?,active_programme=?,subjects='Chemistry' WHERE id=?",(programme,programme,self.case.uid));self.c.commit()
+            for scope in ('full','chapter','multi','half'):
+                with self.subTest(programme=programme,scope=scope):
+                    r=self.case.client.post('/test/start',data={'_csrf_token':'synthetic-csrf','subject':'Chemistry','scope':scope,
+                        'programme':programme,'count':'1','mode':'practice','chapter':e['payload']['release']['chapter_id'],
+                        'chapters':[e['payload']['release']['chapter_id']]},base_url='https://localhost')
+                    self.assertEqual(r.status_code,302);self.assertRegex(r.location,r'/test/session/\d+$')
+                    aid=int(r.location.rsplit('/',1)[1])
+                    row=self.c.execute('SELECT * FROM assessment_sessions WHERE id=?',(aid,)).fetchone()
+                    self.assertEqual(json.loads(row['meta_json'])['programme'],programme)
+                    self.assertEqual(json.loads(row['ph_question_pins_json'])[str(q['id'])]['release_id'],e['payload']['release']['release_id'])
+            r=self.case.client.post('/student/test-me',data={'_csrf_token':'synthetic-csrf','subject':'Chemistry','count':'10'},base_url='https://localhost')
+            self.assertEqual(r.status_code,302);self.assertRegex(r.location,r'/test/session/\d+$')
+    def test_invalid_native_assessment_counts_fail_safely_before_any_session(self):
+        before=self.c.execute('SELECT COUNT(*) FROM assessment_sessions').fetchone()[0]
+        for path in ('/test/start','/student/test-me'):
+            for value in ('NaN','Infinity','2.5','1e309','x'):
+                with self.subTest(path=path,count=value):
+                    r=self.case.client.post(path,data={'_csrf_token':'synthetic-csrf','subject':'Chemistry','scope':'full','count':value},base_url='https://localhost')
+                    self.assertEqual(r.status_code,302);self.assertTrue(r.location.endswith('/test/setup'))
+        self.assertEqual(self.c.execute('SELECT COUNT(*) FROM assessment_sessions').fetchone()[0],before)
+    def test_school_memberships_reuse_governed_year_for_selection_and_submit(self):
+        variants=[('FSC_PART_I','11','FSc Part 1'),('FSC_PART_II','12','FSc Part 2'),
+            ('FSc / Intermediate','11','FSc Part 1'),('FSc / Intermediate','12','FSc Part 2'),
+            ('Pakistan > FSc / Intermediate > Grade 12 > Biology','12','FSc Part 2')]
+        for n,(raw,grade,expected) in enumerate(variants):
+            with self.subTest(source=raw,grade=grade):
+                e=self.envelope(programme=raw,grade=grade,display='FSc / Intermediate' if n==4 else raw)
+                e['message_id']+='::'+str(n);e['idempotency_key']+='::'+str(n)
+                e['payload']['release']['release_id']+='::'+str(n)
+                q=e['payload']['questions'][0];q['question_id']+='::'+str(n);q['question_version_id']+='::'+str(n)
+                if n==4:
+                    q['curriculum']['subject_id']='BIOLOGY';q['curriculum']['display']['subject']='Biology'
+                    e['payload']['release']['subject_id']='BIOLOGY'
+                self.rehash(e);self.admit(e);original=dict(self.qversion(e));self.assertEqual(self.activate(e)['status'],'ACTIVE')
+                row=self.c.execute('SELECT * FROM questions WHERE ph_question_id=?',(q['question_id'],)).fetchone()
+                sql,args=sm._programme_scope_sql(sm._programme_aliases(expected),'q')
+                self.assertIn(row['id'],[r[0] for r in self.c.execute('SELECT q.id FROM questions q WHERE '+sql,args)])
+                self.assertIn(row['subject'],sm.commercial_access.programme_subjects(self.c,expected))
+                import ux_catalogue_browser as catalogue
+                counts=catalogue._release_scope_counts(self.c,'year11' if expected=='FSc Part 1' else 'year12',row['subject'])
+                self.assertGreaterEqual(counts.get(e['payload']['release']['chapter_id'],0),1)
+                wrong='FSc Part 2' if expected=='FSc Part 1' else 'FSc Part 1'
+                self.assertIsNone(sm._ph_programme_scope_context(self.c,row['id'],wrong))
+                aid=sm.create_assessment_session(self.c,self.case.uid,'practice',None,[row['id']],{'programme':expected})
+                other=self.case.client_for('syn-2')
+                self.assertIn(other.get(f'/test/session/{aid}',base_url='https://localhost').status_code,(302,404))
+                self.assertEqual(self.case.submit(aid,other).status_code,302);self.assertIsNone(self.case.attempt(aid))
+                self.assertEqual(self.case.post(aid,{'answer':'B'}).status_code,302)
+                self.assertEqual(self.case.submit(aid).status_code,302)
+                self.assertEqual(self.case.attempt(aid)['score'],100)
+                after=dict(self.qversion(e))
+                for k in ('curriculum_json','content_json','scoremax_projection_json','question_checksum_sha256'):
+                    self.assertEqual(original[k],after[k])
+    def test_membership_fails_closed_for_missing_authority_checksum_or_ambiguous_year(self):
+        releases,q=self.shared_memberships();e=releases['FSc Part 2'];rid=e['payload']['release']['release_id']
+        def blocked():
+            sql,args=sm._programme_scope_sql(sm._programme_aliases('FSc Part 2'),'q')
+            self.assertEqual(list(self.c.execute('SELECT q.id FROM questions q WHERE '+sql,args)),[])
+            with self.assertRaises(sm.question_contracts.QuestionContractError):
+                sm.create_assessment_session(self.c,self.case.uid,'practice',None,[q['id']],{'programme':'FSc Part 2'})
+        self.c.execute("UPDATE integration_ph_product_activation_authorizations SET activation_status='REVOKED' WHERE release_id=?",(rid,));self.c.commit();blocked()
+        self.c.execute("UPDATE integration_ph_product_activation_authorizations SET activation_status='ACTIVATED' WHERE release_id=?",(rid,))
+        self.c.execute("UPDATE integration_ph_content_releases SET package_checksum_sha256=? WHERE release_id=?",('0'*64,rid));self.c.commit();blocked()
+        self.c.execute('UPDATE integration_ph_content_releases SET package_checksum_sha256=? WHERE release_id=?',(e['payload']['release']['package_checksum_sha256'],rid))
+        cur=json.loads(self.qversion(e)['curriculum_json']);cur['display']['grade_year']='11'
+        self.c.execute('UPDATE integration_ph_question_version_store SET curriculum_json=?',(json.dumps(cur),));self.c.commit();blocked()
+    def test_staged_withdrawn_and_excluded_memberships_cannot_enter_new_sessions(self):
+        releases,q=self.shared_memberships()
+        for programme,status in [('FSc Part 2','STAGED'),('MDCAT','WITHDRAWN')]:
+            rid=releases[programme]['payload']['release']['release_id']
+            self.c.execute('UPDATE integration_ph_content_releases SET local_status=? WHERE release_id=?',(status,rid));self.c.commit()
+            with self.assertRaisesRegex(sm.question_contracts.QuestionContractError,'PH_PROGRAMME_MEMBERSHIP_REQUIRED'):
+                sm.create_assessment_session(self.c,self.case.uid,'practice',None,[q['id']],{'programme':programme})
+        rid=releases['ECAT']['payload']['release']['release_id']
+        self.c.execute('''INSERT INTO ph_bridge_staged_withdrawal_exclusions_v6611e
+            (release_id,release_version,question_id,question_version_id,question_checksum_sha256,
+             item_public_id,export_public_id,population_sha256,item_sha256,created_at)
+            VALUES(?,?,?,?,?,'SYN-ITEM','SYN-EXPORT',?,?,?)''',
+            (rid,'1',q['ph_question_id'],q['ph_question_version_id'],q['ph_question_checksum_sha256'],
+             '0'*64,'0'*64,datetime.now(timezone.utc).isoformat()));self.c.commit()
+        with self.assertRaisesRegex(sm.question_contracts.QuestionContractError,'PH_PROGRAMME_MEMBERSHIP_REQUIRED'):
+            sm.create_assessment_session(self.c,self.case.uid,'practice',None,[q['id']],{'programme':'ECAT'})
+    def test_new_version_cannot_borrow_old_membership_and_existing_pin_stays_frozen(self):
+        e=self.envelope();self.admit(e);self.activate(e);q=self.c.execute('SELECT * FROM questions').fetchone()
+        aid=sm.create_assessment_session(self.c,self.case.uid,'practice',None,[q['id']],{'programme':'FSc Part 2'})
+        pins=self.c.execute('SELECT ph_question_pins_json FROM assessment_sessions WHERE id=?',(aid,)).fetchone()[0]
+        next_e=copy.deepcopy(e);next_e['message_id']+='::new';next_e['idempotency_key']+='::new'
+        next_e['payload']['release'].update(release_id=e['payload']['release']['release_id']+'::new',programme_id='MDCAT')
+        v=next_e['payload']['questions'][0];v.update(question_version_id=v['question_version_id']+'::new',question_version_number=2,
+            supersedes_question_version_id=v['question_version_id']);v['content']['stem']='[SYNTHETIC] Updated governed version.'
+        self.rehash(next_e);self.admit(next_e);self.assertEqual(self.activate(next_e)['status'],'ACTIVE')
+        sql,args=sm._programme_scope_sql(sm._programme_aliases('FSc Part 2'),'q')
+        self.assertEqual(list(self.c.execute('SELECT q.id FROM questions q WHERE '+sql,args)),[])
+        with self.assertRaises(sm.question_contracts.QuestionContractError):
+            sm.create_assessment_session(self.c,self.case.uid,'practice',None,[q['id']],{'programme':'FSc Part 2'})
+        self.assertEqual(self.case.post(aid,{'answer':'B'}).status_code,302)
+        self.assertEqual(self.case.submit(aid).status_code,302)
+        self.assertEqual(self.case.attempt(aid)['score'],100)
+        self.assertEqual(self.case.attempt(aid)['ph_question_pins_json'],pins)
     def test_qa_without_mastery_metadata_is_accepted_but_cannot_activate(self):
         e=self.envelope('1.3.0');q=e['payload']['questions'][0]
         q['curriculum'].update(topic_id=None,subtopic_id=None,learning_outcome_ids=[],teaching_learning_outcome_ids=[])

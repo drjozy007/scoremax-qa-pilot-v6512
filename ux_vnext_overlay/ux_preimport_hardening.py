@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ast
 import re
+import textwrap
 from pathlib import Path
 
 PRIMARY_SEED_CONDITION="if preexisting_question_count==0 and content_seed_policy.demo_seed_allowed(SCOREMAX_ENV):"
@@ -171,6 +173,133 @@ def set_account_status(c, *, user_id: int, status: str, changed_at: str) -> None
         text=text.replace(old,new,1)
     return text
 
+
+def _guard_account_route_connection(source: str, *, endpoint: str, role_argument=False) -> str:
+    """Apply the existing caller-owned rollback/close contract to one route block."""
+    lines=source.splitlines(keepends=True)
+    starts=[i for i,line in enumerate(lines) if 'c=db()' in line]
+    if len(starts)!=1:raise SystemExit('ACCOUNT_CONNECTION_OWNER_ANCHOR_MISMATCH')
+    start=starts[0];line=lines[start];indent=line[:len(line)-len(line.lstrip())]
+    before,after=line.strip().split('c=db()',1)
+    end=start+1
+    while end<len(lines) and (not lines[end].strip() or len(lines[end])-len(lines[end].lstrip())>=len(indent)):
+        end+=1
+    body=([indent+after.lstrip('; ')+'\n'] if after.lstrip('; ') else [])+lines[start+1:end]
+    clean=[]
+    for item in body:
+        if item.strip()=='c.close()':continue
+        clean.append(item.replace('c.close(); ','').replace('; c.close()',''))
+    target="url_for('"+endpoint+"'"+(",role=role" if role_argument else '')+")"
+    guarded=(indent+'c=db()\n'+indent+'try:\n'+textwrap.indent(''.join(clean),'    ')+
+        '\n'+indent+'except Exception as exc:\n'+indent+'    c.rollback()\n'+
+        indent+'    from werkzeug.exceptions import HTTPException\n'+
+        indent+'    if isinstance(exc,HTTPException):raise\n'+
+        indent+"    app.logger.error('Account request failed safely (%s).',type(exc).__name__)\n"+
+        indent+"    flash('We could not complete that request. Please try again.','error')\n"+
+        indent+'    return redirect('+target+')\n'+indent+'finally:\n'+indent+'    c.close()\n')
+    prefix=indent+before.rstrip('; ')+'\n' if before else ''
+    changed=''.join(lines[:start])+prefix+guarded+''.join(lines[end:])
+    compile(changed,'account_connection_owner','exec')
+    return changed
+
+
+def _harden_registration_boundary(root: Path, text: str) -> str:
+    """Keep registration in its native route, with the shared mutation lifecycle."""
+    engine_path=root/'account_security_engine.py'
+    engine=engine_path.read_text(encoding='utf-8')
+    if "request.environ['scoremax.created_account_id']=uid" in text:
+        if 'def normalize_registration_email(' not in engine:
+            raise SystemExit('REGISTRATION_EMAIL_VALIDATOR_MISSING')
+        return text
+    engine += '''
+
+def normalize_registration_email(value):
+    """Validate the supported mailbox shape before persisting an account identity."""
+    import re
+    email=str(value or '').strip().lower()
+    if len(email)>254 or email.count('@')!=1:
+        raise ValueError('INVALID_REGISTRATION_EMAIL')
+    local,domain=email.split('@')
+    if (not local or len(local)>64 or local.startswith('.') or local.endswith('.')
+            or '..' in local or not re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+",local)
+            or not domain or len(domain)>253):
+        raise ValueError('INVALID_REGISTRATION_EMAIL')
+    labels=domain.split('.')
+    if any(not re.fullmatch(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?',label) for label in labels):
+        raise ValueError('INVALID_REGISTRATION_EMAIL')
+    return email
+'''
+    compile(engine,str(engine_path),'exec')
+    engine_path.write_text(engine,encoding='utf-8')
+    node=next(n for n in ast.parse(text).body if isinstance(n,ast.FunctionDef) and n.name=='register')
+    original=ast.get_source_segment(text,node)
+    changed=original
+
+    def replace(old,new):
+        nonlocal changed
+        if changed.count(old)!=1:
+            raise SystemExit('REGISTRATION_BOUNDARY_ANCHOR_MISMATCH:'+old[:60])
+        changed=changed.replace(old,new,1)
+
+    replace('    pending_referral=pending_referral_for_role(c,role)',
+            "    pending_referral=pending_referral_for_role(c,role)\n"
+            "    if request.method=='POST' and any(len(request.form.getlist(key))>1 for key in ('email','password','academic_level')):\n"
+            "        flash('Submit one email, password and programme selection.','error')\n"
+            "        return redirect(url_for('register',role=role))")
+
+    replace("        requested_programme=(request.form.get('academic_level','') if request.method=='POST' else request.args.get('programme','')).strip()",
+            "        requested_programme=canonical_programme(request.form.get('academic_level','') if request.method=='POST' else request.args.get('programme',''))\n"
+            "        if requested_programme and requested_programme not in {item['value'] for item in STUDENT_PROGRAMME_CHOICES}:\n"
+            "            flash('Choose a supported programme, or leave study details for later.','error')\n"
+            "            return redirect(url_for('register',role=role))")
+    replace("        email=request.form.get('email','').strip().lower()",
+            "        try:\n"
+            "            email=account_security.normalize_registration_email(request.form.get('email',''))\n"
+            "        except ValueError:\n"
+            "            flash('Enter a valid personal email address.','error')\n"
+            "            return redirect(url_for('register',role=role))")
+    duplicate='''        if c.execute("SELECT 1 FROM users WHERE lower(COALESCE(email,''))=?",(email,)).fetchone():'''
+    replace(duplicate,
+            "        account_programme=requested_programme if role=='student' else request.form.get('academic_level','').strip()\n"
+            "        password_hash=generate_password_hash(password)\n"
+            "        sqlite_mutation.begin_immediate(c)\n"+duplicate)
+    replace("c.close(); flash('If this email can be used for a new ScoreMax account,", "c.rollback(); flash('If this email can be used for a new ScoreMax account,")
+    replace('email,temp_username,generate_password_hash(password),','email,temp_username,password_hash,')
+    changed=changed.replace("request.form.get('academic_level','').strip()","account_programme")
+    # The assignment's non-student fallback must still read its existing form field.
+    changed=changed.replace("account_programme=requested_programme if role=='student' else account_programme",
+                            "account_programme=requested_programme if role=='student' else request.form.get('academic_level','').strip()")
+    replace('        uid=cur.lastrowid',
+            "        uid=cur.lastrowid\n"
+            "        email_policy=request.environ.get('scoremax.registration_email_policy',{})\n"
+            "        if role=='student' and email_policy.get('send'):\n"
+            "            c.execute(\"UPDATE users SET email_verified=0,email_verified_at='',account_status=? WHERE id=?\",\n"
+            "                      ('pending_email_verification' if email_policy.get('required') else 'active',uid))")
+    replace("            session.pop('pending_referral',None)\n",'')
+    replace('        c.commit(); c.close()',
+            "        c.commit()\n"
+            "        request.environ['scoremax.created_account_id']=uid\n"
+            "        if pending_referral:session.pop('pending_referral',None)")
+    changed=_guard_account_route_connection(changed,endpoint='register',role_argument=True)
+    compile(changed,'registration_boundary','exec')
+    return text.replace(original,changed,1)
+
+
+def _harden_reset_connection_owners(text: str) -> str:
+    for name in ('forgot_password','reset_password'):
+        node=next(n for n in ast.parse(text).body if isinstance(n,ast.FunctionDef) and n.name==name)
+        original=ast.get_source_segment(text,node)
+        if 'Account request failed safely' in original:continue
+        changed=original
+        if name=='reset_password':
+            changed=changed.replace('        now_dt=datetime.now()',
+                '        password_hash=generate_password_hash(password)\n        now_dt=datetime.now()',1)
+            changed=changed.replace('password_hash=generate_password_hash(password),changed_at=now_reset',
+                                    'password_hash=password_hash,changed_at=now_reset',1)
+        changed=_guard_account_route_connection(changed,endpoint='forgot_password')
+        text=text.replace(original,changed,1)
+    return text
+
 def apply_preimport_hardening(root: Path) -> None:
     app_path=root/'app.py'
     text=app_path.read_text(encoding='utf-8')
@@ -181,6 +310,8 @@ def apply_preimport_hardening(root: Path) -> None:
     text=_harden_admin_payment_plan_validation(text)
     text=_scrub_credential_logging(text)
     text=_harden_account_revocation(root,text)
+    text=_harden_registration_boundary(root,text)
+    text=_harden_reset_connection_owners(text)
     app_path.write_text(text,encoding='utf-8')
     _repair_digital_coach_mock_state(root)
     _remove_inactive_reviewer_runtime_templates(root)

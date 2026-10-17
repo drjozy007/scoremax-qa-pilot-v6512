@@ -1,4 +1,6 @@
 from __future__ import annotations
+# Load the actual WSGI installers before exercising native routes.
+from scoremax_production import application
 import app as sm
 
 def cols(c,t): return {r['name'] for r in c.execute(f'PRAGMA table_info({t})').fetchall()}
