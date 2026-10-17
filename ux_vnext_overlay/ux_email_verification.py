@@ -63,6 +63,11 @@ def _required():
     return os.environ.get('SCOREMAX_REQUIRE_EMAIL_VERIFICATION','0').strip()=='1'
 
 
+def _send_enabled():
+    # Sending can be qualified without enabling mandatory login enforcement.
+    return _required() or os.environ.get('SCOREMAX_SEND_EMAIL_VERIFICATION','0').strip()=='1'
+
+
 def _preview_enabled():
     return os.environ.get('SCOREMAX_STAGING_EMAIL_VERIFICATION_PREVIEW','0').strip()=='1'
 
@@ -127,7 +132,8 @@ def _make_token(conn,user_id):
 
 
 def _verification_link(token):
-    return url_for('ux_verify_email',token=token,_external=True)
+    from app import scoremax_public_url
+    return scoremax_public_url('ux_verify_email',token=token)
 
 
 def _send_verification(send_email,user,token):
@@ -139,9 +145,11 @@ def _send_verification(send_email,user,token):
     if _preview_enabled() and os.environ.get('SCOREMAX_SMTP_HOST','').strip().lower() in {'','localhost','127.0.0.1'}:
         return False
     link=_verification_link(token)
+    if not link:
+        return False
     body=(
         f"Hello {user['full_name'] or 'there'},\n\n"
-        "Please verify your email address to activate your ScoreMax account.\n\n"
+        "Please verify the email address for your ScoreMax account.\n\n"
         f"Verify email: {link}\n\n"
         f"This link expires in {TOKEN_TTL_HOURS} hours. If you did not create a ScoreMax account, you can ignore this message.\n\n"
         "ScoreMax"
@@ -154,34 +162,53 @@ def install_email_verification(app, send_email) -> None:
         return
     _ensure_schema_and_backfill()
 
+    @app.after_request
+    def _verification_safe_access_path(response):
+        # Gunicorn's safe access format logs route templates, never token URLs.
+        rule=request.url_rule
+        request.environ['scoremax.safe_path']=rule.rule if rule else '[unmatched]'
+        return response
+
     original_register=app.view_functions.get('register')
     original_login=app.view_functions.get('login')
     if original_register is None or original_login is None:
         raise RuntimeError('UX_EMAIL_VERIFICATION_AUTH_ROUTES_MISSING')
 
     def register_wrapper(role):
+        candidate=_send_enabled() and request.method=='POST' and role=='student'
+        email=str(request.form.get('email') or '').strip().lower() if candidate else ''
+        existed=False
+        if email:
+            probe=_connect()
+            try:
+                existed=probe.execute("SELECT 1 FROM users WHERE lower(COALESCE(email,''))=?",(email,)).fetchone() is not None
+            finally:
+                probe.close()
         response=original_register(role)
-        if not _required() or request.method!='POST' or role!='student':
+        if not candidate or not email or existed:
             return response
         status=int(getattr(response,'status_code',200) or 200)
         if status not in {301,302,303,307,308}:
             return response
-        email=str(request.form.get('email') or '').strip().lower()
-        if not email:
-            return response
         conn=_connect()
         try:
             user=_resolve(conn,email)
-            if not user or _is_exempt(conn,user):
+            if (not user or user['role']!='student' or _is_exempt(conn,user)
+                    or not user['password_hash']
+                    or not check_password_hash(user['password_hash'],request.form.get('password',''))):
                 return response
             token=_make_token(conn,user['id'])
-            conn.execute("UPDATE users SET email_verified=0,email_verified_at='',account_status='pending_email_verification' WHERE id=?",(user['id'],))
+            conn.execute("UPDATE users SET email_verified=0,email_verified_at='' WHERE id=?",(user['id'],))
+            if _required():
+                conn.execute("UPDATE users SET account_status='pending_email_verification' WHERE id=?",(user['id'],))
             conn.commit()
             # Re-read after commit so the email function gets the latest row shape.
             user=conn.execute('SELECT * FROM users WHERE id=?',(user['id'],)).fetchone()
             sent=_send_verification(send_email,user,token)
         finally:
             conn.close()
+        if not _required():
+            return response
         flash('Account created. Verify your email before logging in.','success')
         kwargs={'identity':email,'sent':'1' if sent else '0'}
         if _preview_enabled() and not sent:
@@ -208,22 +235,26 @@ def install_email_verification(app, send_email) -> None:
 
     @app.route('/verify-email/<token>',methods=['GET'],endpoint='ux_verify_email')
     def ux_verify_email(token):
-        if not _required():
-            flash('Email verification is not currently required.','info')
-            return redirect(url_for('login'))
         digest=_token_hash(token)
         conn=_connect()
         try:
             user=conn.execute("SELECT * FROM users WHERE email_verification_token_hash=? LIMIT 1",(digest,)).fetchone()
-            if not user:
+            if not user or str(user['account_status'] or 'active') not in {'','active','pending_email_verification'}:
                 flash('That verification link is invalid or has already been used.','error')
                 return redirect(url_for('login'))
             expires=_parse_dt(user['email_verification_expires_at'])
-            if not expires or expires<_utcnow():
+            if not expires or expires<=_utcnow():
                 flash('That verification link has expired. Request a new one below.','error')
                 return redirect(url_for('ux_verification_pending',identity=user['email'],sent='0'))
-            conn.execute("""UPDATE users SET email_verified=1,email_verified_at=?,email_verification_token_hash='',email_verification_expires_at='',account_status='active' WHERE id=?""",(_iso(_utcnow()),user['id']))
+            now=_iso(_utcnow())
+            claimed=conn.execute("""UPDATE users SET email_verified=1,email_verified_at=?,email_verification_token_hash='',email_verification_expires_at='',account_status='active'
+              WHERE id=? AND email_verification_token_hash=?
+              AND julianday(email_verification_expires_at)>julianday(?)
+              AND COALESCE(account_status,'active') IN ('','active','pending_email_verification')""",(now,user['id'],digest,now))
             conn.commit()
+            if claimed.rowcount!=1:
+                flash('That verification link is invalid or has already been used.','error')
+                return redirect(url_for('login'))
         finally:
             conn.close()
         flash('Email verified. You can now log in to ScoreMax.','success')
@@ -248,11 +279,13 @@ def install_email_verification(app, send_email) -> None:
     def ux_resend_verification():
         identity=str(request.form.get('identity') or '').strip()
         sent=False; preview_token=''
-        if _required():
+        if _send_enabled():
             conn=_connect()
             try:
+                conn.execute('BEGIN IMMEDIATE')
                 user=_resolve(conn,identity)
-                if user and not _is_exempt(conn,user) and int(user['email_verified'] or 0)!=1:
+                if (user and not _is_exempt(conn,user) and int(user['email_verified'] or 0)!=1
+                        and str(user['account_status'] or 'active') in {'','active','pending_email_verification'}):
                     last=_parse_dt(user['email_verification_sent_at'])
                     if not last or (_utcnow()-last).total_seconds()>=RESEND_COOLDOWN_SECONDS:
                         token=_make_token(conn,user['id']); conn.commit()
