@@ -69,6 +69,45 @@ class ExistingPHCompatibility(unittest.TestCase):
     def test_grade_from_existing_display_is_sufficient(self):
         cur={'programme_id':'FSc / Intermediate','display':{'grade_year':'Grade 12'}}
         self.assertEqual(sm.question_contracts.programme_from_curriculum(cur),'FSc Part 2')
+    def test_existing_biology_opaque_scope_uses_explicit_qualification_and_grade(self):
+        raw='Pakistan > FSc / Intermediate > Grade 12 > Biology'
+        e=self.envelope(programme=raw,grade='Grade 12',display=raw)
+        q=e['payload']['questions'][0]
+        q['curriculum'].update(qualification_id='FSc / Intermediate',subject_id='Biology')
+        q['curriculum']['display']['subject']='Biology';e['payload']['release']['subject_id']='Biology'
+        original=copy.deepcopy(q['curriculum']);self.rehash(e);self.admit(e)
+        stored=dict(self.qversion(e));projection=json.loads(stored['scoremax_projection_json'])
+        self.assertEqual(projection['programme'],'FSc Part 2')
+        self.assertEqual(projection['ph_programme_id'],raw)
+        self.assertEqual(self.activate(e)['status'],'ACTIVE')
+        row=self.c.execute('SELECT * FROM questions').fetchone()
+        aid=sm.create_assessment_session(self.c,self.case.uid,'practice',None,[row['id']],{'programme':'FSc Part 2'})
+        self.assertEqual(self.case.post(aid,{'answer':'B'}).status_code,302)
+        self.assertEqual(self.case.submit(aid).status_code,302);self.assertEqual(self.case.attempt(aid)['score'],100)
+        # Older stored projections retain their bytes; effective views use the
+        # original immutable qualification/year snapshot rather than source IDs.
+        legacy=copy.deepcopy(projection);legacy['programme']=raw;before=copy.deepcopy(legacy)
+        effective=integration.effective_projection(legacy,q['content'])
+        self.assertEqual(effective['programme'],'FSc Part 2');self.assertEqual(legacy,before)
+        after=dict(self.qversion(e));self.assertEqual(json.loads(after['curriculum_json']),original)
+        for k in ('curriculum_json','content_json','question_checksum_sha256','scoremax_projection_json'):
+            self.assertEqual(stored[k],after[k])
+    def test_qualification_year_fallback_preserves_unknown_and_admission_scopes(self):
+        resolve=sm.question_contracts.programme_from_curriculum
+        for grade,expected in [('Grade 11','FSc Part 1'),('Grade 12','FSc Part 2')]:
+            for qualification in ('FSC','FSc / Intermediate','HSSC'):
+                cur={'programme_id':'SOURCE::OPAQUE','qualification_id':qualification,'grade_year_id':grade,
+                     'display':{'programme':'SOURCE::OPAQUE','grade_year':grade}}
+                before=copy.deepcopy(cur);self.assertEqual(resolve(cur),expected);self.assertEqual(cur,before)
+                cur['display']['grade_year']='Grade 12' if grade=='Grade 11' else 'Grade 11'
+                with self.assertRaisesRegex(sm.question_contracts.QuestionContractError,'PROGRAMME_YEAR_CONFLICT'):resolve(cur)
+        self.assertEqual(resolve({'programme_id':'SOURCE::OPAQUE','grade_year_id':'Grade 12',
+            'display':{'qualification':'FSc / Intermediate'}}),'FSc Part 2')
+        self.assertEqual(resolve({'programme_id':'SOURCE::OPAQUE','qualification_id':'UNRELATED','grade_year_id':'Grade 12'}),'SOURCE::OPAQUE')
+        self.assertEqual(resolve({'programme_id':'SOURCE::OPAQUE','qualification_id':'FSC'}),'SOURCE::OPAQUE')
+        self.assertEqual(sm.question_contracts.programme_for_release('FSC_PART_II',json.dumps({'programme_id':'SOURCE::OPAQUE','qualification_id':'FSC'})),'')
+        for programme in ('MDCAT','ECAT'):
+            self.assertEqual(resolve({'programme_id':programme,'qualification_id':'FSC','grade_year_id':'Grade 12'}),programme)
     def test_existing_specific_programme_needs_no_new_grade(self):
         for token in ('FSC_PART_II','FSc Part II','HSSC-II','FSc Part 2'):
             self.assertEqual(sm.question_contracts.programme_from_curriculum({'programme_id':token}),'FSc Part 2')

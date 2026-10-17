@@ -159,12 +159,18 @@ def programme_from_curriculum(curriculum):
         raise QuestionContractError('PROGRAMME_CONTEXT_CONFLICT')
     if resolved and resolved not in {'FSc Part 1','FSc Part 2'}:
         return resolved
+    years=set()
+    for val in (curriculum.get('grade_year_id'),display.get('grade_year')):
+        token=str(val or '').strip().casefold().replace('_',' ')
+        match=re.fullmatch(r'(?:grade\s*|year\s*|class\s*)?(9|10|11|12)',token)
+        if match:years.add(int(match.group(1)))
+    # PH can retain an opaque hierarchy as programme_id and display.programme.
+    # Its explicit existing qualification + grade still identify the school year.
+    # Do not parse opaque IDs or turn an unallocated QA scope into a learner year.
+    qualifications=(curriculum.get('qualification_id'),display.get('qualification'))
+    if not resolved and not has_fsc and years and any(str(x or '').strip().casefold() in generic for x in qualifications):
+        has_fsc=True
     if has_fsc or resolved in {'FSc Part 1','FSc Part 2'}:
-        years=set()
-        for val in (curriculum.get('grade_year_id'),display.get('grade_year')):
-            token=str(val or '').strip().casefold().replace('_',' ')
-            match=re.fullmatch(r'(?:grade\s*|year\s*|class\s*)?(9|10|11|12)',token)
-            if match:years.add(int(match.group(1)))
         if len(years)>1:
             raise QuestionContractError('PROGRAMME_YEAR_CONFLICT')
         year=next(iter(years),None)
