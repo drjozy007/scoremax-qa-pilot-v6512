@@ -27,13 +27,21 @@ def _programme_scope_sql(alias_values,table_alias='q'):
       JOIN integration_ph_content_releases pr
         ON pr.release_id=pm.release_id AND pr.release_version=pm.release_version
       WHERE pv.local_question_db_id={table_alias}.id
+        AND pv.question_id={table_alias}.ph_question_id AND pv.question_version_id={table_alias}.ph_question_version_id
+        AND pv.question_checksum_sha256={table_alias}.ph_question_checksum_sha256
         AND pr.local_status='ACTIVE'
-        AND lower(trim(pr.programme_id)) IN ({marks})
+        AND EXISTS(SELECT 1 FROM integration_ph_product_activation_authorizations pa
+          WHERE pa.release_id=pr.release_id AND pa.release_version=pr.release_version
+            AND pa.package_checksum_sha256=pr.package_checksum_sha256 AND pa.activation_status IN ('AUTHORIZED','ACTIVATED'))
+        AND NOT EXISTS(SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e pe
+          WHERE pe.release_id=pm.release_id AND pe.release_version=pm.release_version
+            AND pe.question_id=pm.question_id AND pe.question_version_id=pm.question_version_id)
+        AND lower(scoremax_release_programme(pr.programme_id,pv.curriculum_json)) IN ({marks})
     ))"""
     return f'({legacy} OR {ph})',vals+vals
 
 
-def _ph_programme_scope_context(c,question_db_id,programme):
+def _ph_programme_scope_context(c,question_db_id,programme,question=None):
     """Resolve one active PH release scope for the selected learner programme.
 
     Fail closed on no membership or conflicting active scopes. Source question
@@ -43,16 +51,30 @@ def _ph_programme_scope_context(c,question_db_id,programme):
     vals=sorted({str(x).strip().casefold() for x in aliases if str(x).strip()})
     if not vals:return None
     marks=','.join('?' for _ in vals)
-    rows=c.execute(f"""SELECT DISTINCT pr.programme_id,pr.subject_id,pr.chapter_id
+    q=dict(question or c.execute('SELECT * FROM questions WHERE id=?',(int(question_db_id),)).fetchone() or {})
+    pin_scope=''
+    pin_args=[]
+    if question is not None and q.get('ph_release_id'):
+        pin_scope=' AND pr.release_id=? AND pr.release_version=? AND pr.package_checksum_sha256=?'
+        pin_args=[q.get('ph_release_id'),q.get('ph_release_version'),q.get('ph_release_checksum_sha256')]
+    rows=c.execute(f"""SELECT DISTINCT scoremax_release_programme(pr.programme_id,pv.curriculum_json) AS programme_id,pr.subject_id,pr.chapter_id
       FROM integration_ph_question_version_store pv
       JOIN integration_ph_release_question_membership pm
         ON pm.question_id=pv.question_id AND pm.question_version_id=pv.question_version_id
       JOIN integration_ph_content_releases pr
         ON pr.release_id=pm.release_id AND pr.release_version=pm.release_version
       WHERE pv.local_question_db_id=?
+        AND pv.question_id=? AND pv.question_version_id=? AND pv.question_checksum_sha256=?
         AND pr.local_status='ACTIVE'
-        AND lower(trim(pr.programme_id)) IN ({marks})
-      ORDER BY pr.subject_id,pr.chapter_id""",[int(question_db_id)]+vals).fetchall()
+        AND EXISTS(SELECT 1 FROM integration_ph_product_activation_authorizations pa
+          WHERE pa.release_id=pr.release_id AND pa.release_version=pr.release_version
+            AND pa.package_checksum_sha256=pr.package_checksum_sha256 AND pa.activation_status IN ('AUTHORIZED','ACTIVATED'))
+        AND NOT EXISTS(SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e pe
+          WHERE pe.release_id=pm.release_id AND pe.release_version=pm.release_version
+            AND pe.question_id=pm.question_id AND pe.question_version_id=pm.question_version_id)
+        AND lower(scoremax_release_programme(pr.programme_id,pv.curriculum_json)) IN ({marks})
+        {pin_scope}
+      ORDER BY pr.subject_id,pr.chapter_id""",[int(question_db_id),q.get('ph_question_id'),q.get('ph_question_version_id'),q.get('ph_question_checksum_sha256')]+vals+pin_args).fetchall()
     scopes={(str(r['programme_id'] or ''),str(r['subject_id'] or ''),str(r['chapter_id'] or '')) for r in rows}
     if len(scopes)!=1:return None
     raw_programme,subject_id,chapter_id=next(iter(scopes))
@@ -80,8 +102,16 @@ def _programme_chapter_scope_sql(programme,chapter,table_alias='q'):
       JOIN integration_ph_content_releases cr
         ON cr.release_id=cm.release_id AND cr.release_version=cm.release_version
       WHERE cv.local_question_db_id={table_alias}.id
+        AND cv.question_id={table_alias}.ph_question_id AND cv.question_version_id={table_alias}.ph_question_version_id
+        AND cv.question_checksum_sha256={table_alias}.ph_question_checksum_sha256
         AND cr.local_status='ACTIVE'
-        AND lower(trim(cr.programme_id)) IN ({marks})
+        AND EXISTS(SELECT 1 FROM integration_ph_product_activation_authorizations ca
+          WHERE ca.release_id=cr.release_id AND ca.release_version=cr.release_version
+            AND ca.package_checksum_sha256=cr.package_checksum_sha256 AND ca.activation_status IN ('AUTHORIZED','ACTIVATED'))
+        AND NOT EXISTS(SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e ce
+          WHERE ce.release_id=cm.release_id AND ce.release_version=cm.release_version
+            AND ce.question_id=cm.question_id AND ce.question_version_id=cm.question_version_id)
+        AND lower(scoremax_release_programme(cr.programme_id,cv.curriculum_json)) IN ({marks})
         AND lower(trim(cr.chapter_id))=lower(?)
     ))"""
     chapter_clause=f"(lower(COALESCE({table_alias}.chapter,''))=lower(?) OR {ph_chapter})"
@@ -112,7 +142,7 @@ def evidence_context(c,question,programme,question_db_id):
     context={key:q.get(key) for key in fields}
     selected_programme=canonical_programme(programme)
     if str(q.get('ph_projection_owner') or '')=='POWER_HOUSE':
-        scope=_ph_programme_scope_context(c,question_db_id,selected_programme)
+        scope=_ph_programme_scope_context(c,question_db_id,selected_programme,q)
         if not scope or canonical_programme(scope.get('programme'))!=selected_programme:
             raise question_contracts.QuestionContractError('PH_PROGRAMME_MEMBERSHIP_REQUIRED')
         context['ph_release_chapter_id']=scope.get('chapter_id') or ''

@@ -102,6 +102,14 @@ def runtime_suite():
             self.c.commit()
             self.assertNotIn(subject,coverage.programme_subjects(self.c,'MDCAT'))
             self.c.execute("UPDATE integration_ph_content_releases SET local_status='ACTIVE' WHERE release_id='SYN-MDCAT-COVERAGE'");self.c.commit()
+            self.assertNotIn(subject,coverage.programme_subjects(self.c,'MDCAT'))
+            # ACTIVE alone is not product authority. Exercise the existing
+            # exact-checksum authorisation path on this disposable destination.
+            self.c.execute("UPDATE integration_ph_content_releases SET local_status='STAGED' WHERE release_id='SYN-MDCAT-COVERAGE'");self.c.commit()
+            import scoremax_integration_v1 as integration
+            approved=integration.authorize_product_activation(self.c,'SYN-MDCAT-COVERAGE',
+                release['release_version'],release['package_checksum_sha256'],'SYNTHETIC-OWNER','Isolated guided coverage regression')
+            self.c.commit();self.assertEqual(approved['status'],'ACTIVE',approved)
             self.assertIn(subject,coverage.programme_subjects(self.c,'MDCAT'))
             self.assertNotIn(subject,coverage.programme_subjects(self.c,'FSc Part 2'))
 

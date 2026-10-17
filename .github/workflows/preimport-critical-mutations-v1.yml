@@ -1,6 +1,8 @@
 name: Pre-Import Critical Mutations v1
 
 on:
+  pull_request:
+    branches: [feature/v6611c-ux-vnext-landing]
   push:
     branches: [feature/v6611c-ux-vnext-landing]
     paths:
@@ -17,24 +19,37 @@ jobs:
   mutations:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      SCOREMAX_SECRET: synthetic-ci-only-mutation-qualification-secret
+      SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD: Synthetic-Only-Qualification-2026!
+      SCOREMAX_SMTP_HOST: smtp.invalid
+      SCOREMAX_SMTP_FROM: qualification@scoremax.test
+      SCOREMAX_INSTANCE_COUNT: '1'
+      WEB_CONCURRENCY: '1'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/v6611c-ux-vnext-landing
-          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
       - name: Materialize exact candidate
-        run: python deploy_ux_vnext.py
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          git rev-parse HEAD > /tmp/scoremax_mutation_candidate.txt
+          python deploy_ux_vnext.py
       - name: Install dependencies
         run: pip install -r scoremax_runtime_v669b/requirements.txt
       - name: Core classroom and learner mutations
         env:
-          SCOREMAX_ENV: local
-          SCOREMAX_STAGING_SESSION_SECRET: mutation-core-v1
-          SCOREMAX_DB: /tmp/scoremax_mut_core.db
+          SCOREMAX_ENV: production
+          SCOREMAX_STAGING_SESSION_SECRET: synthetic-ci-only-mutation-core-v1-qualification-secret
+          SCOREMAX_DB: /tmp/scoremax_mut_core/scoremax.db
           SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_mut_core
           SCOREMAX_BACKUP_DIR: /tmp/scoremax_mut_core/backup
           SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_mut_core/intake
-          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_PUBLIC_BASE_URL: https://localhost
           SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
           SCOREMAX_ENFORCE_PAYWALL: '0'
         run: |
@@ -43,13 +58,13 @@ jobs:
           cd scoremax_runtime_v669b && python preimport_mutation_core.py
       - name: Commercial configuration and checkout mutations
         env:
-          SCOREMAX_ENV: local
-          SCOREMAX_STAGING_SESSION_SECRET: mutation-commercial-v1
-          SCOREMAX_DB: /tmp/scoremax_mut_commercial.db
+          SCOREMAX_ENV: production
+          SCOREMAX_STAGING_SESSION_SECRET: synthetic-ci-only-mutation-commercial-v1-qualification-secret
+          SCOREMAX_DB: /tmp/scoremax_mut_commercial/scoremax.db
           SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_mut_commercial
           SCOREMAX_BACKUP_DIR: /tmp/scoremax_mut_commercial/backup
           SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_mut_commercial/intake
-          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_PUBLIC_BASE_URL: https://localhost
           SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
           SCOREMAX_ENFORCE_PAYWALL: '0'
         run: |
@@ -58,13 +73,13 @@ jobs:
           cd scoremax_runtime_v669b && python preimport_mutation_commercial.py
       - name: Interest capture and import fail-safe mutations
         env:
-          SCOREMAX_ENV: local
-          SCOREMAX_STAGING_SESSION_SECRET: mutation-intake-v1
-          SCOREMAX_DB: /tmp/scoremax_mut_intake.db
+          SCOREMAX_ENV: production
+          SCOREMAX_STAGING_SESSION_SECRET: synthetic-ci-only-mutation-intake-v1-qualification-secret
+          SCOREMAX_DB: /tmp/scoremax_mut_intake/scoremax.db
           SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_mut_intake
           SCOREMAX_BACKUP_DIR: /tmp/scoremax_mut_intake/backup
           SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_mut_intake/intake
-          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_PUBLIC_BASE_URL: https://localhost
           SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
           SCOREMAX_ENFORCE_PAYWALL: '0'
         run: |
@@ -73,16 +88,24 @@ jobs:
           cd scoremax_runtime_v669b && python preimport_mutation_intake.py
       - name: Parameterized routes and malformed mutation edges
         env:
-          SCOREMAX_ENV: local
-          SCOREMAX_STAGING_SESSION_SECRET: route-edge-v1
-          SCOREMAX_DB: /tmp/scoremax_route_edge.db
+          SCOREMAX_ENV: production
+          SCOREMAX_STAGING_SESSION_SECRET: synthetic-ci-only-route-edge-v1-qualification-secret
+          SCOREMAX_DB: /tmp/scoremax_route_edge/scoremax.db
           SCOREMAX_PERSISTENT_ROOT: /tmp/scoremax_route_edge
           SCOREMAX_BACKUP_DIR: /tmp/scoremax_route_edge/backup
           SCOREMAX_CONTENT_INTAKE_DIR: /tmp/scoremax_route_edge/intake
-          SCOREMAX_PUBLIC_BASE_URL: http://localhost
+          SCOREMAX_PUBLIC_BASE_URL: https://localhost
           SCOREMAX_REQUIRE_EMAIL_VERIFICATION: '0'
           SCOREMAX_ENFORCE_PAYWALL: '0'
         run: |
           rm -rf /tmp/scoremax_route_edge && mkdir -p /tmp/scoremax_route_edge/backup /tmp/scoremax_route_edge/intake
           cp scripts/preimport_route_edge_audit.py scoremax_runtime_v669b/preimport_route_edge_audit.py
           cd scoremax_runtime_v669b && python preimport_route_edge_audit.py
+      - name: Publish candidate-bound mutation identity
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scoremax-preimport-critical-mutations-v1
+          path: /tmp/scoremax_mutation_candidate.txt
+          if-no-files-found: error
+          retention-days: 14

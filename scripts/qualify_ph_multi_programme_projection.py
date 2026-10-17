@@ -18,35 +18,6 @@ def emit(event,**kw):
     print("SCOREMAX_PH_MULTI_PROGRAMME "+json.dumps({"event":event,"policy":POLICY,**kw},sort_keys=True),flush=True)
 
 
-class Contracts:
-    @staticmethod
-    def canonical_programme(value):
-        value=str(value or "").strip()
-        groups={
-          "FSc Part 1":("FSc Part 1","FSC_PART_I","FSC_PART_1","HSSC_PART_I"),
-          "FSc Part 2":("FSc Part 2","FSC_PART_II","FSC_PART_2","HSSC_PART_II"),
-          "MDCAT":("MDCAT",),
-          "ECAT":("ECAT",),
-        }
-        key=value.casefold()
-        for name,aliases in groups.items():
-            if key in {x.casefold() for x in aliases}:return name
-        return value
-
-    @classmethod
-    def programme_aliases(cls,value):
-        name=cls.canonical_programme(value)
-        return {
-          "FSc Part 1":["FSc Part 1","FSC_PART_I","FSC_PART_1","HSSC_PART_I"],
-          "FSc Part 2":["FSc Part 2","FSC_PART_II","FSC_PART_2","HSSC_PART_II"],
-          "MDCAT":["MDCAT"],
-          "ECAT":["ECAT"],
-        }.get(name,[name] if name else [])
-
-    class QuestionContractError(ValueError):
-        pass
-
-
 class Integration:
     @staticmethod
     def canonical_json(value):
@@ -69,6 +40,9 @@ def extract_functions(path:Path,names:list[str]):
 
 
 def main():
+    # Exercise the actual resolver; a parallel alias mock can hide contract drift.
+    sys.path.insert(0,str(ROOT))
+    import question_contract_engine as Contracts
     app=ROOT/"app.py"
     catalogue=ROOT/"ux_catalogue_browser.py"
     template=ROOT/"templates"/"ux_catalogue_subject.html"
@@ -83,35 +57,47 @@ def main():
 
     c=sqlite3.connect(":memory:")
     c.row_factory=sqlite3.Row
+    c.create_function('scoremax_release_programme',2,Contracts.programme_for_release,deterministic=True)
     c.executescript("""
       CREATE TABLE questions(
         id INTEGER PRIMARY KEY, programme TEXT, qualification TEXT, chapter TEXT, subject TEXT,
         ph_projection_owner TEXT, ph_question_id TEXT, ph_question_version_id TEXT,
         question_id TEXT, topic TEXT, subtopic TEXT, learning_outcome TEXT, level TEXT,
-        difficulty TEXT, command_word TEXT, cognitive_skill TEXT, family_id TEXT, question_version INTEGER
+        difficulty TEXT, command_word TEXT, cognitive_skill TEXT, family_id TEXT, question_version INTEGER,
+        ph_question_checksum_sha256 TEXT
       );
       CREATE TABLE integration_ph_question_version_store(
-        question_id TEXT, question_version_id TEXT, local_question_db_id INTEGER
+        question_id TEXT, question_version_id TEXT, local_question_db_id INTEGER, curriculum_json TEXT,
+        question_checksum_sha256 TEXT
       );
       CREATE TABLE integration_ph_release_question_membership(
         release_id TEXT, release_version TEXT, question_id TEXT, question_version_id TEXT
       );
       CREATE TABLE integration_ph_content_releases(
         release_id TEXT, release_version TEXT, local_status TEXT,
-        programme_id TEXT, subject_id TEXT, chapter_id TEXT
+        programme_id TEXT, subject_id TEXT, chapter_id TEXT, package_checksum_sha256 TEXT DEFAULT 'SYN-CHECKSUM'
+      );
+      CREATE TABLE integration_ph_product_activation_authorizations(
+        release_id TEXT, release_version TEXT, package_checksum_sha256 TEXT, activation_status TEXT
+      );
+      CREATE TABLE ph_bridge_staged_withdrawal_exclusions_v6611e(
+        release_id TEXT, release_version TEXT, question_id TEXT, question_version_id TEXT
       );
     """)
     c.execute("""INSERT INTO questions VALUES(
       1,'FSc Part 1','FSC','Atomic Structure','Chemistry','POWER_HOUSE',
       'PH-Q-ONE','PH-QV-ONE','PHQ::ONE','Electron configuration','','LO','Exam Ready',
-      'Exam Ready','Identify','Knowledge','FAM1',1)""")
-    c.execute("INSERT INTO integration_ph_question_version_store VALUES('PH-Q-ONE','PH-QV-ONE',1)")
+      'Exam Ready','Identify','Knowledge','FAM1',1,'SYN-Q-CHECKSUM')""")
+    c.execute("INSERT INTO integration_ph_question_version_store VALUES('PH-Q-ONE','PH-QV-ONE',1,?,'SYN-Q-CHECKSUM')",
+              (json.dumps({'programme_id':'FSC_PART_I','grade_year_id':'11','display':{'programme':'FSc Part 1','grade_year':'11'}}),))
     releases=[
       ("REL-FSC","1","ACTIVE","FSC_PART_I","CHEMISTRY","CHAPTER::CHEMISTRY::11::02"),
       ("REL-MDCAT","1","ACTIVE","MDCAT","CHEMISTRY","MDCAT::CHEMISTRY::UNIT::02"),
       ("REL-ECAT","1","STAGED","ECAT","CHEMISTRY","ECAT::CHEMISTRY::UNIT::02"),
     ]
-    c.executemany("INSERT INTO integration_ph_content_releases VALUES(?,?,?,?,?,?)",releases)
+    c.executemany("INSERT INTO integration_ph_content_releases(release_id,release_version,local_status,programme_id,subject_id,chapter_id) VALUES(?,?,?,?,?,?)",releases)
+    c.executemany("INSERT INTO integration_ph_product_activation_authorizations VALUES(?,'1','SYN-CHECKSUM','ACTIVATED')",
+                  [(r[0],) for r in releases if r[2]=='ACTIVE'])
     c.executemany("INSERT INTO integration_ph_release_question_membership VALUES(?,?,?,?)",[
       ("REL-FSC","1","PH-Q-ONE","PH-QV-ONE"),
       ("REL-MDCAT","1","PH-Q-ONE","PH-QV-ONE"),

@@ -100,7 +100,7 @@ def _validated_pin(session_row,qid,current_row=None):
     return pin
 
 
-def build_session_content_pins(c,question_ids):
+def build_session_content_pins(c,question_ids,programme=None):
     releases={};questions={}
     for qid in question_ids:
         row=c.execute('SELECT * FROM questions WHERE id=?',(qid,)).fetchone()
@@ -115,10 +115,27 @@ def build_session_content_pins(c,question_ids):
             raise question_contracts.QuestionContractError('IMMUTABLE_VERSION_MISSING_OR_MISMATCHED')
         projection=effective_projection(strict_json_loads(v['scoremax_projection_json']),strict_json_loads(v['content_json']))
         question_contracts.validate_assessment_contract(projection)
-        scope={key:current.get('ph_'+key) or '' for key in ('market_id','programme_id','subject_id','chapter_id')}
+        # Bind new sessions to the selected destination's exact active membership,
+        # rather than the last release that materialised this shared question row.
+        selected=question_contracts.canonical_programme(programme or projection.get('programme'))
+        candidates=c.execute('''SELECT r.* FROM integration_ph_release_question_membership m
+          JOIN integration_ph_content_releases r ON r.release_id=m.release_id AND r.release_version=m.release_version
+          WHERE m.question_id=? AND m.question_version_id=? AND r.local_status='ACTIVE'
+            AND NOT EXISTS(SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
+              WHERE e.release_id=m.release_id AND e.release_version=m.release_version
+                AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id)
+          ORDER BY r.release_id,r.release_version''',(v['question_id'],v['question_version_id'])).fetchall()
+        candidates=[r for r in candidates if _activation_authorization(c,r) and
+            question_contracts.programme_for_release(r['programme_id'],v['curriculum_json'])==selected]
+        scopes={(r['market_id'],r['subject_id'],r['chapter_id']) for r in candidates}
+        if not candidates or len(scopes)!=1:
+            raise question_contracts.QuestionContractError('PH_PROGRAMME_MEMBERSHIP_REQUIRED')
+        release=next((r for r in candidates if (r['release_id'],r['release_version'])==
+            (current.get('ph_release_id'),current.get('ph_release_version'))),candidates[0])
+        scope={key:release[key] or '' for key in ('market_id','programme_id','subject_id','chapter_id')}
         pin={'question_db_id':int(qid),'question_id':current.get('ph_question_id'),'question_version_id':current.get('ph_question_version_id'),
-             'question_checksum_sha256':current.get('ph_question_checksum_sha256'),'release_id':current.get('ph_release_id'),
-             'release_version':current.get('ph_release_version'),'release_checksum_sha256':current.get('ph_release_checksum_sha256'),
+             'question_checksum_sha256':current.get('ph_question_checksum_sha256'),'release_id':release['release_id'],
+             'release_version':release['release_version'],'release_checksum_sha256':release['package_checksum_sha256'],
              **scope,'projection':projection,'adapter_version':'SM-ASSESSMENT-CONTRACT-2'}
         pin['pin_sha256']=hashlib.sha256(canonical_json(pin).encode()).hexdigest()
         questions[str(qid)]=pin

@@ -404,11 +404,14 @@ class ProgrammeMasteryRepair(unittest.TestCase):
         fields={k:str(base[k] if base[k] is not None else '') for k in ('min_forms','min_questions','min_accuracy','verification_days','external_percentile_target','target_band_pct','unseen_family_pct','min_breadth_pct')}
         fields['min_accuracy']='95'
         before=self.snapshot('attempts')
+        audit_before=self.snapshot('mastery_policy_change_audit_v1')
         r=self.client_for('admin').post('/admin/mastery-rigor/level',data={'_csrf_token':'synthetic-csrf','mastery_level':'Exam Ready','reason':'Synthetic tightening',**fields},base_url='https://localhost')
         self.assertEqual(r.status_code,302)
         self.assertEqual(self.status(first),'Verification Due');self.assertEqual(self.status(other),'Verified')
         self.assertEqual(self.snapshot('attempts'),before)
-        self.assertEqual(len(self.snapshot('mastery_policy_change_audit_v1')),1)
+        audit_after=self.snapshot('mastery_policy_change_audit_v1')
+        self.assertEqual(audit_after[:len(audit_before)],audit_before)
+        self.assertEqual(len(audit_after)-len(audit_before),1)
     def test_programme_switch_respects_interest_gate_and_preserves_current_selection(self):
         before=self.programme()
         response=self.client.post('/student/programme',data={'_csrf_token':'synthetic-csrf','programme_code':'mdcat','return_to':'/student/learn-vnext'},base_url='https://localhost')

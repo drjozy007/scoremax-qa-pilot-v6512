@@ -9,6 +9,7 @@ from pathlib import Path
 
 from flask import flash, redirect, render_template, request, url_for
 from werkzeug.security import check_password_hash
+import sqlite_mutation_engine as sqlite_mutation
 
 TOKEN_TTL_HOURS=24
 RESEND_COOLDOWN_SECONDS=60
@@ -177,34 +178,33 @@ def install_email_verification(app, send_email) -> None:
     def register_wrapper(role):
         candidate=_send_enabled() and request.method=='POST' and role=='student'
         email=str(request.form.get('email') or '').strip().lower() if candidate else ''
-        existed=False
-        if email:
-            probe=_connect()
-            try:
-                existed=probe.execute("SELECT 1 FROM users WHERE lower(COALESCE(email,''))=?",(email,)).fetchone() is not None
-            finally:
-                probe.close()
+        request.environ['scoremax.registration_email_policy']={'send':candidate,'required':_required()}
         response=original_register(role)
-        if not candidate or not email or existed:
+        created_id=request.environ.get('scoremax.created_account_id')
+        if not candidate or not email or not created_id:
             return response
         status=int(getattr(response,'status_code',200) or 200)
         if status not in {301,302,303,307,308}:
             return response
         conn=_connect()
+        sent=False
         try:
-            user=_resolve(conn,email)
-            if (not user or user['role']!='student' or _is_exempt(conn,user)
-                    or not user['password_hash']
-                    or not check_password_hash(user['password_hash'],request.form.get('password',''))):
-                return response
-            token=_make_token(conn,user['id'])
-            conn.execute("UPDATE users SET email_verified=0,email_verified_at='' WHERE id=?",(user['id'],))
-            if _required():
-                conn.execute("UPDATE users SET account_status='pending_email_verification' WHERE id=?",(user['id'],))
-            conn.commit()
+            with conn:
+                sqlite_mutation.begin_immediate(conn)
+                user=conn.execute('SELECT * FROM users WHERE id=?',(created_id,)).fetchone()
+                if (not user or str(user['email'] or '').strip().lower()!=email
+                        or user['role']!='student' or _is_exempt(conn,user)
+                        or str(user['account_status'] or 'active') not in {'active','pending_email_verification'}):
+                    return response
+                token=_make_token(conn,user['id'])
             # Re-read after commit so the email function gets the latest row shape.
             user=conn.execute('SELECT * FROM users WHERE id=?',(user['id'],)).fetchone()
             sent=_send_verification(send_email,user,token)
+        except Exception as exc:
+            conn.rollback()
+            # Registration has committed. A notification failure cannot turn a
+            # valid account into a failed signup or undo required verification.
+            app.logger.error('Initial verification delivery failed (%s).',type(exc).__name__)
         finally:
             conn.close()
         if not _required():
@@ -282,7 +282,7 @@ def install_email_verification(app, send_email) -> None:
         if _send_enabled():
             conn=_connect()
             try:
-                conn.execute('BEGIN IMMEDIATE')
+                sqlite_mutation.begin_immediate(conn)
                 user=_resolve(conn,identity)
                 if (user and not _is_exempt(conn,user) and int(user['email_verified'] or 0)!=1
                         and str(user['account_status'] or 'active') in {'','active','pending_email_verification'}):

@@ -12,11 +12,6 @@ _TRACK_PROGRAMMES={
     'mdcat':'MDCAT',
 }
 _MAIN_FSC_SUBJECTS={'biology','chemistry','physics'}
-_RELEASE_PROGRAMME_ALIASES={
-    'year11':('FSc Part 1','FSC_PART_I','FSC_PART_1','HSSC_PART_I'),
-    'year12':('FSc Part 2','FSC_PART_II','FSC_PART_2','HSSC_PART_II'),
-    'mdcat':('MDCAT',),
-}
 
 
 def _norm(value: str) -> str:
@@ -24,7 +19,8 @@ def _norm(value: str) -> str:
 
 
 def _release_scope_counts(conn, track: str, subject: str) -> dict[str,int]:
-    aliases=_RELEASE_PROGRAMME_ALIASES.get(track) or ()
+    from question_contract_engine import programme_aliases
+    aliases=programme_aliases(_TRACK_PROGRAMMES.get(track))
     if not aliases:return {}
     vals=[x.casefold() for x in aliases]
     marks=','.join('?' for _ in vals)
@@ -34,8 +30,16 @@ def _release_scope_counts(conn, track: str, subject: str) -> dict[str,int]:
         ON m.release_id=r.release_id AND m.release_version=r.release_version
       JOIN integration_ph_question_version_store v
         ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
+      JOIN questions q ON q.id=v.local_question_db_id AND q.ph_question_id=v.question_id
+        AND q.ph_question_version_id=v.question_version_id AND q.ph_question_checksum_sha256=v.question_checksum_sha256
       WHERE r.local_status='ACTIVE'
-        AND lower(trim(r.programme_id)) IN ({marks})
+        AND lower(scoremax_release_programme(r.programme_id,v.curriculum_json)) IN ({marks})
+        AND EXISTS(SELECT 1 FROM integration_ph_product_activation_authorizations a
+          WHERE a.release_id=r.release_id AND a.release_version=r.release_version
+            AND a.package_checksum_sha256=r.package_checksum_sha256 AND a.activation_status IN ('AUTHORIZED','ACTIVATED'))
+        AND NOT EXISTS(SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
+          WHERE e.release_id=m.release_id AND e.release_version=m.release_version
+            AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id)
         AND lower(replace(trim(r.subject_id),'_',' '))=lower(?)
         AND v.local_question_db_id IS NOT NULL
       GROUP BY r.chapter_id

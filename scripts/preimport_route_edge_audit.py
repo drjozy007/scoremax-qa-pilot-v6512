@@ -1,6 +1,8 @@
 from __future__ import annotations
 import json
 from collections import defaultdict
+# Load the actual WSGI installers before exercising native routes.
+from scoremax_production import application
 import app as sm
 
 R={'get_failures':[],'mutation_failures':[],'counts':defaultdict(int)}

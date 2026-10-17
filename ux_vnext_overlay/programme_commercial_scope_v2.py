@@ -18,6 +18,14 @@ def programme_subjects(c, programme):
             SELECT 1 FROM integration_ph_question_version_store v
             JOIN integration_ph_release_question_membership m ON m.question_id=v.question_id AND m.question_version_id=v.question_version_id
             JOIN integration_ph_content_releases r ON r.release_id=m.release_id AND r.release_version=m.release_version
-            WHERE v.local_question_db_id=q.id AND r.local_status='ACTIVE' AND lower(trim(r.programme_id)) IN ({slots}))))
+            WHERE v.local_question_db_id=q.id AND v.question_id=q.ph_question_id
+              AND v.question_version_id=q.ph_question_version_id AND v.question_checksum_sha256=q.ph_question_checksum_sha256
+              AND r.local_status='ACTIVE' AND lower(scoremax_release_programme(r.programme_id,v.curriculum_json)) IN ({slots})
+              AND EXISTS(SELECT 1 FROM integration_ph_product_activation_authorizations a
+                WHERE a.release_id=r.release_id AND a.release_version=r.release_version
+                  AND a.package_checksum_sha256=r.package_checksum_sha256 AND a.activation_status IN ('AUTHORIZED','ACTIVATED'))
+              AND NOT EXISTS(SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
+                WHERE e.release_id=m.release_id AND e.release_version=m.release_version
+                  AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id))))
           ORDER BY q.subject""",aliases+aliases+aliases).fetchall()
     return [r['subject'] for r in rows]

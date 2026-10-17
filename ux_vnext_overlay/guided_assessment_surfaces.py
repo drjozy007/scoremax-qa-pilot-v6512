@@ -107,43 +107,33 @@ def apply(root):
     if guided_mode and (mode!='practice' or request.form.get('mcq_only') or request.form.get('question_type')=='MCQ'):
         abort(409,description='Guided written practice is separate from scored and MCQ-only tests.')''')
         s = change(s, 'test_start', "    clauses=[live_question_clause('q'),'q.subject=?']", "    clauses=[guided_live_question_clause('q') if guided_mode else live_question_clause('q'),'q.subject=?']")
-        s = change(s, 'test_start', "    state=student_subject_state(access_check,session['user_id'],subject,programme)", '''    if guided_mode:
-        programme=canonical_programme(programme or student_programme(access_check,session['user_id']))
+        s = change(s, 'test_start', "    state=student_subject_state(access_check,session['user_id'],subject,programme)", '''    programme=canonical_programme(programme or student_programme(access_check,session['user_id']))
+    learner_scope,learner_scope_params=_programme_scope_sql(_programme_aliases(programme),'q')
+    if guided_mode:
         guided_scope,guided_params=_programme_scope_sql(_programme_aliases(programme),'q')
         guided_available=bool(access_check.execute(f'SELECT 1 FROM questions q WHERE {guided_live_question_clause("q")} AND {guided_scope} AND lower(q.subject)=lower(?) LIMIT 1',guided_params+[subject]).fetchone())
         state=commercial_access.subject_state(access_check,session['user_id'],programme,subject,available=guided_available,commercial_gates_enabled=COMMERCIAL_GATES_ENABLED)
     else:
         state=student_subject_state(access_check,session['user_id'],subject,programme)''')
-        s = change(s, 'test_start', "        clauses+=['q.programme=?']; params+=[programme]", '''        if guided_mode:
-            guided_scope,guided_params=_programme_scope_sql(_programme_aliases(programme),'q')
-            clauses.append(guided_scope);params+=guided_params
-        else:
-            clauses+=['q.programme=?']; params+=[programme]''')
-        s = change(s, 'test_start', "        clauses+=['q.chapter=?']; params+=[request.form['chapter']]", '''        if guided_mode:
-            guided_chapter,guided_params=_programme_chapter_scope_sql(programme,request.form['chapter'],'q')
-            clauses.append(guided_chapter);params+=guided_params
-        else:
-            clauses+=['q.chapter=?']; params+=[request.form['chapter']]''')
+        s = change(s, 'test_start', "        clauses+=['q.programme=?']; params+=[programme]",
+            '        clauses.append(learner_scope);params+=learner_scope_params')
+        s = change(s, 'test_start', "        clauses+=['q.chapter=?']; params+=[request.form['chapter']]", '''        chapter_scope,chapter_params=_programme_chapter_scope_sql(programme,request.form['chapter'],'q')
+        clauses.append(chapter_scope);params+=chapter_params''')
         s = change(s, 'test_start', '        if programme:\n            all_chapters=', '''        if guided_mode:
             all_chapters=guided_chapters(ctmp,programme,subject)
         elif programme:
             all_chapters=''')
+        s = change(s, 'test_start',
+            "AND q.subject=? AND q.programme=? AND COALESCE(q.chapter,'')<>'' GROUP BY q.chapter ORDER BY first_id\"\"\",(subject,programme)",
+            "AND q.subject=? AND {learner_scope} AND COALESCE(q.chapter,'')<>'' GROUP BY q.chapter ORDER BY first_id\"\"\",[subject]+learner_scope_params")
         s = change(s, 'test_start', '''                clauses+=[f"q.chapter IN ({','.join('?' for _ in chapters)})"]
-                params+=chapters''', '''                if guided_mode:
-                    parts=[_programme_chapter_scope_sql(programme,ch,'q') for ch in chapters]
-                    clauses.append('('+ ' OR '.join('('+sql+')' for sql,values in parts)+')')
-                    params += [value for sql,values in parts for value in values]
-                else:
-                    clauses+=[f"q.chapter IN ({','.join('?' for _ in chapters)})"]
-                    params+=chapters''')
+                params+=chapters''', '''                parts=[_programme_chapter_scope_sql(programme,ch,'q') for ch in chapters]
+                clauses.append('('+ ' OR '.join('('+sql+')' for sql,values in parts)+')')
+                params += [value for sql,values in parts for value in values]''')
         s = change(s, 'test_start', '''        clauses+=[f"q.chapter IN ({','.join('?' for _ in chapters)})"]
-        params+=chapters''', '''        if guided_mode:
-            parts=[_programme_chapter_scope_sql(programme,ch,'q') for ch in chapters]
-            clauses.append('('+ ' OR '.join('('+sql+')' for sql,values in parts)+')')
-            params += [value for sql,values in parts for value in values]
-        else:
-            clauses+=[f"q.chapter IN ({','.join('?' for _ in chapters)})"]
-            params+=chapters''')
+        params+=chapters''', '''        parts=[_programme_chapter_scope_sql(programme,ch,'q') for ch in chapters]
+        clauses.append('('+ ' OR '.join('('+sql+')' for sql,values in parts)+')')
+        params += [value for sql,values in parts for value in values]''')
         s = change(s, 'test_start', '    assessment_id=create_assessment_session(', '''    if guided_mode:
         duration=None
         meta={k:meta[k] for k in ('scope','programme','subject','chapters','topic','subtopic','level')}

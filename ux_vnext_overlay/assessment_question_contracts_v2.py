@@ -125,7 +125,7 @@ def _programme_alias_groups():
 
 def canonical_programme(value):
     value=str(value or '').strip()
-    key=value.casefold()
+    key=' '.join(value.split()).casefold()
     return next((name for name,aliases in _programme_alias_groups().items()
                  if key in {str(x).casefold() for x in aliases}),value)
 
@@ -159,12 +159,18 @@ def programme_from_curriculum(curriculum):
         raise QuestionContractError('PROGRAMME_CONTEXT_CONFLICT')
     if resolved and resolved not in {'FSc Part 1','FSc Part 2'}:
         return resolved
+    years=set()
+    for val in (curriculum.get('grade_year_id'),display.get('grade_year')):
+        token=str(val or '').strip().casefold().replace('_',' ')
+        match=re.fullmatch(r'(?:grade\s*|year\s*|class\s*)?(9|10|11|12)',token)
+        if match:years.add(int(match.group(1)))
+    # PH can retain an opaque hierarchy as programme_id and display.programme.
+    # Its explicit existing qualification + grade still identify the school year.
+    # Do not parse opaque IDs or turn an unallocated QA scope into a learner year.
+    qualifications=(curriculum.get('qualification_id'),display.get('qualification'))
+    if not resolved and not has_fsc and years and any(str(x or '').strip().casefold() in generic for x in qualifications):
+        has_fsc=True
     if has_fsc or resolved in {'FSc Part 1','FSc Part 2'}:
-        years=set()
-        for val in (curriculum.get('grade_year_id'),display.get('grade_year')):
-            token=str(val or '').strip().casefold().replace('_',' ')
-            match=re.fullmatch(r'(?:grade\s*|year\s*|class\s*)?(9|10|11|12)',token)
-            if match:years.add(int(match.group(1)))
         if len(years)>1:
             raise QuestionContractError('PROGRAMME_YEAR_CONFLICT')
         year=next(iter(years),None)
@@ -177,3 +183,38 @@ def programme_from_curriculum(curriculum):
             return 'FSc Part 1' if year==11 else 'FSc Part 2'
         raise QuestionContractError('FSC_YEAR_UNRESOLVED')
     return raw[0] or raw[1]
+
+
+def programme_for_release(release_programme, curriculum_json):
+    """Resolve an existing release membership using its immutable source evidence.
+
+    Admission-exam membership remains the governed destination. School-year
+    membership must agree with the same resolver used by source projection.
+    The SQLite reader fails closed on incomplete or conflicting source scope.
+    """
+    import json
+    raw=str(release_programme or '').strip()
+    if not raw:return ''
+    school={'FSc Part 1','FSc Part 2'}
+    try:
+        release=programme_from_curriculum({'programme_id':raw})
+    except QuestionContractError as exc:
+        if str(exc)!='FSC_YEAR_UNRESOLVED':return ''
+        release=None
+    if release in _programme_alias_groups() and release not in school:
+        return release
+    try:
+        curriculum=json.loads(curriculum_json or '{}')
+        if not isinstance(curriculum,dict):return ''
+        source=programme_from_curriculum(curriculum)
+    except (QuestionContractError,TypeError,ValueError):
+        return ''
+    if release is None:
+        return source if source in school else ''
+    if release in school:
+        return release if source==release else ''
+    # A nested/opaque source ID can have an existing, explicit display scope.
+    # Use it only when the membership identifies that same original source.
+    if raw==str(curriculum.get('programme_id') or '').strip():
+        return source
+    return release

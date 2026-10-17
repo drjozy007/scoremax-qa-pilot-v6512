@@ -24,7 +24,9 @@ def _db_path() -> Path:
 
 
 def _connect() -> sqlite3.Connection:
-    conn=sqlite3.connect(_db_path()); conn.row_factory=sqlite3.Row; conn.execute('PRAGMA busy_timeout=5000'); return conn
+    # Use the native connection contract, including shared membership readers.
+    import app as runtime
+    return runtime.db()
 
 
 def _is_fsc1(level: str) -> bool:

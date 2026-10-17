@@ -1,6 +1,8 @@
 name: Pre-Import Full Platform Qualification v1
 
 on:
+  pull_request:
+    branches: [feature/v6611c-ux-vnext-landing]
   push:
     branches: [feature/v6611c-ux-vnext-landing, repair/account-startup-20260922]
     paths:
@@ -8,6 +10,8 @@ on:
       - 'scripts/preimport_full_platform_audit.py'
       - 'scripts/preimport_governance_gates.py'
       - 'scripts/qualify_account_startup_repair.py'
+      - 'scripts/qualify_registration_boundary.py'
+      - 'scripts/qualify_optional_email_verification.py'
       - 'scripts/qualify_build_determinism.py'
       - 'scripts/qualify_assessment_contract_repair.py'
       - 'scripts/qualify_assessment_browser.py'
@@ -44,16 +48,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
       - name: Materialize exact triggering candidate
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
           git rev-parse HEAD > /tmp/scoremax_qualified_commit.txt
           python scripts/qualify_build_determinism.py --report /tmp/scoremax_build_determinism.json
           mkdir -p /tmp/scoremax_qualified_source
-          cp scoremax_runtime_v669b/{app.py,account_security_engine.py,scoremax_production.py,scoremax_integration_v1.py,question_contract_engine.py,ux_constructed_auto_marker.py,written_response_engine.py,ux_content_reviewer.py,ux_student_batch.py,ux_catalogue_browser.py,ux_mastery_rigor_admin.py,ux_staging_routes.py} /tmp/scoremax_qualified_source/
+          cp scoremax_runtime_v669b/{app.py,account_security_engine.py,sqlite_mutation_engine.py,ux_email_verification.py,commercial_access_engine.py,scoremax_production.py,scoremax_integration_v1.py,question_contract_engine.py,ux_constructed_auto_marker.py,written_response_engine.py,ux_content_reviewer.py,ux_student_batch.py,ux_catalogue_browser.py,ux_mastery_rigor_admin.py,ux_staging_routes.py} /tmp/scoremax_qualified_source/
           cp -r scoremax_runtime_v669b/templates /tmp/scoremax_qualified_source/templates
           sha256sum /tmp/scoremax_qualified_source/*.py > /tmp/scoremax_qualified_source/SHA256SUMS.txt
       - name: Install runtime dependencies
@@ -62,6 +68,12 @@ jobs:
       - name: Qualify account revocation and actual cold/restarted WSGI
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python scripts/qualify_account_startup_repair.py --report /tmp/scoremax_account_startup_repair.json
+      - name: Qualify registration transactions and account boundary
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python scripts/qualify_registration_boundary.py --report /tmp/scoremax_registration_boundary.json
+      - name: Qualify optional email delivery isolation and token lifecycle
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python scripts/qualify_optional_email_verification.py | tee /tmp/scoremax_optional_email.log
       - name: Qualify native assessment contract and adversarial marking
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python scripts/qualify_assessment_contract_repair.py --report /tmp/scoremax_assessment_contract_repair.json
@@ -137,6 +149,8 @@ jobs:
             /tmp/scoremax_build_determinism.json
             /tmp/scoremax_qualified_source/
             /tmp/scoremax_account_startup_repair.json
+            /tmp/scoremax_registration_boundary.json
+            /tmp/scoremax_optional_email.log
             /tmp/scoremax_assessment_contract_repair.json
             /tmp/scoremax_written_entrypoints.json
             /tmp/scoremax_assessment_browser.json

@@ -33,6 +33,17 @@ def apply_programme_mastery_repair(root):
         donors(here/'programme_commercial_scope_v2.py')['programme_subjects'])
     compile(coverage,str(commercial),'exec');commercial.write_text(coverage)
     ap=root/'app.py';a=ap.read_text()
+    connection=fn(a,'db')
+    connection=replace_once(connection,
+        '    sqlite_mutation.configure_connection(c)\n    return c',
+        "    try:\n"
+        "        sqlite_mutation.configure_connection(c)\n"
+        "        c.create_function('scoremax_release_programme',2,question_contracts.programme_for_release,deterministic=True)\n"
+        "        return c\n"
+        "    except Exception:\n"
+        "        c.close()\n"
+        "        raise")
+    a=replace_function(a,'db',connection)
     a=add_functions(a,donors(here/'programme_evidence_v3.py'))
     a=add_functions(a,donors(here/'mastery_policy_v3.py'))
     # Schema changes are additive, leave all saved histories and unscoped legacy states intact.
@@ -193,6 +204,22 @@ def apply_programme_mastery_repair(root):
     m=fn(a,'create_assessment_session')
     m=replace_once(m,"    meta=dict(meta or {})", "    meta=dict(meta or {})\n    meta['programme']=canonical_programme(meta.get('programme') or student_programme(c,student_id))\n    for _qid in question_ids:\n        _q=c.execute('SELECT programme,qualification,ph_projection_owner FROM questions WHERE id=?',(_qid,)).fetchone()\n        if str(_q['ph_projection_owner'] or '')!='POWER_HOUSE' and canonical_programme(_q['programme'] or _q['qualification'])!=meta['programme']:\n            raise question_contracts.QuestionContractError('ASSESSMENT_PROGRAMME_MISMATCH')")
     a=replace_function(a,'create_assessment_session',m)
+    a=replace_once(a,'integration_v1.build_session_content_pins(c,question_ids)',
+        "integration_v1.build_session_content_pins(c,question_ids,meta['programme'])")
+    m=fn(a,'scoremax_test_me')
+    m=replace_once(m,"    programme=student_programme(c,session['user_id'])",
+        "    programme=student_programme(c,session['user_id'])\n    scope_sql,scope_args=_programme_scope_sql(_programme_aliases(programme),'q')")
+    m=replace_once(m,"AND (?='' OR lower(COALESCE(q.programme,''))=lower(?) OR lower(COALESCE(q.qualification,''))=lower(?))",
+        'AND {scope_sql}')
+    m=replace_once(m,'[subject,programme,programme,programme,count*3]','[subject]+scope_args+[count*3]')
+    a=replace_function(a,'scoremax_test_me',m)
+    # Reject malformed assessment counts before opening a database connection.
+    for endpoint,old,valid in (
+        ('test_start',"    count=max(1,min(100,int(request.form['count'])))","max(1,min(100,int(request.form.get('count',''))))"),
+        ('scoremax_test_me',"    count=max(10,min(40,int(request.form.get('count') or 20)))","max(10,min(40,int(request.form.get('count') or 20)))")):
+        m=fn(a,endpoint)
+        m=replace_once(m,old,"    try:\n        count="+valid+"\n    except (ValueError,TypeError,OverflowError):\n        flash('Choose a valid whole number of questions.','error')\n        return redirect(url_for('test_setup'))")
+        a=replace_function(a,endpoint,m)
     m=fn(a,'active_assembly_policy')
     m=replace_once(m,'    candidates=[]',"    programme=canonical_programme(programme)\n    subject=str(subject or '').strip();chapter=str(chapter or '').strip()\n    candidates=[]")
     a=replace_function(a,'active_assembly_policy',m)
