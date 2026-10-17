@@ -55,6 +55,7 @@ def main() -> None:
         "static/ux_structure_v2.css",
         "static/ux_footer_v2.css",
         "static/ux_text_editor.js",
+        "static/ux_calculator_drawer.js",
         "static/ux_login_clean.js",
         "ux_staging_routes.py",
         "ux_student_batch.py",
@@ -111,7 +112,7 @@ def main() -> None:
   <nav class="ux-footer-col" aria-label="Account"><h3>Account</h3><a href="{{url_for('login')}}">Login</a><a class="ux-footer-primary" href="{{url_for('register',role='student')}}">Start Free</a></nav>
 </div><div class="ux-footer-bottom"><span>© ScoreMax</span><div class="ux-footer-bottom-links"><a href="{{url_for('faq_page')}}">Help</a><a href="{{url_for('about_page')}}">About</a></div></div></section>
 {% endif %}'''
-    script_inject = footer + '\n' + script_marker + '\n{% if not session.get(\'user_id\') and request.endpoint == \'index\' %}<script src="{{url_for(\'static\',filename=\'ux_text_editor.js\')}}"></script>{% endif %}'
+    script_inject = footer + '\n' + script_marker
     if script_marker not in text:
         raise SystemExit("UX_VNEXT_TEXT_EDITOR_SCRIPT_MARKER_MISSING")
     text = text.replace(script_marker, script_inject, 1)
