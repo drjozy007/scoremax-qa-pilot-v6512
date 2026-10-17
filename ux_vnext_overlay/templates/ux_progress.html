@@ -7,7 +7,7 @@
   <div class="ux-progress-metrics"><article><strong>{{avg_score}}%</strong><span>average score</span></article><article><strong>{{tests_completed}}</strong><span>tests completed</span></article><article><strong>{{mastery_count}}</strong><span>mastery areas</span></article><article><strong>{{health}}/100</strong><span>overall progress</span></article></div>
   <div class="ux-progress-grid">
     <section class="ux-panel"><p class="eyebrow">BY SUBJECT</p><h2>Your subject position</h2><div class="ux-progress-subjects">{% for s in subjects %}<article class="ux-progress-subject"><strong>{{s.name}}</strong><span>{{s.accuracy ~ '%' if s.answered else 'No evidence yet'}} · {{s.started_chapters}} chapters started</span><a href="{{s.url}}">Open chapters →</a></article>{% else %}<div class="ux-empty-progress">No subject progress yet.</div>{% endfor %}</div></section>
-    <section class="ux-panel"><p class="eyebrow">NEXT ACTIONS</p><h2>What to do next</h2>{% for a in actions %}<div class="ux-action-row"><div><strong>{{a.title}}</strong><span>{{a.copy}}</span></div><a href="{{a.url}}">Open →</a></div>{% else %}<div class="ux-empty-progress">Complete a diagnostic or chapter activity and ScoreMax will start recommending next actions.</div>{% endfor %}</section>
+    <section class="ux-panel"><p class="eyebrow">NEXT ACTIONS</p><h2>What to do next</h2>{% for a in actions %}<div class="ux-action-row"><div><strong>{{a.title}}</strong><span>{{a['copy']}}</span></div><a href="{{a.url}}">Open →</a></div>{% else %}<div class="ux-empty-progress">Complete a diagnostic or chapter activity and ScoreMax will start recommending next actions.</div>{% endfor %}</section>
   </div>
 </section>
 {% endblock %}
