@@ -1,6 +1,11 @@
 name: Teacher Corner Staging Qualification v7
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/teacher-corner-staging-audit-v7.yml'
+      - 'ux_vnext_overlay/ux_teacher_workspace*.py'
+      - 'scripts/qualify_teacher_rendering.py'
   push:
     branches: [feature/v6611c-ux-vnext-landing]
     paths:
@@ -8,6 +13,8 @@ on:
       - 'deploy_ux_vnext.py'
       - 'deploy_ux_vnext_recovery.py'
       - 'ux_vnext_overlay/ux_teacher_workspace_v2.py'
+      - 'ux_vnext_overlay/ux_teacher_workspace.py'
+      - 'scripts/qualify_teacher_rendering.py'
       - 'ux_vnext_overlay/ux_referral_hero_v3.py'
       - 'ux_vnext_overlay/ux_teacher_preview.py'
 
@@ -21,12 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/v6611c-ux-vnext-landing
           fetch-depth: 0
       - name: Materialize Teacher Workspace v2 plus Referral Hero v3
         run: python deploy_ux_vnext.py
       - name: Install runtime dependencies
         run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Native WSGI teacher rendering regression
+        run: python scripts/qualify_teacher_rendering.py
       - name: Fresh database teacher qualification
         env:
           SCOREMAX_ENV: local
