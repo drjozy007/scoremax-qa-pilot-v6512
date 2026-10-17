@@ -45,6 +45,10 @@ jobs:
         run: python scripts/qualify_qa_agents_admin.py
       - name: Run existing assessment regression
         run: python scripts/qualify_assessment_contract_repair.py
+      - name: Qualify optional registration email and token safety
+        run: python scripts/qualify_optional_email_verification.py
+      - name: Run account and session startup regression
+        run: python scripts/qualify_account_startup_repair.py
       - name: Run optional QA wild attack
         if: ${{ hashFiles('scripts/wild_attack_qa_admin.py') != '' }}
         run: python scripts/wild_attack_qa_admin.py
