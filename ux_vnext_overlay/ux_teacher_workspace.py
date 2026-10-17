@@ -9,9 +9,11 @@ STYLE = r'''<style id="ux-teacher-workspace-style">
 .ux-teacher-home .next-action-card{border:1px solid #e5d4ae;border-top:5px solid #d6a74d;background:linear-gradient(135deg,#fffaf0,#fff)}.ux-teacher-home .next-action-card h2{margin:.15rem 0 .3rem}.ux-teacher-home .grid{gap:10px}.ux-teacher-create,.ux-teacher-activity,.ux-teacher-classes{border-radius:15px}.ux-teacher-section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:20px 2px 8px}.ux-teacher-section-head h2{margin:.1rem 0;color:#2f7f7d;font-size:1.35rem}.ux-teacher-section-head p{margin:0;color:#6b7875;font-size:.72rem}.ux-teacher-classes table th{font-size:.66rem}.ux-teacher-classes table td{vertical-align:middle}.ux-teacher-classes a{font-weight:850;color:#236765}
 .ux-teacher-secondary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.ux-teacher-secondary-grid>.card,.ux-teacher-secondary-grid>section.card{margin:0}.ux-teacher-secondary-grid .teacher-referral-callout{display:block}.ux-teacher-secondary-grid .teacher-referral-callout .btn{margin-top:9px}.ux-teacher-secondary-grid h2,.ux-teacher-secondary-grid h3{font-size:1rem}.ux-teacher-secondary-grid p{font-size:.7rem}.ux-teacher-secondary-grid .eyebrow{font-size:.58rem}
 .ux-classroom-home{max-width:1220px;margin:0 auto;padding-bottom:48px}.ux-classroom-home .dashboard-hero{background:linear-gradient(135deg,#eff9f8,#fff 62%);border:1px solid #cfe5e3}.ux-classroom-home .dashboard-hero h2{color:#2f7f7d}.ux-classroom-home .grid3{gap:9px;margin-bottom:11px}.ux-classroom-home .metric{border-top:4px solid #3fa6a3;border-radius:14px}.ux-classroom-home .next-action-card{border-top:5px solid #d6a74d}.ux-classroom-home .ux-class-blueprint{margin-top:14px;background:#fafcfc}.ux-classroom-home .ux-class-section-label{margin:20px 2px 8px}.ux-classroom-home .ux-class-section-label h2{margin:.1rem 0;color:#2f7f7d;font-size:1.3rem}
+.ux-teacher-home .grid3,.ux-classroom-home .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.ux-teacher-home .metric,.ux-classroom-home .metric{display:flex;flex-direction:column;gap:6px;min-height:92px;padding:16px;background:#fff;border:1px solid #dce7e6;border-top:4px solid #3fa6a3}.ux-teacher-home .metric span,.ux-classroom-home .metric span{font-size:.78rem;color:#60706d}.ux-teacher-home .metric strong,.ux-classroom-home .metric strong{font-size:1.7rem;line-height:1.2;color:#173f3d}
 .ux-teacher-nav-menu{position:relative}.ux-teacher-nav-menu>summary{cursor:pointer;list-style:none;font-weight:700}.ux-teacher-nav-menu>summary::-webkit-details-marker{display:none}.ux-teacher-nav-menu>div{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:80;min-width:180px;padding:8px;border:1px solid #d9e5e3;border-radius:12px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.12)}.ux-teacher-nav-menu[open]>div{display:grid}.ux-teacher-nav-menu>div a{padding:8px 10px;border-radius:8px;white-space:nowrap}.ux-teacher-nav-menu>div a:hover{background:#f2f8f7}
 @media(max-width:900px){.ux-teacher-actions{grid-template-columns:1fr 1fr}.ux-teacher-secondary-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.ux-teacher-home,.ux-classroom-home{padding-left:0;padding-right:0}.ux-teacher-actions{grid-template-columns:1fr 1fr}.ux-teacher-actions a{min-height:44px}.ux-teacher-section-head{align-items:flex-start;flex-direction:column}.ux-teacher-home .table-wrap,.ux-classroom-home .table-wrap{margin-left:-2px;margin-right:-2px}.ux-teacher-home table,.ux-classroom-home table{font-size:.72rem}}
+@media(max-width:420px){.ux-teacher-home .grid3,.ux-classroom-home .grid3{grid-template-columns:1fr}}
 </style>'''
 
 
@@ -22,6 +24,17 @@ def _take_once(text: str, pattern: str, label: str) -> tuple[str, str]:
         raise SystemExit(f'UX_TEACHER_{label}_ANCHOR_MISMATCH:{len(matches)}')
     m=matches[0]
     return text[:m.start()]+text[m.end():],m.group(0)
+
+
+def _append_content(text: str, fragment: str, label: str) -> str:
+    """Insert into the explicit content block, never the preceding title block."""
+    marker = '{% block content %}'
+    if text.count(marker) != 1:
+        raise SystemExit(f'UX_TEACHER_{label}_CONTENT_BLOCK_MISMATCH')
+    prefix, content = text.split(marker, 1)
+    if content.count('{% endblock %}') != 1:
+        raise SystemExit(f'UX_TEACHER_{label}_CONTENT_END_MISMATCH')
+    return prefix + marker + content.replace('{% endblock %}', fragment + '\n{% endblock %}', 1)
 
 
 def _refine_teacher_template(path: Path) -> None:
@@ -61,7 +74,7 @@ def _refine_teacher_template(path: Path) -> None:
 <div class="ux-teacher-secondary-grid">'''+referral+'\n'+structures+'''</div>'''
     if '{% endblock %}' not in text:
         raise SystemExit('UX_TEACHER_ENDBLOCK_MISSING')
-    text=text.replace('{% endblock %}',secondary+'\n</section>\n{% endblock %}',1)
+    text=_append_content(text,secondary+'\n</section>','HOME')
     path.write_text(text,encoding='utf-8')
 
 
@@ -95,9 +108,9 @@ def _refine_classroom_template(path: Path) -> None:
     if blueprint:
         blueprint=blueprint.replace('<section class="card">','<section class="card ux-class-blueprint">',1)
         label='<section class="ux-class-section-label"><p class="eyebrow">EXAM CONTEXT</p><h2>Assessment structure</h2></section>'
-        text=text.replace('{% endblock %}',label+'\n'+blueprint+'\n</section>\n{% endblock %}',1)
+        text=_append_content(text,label+'\n'+blueprint+'\n</section>','CLASSROOM')
     else:
-        text=text.replace('{% endblock %}','</section>\n{% endblock %}',1)
+        text=_append_content(text,'</section>','CLASSROOM')
     path.write_text(text,encoding='utf-8')
 
 
