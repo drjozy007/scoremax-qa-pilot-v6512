@@ -10,6 +10,7 @@ import re
 
 VERSION = 'PH-NATIVE-OPERATIONS-3-PRACTICE'
 RESPONSE_VERSION = 'PH-STRUCTURED-PRACTICE-1'
+EXTENDED_PRACTICE_VERSION = 'PH-NATIVE-OPERATIONS-4-PRACTICE'
 AUTHORITY = {
     'policy': 'CHEMISTRY-STRUCTURED-PRACTICE-OWNER-20261012',
     'purpose': 'STRUCTURED_PRACTICE',
@@ -218,11 +219,15 @@ def derive(source):
 def attach(rubric,source):
     from native_scoring_operations_v1 import stable_hash, _original_points_match
     operations=derive(source)
+    version=VERSION
+    if not operations:
+        operations=derive_extended(source)
+        version=EXTENDED_PRACTICE_VERSION
     if not operations or 'native_scoring' in rubric:return None
     if not _original_points_match(rubric,source,operations):return None
     body=copy.deepcopy(rubric);original=body.pop('contract_sha256',None)
     if original!=stable_hash(body):return None
-    body['native_scoring']={'version':VERSION,'original_contract_sha256':original,
+    body['native_scoring']={'version':version,'original_contract_sha256':original,
         'source_row_sha256':stable_hash(source),'source_row':copy.deepcopy(source),
         'operations':operations,'response_contract':RESPONSE_VERSION,
         'practice_authority':copy.deepcopy(AUTHORITY)}
@@ -249,7 +254,7 @@ def observations(binding,answer):
         for claim in assertions:
             if not isinstance(claim,dict) or set(claim)!={'subject','relation','object'}:
                 raise ValueError('ASSERTION_FIELDS_INVALID')
-            actual=atom(claim['subject'],claim['relation'],claim['object'])
+            actual=(extended_atom if binding['version']==EXTENDED_PRACTICE_VERSION else atom)(claim['subject'],claim['relation'],claim['object'])
             matched=False
             for op in binding['operations']:
                 for expected in op.get('assertions',[]):
@@ -338,7 +343,7 @@ def observations(binding,answer):
 
 
 def practice_contract(runtime_rubric):
-    return runtime_rubric.get('native_contract',{}).get('native_scoring',{}).get('version')==VERSION
+    return runtime_rubric.get('native_contract',{}).get('native_scoring',{}).get('version') in (VERSION,EXTENDED_PRACTICE_VERSION)
 
 
 def response_descriptor(runtime_rubric):
@@ -347,3 +352,105 @@ def response_descriptor(runtime_rubric):
     return {'version':RESPONSE_VERSION,'purpose':'STRUCTURED_PRACTICE',
             'fields':['subject','relation','object'],'original_exam_equivalent':False,
             'exam_readiness_evidence':False}
+
+
+# Additional grammatical inflections preserve each source-authored predicate.
+# No synonym, active/passive equivalence or scientific rule is inferred here.
+_ADDITIONAL_VERBS = {
+    'lacks':'lack','lack':'lack','exerts':'exert','exert':'exert',
+    'distorts':'distort','distort':'distort','creates':'create','create':'create',
+    'keeps':'keep','keep':'keep','holds':'hold','hold':'hold',
+    'attracts':'attract','attract':'attract','separates':'separate','separate':'separate',
+    'overcomes':'overcome','overcome':'overcome','escapes from':'escape from',
+    'escape from':'escape from','collides with':'collide with','collide with':'collide with',
+    'vibrates about':'vibrate about','vibrate about':'vibrate about',
+    'reflects':'reflect','reflect':'reflect','describes':'describe','describe':'describe',
+    'equals':'equal','equal':'equal','differs from':'differ from','differ from':'differ from',
+    'includes':'include','include':'include','reduces':'reduce','reduce':'reduce',
+    'possesses':'possess','possess':'possess','allows':'allow','allow':'allow',
+    'opposes':'oppose','oppose':'oppose','forms between':'form between',
+    'acts between':'act between','act between':'act between',
+    'arises from':'arise from','arise from':'arise from',
+    'results in':'result in','results from':'result from',
+}
+_EXTENDED_VERBS = {**VERBS, **_ADDITIONAL_VERBS}
+# Preserve modality; "may" never becomes an unconditional assertion.
+for _form, _base in list(_EXTENDED_VERBS.items()):
+    if _form==_base:
+        for _modal in ('can','may','must'):
+            _EXTENDED_VERBS[_modal+' '+_form]=_modal+' '+_base
+for _participle in ('separated','held','arranged','packed','polarized','attracted','caused','formed','produced'):
+    for _preposition in ('by','in','into','with','to','from'):
+        for _copula in ('is','are','be'):
+            _EXTENDED_VERBS[_copula+' '+_participle+' '+_preposition]='be '+_participle+' '+_preposition
+
+
+def extended_atom(subject,predicate,object_):
+    raw=text(predicate).lower();neg=False
+    if raw.startswith(('does not ','do not ')):
+        raw=raw.split(' not ',1)[1];neg=True
+    elif ' not ' in raw:
+        raw=raw.replace(' not ',' ',1);neg=True
+    elif raw.endswith(' not'):
+        raw=raw[:-4];neg=True
+    relation_=_EXTENDED_VERBS.get(raw,raw)
+    if relation_ not in set(_EXTENDED_VERBS.values()):raise ValueError('UNSUPPORTED_RELATION')
+    subject=entity(subject);object_=entity(object_)
+    if object_.startswith('no '):
+        if neg:raise ValueError('DOUBLE_NEGATION')
+        neg=True;object_=object_[3:]
+    return {'subject':subject,'relation':relation_,'object':object_,'negative':neg}
+
+
+def parse_extended_proposition(clause):
+    """A bounded single proposition; nested causal/conditional text stays held."""
+    clause=text(clause)
+    if re.search(r'[,;:|=∝]|\b(and|or|because|therefore|whereas|although|unless|which|that|when|if|so|as|before|after|while)\b',clause,re.I):return None
+    if re.match(r'(?i)(it|its|their|this|these|they|there|such|each|both|consequently|at|for|with|without|during)\b',clause):return None
+    terms=sorted(_EXTENDED_VERBS,key=len,reverse=True)
+    pattern=r'\b(?:(?:does|do) not )?('+'|'.join(re.escape(v) for v in terms)+r')(?: not)?\b'
+    matches=list(re.finditer(pattern,clause))
+    if len(matches)!=1:return None
+    m=matches[0];subject=clause[:m.start()].strip();obj=clause[m.end():].strip()
+    if not subject or not obj or re.search(r'\b(not|no|does|do)\b',subject):return None
+    try:return extended_atom(subject,m.group(),obj)
+    except ValueError:return None
+
+
+def parse_extended_bundle(clause):
+    direct=parse_extended_proposition(clause)
+    if direct:return [direct]
+    chunks=re.split(r'\s+and\s+|(?<!\d)\.\s+|;\s*',text(clause))
+    if not 2<=len(chunks)<=6:return None
+    result=[];subject=None
+    for chunk in chunks:
+        parsed=parse_extended_proposition(chunk)
+        starts_verb=any(chunk.startswith(v+' ') for v in _EXTENDED_VERBS) or chunk.startswith(('does not ','do not '))
+        if parsed is None and subject and starts_verb:
+            parsed=parse_extended_proposition(subject+' '+chunk)
+        if parsed is None:return None
+        subject=parsed['subject'];result.append(parsed)
+    if len({json.dumps(x,sort_keys=True) for x in result})!=len(result):return None
+    return result
+
+
+def derive_extended(source):
+    """Versioned grammatical extension; accepted v3 bindings stay unchanged."""
+    from native_scoring_operations_v1 import _fraction
+    if source.get('Required_Produced_Representation')!='NONE':return None
+    if source.get('Numerical_Tolerance_Rule')!='NOT_APPLICABLE' or source.get('Significant_Figures_Rule')!='NOT_APPLICABLE':return None
+    if source.get('Partial_Credit_Rule')!='Award 1 mark for each independently satisfied mark point.':return None
+    if not source.get('Contradiction_Rule','').startswith('A direct contradiction of a credited proposition removes credit for that proposition;'):return None
+    evidence=source.get('Canonical_Accepted_Evidence','').split(' | ')
+    values=source.get('Mark_Point_Values','').split(';')
+    if not len(evidence)==len(values)==source.get('Mark_Point_Count'):return None
+    if sum(_fraction(v) for v in values)!=_fraction(source['Marks']):return None
+    operations=[]
+    for i,clause in enumerate(evidence,1):
+        parsed=parse_extended_bundle(clause)
+        operation=({'kind':'TYPED_PROPOSITION','assertions':parsed} if parsed else
+                   equation_operation(clause,source) or substitution_operation(clause,source))
+        if not operation:return None
+        operations.append({'point_id':f'p{i}','canonical':clause,**operation})
+    signatures=[json.dumps({k:v for k,v in op.items() if k not in ('point_id','canonical')},sort_keys=True) for op in operations]
+    return operations if len(signatures)==len(set(signatures)) else None
