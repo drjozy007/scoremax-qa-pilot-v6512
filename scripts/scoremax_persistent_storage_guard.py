@@ -52,6 +52,15 @@ def is_mount(path: Path) -> bool:
     return False
 
 
+def _sha256_stream(path: Path) -> str:
+    """Hash a backup/intake file with bounded memory, independent of its size."""
+    digest=hashlib.sha256()
+    with Path(path).open('rb') as source:
+        for chunk in iter(lambda: source.read(1024*1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def check_sqlite(path: Path) -> tuple[str,int]:
     try:
         c=sqlite3.connect(path,timeout=30)
@@ -105,13 +114,19 @@ def _reviewer_state(c):
 
 
 def _backup_and_verify(c,target: Path) -> tuple[str,str,int]:
+    # Publish only after the private copy passes integrity and a streamed digest.
+    # A failed verification must never replace the last known-good backup.
     tmp=target.with_suffix('.tmp'); tmp.unlink(missing_ok=True)
-    dest=sqlite3.connect(tmp)
-    try: c.backup(dest); dest.commit()
-    finally: dest.close()
-    os.replace(tmp,target)
-    integ,fk=check_sqlite(target)
-    return hashlib.sha256(target.read_bytes()).hexdigest(),integ,fk
+    try:
+        dest=sqlite3.connect(tmp)
+        try: c.backup(dest); dest.commit()
+        finally: dest.close()
+        integ,fk=check_sqlite(tmp)
+        digest=_sha256_stream(tmp)
+        os.replace(tmp,target)
+        return digest,integ,fk
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def _restore_semantic_check(source: Path, expected_counts: dict, expected_reviewers: dict) -> None:
@@ -141,9 +156,8 @@ def _verify_backup_row(row,kind: str) -> None:
     path=Path(str(row['file_path'] or '')).resolve()
     if not path.is_file(): fail(f'emergency_{kind}_backup_file_missing')
     if BACKUP not in path.parents: fail(f'emergency_{kind}_backup_outside_protected_storage')
-    raw=path.read_bytes()
-    if hashlib.sha256(raw).hexdigest()!=str(row['file_sha256'] or '').lower(): fail(f'emergency_{kind}_backup_checksum_mismatch')
-    if len(raw)!=int(row['file_size_bytes'] or 0): fail(f'emergency_{kind}_backup_size_mismatch')
+    if _sha256_stream(path)!=str(row['file_sha256'] or '').lower(): fail(f'emergency_{kind}_backup_checksum_mismatch')
+    if path.stat().st_size!=int(row['file_size_bytes'] or 0): fail(f'emergency_{kind}_backup_size_mismatch')
     check_sqlite(path)
 
 
@@ -182,7 +196,7 @@ def _qualify_emergency_batches(c) -> dict:
         if row_count<1 or valid!=row_count or errors!=0 or warnings!=0: fail(f'emergency_validation_not_clean batch={code} rows={row_count} valid={valid} errors={errors} warnings={warnings}')
         source=Path(str(b['source_file_path'] or '')).resolve()
         if not source.is_file() or INTAKE not in source.parents: fail(f'emergency_source_file_not_protected batch={code}')
-        if hashlib.sha256(source.read_bytes()).hexdigest()!=str(b['payload_checksum']).lower(): fail(f'emergency_source_checksum_mismatch batch={code}')
+        if _sha256_stream(source)!=str(b['payload_checksum']).lower(): fail(f'emergency_source_checksum_mismatch batch={code}')
         stored=c.execute('SELECT * FROM content_import_batch_rows WHERE batch_id=? ORDER BY id',(bid,)).fetchall()
         if len(stored)!=row_count: fail(f'emergency_row_evidence_count_mismatch batch={code}')
         qrows=c.execute('SELECT * FROM questions WHERE source_import_batch_id=? ORDER BY id',(bid,)).fetchall()
