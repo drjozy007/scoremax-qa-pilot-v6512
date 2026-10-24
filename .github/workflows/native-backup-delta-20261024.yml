@@ -1,0 +1,32 @@
+name: ScoreMax native backup delta only
+on:
+  push:
+    branches: [fix/scoremax-streamed-backup-20261022]
+    paths:
+      - '.github/workflows/native-backup-delta-20261024.yml'
+      - 'scripts/apply_scoremax_native_backup_delta_20261024.py'
+      - 'qualification/native_backup_delta_20261024/**'
+      - 'tests/native_backup_delta_20261024/**'
+      - 'deploy_ux_vnext.py'
+permissions:
+  contents: read
+jobs:
+  native_backup_delta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: New synthetic native backup cases and exact-source checks only
+        run: python -B tests/native_backup_delta_20261024/run_scoremax_native_delta_linux_20261024.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scoremax-native-backup-delta-${{ github.sha }}
+          path: native-backup-evidence/
+          retention-days: 14
+          if-no-files-found: error

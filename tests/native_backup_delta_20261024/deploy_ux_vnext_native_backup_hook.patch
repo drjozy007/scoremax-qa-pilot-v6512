@@ -1,0 +1,11 @@
+--- a/deploy_ux_vnext.py
++++ b/deploy_ux_vnext.py
+@@ -623,6 +623,8 @@
+     print('SCOREMAX_SOURCE_MARKET_SCHEMA_FINAL_GATE_PASS source=1.2.0 package=true manifest=true envelope=true',flush=True)
+     from ux_vnext_overlay.native_manifest_pull_v1 import apply as apply_native_manifest_pull
+     apply_native_manifest_pull(ROOT)
++    from scripts.apply_scoremax_native_backup_delta_20261024 import apply as apply_native_backup_delta
++    print('SCOREMAX_NATIVE_BACKUP_DELTA', apply_native_backup_delta(ROOT), flush=True)
+ 
+ 
+ if __name__ == '__main__':
