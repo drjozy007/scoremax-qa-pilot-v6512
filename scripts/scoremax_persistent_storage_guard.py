@@ -1,12 +1,21 @@
 from __future__ import annotations
 
+from contextlib import closing
 import hashlib
 import json
 import os
 import sqlite3
-import tempfile
+import shutil
 import uuid
 from pathlib import Path
+
+# Exact existing capacity fence is packaged beside this guard; no second manager.
+from backup_capacity_v1 import (
+    RESERVE_BYTES, capacity_backup,
+    database_copy_reservation, owned_copy_publication,
+)
+
+COPY_SLACK_BYTES=4*1024*1024
 
 POLICY='SCOREMAX-PERSISTENT-GUARD-V4-GOVERNED-EMERGENCY-DIRECT-20260915'
 ROOT=Path(os.environ.get('SCOREMAX_PERSISTENT_ROOT','/data/scoremax')).resolve()
@@ -61,12 +70,29 @@ def _sha256_stream(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _readonly_connection(path: Path):
+    # Never turn a missing backup/source into a new empty database.
+    return sqlite3.connect(Path(path).resolve().as_uri()+'?mode=ro',uri=True,timeout=30)
+
+
+def _private_destination(path: Path):
+    # Names are inside the publication helper's new private directory. Never
+    # adopt or remove an existing partial, including one owned by another run.
+    fd=os.open(path,os.O_CREAT|os.O_EXCL|os.O_RDWR,0o600)
+    os.close(fd)
+    return sqlite3.connect(path,timeout=30)
+
+
+def _sqlite_state(c) -> tuple[str,int]:
+    integrity=c.execute('PRAGMA integrity_check').fetchone()[0]
+    foreign_keys=sum(1 for _ in c.execute('PRAGMA foreign_key_check'))
+    return integrity,foreign_keys
+
+
 def check_sqlite(path: Path) -> tuple[str,int]:
     try:
-        c=sqlite3.connect(path,timeout=30)
-        integ=c.execute('PRAGMA integrity_check').fetchone()[0]
-        fk=len(c.execute('PRAGMA foreign_key_check').fetchall())
-        c.close()
+        with closing(_readonly_connection(path)) as c:
+            integ,fk=_sqlite_state(c)
     except Exception as exc:
         fail(f'sqlite_check_failed path={path} error={type(exc).__name__}')
     if integ!='ok': fail(f'sqlite_integrity_failed path={path} result={integ}')
@@ -75,14 +101,14 @@ def check_sqlite(path: Path) -> tuple[str,int]:
 
 
 def durability_probe() -> int:
-    c=sqlite3.connect(PROBE_DB,timeout=30)
-    c.execute('CREATE TABLE IF NOT EXISTS durability_probe(id INTEGER PRIMARY KEY CHECK(id=1), runs INTEGER NOT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)')
-    row=c.execute('SELECT runs FROM durability_probe WHERE id=1').fetchone()
-    if row is None:
-        runs=1; c.execute('INSERT INTO durability_probe(id,runs) VALUES(1,1)')
-    else:
-        runs=int(row[0])+1; c.execute('UPDATE durability_probe SET runs=?,updated_at=CURRENT_TIMESTAMP WHERE id=1',(runs,))
-    c.commit(); integ=c.execute('PRAGMA integrity_check').fetchone()[0]; fk=len(c.execute('PRAGMA foreign_key_check').fetchall()); c.close()
+    with closing(sqlite3.connect(PROBE_DB,timeout=30)) as c:
+        c.execute('CREATE TABLE IF NOT EXISTS durability_probe(id INTEGER PRIMARY KEY CHECK(id=1), runs INTEGER NOT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)')
+        row=c.execute('SELECT runs FROM durability_probe WHERE id=1').fetchone()
+        if row is None:
+            runs=1; c.execute('INSERT INTO durability_probe(id,runs) VALUES(1,1)')
+        else:
+            runs=int(row[0])+1; c.execute('UPDATE durability_probe SET runs=?,updated_at=CURRENT_TIMESTAMP WHERE id=1',(runs,))
+        c.commit(); integ,fk=_sqlite_state(c)
     if integ!='ok' or fk: fail(f'durability_probe_integrity_failed integrity={integ} fk={fk}')
     return runs
 
@@ -113,31 +139,67 @@ def _reviewer_state(c):
     return {'count':len(rows),'ids':ids,'approved':approved}
 
 
+def _copy_with_budget(source,destination,target: Path,*,max_bytes: int,page_size: int,followup_bytes: int) -> None:
+    def progress(status,remaining,total):
+        # The read snapshot bounds this copy; do not expand its admission while
+        # a live database grows. The next restore copy remains reserved too.
+        if total*page_size>max_bytes: fail('backup_snapshot_exceeds_reserved_size')
+        required=RESERVE_BYTES+remaining*page_size+followup_bytes+COPY_SLACK_BYTES
+        if shutil.disk_usage(target.parent).free<required:
+            fail('backup_remaining_capacity_refused')
+    capacity_backup(source,destination,target,progress_hook=progress,pages=256,backup_artifact=True)
+    destination.commit()
+
+
 def _backup_and_verify(c,target: Path) -> tuple[str,str,int]:
-    # Publish only after the private copy passes integrity and a streamed digest.
-    # A failed verification must never replace the last known-good backup.
-    tmp=target.with_suffix('.tmp'); tmp.unlink(missing_ok=True)
+    # Hold the existing per-filesystem capacity lock through private backup,
+    # persistent restore qualification, publication and owned-directory cleanup.
+    # Existing backups/partials and all source data are outside cleanup ownership.
+    if Path(target).parent.resolve()!=BACKUP:
+        fail('backup_target_outside_configured_directory')
+    files=[r[2] for r in c.execute('PRAGMA database_list') if r[1]=='main']
+    if len(files)!=1 or not files[0] or Path(files[0]).resolve()!=DB:
+        fail('backup_source_connection_mismatch')
+    page_size=int(c.execute('PRAGMA page_size').fetchone()[0])
+    max_bytes=max(1,int(c.execute('PRAGMA page_count').fetchone()[0]))*page_size
+    expected_counts=_counts(c); expected_reviewers=_reviewer_state(c)
     try:
-        dest=sqlite3.connect(tmp)
-        try: c.backup(dest); dest.commit()
-        finally: dest.close()
-        integ,fk=check_sqlite(tmp)
-        digest=_sha256_stream(tmp)
-        os.replace(tmp,target)
-        return digest,integ,fk
-    finally:
-        tmp.unlink(missing_ok=True)
+        with database_copy_reservation(DB,BACKUP,copies=2,temporary_bytes=COPY_SLACK_BYTES):
+            # The live file could shrink after this connection's snapshot began.
+            # Reserve for that actual source snapshot as well as the helper's
+            # fresh current-file budget, before allocating either private copy.
+            if shutil.disk_usage(BACKUP).free<RESERVE_BYTES+2*max_bytes+COPY_SLACK_BYTES:
+                fail('backup_snapshot_capacity_refused')
+            with owned_copy_publication(target,overwrite=True) as (private,publish):
+                with closing(_private_destination(private)) as dest:
+                    _copy_with_budget(c,dest,private,max_bytes=max_bytes,page_size=page_size,followup_bytes=max_bytes)
+                integ,fk=check_sqlite(private)
+                _restore_semantic_check(private,expected_counts,expected_reviewers,
+                                        workspace=private.parent,max_bytes=max_bytes,page_size=page_size)
+                digest=_sha256_stream(private)
+                # Verification/hash scans can outlast the last copy progress
+                # check while the source snapshot pins WAL. Recheck the current
+                # reserve and remaining publication slack under the same lock.
+                if shutil.disk_usage(BACKUP).free<RESERVE_BYTES+COPY_SLACK_BYTES:
+                    fail('backup_publication_capacity_refused')
+                publish()
+                return digest,integ,fk
+    except (RuntimeError,TimeoutError) as exc:
+        fail('backup_storage_refused error='+type(exc).__name__+' reason='+str(exc))
 
 
-def _restore_semantic_check(source: Path, expected_counts: dict, expected_reviewers: dict) -> None:
-    with tempfile.TemporaryDirectory(prefix='scoremax-guard-restore-') as td:
-        restored=Path(td)/'restored.sqlite3'; src=sqlite3.connect(source,timeout=30); dst=sqlite3.connect(restored,timeout=30)
-        try: src.backup(dst); dst.commit()
-        finally: dst.close(); src.close()
-        check_sqlite(restored); rc=sqlite3.connect(restored,timeout=30)
-        try: got=_counts(rc); reviewers=_reviewer_state(rc)
-        finally: rc.close()
-        if got!=expected_counts or reviewers!=expected_reviewers: fail('restore_semantic_mismatch')
+def _restore_semantic_check(source: Path,expected_counts: dict,expected_reviewers: dict,*,
+                            workspace: Path,max_bytes: int,page_size: int) -> None:
+    # The caller owns this unique persistent publication directory and its lock.
+    # No full database copy is sent to the separately limited system /tmp.
+    restored=workspace/'restore.sqlite3'
+    with closing(_readonly_connection(source)) as src:
+        with closing(_private_destination(restored)) as dst:
+            _copy_with_budget(src,dst,restored,max_bytes=max_bytes,page_size=page_size,followup_bytes=0)
+    check_sqlite(restored)
+    with closing(_readonly_connection(restored)) as rc:
+        got=_counts(rc); reviewers=_reviewer_state(rc)
+    if got!=expected_counts or reviewers!=expected_reviewers: fail('restore_semantic_mismatch')
 
 
 def _hex64(value) -> bool:
@@ -172,16 +234,17 @@ def _emergency_governance_text(payload: dict) -> tuple[bool,bool,bool]:
 
 
 def _qualify_emergency_batches(c) -> dict:
-    non_ph=c.execute("SELECT * FROM questions WHERE COALESCE(ph_projection_owner,'')<>'POWER_HOUSE' ORDER BY id").fetchall()
-    if not non_ph: return {'questions':0,'batches':0,'released':0,'candidate':0,'batch_codes':[]}
+    # Classify with scalar metadata, not every question's complete academic payload.
+    non_ph_count=int(c.execute("SELECT COUNT(*) FROM questions WHERE COALESCE(ph_projection_owner,'')<>'POWER_HOUSE'").fetchone()[0])
+    if not non_ph_count: return {'questions':0,'batches':0,'released':0,'candidate':0,'batch_codes':[]}
     for t in ('content_import_batches','content_import_batch_rows','pilot_backups'):
         if not _table(c,t): fail('emergency_evidence_table_missing='+t)
     qcols=_cols(c,'questions')
     for col in ('source_import_batch_id','content_environment','scoremax_ready','status','review_status','active'):
         if col not in qcols: fail('emergency_question_column_missing='+col)
-    batch_ids=sorted({int(q['source_import_batch_id'] or 0) for q in non_ph})
+    batch_ids=sorted({int(r[0] or 0) for r in c.execute("SELECT DISTINCT source_import_batch_id FROM questions WHERE COALESCE(ph_projection_owner,'')<>'POWER_HOUSE'")})
     if not batch_ids or 0 in batch_ids: fail('postimport_unbound_non_power_house_questions')
-    result={'questions':len(non_ph),'batches':0,'released':0,'candidate':0,'batch_codes':[]}
+    result={'questions':non_ph_count,'batches':0,'released':0,'candidate':0,'batch_codes':[]}
     for bid in batch_ids:
         b=c.execute('SELECT * FROM content_import_batches WHERE id=?',(bid,)).fetchone()
         if not b: fail(f'emergency_batch_missing id={bid}')
@@ -197,9 +260,10 @@ def _qualify_emergency_batches(c) -> dict:
         source=Path(str(b['source_file_path'] or '')).resolve()
         if not source.is_file() or INTAKE not in source.parents: fail(f'emergency_source_file_not_protected batch={code}')
         if _sha256_stream(source)!=str(b['payload_checksum']).lower(): fail(f'emergency_source_checksum_mismatch batch={code}')
-        stored=c.execute('SELECT * FROM content_import_batch_rows WHERE batch_id=? ORDER BY id',(bid,)).fetchall()
-        if len(stored)!=row_count: fail(f'emergency_row_evidence_count_mismatch batch={code}')
-        qrows=c.execute('SELECT * FROM questions WHERE source_import_batch_id=? ORDER BY id',(bid,)).fetchall()
+        stored_count=int(c.execute('SELECT COUNT(*) FROM content_import_batch_rows WHERE batch_id=?',(bid,)).fetchone()[0])
+        if stored_count!=row_count: fail(f'emergency_row_evidence_count_mismatch batch={code}')
+        stored=c.execute('SELECT * FROM content_import_batch_rows WHERE batch_id=? ORDER BY id',(bid,))
+        qrows=c.execute('SELECT id,question_id,active,status,review_status,content_environment,scoremax_ready FROM questions WHERE source_import_batch_id=? ORDER BY id',(bid,)).fetchall()
         if len(qrows)!=row_count: fail(f'emergency_question_count_mismatch batch={code}')
         by_db={int(q['id']):q for q in qrows}
         for r in stored:
@@ -237,9 +301,10 @@ def _qualify_emergency_batches(c) -> dict:
 
 def qualify_database():
     if not DB.exists(): return {'state':'absent','policy':POLICY}
-    c=sqlite3.connect(DB,timeout=30); c.row_factory=sqlite3.Row
+    c=_readonly_connection(DB); c.row_factory=sqlite3.Row
     try:
-        integrity=c.execute('PRAGMA integrity_check').fetchone()[0]; fk=len(c.execute('PRAGMA foreign_key_check').fetchall()); counts=_counts(c); reviewers=_reviewer_state(c)
+        c.execute('BEGIN')
+        integrity,fk=_sqlite_state(c); counts=_counts(c); reviewers=_reviewer_state(c)
         if integrity!='ok' or fk: fail(f'db_integrity_failed integrity={integrity} fk={fk}')
         if not reviewers['approved']: fail('unapproved_reviewer_state='+json.dumps(reviewers,sort_keys=True))
         commercial=_commercial_catalogue_state(c)
@@ -249,7 +314,7 @@ def qualify_database():
         if counts['questions']==0:
             governed={k:counts[k] for k in ('questions','curriculum','question_families','chapter_catalogue')}
             if any(governed.values()): fail('preimport_governed_substrate_not_empty='+json.dumps(governed,sort_keys=True))
-            sha,bi,bfk=_backup_and_verify(c,BASELINE_BACKUP); _restore_semantic_check(BASELINE_BACKUP,counts,reviewers)
+            sha,bi,bfk=_backup_and_verify(c,BASELINE_BACKUP)
             return {'state':'preimport_qualified','policy':POLICY,'integrity':integrity,'fk':fk,'counts':counts,'priced_plans':priced,'commercial_catalogue':{'approved':True,'count':commercial['count'],'codes':commercial['codes']},'reviewer_state':reviewers,'backup':str(BASELINE_BACKUP),'backup_sha256':sha,'backup_integrity':bi,'backup_fk':bfk}
         qcols=_cols(c,'questions')
         required={'ph_projection_owner','ph_question_id','ph_question_version_id','ph_question_checksum_sha256','ph_release_id','ph_release_version','ph_release_checksum_sha256','active'}
@@ -271,7 +336,7 @@ def qualify_database():
             releases=0; membership=0; unbound=0
         emergency=_qualify_emergency_batches(c)
         if ph_count+int(emergency['questions'])!=counts['questions']: fail('postimport_question_classification_mismatch')
-        sha,bi,bfk=_backup_and_verify(c,OPERATIONAL_BACKUP); _restore_semantic_check(OPERATIONAL_BACKUP,counts,reviewers)
+        sha,bi,bfk=_backup_and_verify(c,OPERATIONAL_BACKUP)
         return {'state':'postimport_qualified','policy':POLICY,'integrity':integrity,'fk':fk,'counts':counts,'priced_plans':priced,'commercial_catalogue':{'approved':True,'count':commercial['count'],'codes':commercial['codes']},'reviewer_state':reviewers,'native_power_house_questions':ph_count,'release_rows':releases,'membership_rows':membership,'unbound_questions':unbound,'governed_emergency':emergency,'backup':str(OPERATIONAL_BACKUP),'backup_sha256':sha,'backup_integrity':bi,'backup_fk':bfk,'preimport_baseline_preserved':BASELINE_BACKUP.exists()}
     finally: c.close()
 
@@ -294,9 +359,12 @@ def main():
     digest=hashlib.sha256(ident.encode()).hexdigest(); probe=ROOT/'.write_probe'
     with probe.open('w',encoding='utf-8') as f: f.write(digest+'\n'); f.flush(); os.fsync(f.fileno())
     if probe.read_text(encoding='utf-8').strip()!=digest: fail('write_read_probe_failed')
-    runs=durability_probe(); db_state='absent'; db_integrity='n/a'; db_fk='n/a'
-    if DB.exists(): db_integrity,fk=check_sqlite(DB); db_state='existing'; db_fk=str(fk)
+    runs=durability_probe()
     qualification=qualify_database()
+    # Qualification performs the live integrity/FK scan in its owned snapshot.
+    # Reuse that result instead of scanning the same unchanged database twice.
+    db_state='absent' if qualification['state']=='absent' else 'existing'
+    db_integrity=qualification.get('integrity','n/a'); db_fk=str(qualification.get('fk','n/a'))
     # SCOREMAX_SAFE98_RETURN_PROBE_HOOK_V1: bounded one-shot against an already STAGED, non-activated SAFE98 release.
     # OFF by default; never materialises or activates learner content.
     if False and os.environ.get('SCOREMAX_SAFE98_RETURN_PROBE','OFF').strip().upper()=='RUN':

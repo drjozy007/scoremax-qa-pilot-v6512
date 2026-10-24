@@ -1,0 +1,48 @@
+name: ScoreMax existing storage guard — new delta only
+on:
+  push:
+    branches: [fix/scoremax-streamed-backup-20261022]
+    paths:
+      - scripts/scoremax_persistent_storage_guard.py
+      - scripts/backup_capacity_v1.py
+      - tests/storage_guard_delta_20261024/**
+      - .github/workflows/storage-guard-delta-20261024.yml
+permissions:
+  contents: read
+jobs:
+  new_storage_delta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Require exact changed guard and unchanged accepted capacity helper
+        run: |
+          python -I -B - <<'PY'
+          import hashlib
+          from pathlib import Path
+          root=Path('tests/storage_guard_delta_20261024')
+          expected={'scoremax_persistent_storage_guard.py':'1418af71119b5a0a3517149aac847ed47c373433ac60c2d1adc5cba855583b86','backup_capacity_v1.py':'ebb95b113285ae6dd8d3e27eb0c0f537f70eecabd5c728dcae48ef986f4308a3'}
+          for name,sha in expected.items():
+              raw=Path('scripts',name).read_bytes()
+              assert hashlib.sha256(raw).hexdigest()==sha,name
+              (root/name).write_bytes(raw)
+          PY
+      - name: New source scope and tiny Linux copy/lock/publication delta only
+        run: |
+          python -B tests/storage_guard_delta_20261024/review_storage_delta_20261024.py
+          python -B tests/storage_guard_delta_20261024/test_scoremax_storage_delta_20261024.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scoremax-storage-guard-delta-${{ github.sha }}
+          path: |
+            tests/storage_guard_delta_20261024/DELTA_TEST_RESULT_20261024.json
+            tests/storage_guard_delta_20261024/CANDIDATE_REVIEW_20261024.json
+            tests/storage_guard_delta_20261024/scoremax_persistent_storage_guard.patch
+          if-no-files-found: warn
+          retention-days: 14
