@@ -8,6 +8,8 @@ on:
       - ux_vnext_overlay/invite_only_pilot_runtime.py
       - ux_vnext_overlay/ux_invite_only_pilot.py
       - tests/test_invite_only_pilot.py
+      - tests/test_programme_practice_routing.py
+      - ux_vnext_overlay/ux_programme_practice_routing_20261025.py
       - .github/workflows/launch-runtime-delta-20261025.yml
 permissions:
   contents: read

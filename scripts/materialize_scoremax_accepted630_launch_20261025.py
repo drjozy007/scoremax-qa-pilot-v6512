@@ -7,7 +7,7 @@ from pathlib import Path
 REPO=Path(__file__).resolve().parents[1]
 CAPTURE=REPO/'tests/native_backup_delta_20261024/accepted630_source_capture.json.gz'
 BASE='28aeb812a0ed269840ff73ea45f6864cf78138e57f98ab6c1c69093161ba6279'
-EXPECTED='6151aa9c27feea18b36080613350b97230278eac8793f447d4db7e66486e87fe'
+EXPECTED='5ec719e0822f33a9a531a8c778b36c3fe8ce1b6610f2f639e172def2c360b01e'
 def digest(data):return hashlib.sha256(data).hexdigest()
 def tree(m):return digest(json.dumps(m,sort_keys=True,separators=(',',':')).encode())
 def module(name,path):
@@ -39,6 +39,7 @@ def materialize():
  accepted=module('accepted_native_backup_installer',REPO/'scripts/apply_scoremax_native_backup_delta_20261024.py').apply(root)
  assert accepted['derived_tree_sha256']=='e18573635e90ad3149bafd4ece5b74ea68e0a6d48e29e2222e71400fbd9d7b3c'
  module('launch_invitation_installer',REPO/'ux_vnext_overlay/ux_invite_only_pilot.py').apply(root)
+ module('launch_routing_repair',REPO/'ux_vnext_overlay/ux_programme_practice_routing_20261025.py').apply(root)
  current={p.relative_to(root).as_posix():digest(p.read_bytes()) for p in root.rglob('*') if p.is_file()}
  assert len(current)==261 and tree(current)==EXPECTED,'FINAL_RUNTIME_SOURCE_MISMATCH'
  return {'replayed':False,'runtime_sha256':EXPECTED,'files':261,'startup_guard_sha256':'c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195','base_live_commit':saved['source_commit'],'historical_qualifications_run':0,'app_imports':0,'database_access':False}
