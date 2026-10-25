@@ -21,6 +21,13 @@ def materialize():
   p=Path(name);assert not p.is_absolute() and '..' not in p.parts and not any(x.startswith('.') for x in p.parts) and p.suffix.lower() not in {'.db','.sqlite','.sqlite3','.env','.key','.pem'}
   data=base64.b64decode(encoded,validate=True);assert digest(data)==manifest[name];payload[name]=data
  root=REPO/'scoremax_runtime_v669b'
+ guard=REPO/'scripts/scoremax_persistent_storage_guard.py'
+ assert digest(guard.read_bytes()) in {'1418af71119b5a0a3517149aac847ed47c373433ac60c2d1adc5cba855583b86','c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195'},'STARTUP_GUARD_BASE_MISMATCH'
+ assert Path.cwd().resolve()==REPO,'SOURCE_BUILD_CWD_MISMATCH'
+ module('existing_postrelease_guard_overlay',REPO/'ux_vnext_overlay/ux_persistent_guard_postrelease_state.py').apply_persistent_guard_postrelease_state(root)
+ module('existing_batch_retirement_overlay',REPO/'ux_vnext_overlay/ux_persistent_guard_batch_retirement.py').apply_persistent_guard_batch_retirement(root)
+ guard.write_bytes(guard.read_text(encoding='utf8').encode())
+ assert digest(guard.read_bytes())=='c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195','STARTUP_GUARD_DERIVED_MISMATCH'
  if root.exists():
   assert root.is_dir() and not root.is_symlink()
   current={p.relative_to(root).as_posix():digest(p.read_bytes()) for p in root.rglob('*') if p.is_file()}
@@ -34,5 +41,5 @@ def materialize():
  module('launch_invitation_installer',REPO/'ux_vnext_overlay/ux_invite_only_pilot.py').apply(root)
  current={p.relative_to(root).as_posix():digest(p.read_bytes()) for p in root.rglob('*') if p.is_file()}
  assert len(current)==261 and tree(current)==EXPECTED,'FINAL_RUNTIME_SOURCE_MISMATCH'
- return {'replayed':False,'runtime_sha256':EXPECTED,'files':261,'base_live_commit':saved['source_commit'],'historical_qualifications_run':0,'app_imports':0,'database_access':False}
+ return {'replayed':False,'runtime_sha256':EXPECTED,'files':261,'startup_guard_sha256':'c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195','base_live_commit':saved['source_commit'],'historical_qualifications_run':0,'app_imports':0,'database_access':False}
 if __name__=='__main__':print('SCOREMAX_LAUNCH_RUNTIME='+json.dumps(materialize(),sort_keys=True))

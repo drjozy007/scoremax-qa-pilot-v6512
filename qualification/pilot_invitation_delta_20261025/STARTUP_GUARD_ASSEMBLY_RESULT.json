@@ -1,0 +1,9 @@
+{
+  "guard_sha256": "c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195",
+  "retirement_function_sha256": "951d8c6664f35b8ed2c0ce777fc723158a478c6cde73103640a48e54ba02d772",
+  "installed_retirement_decision_branch_exact": true,
+  "retirement_branch_sha256": "76b7d0af3beae302d28ccb2c5e667e4829fa0024fd4f14fe7364149d62222bc6",
+  "source_bytes": 34575,
+  "old_installed_guard_sha256": "b8e49cb4b5fee26b4c70ec94c710eebbfb6aa44facf2de765326beaff8582279",
+  "accepted_backup_helpers_preserved": true
+}

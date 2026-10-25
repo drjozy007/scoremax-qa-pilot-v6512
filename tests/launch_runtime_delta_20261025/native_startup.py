@@ -1,5 +1,5 @@
 """New invitation delta on the exact production WSGI path; synthetic users only."""
-import contextlib,datetime,hashlib,importlib.metadata,io,json,os,resource,socket,sqlite3,subprocess,sys,time
+import ast,contextlib,datetime,hashlib,importlib.metadata,io,json,os,resource,socket,sqlite3,subprocess,sys,time
 from pathlib import Path
 OUT=Path('/evidence');OUT.mkdir(exist_ok=True)
 CG=Path('/sys/fs/cgroup')
@@ -7,8 +7,14 @@ def counters(name):return dict((k,int(v)) for k,v in (line.split() for line in (
 before=counters('memory.events');cpu_before=counters('cpu.stat');started=time.monotonic()
 p=subprocess.run([sys.executable,'-B','/checks/tests/test_invite_only_pilot.py','-v'],capture_output=True,text=True,timeout=30)
 (OUT/'invitation-boundary-tests.log').write_text(p.stdout+p.stderr);assert p.returncode==0,p.stdout+p.stderr
-root=Path('/tmp/scoremax-launch-delta');root.mkdir()
-os.environ.update({'SCOREMAX_ENV':'production','SCOREMAX_SECRET':'synthetic-linux-delta-only-secret-over-32-characters','SCOREMAX_STAGING_SESSION_SECRET':'synthetic-staging-session-key-for-ci-only-2026','SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD':'Synthetic-CI-Only-Delta-2026','SCOREMAX_BOOTSTRAP_ADMIN_EMAIL':'admin@scoremax.test','SCOREMAX_SMTP_HOST':'localhost','SCOREMAX_SMTP_FROM':'test@scoremax.test','SCOREMAX_PUBLIC_BASE_URL':'https://scoremax.test','SCOREMAX_SEND_EMAIL_VERIFICATION':'0','SCOREMAX_PERSISTENT_ROOT':str(root),'SCOREMAX_DB':str(root/'state/scoremax.db'),'SCOREMAX_BACKUP_DIR':str(root/'backup'),'SCOREMAX_CONTENT_INTAKE_DIR':str(root/'intake'),'SCOREMAX_INSTANCE_COUNT':'1','WEB_CONCURRENCY':'1','SCOREMAX_INVITE_ONLY_PILOT':'1','SCOREMAX_PILOT_STUDENT_IDS_JSON':'["STU-999901"]'})
+root=Path('/data/scoremax');root.mkdir()
+os.environ.update({'SCOREMAX_ENV':'production','SCOREMAX_SECRET':'synthetic-linux-delta-only-secret-over-32-characters','SCOREMAX_STAGING_SESSION_SECRET':'synthetic-staging-session-key-for-ci-only-2026','SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD':'Synthetic-CI-Only-Delta-2026','SCOREMAX_BOOTSTRAP_ADMIN_EMAIL':'admin@scoremax.test','SCOREMAX_SMTP_HOST':'localhost','SCOREMAX_SMTP_FROM':'test@scoremax.test','SCOREMAX_PUBLIC_BASE_URL':'https://scoremax.test','SCOREMAX_SEND_EMAIL_VERIFICATION':'0','SCOREMAX_PERSISTENT_ROOT':str(root),'SCOREMAX_DB':str(root/'state/scoremax.db'),'SCOREMAX_BACKUP_DIR':str(root/'backup'),'SCOREMAX_CONTENT_INTAKE_DIR':str(root/'intake'),'SCOREMAX_EXPECTED_PERSISTENT_MOUNT':'/data','SCOREMAX_INSTANCE_COUNT':'1','WEB_CONCURRENCY':'1','SCOREMAX_INVITE_ONLY_PILOT':'1','SCOREMAX_PILOT_STUDENT_IDS_JSON':'["STU-999901"]'})
+sys.path.insert(0,'/checks/native_guard')
+import scoremax_persistent_storage_guard as startup_guard
+guard_path=Path(startup_guard.__file__);guard_source=guard_path.read_text();assert hashlib.sha256(guard_path.read_bytes()).hexdigest()=='c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195'
+branch_start=guard_source.index("        elif release_status=='RELEASED_ELIGIBLE':");branch_end=guard_source.index("        else:\n            fail(f'emergency_release_status_invalid",branch_start)
+assert hashlib.sha256(guard_source[branch_start:branch_end].encode()).hexdigest()=='76b7d0af3beae302d28ccb2c5e667e4829fa0024fd4f14fe7364149d62222bc6'
+startup_guard.main()
 network_calls=[]
 def no_network(self,address):network_calls.append('blocked');raise RuntimeError('NO_NETWORK_IN_SYNTHETIC_DELTA')
 socket.socket.connect=no_network
@@ -43,5 +49,5 @@ try:
 finally:c.close()
 after=counters('memory.events');cpu_after=counters('cpu.stat');delta={k:after[k]-before[k] for k in before};assert all(delta[k]==0 for k in ('high','max','oom','oom_kill')),delta
 assert not network_calls
-result={'status':'NEW_LINUX_RUNTIME_AND_INVITATION_DELTA_PASS','observed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'runtime_sha256':'6151aa9c27feea18b36080613350b97230278eac8793f447d4db7e66486e87fe','unit_boundary_tests':8,'native_http_checks':checks,'memory_event_delta':delta,'memory_peak_bytes':int((CG/'memory.peak').read_text()),'memory_limit_bytes':int((CG/'memory.max').read_text()),'cpu_stat_delta':{k:cpu_after[k]-cpu_before[k] for k in cpu_before},'elapsed_seconds':time.monotonic()-started,'python':sys.version,'dependencies':{p:importlib.metadata.version(p) for p in ('Flask','Werkzeug','gunicorn','Pillow','jsonschema','openpyxl')},'external_network_calls':len(network_calls),'student_data_or_question_payloads':0,'production_import_or_activation':False,'historical_workload_repeated':False,'full_gate_d_closed':False}
+result={'status':'NEW_LINUX_RUNTIME_AND_INVITATION_DELTA_PASS','observed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'runtime_sha256':'6151aa9c27feea18b36080613350b97230278eac8793f447d4db7e66486e87fe','startup_guard_sha256':'c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195','installed_retirement_decision_branch_exact':True,'native_persistent_guard_before_wsgi':True,'unit_boundary_tests':8,'native_http_checks':checks,'memory_event_delta':delta,'memory_peak_bytes':int((CG/'memory.peak').read_text()),'memory_limit_bytes':int((CG/'memory.max').read_text()),'cpu_stat_delta':{k:cpu_after[k]-cpu_before[k] for k in cpu_before},'elapsed_seconds':time.monotonic()-started,'python':sys.version,'dependencies':{p:importlib.metadata.version(p) for p in ('Flask','Werkzeug','gunicorn','Pillow','jsonschema','openpyxl')},'external_network_calls':len(network_calls),'student_data_or_question_payloads':0,'production_import_or_activation':False,'historical_workload_repeated':False,'full_gate_d_closed':False}
 (OUT/'LINUX_LAUNCH_DELTA_RESULT.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))

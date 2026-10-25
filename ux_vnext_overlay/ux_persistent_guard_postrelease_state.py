@@ -24,6 +24,9 @@ def apply_persistent_guard_postrelease_state(root: Path) -> None:
     new_result=("result={'questions':len(non_ph),'batches':0,'released':0,'historical_released':0,"
                 "'post_release_inactive':0,'candidate':0,'batch_codes':[]}")
     if old_result not in text:
+        old_result=old_result.replace('len(non_ph)','non_ph_count')
+        new_result=new_result.replace('len(non_ph)','non_ph_count')
+    if old_result not in text:
         raise SystemExit('SCOREMAX_PERSISTENT_GUARD_RESULT_ANCHOR_MISSING')
     text=text.replace(old_result,new_result,1)
 
