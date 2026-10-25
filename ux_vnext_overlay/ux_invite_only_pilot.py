@@ -29,6 +29,6 @@ def apply(root):
         chapters = chapters.replace('{% if not ch.answered %}', unavailable, 1)
     compile(text, str(production), 'exec')
     shutil.copyfile(source, root / source.name)
-    production.write_text(text, encoding='utf-8')
-    template.write_text(chapters, encoding='utf-8')
+    production.write_text(text, encoding='utf-8', newline='\n')
+    template.write_text(chapters, encoding='utf-8', newline='\n')
     return {'installed': True, 'native_release_and_role_checks_preserved': True}

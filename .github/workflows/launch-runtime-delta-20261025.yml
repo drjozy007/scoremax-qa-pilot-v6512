@@ -1,0 +1,36 @@
+name: ScoreMax exact launch runtime and new invitation paths
+on:
+  push:
+    branches: [fix/scoremax-streamed-backup-20261022]
+    paths:
+      - scripts/materialize_scoremax_accepted630_launch_20261025.py
+      - tests/launch_runtime_delta_20261025/**
+      - ux_vnext_overlay/invite_only_pilot_runtime.py
+      - ux_vnext_overlay/ux_invite_only_pilot.py
+      - tests/test_invite_only_pilot.py
+      - .github/workflows/launch-runtime-delta-20261025.yml
+permissions:
+  contents: read
+jobs:
+  launch_delta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Materialize exact accepted source with the new pilot delta only
+        run: python -B scripts/materialize_scoremax_accepted630_launch_20261025.py
+      - name: Build required Linux runtime without historical qualifications
+        run: timeout 240 docker build -f tests/launch_runtime_delta_20261025/Dockerfile -t scoremax-launch-delta .
+      - name: New access paths and exact WSGI startup under existing memory limit
+        run: |
+          mkdir -p launch-delta-evidence
+          timeout 120 docker run --rm --network none --memory=2g --memory-swap=2g --cpus=1 -v "$PWD/launch-delta-evidence:/evidence" scoremax-launch-delta
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scoremax-launch-delta-${{ github.sha }}
+          path: launch-delta-evidence/
+          if-no-files-found: error
+          retention-days: 14
