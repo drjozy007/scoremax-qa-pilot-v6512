@@ -1,0 +1,41 @@
+name: ScoreMax public opening external verification
+on:
+  push:
+    branches: [fix/scoremax-streamed-backup-20261022]
+    paths: [.github/workflows/public-opening-external-verification-20261026.yml]
+permissions:
+  contents: read
+jobs:
+  public_routes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify public TLS, login and student registration without credentials
+        run: |
+          python - <<'PY'
+          import datetime,json,time,urllib.request,urllib.error
+          from pathlib import Path
+          rows=[]
+          for host in ['scoremax.pk','www.scoremax.pk','scoremax-preimport-persistent.onrender.com']:
+              row={'host':host,'certificate_verification':True,'credentials_used':False}
+              for path,key in [('/login','login'),('/register/student','registration')]:
+                  start=time.monotonic()
+                  try:
+                      req=urllib.request.Request('https://'+host+path,headers={'User-Agent':'ScoreMax-Public-Readonly-Opening-Verification'})
+                      with urllib.request.urlopen(req,timeout=12) as r:
+                          body=r.read(262144).decode('utf8','replace')
+                          row[key]={'status':r.status,'final_url':r.url,'form_present':'<form' in body and 'password' in body,'public_partial_coverage_notice':'Initial public practice opening' in body,'elapsed_seconds':time.monotonic()-start}
+                  except Exception as exc:row[key]={'error_type':type(exc).__name__}
+              rows.append(row)
+          passed=all(all(x.get(k,{}).get('status')==200 and x[k]['form_present'] and x[k]['public_partial_coverage_notice'] for k in ['login','registration']) for x in rows)
+          out={'status':'PASS' if passed else 'FAIL','observed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'live_source_commit':'9df838d46ad82633904f252108ba434be90f9bb3','live_deploy':'dep-dbfn4tgn74is73f17p2g','vantage':'INDEPENDENT_GITHUB_UBUNTU','requests':rows,'source_builds':0,'credentials_or_personal_or_question_data_used':False,'registration_POSTs':0,'database_access':False}
+          Path('PUBLIC_OPENING_EXTERNAL_RESULT.json').write_text(json.dumps(out,indent=2)+'\n')
+          print(json.dumps(out,indent=2))
+          assert passed,'PUBLIC_OPENING_EXTERNAL_ROUTE_FAILURE'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scoremax-public-opening-external-${{ github.sha }}
+          path: PUBLIC_OPENING_EXTERNAL_RESULT.json
+          retention-days: 14
