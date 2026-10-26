@@ -1,0 +1,35 @@
+name: ScoreMax paid AI engineering preparation
+on:
+  push:
+    branches: [fix/scoremax-streamed-backup-20261022]
+    paths:
+      - scripts/materialize_scoremax_paid_ai_feedback_20261026.py
+      - scripts/evaluate_paid_ai_benchmark_20261026.py
+      - ux_vnext_overlay/ux_paid_ai_marking_20261026.py
+      - ux_vnext_overlay/paid_ai_marking_20261026/**
+      - tests/paid_ai_marking_20261026/**
+      - .github/workflows/paid-ai-preparation-20261026.yml
+permissions:
+  contents: read
+jobs:
+  engineering_only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reuse accepted public runtime and add disabled paid feedback
+        run: python -B scripts/materialize_scoremax_paid_ai_feedback_20261026.py
+      - name: Build changed native WSGI and AI tests
+        run: timeout 240 docker build -f tests/paid_ai_marking_20261026/Dockerfile -t scoremax-paid-ai-preparation .
+      - name: Synthetic engineering checks only, no provider access or approved reference marks
+        run: |
+          mkdir -p paid-ai-evidence
+          timeout 120 docker run --rm --network none --memory=2g --memory-swap=2g --cpus=1 --tmpfs /data:rw,size=1g -v "$PWD/paid-ai-evidence:/evidence" scoremax-paid-ai-preparation
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scoremax-paid-ai-engineering-${{ github.sha }}
+          path: paid-ai-evidence/
+          retention-days: 14
