@@ -5,7 +5,7 @@ from unittest.mock import patch
 OUT=Path('/evidence');OUT.mkdir(exist_ok=True)
 CG=Path('/sys/fs/cgroup')
 def read(name):return dict((k,int(v)) for k,v in (l.split() for l in (CG/name).read_text().splitlines()))
-before=read('memory.events');cpu=read('cpu.stat');started=time.monotonic()
+memory_before=read('memory.events');cpu=read('cpu.stat');started=time.monotonic()
 p=subprocess.run([sys.executable,'-B','/checks/tests/paid_ai_marking_20261026/test_paid_ai.py','/app'],capture_output=True,text=True,timeout=45)
 (OUT/'paid-ai-engineering-tests.log').write_text(p.stdout+p.stderr)
 assert p.returncode==0,p.stdout+p.stderr
@@ -107,7 +107,7 @@ assert list(c.execute('PRAGMA integrity_check'))[0][0]=='ok'
 assert not c.execute("SELECT 1 FROM sqlite_master WHERE name='paid_ai_feedback_requests'").fetchone()
 c.close()
 
-after=read('memory.events');delta={k:after[k]-before[k] for k in before}
+after=read('memory.events');delta={k:after[k]-memory_before[k] for k in memory_before}
 assert all(delta[k]==0 for k in ('high','max','oom','oom_kill')),delta
 result={'status':'CONSOLIDATED_WRITTEN_AI_ENGINEERING_PASS','observed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'runtime_sha256':'ec1a17eb734df0657147f76800034807c53b9c31fa0236d0c56854827b7560a4','new_synthetic_engineering_tests':28,'independently_approved_reference_mark_tests':0,'independent_reference_mark_approval':'PENDING','model_benchmark_calls':0,'provider_spend_usd':0,'free_member_denied':True,'native_CSRF_required':True,'paid_member_without_configuration_denied':True,'separate_feedback_page_removed':True,'new_parallel_tables':0,'affected_legacy_written_regressions':6,'legacy_written_rows_and_replay_preserved':True,'native_and_written_identities_separate':True,'billable_admin_retry_rejected':True,'old_runtime_insert_shape_compatible':True,'AI_disabled_by_default':True,'AI_table_not_created_when_disabled':True,'official_score_or_mastery_writes':0,'existing_public_registration_tests_replayed':0,'historical_workloads_replayed':0,'native_startup_guard_unchanged':True,'healthz':200,'memory_event_delta':delta,'memory_peak_bytes':int((CG/'memory.peak').read_text()),'memory_limit_bytes':int((CG/'memory.max').read_text()),'cpu_stat_delta':{k:v-cpu.get(k,0) for k,v in read('cpu.stat').items()},'elapsed_seconds':time.monotonic()-started,'production_database_or_question_or_student_data_used':False,'existing_marking_fixtures_claimed_independent':False}
 (OUT/'PAID_AI_ENGINEERING_LINUX_RESULT.json').write_text(json.dumps(result,indent=2)+'\n')

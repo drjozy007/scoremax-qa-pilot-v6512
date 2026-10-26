@@ -1,0 +1,34 @@
+Independent Chemistry reference approval — retained 108-case manifest
+
+Use REFERENCE_APPROVAL_PENDING.json. Its case IDs, question IDs, immutable versions,
+question checksums and rubric SHA-256 values are frozen. It contains 108 case slots
+(18 originals × 6 categories), plus separately labelled engineering rejection cases.
+Reference answer artifacts and reference marks remain null. These are not 108
+independently approved graded answers or a completed provider benchmark.
+
+For each existing case, the independent academic approver must verify the exact
+governed question and full rubric, supply/review the response artifact, record the
+award for every original point, reconcile the total and approve the explanation.
+Cover full credit, partial credit, valid scientific alternatives, contradiction,
+irrelevance and prompt injection. Do not change question authority, regenerate a
+bank, use structured-practice variants as scored originals or invent new points.
+Any rubric ambiguity remains held.
+
+Record independent_reference_approval.status=APPROVED only after obtaining:
+approving_authority, receipt_reference, and approved_manifest_sha256.
+The evaluator hashes the canonical case_id/question_id/question_version_id/
+question_checksum_sha256/rubric_sha256/reference_marks manifest. Approval and
+response-artifact references must be independently verified; filling JSON is not
+itself academic approval.
+
+Later provider predictions must retain all exact lineage fields and report model,
+awarded_marks, measured_usd and any error. Reuse scripts/evaluate_paid_ai_benchmark_20261026.py
+to compare the same complete case set across economical providers. Report point
+errors, scientific-equivalence failures and overmarks alongside cost; select the
+cheapest provider that actually passes the approved academic criteria.
+No automatic escalation and no official-grade/mastery authority follow from a
+benchmark score. Source review must qualify the registered adapter separately.
+
+Budget is zero. Do not obtain credentials or call a provider as part of approval
+preparation. No production DB, activation, Power House transfer or deployment is
+needed for this review.
