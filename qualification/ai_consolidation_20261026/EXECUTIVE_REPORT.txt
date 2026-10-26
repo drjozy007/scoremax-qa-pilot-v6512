@@ -1,0 +1,18 @@
+EXISTING: ScoreMax already had V6 written-response contracts, jobs, marking runs, point evidence, usage records and result views.
+
+REUSED: Native assessments, immutable PH versions/rubrics/releases, paid entitlements and deterministic marking remain authoritative. Native marking runs before any external dispatch.
+
+REMOVED/AVOIDED: The separate paid_ai_feedback_requests ledger, paid_ai_marking.py implementation and standalone feedback page are removed from the candidate. No second assessment or mastery engine.
+
+EXTENDED: Explicit native identities and conservative microUSD reservation states in existing tables; one shared evidence writer and result presentation; pluggable economical provider interface.
+
+COST CONTROL: 20/day and 200/month per paid member; atomic reservations, persistent deduplication, global single in-flight request, token ceilings, held uncertain charges and no billable retries/escalation. Default budget remains zero.
+
+ACCEPTANCE: Qualified source 0470cbc0de77575eae96e83bcb8d85a90845080c; 28 engineering tests, six affected legacy regressions and native WSGI/authentication/CSRF/retry/rendering checks passed. Zero new memory events, CPU throttling, external calls or spending. Official native scores/mastery unchanged. Provider accuracy and the retained 108-case independent reference approval remain pending. Historical v0.3 patch bytes remain unverified despite the recorded hash and verified baseline.
+
+DEPLOYMENT: Engineering candidate is qualified; no production promotion occurred. ScoreMax remains live on 9df838d46ad82633904f252108ba434be90f9bb3, automatic deployment off. Power House, inventory, activation, backups and production data were untouched. Further production promotion requires compatibility and rollback verification; enabling a provider separately needs academic qualification, credentials and explicit budget approval.
+
+NEXT ACTION: Have the independent academic reviewer complete and approve the frozen 108-case reference packet.
+
+CI: https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/40397677896
+Runtime: 263 files; SHA-256 ec1a17eb734df0657147f76800034807c53b9c31fa0236d0c56854827b7560a4

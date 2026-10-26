@@ -1,5 +1,5 @@
 {
-  "status": "OFFLINE_ARCHITECTURE_CONSOLIDATED_ENGINEERING_QUALIFICATION_PENDING",
+  "status": "CONSOLIDATED_WRITTEN_AI_ENGINEERING_QUALIFIED_EXTERNAL_SEMANTIC_APPROVAL_PENDING",
   "date": "2026-10-26",
   "baseline_live_commit": "9df838d46ad82633904f252108ba434be90f9bb3",
   "replaces_staged_candidate": "0354c6d0a2eece47cf2d319119ba261e653a7dd5",
@@ -21,7 +21,8 @@
       "existing": "V6.0 Written Response Intelligence",
       "evidence": "Accepted public app.py contains written tables/routes and governed written_response_engine.py; overlay code is materialised, not missing from the live implementation.",
       "decision": "REUSE",
-      "qualification": "Native governed deterministic lane is live; historical lexical A/B helpers are not used as semantic graders."
+      "qualification": "Native governed deterministic lane is live; historical lexical A/B helpers are not used as semantic graders.",
+      "historical_experiment_reference": "Verified baseline 7cf0028b23aaacdde0b4db5fa03cb9953a6c7115 and scripts/qualify_written_entrypoints.py preserve full/partial/contradiction/paraphrase fixtures; these are engineering evidence, not independent semantic-model qualification."
     },
     {
       "existing": "assessment_written_response_v2.py and assessment_marking_v2.py",
@@ -114,7 +115,8 @@
     "pending_benchmark_original_cases": 108,
     "reference_marks": "PENDING_INDEPENDENT_APPROVAL",
     "scientific_equivalence_boundary": "Authored alternatives can be marked by accepted deterministic contracts. Unauthored semantic answers require later independent provider qualification; current external outputs are mocked engineering fixtures only.",
-    "fair_marking_experiments": "Historical work remains developmental. No old experimental semantic workers or lexical A/B qualification reinstated."
+    "fair_marking_experiments": "Historical work remains developmental. No old experimental semantic workers or lexical A/B qualification reinstated.",
+    "prepared_benchmark_boundary": "108 lineage-frozen case slots; response artifacts and independently approved reference marks remain pending. Not 108 approved grades."
   },
   "deployment": {
     "production_deployments": 0,
@@ -124,7 +126,26 @@
     "transfers": 0,
     "gate_d_replays": 0,
     "live_public_unchanged": true,
-    "controlled_promotion": "Pending exact candidate Linux result; default-off only. Provider activation separately requires academic qualification, credential reference and explicit budget approval."
+    "controlled_promotion": "Engineering candidate qualified for review as disabled-only. No deployment is authorised or performed. Live migration/rollback rehearsal and exact source/learner compatibility must be verified before future production promotion; provider activation also requires independent academic qualification, credentials and explicit budget approval."
   },
-  "next_action": "Independently approve the retained 108-case Chemistry reference manifest before any provider benchmark or activation."
+  "next_action": "Independently approve the retained 108-case Chemistry reference manifest before any provider benchmark or activation.",
+  "qualification": {
+    "commit": "0470cbc0de77575eae96e83bcb8d85a90845080c",
+    "workflow_url": "https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/40397677896",
+    "engineering_tests": 28,
+    "affected_legacy_regressions": 6,
+    "native_wsgi_checks": "PASS",
+    "api_calls": 0,
+    "spend_usd": 0,
+    "memory_events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "cpu_throttling_periods": 0,
+    "runtime_sha256": "ec1a17eb734df0657147f76800034807c53b9c31fa0236d0c56854827b7560a4"
+  }
 }

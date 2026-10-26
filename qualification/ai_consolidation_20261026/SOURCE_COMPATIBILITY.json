@@ -1,0 +1,17 @@
+{
+  "status": "SOURCE_COMPATIBILITY_PASS",
+  "accepted_public_commit": "9df838d46ad82633904f252108ba434be90f9bb3",
+  "application_function_changes": {
+    "app.py": [
+      "written_evaluate_attempt",
+      "admin_pilot_job_retry"
+    ],
+    "written_response_engine.py": {
+      "existing_function_changes": 0,
+      "new_shared_writer": true
+    }
+  },
+  "native_assessment_marking_and_payment_entitlement_function_changes": 0,
+  "startup_guard_changes": 0,
+  "public_registration_function_changes": 0
+}
