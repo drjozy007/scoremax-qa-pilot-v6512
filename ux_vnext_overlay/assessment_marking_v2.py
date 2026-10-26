@@ -90,19 +90,8 @@ def written_evaluate_attempt(c,attempt_id,answer_version_id,creates_formal_evide
             return result,None
         # Feedback-led versions cannot become independent evidence via a caller flag.
         creates_formal_evidence=bool(creates_formal_evidence and result.get('evidence_eligible') is True and version['version_type'] in {'ORIGINAL_TYPED','CONFIRMED_TRANSCRIPT'})
-        cur=c.execute("""INSERT INTO written_marking_runs(attempt_id,answer_version_id,proposed_mark,maximum_mark,percentage,
-          confidence,result_state,command_verb_met,grader_a_json,grader_b_json,reconciliation_json,feedback_json,
-          contradictions_json,misconceptions_json,validation_boundary) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-          (attempt_id,answer_version_id,result['proposed_mark'],result['maximum_mark'],result['percentage'],result['confidence'],
-           result['status'],1 if result['command_verb_met'] else 0,json.dumps(result['grader_a']),json.dumps(result['grader_b']),
-           json.dumps({'policy_version':result['reconciliation_policy_version']}),json.dumps(result['feedback']),
-           json.dumps(result.get('contradictions',[])),json.dumps(result.get('misconceptions',[])),result['validation_boundary']))
-        run_id=cur.lastrowid
-        for pt in result['mark_points']:
-            c.execute("""INSERT INTO written_mark_point_results(marking_run_id,point_id,description,available_marks,awarded_marks,
-              status,evidence_json,improvement_instruction,grader_a_status,grader_b_status) VALUES(?,?,?,?,?,?,?,?,?,?)""",
-              (run_id,pt['point_id'],pt['description'],pt['available_marks'],pt['awarded_marks'],pt['status'],json.dumps(pt['evidence']),
-               pt['improvement_instruction'],pt['grader_a_status'],pt['grader_b_status']))
+        from written_response_engine import persist_written_marking_result
+        run_id=persist_written_marking_result(c,result,attempt_id=attempt_id,answer_version_id=answer_version_id)
         c.execute("""UPDATE written_attempts SET status='MARKED',current_mark=?,maximum_mark=?,marking_confidence=?,result_state=?,
           grader_a_version=?,grader_b_version=?,reconciliation_policy_version=?,completed_at=? WHERE id=?""",
           (result['proposed_mark'],result['maximum_mark'],result['confidence'],result['status'],result['grader_a']['version'],

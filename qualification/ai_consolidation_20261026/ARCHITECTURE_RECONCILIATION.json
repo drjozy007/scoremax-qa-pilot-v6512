@@ -1,0 +1,130 @@
+{
+  "status": "OFFLINE_ARCHITECTURE_CONSOLIDATED_ENGINEERING_QUALIFICATION_PENDING",
+  "date": "2026-10-26",
+  "baseline_live_commit": "9df838d46ad82633904f252108ba434be90f9bb3",
+  "replaces_staged_candidate": "0354c6d0a2eece47cf2d319119ba261e653a7dd5",
+  "runtime": {
+    "files": 263,
+    "sha256": "ec1a17eb734df0657147f76800034807c53b9c31fa0236d0c56854827b7560a4",
+    "changed_paths": [
+      "app.py",
+      "scoremax_production.py",
+      "templates/result.html",
+      "templates/written_result.html",
+      "templates/_written_marking_run.html",
+      "written_ai_adapter.py",
+      "written_response_engine.py"
+    ]
+  },
+  "capabilities": [
+    {
+      "existing": "V6.0 Written Response Intelligence",
+      "evidence": "Accepted public app.py contains written tables/routes and governed written_response_engine.py; overlay code is materialised, not missing from the live implementation.",
+      "decision": "REUSE",
+      "qualification": "Native governed deterministic lane is live; historical lexical A/B helpers are not used as semantic graders."
+    },
+    {
+      "existing": "assessment_written_response_v2.py and assessment_marking_v2.py",
+      "decision": "EXTEND",
+      "change": "Extract one common evidence writer; legacy evaluation semantics, formal-evidence rules and recovery behavior retained."
+    },
+    {
+      "existing": "Native assessment sessions, saved answer pins, PH immutable scoring contracts and activation authorisations",
+      "decision": "REUSE_AUTHORITATIVE",
+      "change": "No new assessment, answer, grade or mastery identity. Paid semantic feedback uses native source/version/checksum/release pins."
+    },
+    {
+      "existing": "written_processing_jobs",
+      "decision": "EXTEND",
+      "gap": "attempt_id was legacy written-only NOT NULL; native identity needs an explicit nullable legacy field and separate native_attempt_id/native_question_id/source_kind.",
+      "change": "Existing unique idempotency_key, provider/version, state/input/output/error/retry fields own dispatch/cache. Billable job type cannot be retried by legacy admin action."
+    },
+    {
+      "existing": "written_marking_runs and written_mark_point_results",
+      "decision": "EXTEND_AND_REUSE",
+      "gap": "Legacy attempt_id and answer_version_id were required, but native responses have no written answer-version row.",
+      "change": "Transactional nullable legacy IDs plus explicit native IDs and unique processing_job_id. Existing point-evidence writer and shared result rendering. Provisional state cannot masquerade as confirmed."
+    },
+    {
+      "existing": "written_usage_ledger",
+      "decision": "EXTEND",
+      "gap": "estimated_cost_minor had no atomic microUSD reservation or native/job identity.",
+      "change": "Add native IDs, unique processing_job_id, integer reserved_micro_usd and reservation_state. Existing metadata records currency, source identity, token usage, estimates and held reservation."
+    },
+    {
+      "existing": "paid_ai_feedback_requests and paid_ai_feedback.html",
+      "decision": "REMOVE_FROM_CANDIDATE",
+      "change": "No new tables and no second student result page. One POST action redirects to existing result. Existing unreconciled parallel table fails closed rather than losing cost history."
+    },
+    {
+      "existing": "Paid subscriptions and institutional entitlements",
+      "decision": "REUSE",
+      "change": "Native profile is required; free/trial/unpaid overrides cannot dispatch. Native marking is first and free of provider charges."
+    },
+    {
+      "existing": "September OpenAI Responses API adapter v0.3",
+      "decision": "HISTORICAL_SOURCE_UNVERIFIED_NOT_PROMOTED",
+      "evidence": {
+        "library_ids": [
+          "libfile_1ed30be3675081919992de47ba99aa3c",
+          "libfile_f39efb882c348191a8bac1db36c6e9f0"
+        ],
+        "recorded_patch": "ScoreMax_Written_Marking_v0_3.patch",
+        "owner_recorded_sha256": "78f01341c46a6e0dcb49d3b647b746785ac51c0d4ce0c3e82dacd3a97b156ca8",
+        "baseline_commit": "7cf0028b23aaacdde0b4db5fa03cb9953a6c7115",
+        "baseline_verified": true,
+        "patch_bytes_independently_located": false
+      },
+      "boundary": "Verified baseline closes word-overlap bypass. Patch bytes absent from accessible source; no claim of deployed/qualified OpenAI transport and no new OpenAI adapter built."
+    }
+  ],
+  "minimum_schema_extension": {
+    "new_tables": 0,
+    "rebuilds": [
+      "written_processing_jobs",
+      "written_marking_runs"
+    ],
+    "reason": "SQLite needs a transactional rebuild to relax old NOT NULL identities; retain all columns, row IDs, timestamps, indexes, triggers and replay keys. Unknown incoming/outgoing FKs fail closed. Prior runtime INSERT shapes remain compatible.",
+    "default_off_behavior": "No AI migration or AI persistence writes; public startup schema remains unchanged."
+  },
+  "cost_control": {
+    "default_api_budget_micro_usd": 0,
+    "initial_budget_ceiling_micro_usd": 1000000,
+    "daily_per_paid_member": 20,
+    "monthly_per_paid_member": 200,
+    "peak_call_reservation_micro_usd": 5837,
+    "input_token_ceiling": 16384,
+    "output_token_ceiling": 768,
+    "max_inflight_platform": 1,
+    "timeout_seconds": 12,
+    "automatic_billable_retries": 0,
+    "automatic_provider_escalation": false,
+    "reservation_release_policy": "Never release on uncertainty; retain conservative full reservation after completion. All reservations count across models.",
+    "provider_credentials_obtained": false,
+    "provider_calls": 0,
+    "provider_spend_usd": 0,
+    "production_qualification_gate": "No registered external adapter is academically qualified yet. Env flags cannot grant qualification."
+  },
+  "academic_evidence": {
+    "chemistry_real_saq_rubrics": 200,
+    "preserved_atomic_points": 403,
+    "source": "ScoreMax_Marking_QA_Handoff_20260925_v1_6.md and retained source-parser regression evidence; preservation evidence, not independent semantic grading approval.",
+    "native_scored_original_chemistry": 18,
+    "structured_practice_variants_separate": 48,
+    "pending_benchmark_original_cases": 108,
+    "reference_marks": "PENDING_INDEPENDENT_APPROVAL",
+    "scientific_equivalence_boundary": "Authored alternatives can be marked by accepted deterministic contracts. Unauthored semantic answers require later independent provider qualification; current external outputs are mocked engineering fixtures only.",
+    "fair_marking_experiments": "Historical work remains developmental. No old experimental semantic workers or lexical A/B qualification reinstated."
+  },
+  "deployment": {
+    "production_deployments": 0,
+    "production_database_writes": 0,
+    "power_house_deployments": 0,
+    "activation_changes": 0,
+    "transfers": 0,
+    "gate_d_replays": 0,
+    "live_public_unchanged": true,
+    "controlled_promotion": "Pending exact candidate Linux result; default-off only. Provider activation separately requires academic qualification, credential reference and explicit budget approval."
+  },
+  "next_action": "Independently approve the retained 108-case Chemistry reference manifest before any provider benchmark or activation."
+}

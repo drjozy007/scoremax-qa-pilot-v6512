@@ -1,0 +1,14 @@
+<section class="card written-marking-run">
+<div class="split"><div><p class="eyebrow">{{ 'PROVISIONAL PRACTICE FEEDBACK' if run.result_state=='PROVISIONAL_PRACTICE_FEEDBACK' else 'MARKING RUN' }}</p>
+<h2>{{run.proposed_mark}} / {{run.maximum_mark}} · {{run.percentage}}%</h2></div>
+{% if run.result_state=='PROVISIONAL_PRACTICE_FEEDBACK' %}<p>AI interpretation awaiting academic validation. Your official score and mastery are unchanged.</p>
+{% else %}<span class="status-pill {{'good' if run.result_state=='MARK_CONFIRMED' else 'mid'}}">{{run.result_state}} · {{(run.confidence*100)|round(0)|int}}% confidence</span>{% endif %}</div>
+<div class="table-wrap"><table><tr><th>Mark point</th><th>Awarded</th><th>Evidence</th><th>Next step</th></tr>
+{% for p in run.points %}<tr><td>{{p.description}}</td><td>{{p.awarded_marks}} / {{p.available_marks}} · {{p.status}}</td>
+<td>{{p.evidence_json|default('[]')}}{% for x in p.correct_elements|default([]) %}<p>Correct: {{x}}</p>{% endfor %}{% for x in p.mistakes|default([]) %}<p>Correction: {{x}}</p>{% endfor %}</td>
+<td>{{p.improvement_instruction}}</td></tr>{% endfor %}</table></div>
+{% for x in run.feedback %}<p>{{x}}</p>{% endfor %}
+{% if run.approved_answer %}<h3>Approved answer</h3><p>{{run.approved_answer}}</p>
+{% if run.approved_alternatives %}<h3>Approved alternatives</h3><ul>{% for x in run.approved_alternatives %}<li>{{x}}</li>{% endfor %}</ul>{% endif %}
+{% if run.missing_marking_point_details %}<h3>Missing marking points</h3><ul>{% for x in run.missing_marking_point_details %}<li>{{x.description}}</li>{% endfor %}</ul>{% endif %}{% endif %}
+</section>
