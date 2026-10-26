@@ -1,0 +1,70 @@
+name: ScoreMax learner display and public route delta
+on:
+  push:
+    branches: [fix/scoremax-streamed-backup-20261022]
+    paths:
+      - scripts/materialize_scoremax_learner_display_20261026.py
+      - ux_vnext_overlay/ux_learner_display_20261026.py
+      - tests/learner_display_delta_20261026/**
+      - .github/workflows/learner-display-delta-20261026.yml
+permissions:
+  contents: read
+jobs:
+  learner_display:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reuse accepted source and apply only learner display changes
+        run: python -B scripts/materialize_scoremax_learner_display_20261026.py
+      - name: Build exact required Linux runtime
+        run: timeout 240 docker build -f tests/learner_display_delta_20261026/Dockerfile -t scoremax-display-delta .
+      - name: New display regressions and modified WSGI import
+        run: |
+          mkdir -p display-evidence
+          timeout 120 docker run --rm --network none --memory=2g --memory-swap=2g --cpus=1 --tmpfs /data:rw,size=1g -v "$PWD/display-evidence:/evidence" scoremax-display-delta
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scoremax-display-${{ github.sha }}
+          path: display-evidence/
+          retention-days: 14
+  public_domain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify public login and closed registration without credentials
+        run: |
+          python - <<'PY'
+          import datetime,json,time,urllib.request,urllib.error
+          from pathlib import Path
+          results=[]
+          for host in ['scoremax.pk','www.scoremax.pk','scoremax-preimport-persistent.onrender.com']:
+              started=time.monotonic()
+              item={'host':host,'method':'GET','credentials_sent':False,'certificate_verification':True}
+              try:
+                  request=urllib.request.Request('https://'+host+'/login',headers={'User-Agent':'ScoreMax-Readonly-Launch-Probe-20261025'})
+                  with urllib.request.urlopen(request,timeout=12) as response:
+                      text=response.read(262144).decode('utf8','replace')
+                      item.update(status=response.status,final_url=response.url,scoremax_login_form=('ScoreMax' in text and 'password' in text and '<form' in text))
+                  try:
+                      urllib.request.urlopen('https://'+host+'/register/student',timeout=12)
+                      item['public_student_registration_status']=200
+                  except urllib.error.HTTPError as exc:item['public_student_registration_status']=exc.code
+              except Exception as exc:item.update(error_type=type(exc).__name__,error=str(exc)[:180])
+              item['elapsed_seconds']=time.monotonic()-started
+              results.append(item)
+          passed=all(r.get('status')==200 and r.get('scoremax_login_form') and r.get('public_student_registration_status')==403 for r in results)
+          receipt={'status':'PASS' if passed else 'FAIL','observed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'vantage':'GITHUB_HOSTED_UBUNTU_RUNNER_INDEPENDENT_OF_RENDER_AND_OWNER_DEVICE','requests':results,'question_or_student_data_uploaded':False,'credentials_used':False,'database_access':False,'source_builds':0,'historical_qualifications_repeated':0,'service_or_dns_mutations':0}
+          Path('public-domain-result.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print(json.dumps(receipt,indent=2))
+          assert passed,'PUBLIC_DOMAIN_OR_INVITATION_FENCE_FAILURE'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scoremax-public-domain-${{ github.sha }}
+          path: public-domain-result.json
+          retention-days: 14
