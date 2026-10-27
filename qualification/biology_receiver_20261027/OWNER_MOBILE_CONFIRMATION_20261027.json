@@ -1,0 +1,16 @@
+{
+  "status": "OWNER_MOBILE_CHECK_PASS",
+  "recorded_utc": "2026-10-27T12:38:17Z",
+  "source": "Direct owner reply to the mobile/public-domain verification question",
+  "owner_answer": "Login, Biology controls and question work",
+  "domain": "https://scoremax.pk",
+  "network": "Mobile data",
+  "scope": [
+    "Public login",
+    "Biology practice question-format control",
+    "Biology question opening"
+  ],
+  "independently_instrumented": false,
+  "actual_new_biology_chapter_transfer_verified": false,
+  "dns_or_tls_changes": 0
+}

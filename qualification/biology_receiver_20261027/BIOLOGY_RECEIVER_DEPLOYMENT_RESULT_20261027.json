@@ -1,7 +1,7 @@
 {
   "status": "BIOLOGY_RECEIVER_LIVE",
   "receiver_ready": true,
-  "scope": "Existing bounded governed receiver compatibility; actual new chapter transfer and mobile/custom-domain verification pending",
+  "scope": "Live bounded governed receiver compatibility verified; first actual new governed Biology chapter transfer still pending",
   "deployed_commit": "1b21042012af0b1aefce79c4cc86f2182d4f6b75",
   "deploy_id": "dep-dbg9ct942hec73e04t7g",
   "service_id": "srv-daj5fbm7bikc73aq2gdg",
@@ -104,7 +104,16 @@
     "fsc2_biology_chapters": 13,
     "fsc2_unpopulated_unavailable": true,
     "desktop_controls_visually_verified": true,
-    "new_controls_physical_mobile_verified": false
+    "new_controls_physical_mobile_verified": true,
+    "physical_mobile_evidence": {
+      "source": "Owner confirmation in this chat",
+      "recorded_utc": "2026-10-27T12:38:17Z",
+      "connection": "Mobile data",
+      "public_login": true,
+      "biology_question_format_controls": true,
+      "biology_question_opened": true,
+      "independently_instrumented": false
+    }
   },
   "custom_domain": {
     "apex": "scoremax.pk",
@@ -116,7 +125,8 @@
     "public_login_probe": "CONNECTION_RESET_FROM_THIS_ENVIRONMENT",
     "render_origin_tester_journey": "PASS",
     "dns_or_tls_configuration_changes": 0,
-    "physical_mobile_followup_pending": true
+    "physical_mobile_followup_pending": false,
+    "owner_mobile_confirmation": "PASS: Login, Biology controls and question work"
   },
   "observed_post_deploy_5xx_logs": {
     "start_utc": "2026-10-27T12:19:16Z",
@@ -149,7 +159,7 @@
   },
   "remaining": [
     "Actual governed Biology chapter delivery and exact-byte capacity admission, ACK/count reconciliation and authorised activation",
-    "Desktop/mobile first actual chapter student journey; no per-chapter full qualification",
-    "Public domain/mobile followup: Render verification/certificates are valid but this environment receives a connection reset"
-  ]
+    "Desktop/mobile first actual chapter student journey; no per-chapter full qualification"
+  ],
+  "scope_note": "The local connection-reset observation remains recorded. Owner mobile confirmation establishes the public-domain student path from the owner phone; no DNS or TLS changes were made."
 }
