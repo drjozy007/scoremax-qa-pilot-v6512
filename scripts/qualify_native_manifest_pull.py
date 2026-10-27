@@ -40,7 +40,7 @@ class PullTests(unittest.TestCase):
         class Response:
             def __enter__(self):return self
             def __exit__(self,*_):pass
-            def read(self):return b'qualified-archive'
+            def read(self, *args):return b'qualified-archive'
         class Opener:
             def open(self,req,timeout):requests.append(req);return Response()
         with patch.object(integration.urlrequest,'build_opener',return_value=Opener()):
