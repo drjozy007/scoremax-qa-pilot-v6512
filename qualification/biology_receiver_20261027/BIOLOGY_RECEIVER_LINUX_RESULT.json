@@ -1,0 +1,74 @@
+{
+  "status": "BIOLOGY_RECEIVER_ENGINEERING_PASS",
+  "observed_utc": "2026-10-27T10:27:55.908122+00:00",
+  "runtime_sha256": "ddb4ee4a1398c0e5ac2300e4711b7a1befadd7e4ef067dfc21bc28de118cdc9c",
+  "runtime_files": 261,
+  "accepted_public_cold_rollback": true,
+  "targeted_native_cases": 15,
+  "baseline_gap_reproduction_cases": 15,
+  "manifest_bound_cases": 4,
+  "checks": [
+    {
+      "check": "accepted-public-gap-reproduction",
+      "passed": true,
+      "seconds": 3.120884138000001
+    },
+    {
+      "check": "biology-native-receiver",
+      "passed": true,
+      "seconds": 3.4973344480000037
+    },
+    {
+      "check": "accepted-public-cold-rollback",
+      "passed": true,
+      "seconds": 2.5091944950000027
+    },
+    {
+      "check": "manifest-byte-bounds",
+      "passed": true,
+      "seconds": 0.715635148000004
+    },
+    {
+      "check": "affected-native-pull-security",
+      "passed": true,
+      "seconds": 0.6937870240000024
+    }
+  ],
+  "elapsed_seconds": 10.537125052999997,
+  "memory_event_delta": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "memory_peak_bytes": 165801984,
+  "cpu_stat_delta": {
+    "usage_usec": 10520282,
+    "user_usec": 9834334,
+    "system_usec": 685947,
+    "nice_usec": 0,
+    "core_sched.force_idle_usec": 0,
+    "nr_periods": 106,
+    "nr_throttled": 13,
+    "throttled_usec": 5735,
+    "nr_bursts": 0,
+    "burst_usec": 0
+  },
+  "production_data_used": false,
+  "power_house_accessed": false,
+  "production_deployments": 0,
+  "academic_banks_generated": false,
+  "historical_transfers_or_acks_replayed": false,
+  "Gate_D_replayed": false,
+  "live_question_or_release_changes": 0,
+  "AI_candidate_applied": false,
+  "paid_AI_calls": 0,
+  "scope": "Receiver compatibility and changed native student scopes only; no 300/1500 academic-bank or production capacity qualification",
+  "qualification_commit": "1b21042012af0b1aefce79c4cc86f2182d4f6b75",
+  "actions_run_id": 40488611459,
+  "actions_job_id": 122136589091,
+  "artifact_id": 12726635799,
+  "artifact_zip_sha256": "a4e837ba087e7f7d6652f3b33462101617a7201b5e71589c21d8aca1b037d048"
+}

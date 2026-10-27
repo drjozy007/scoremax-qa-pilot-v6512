@@ -1,0 +1,32 @@
+{
+  "result": "SOURCE_COMPATIBILITY_PASS",
+  "runtime_file_count": 261,
+  "changed_paths": [
+    "app.py",
+    "scoremax_integration_v1.py",
+    "templates/chapter_page.html",
+    "templates/test_setup.html",
+    "ux_catalogue_browser.py"
+  ],
+  "app_changed_functions": [
+    "chapter_page",
+    "create_assessment_session",
+    "db",
+    "evidence_context",
+    "practice_scope_placements",
+    "practice_setup_context",
+    "submit_assessment_v4",
+    "test_setup",
+    "test_start"
+  ],
+  "app_added_functions": [
+    "_superseded_pin_scope",
+    "practice_section_scope",
+    "practice_type_scope"
+  ],
+  "native_marking_mastery_access_and_startup_guard_files_unchanged": true,
+  "public_baseline_commit": "9df838d46ad82633904f252108ba434be90f9bb3",
+  "candidate_runtime_sha256": "ddb4ee4a1398c0e5ac2300e4711b7a1befadd7e4ef067dfc21bc28de118cdc9c",
+  "database_change": "Four additive lookup indexes; no table/column replacement",
+  "ai_overlay_included": false
+}
