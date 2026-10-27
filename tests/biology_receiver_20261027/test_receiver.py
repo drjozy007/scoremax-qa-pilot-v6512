@@ -294,7 +294,7 @@ class BiologyReceiverTests(unittest.TestCase):
    marking={'key_type':'RUBRIC_ONLY','key':runtime_q['answer'],'accepted_answers':[],
     'numeric_tolerance':None,'marks':3,'negative_marks':0,
     'rubric':json.loads(runtime_q['marking_config'])['rubric'],'explanation':'Synthetic guided example.'})
-  q['architecture'].update(independent_mastery_eligible=False,independent_mastery_weight=0)
+  q['architecture'].update(independent_mastery_eligible=False,independent_mastery_weight=0,mastery_level='FOUNDATION')
   q['question_checksum_sha256']=integration._object_checksum(q,'question_checksum_sha256')
   env['payload_checksum_sha256']=integration.payload_checksum(env['payload']);self.admit(env)
   if BASELINE:return
@@ -327,7 +327,7 @@ class BiologyReceiverTests(unittest.TestCase):
 if __name__=='__main__':
  suite=unittest.defaultTestLoader.loadTestsFromTestCase(BiologyReceiverTests)
  outcome=unittest.TextTestRunner(verbosity=2).run(suite)
- summary={'status':'BASELINE_GAPS_REPRODUCED' if BASELINE else 'BIOLOGY_RECEIVER_CHANGED_PATHS_PASS',
+ summary={'status':('BASELINE_GAPS_REPRODUCED' if BASELINE else 'BIOLOGY_RECEIVER_CHANGED_PATHS_PASS') if outcome.wasSuccessful() else 'BIOLOGY_RECEIVER_CHECK_FAILED',
   'tests':outcome.testsRun,'failures':len(outcome.failures),'errors':len(outcome.errors),
   'production_data_used':False,'power_house_accessed':False,'historical_transfers_or_acks_replayed':False,
   'academic_banks_generated':False,'paid_AI_calls':0,'live_activation':False}
