@@ -19,8 +19,8 @@ run('affected-native-pull-security',['/checks/scripts/qualify_native_manifest_pu
 memory_after=counters('memory.events');memory_delta={k:memory_after[k]-v for k,v in memory_before.items()}
 assert all(memory_delta[k]==0 for k in ('high','max','oom','oom_kill')),memory_delta
 result={'status':'BIOLOGY_RECEIVER_ENGINEERING_PASS','observed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
- 'runtime_sha256':'3bf054ecef543948ce8babdf34ef9172950ec09623825fb059ed3018f62fde32','runtime_files':261,
- 'targeted_native_cases':13,'baseline_gap_reproduction_cases':13,'manifest_bound_cases':4,
+ 'runtime_sha256':'5f4407e82071fc8ac85192b9b8118fdc36d4bef18c1f1159470b9544c24083b9','runtime_files':261,
+ 'targeted_native_cases':15,'baseline_gap_reproduction_cases':15,'manifest_bound_cases':4,
  'checks':results,'elapsed_seconds':time.monotonic()-started,'memory_event_delta':memory_delta,
  'memory_peak_bytes':int((CG/'memory.peak').read_text()),'cpu_stat_delta':{k:v-cpu_before.get(k,0) for k,v in counters('cpu.stat').items()},
  'production_data_used':False,'power_house_accessed':False,'production_deployments':0,

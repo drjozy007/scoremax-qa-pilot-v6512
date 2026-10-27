@@ -2,7 +2,7 @@
 import argparse,hashlib,importlib.util,json,shutil
 from pathlib import Path
 REPO=Path(__file__).resolve().parents[1]
-EXPECTED='3bf054ecef543948ce8babdf34ef9172950ec09623825fb059ed3018f62fde32'
+EXPECTED='5f4407e82071fc8ac85192b9b8118fdc36d4bef18c1f1159470b9544c24083b9'
 PUBLIC='bed7d678f3c43d10d85ab31c699ad78994e0764670890c2fd0c4c77c2629f69c'
 def digest(root):
  manifest={p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file()}

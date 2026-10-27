@@ -46,6 +46,7 @@ nodes=[n for n in tree.body if (isinstance(n,ast.FunctionDef) and n.name in {'qu
 fixture_ns={'copy':copy,'json':json}
 exec(compile(ast.Module(body=nodes,type_ignores=[]),str(fixture_path),'exec'),fixture_ns)
 SPECS=fixture_ns['SPECS']
+from guided_fixture_helpers import fixture as guided_fixture
 c=sm.db()
 uid=c.execute("""INSERT INTO users(role,system_user_id,full_name,email,username,password_hash,account_status,
  email_verified,is_demo_account,academic_level,active_programme,subjects)
@@ -65,7 +66,10 @@ class BiologyReceiverTests(unittest.TestCase):
   with self.client.session_transaction(base_url='https://localhost') as state:
    state.update(user_id=uid,role='student',session_version=0,_csrf_token='synthetic-csrf')
   self.counter=0
- def tearDown(self):self.c.rollback();self.c.close()
+ def tearDown(self):
+  self.c.rollback();self.c.close()
+  assert self.path.parent==WORK
+  self.path.unlink(missing_ok=True)
  def programme(self,value):
   self.c.execute('UPDATE users SET active_programme=? WHERE id=?',(value,uid));self.c.commit()
  def local(self,kind,programme='FSc Part 1',chapter=None,section='SYN-SECTION-A',topic='Shared topic'):
@@ -74,7 +78,8 @@ class BiologyReceiverTests(unittest.TestCase):
   q.update(question_id='SYN-LOCAL-'+str(self.counter),family_id='SYN-FAMILY-'+str(self.counter),
    programme=programme,qualification=programme,subject='Biology',chapter=chapter or item['name'],topic=topic,
    level='Foundation',difficulty='Foundation',status='Approved',review_status='Approved',active=1,is_demo=0,
-   scoremax_ready=1,ph_projection_owner='',family_key='SYN-FAMILY-'+str(self.counter),
+   scoremax_ready=1,ph_projection_owner='',source_type='ISOLATED_SYNTHETIC_TEST',rights_status='ScoreMax Original',
+   content_environment='PRODUCTION',country='Pakistan',family_key='SYN-FAMILY-'+str(self.counter),
    ph_curriculum_snapshot_json=json.dumps({'section_id':section,'display':{'section':'Existing section '+section}}))
   columns={r[1] for r in self.c.execute('PRAGMA table_info(questions)')};q={k:v for k,v in q.items() if k in columns}
   result=self.c.execute('INSERT INTO questions('+','.join(q)+') VALUES('+','.join('?' for _ in q)+')',tuple(q.values())).lastrowid
@@ -111,7 +116,9 @@ class BiologyReceiverTests(unittest.TestCase):
   return self.client.post('/test/start',data=form,base_url='https://localhost')
  def session_for(self,response):
   self.assertEqual(response.status_code,302,response.text[:200])
-  return self.c.execute('SELECT * FROM assessment_sessions WHERE student_id=? ORDER BY id DESC LIMIT 1',(uid,)).fetchone()
+  row=self.c.execute('SELECT * FROM assessment_sessions WHERE student_id=? ORDER BY id DESC LIMIT 1',(uid,)).fetchone()
+  self.assertIsNotNone(row,{'redirect':response.location,'message':response.text[:300]})
+  return row
 
  def test_opaque_governed_chapters_and_both_school_years(self):
   for year in (11,12):
@@ -209,7 +216,9 @@ class BiologyReceiverTests(unittest.TestCase):
   new['payload_checksum_sha256']=integration.payload_checksum(new['payload']);self.admit(new)
   self.assertEqual(self.client.get('/test/session/'+str(aid),base_url='https://localhost').status_code,200)
   reply=self.client.post('/test/session/'+str(aid)+'/submit',data={'_csrf_token':'synthetic-csrf'},base_url='https://localhost')
-  self.assertEqual(reply.status_code,302)
+  if BASELINE:
+   self.assertEqual(reply.status_code,409);return
+  self.assertEqual(reply.status_code,302,reply.text[:300])
   attempt=self.c.execute('SELECT * FROM attempts WHERE assessment_session_id=?',(aid,)).fetchone()
   self.assertEqual(attempt['score'],100)
   answer=self.c.execute('SELECT * FROM attempt_answers WHERE attempt_id=?',(attempt['id'],)).fetchone()
@@ -273,6 +282,46 @@ class BiologyReceiverTests(unittest.TestCase):
    setup=self.client.get('/test/setup',query_string={'subject':'Biology','chapter':chapter,'scope':'chapter'},base_url='https://localhost')
    self.assertEqual(setup.status_code,200);self.assertIn('name="question_type"',setup.text);self.assertIn('name="section"',setup.text)
   self.assertIn('@media(max-width:600px)',page.text)
+
+
+ def test_guided_only_chapter_uses_existing_unscored_practice(self):
+  import guided_self_assessment as guided
+  runtime_q=guided_fixture();env=self.envelope('guided-only')
+  q=env['payload']['questions'][0];q['content'].update(
+   question_family_type='CONSTRUCTED_RESPONSE',exam_question_type='SHORT_RESPONSE',
+   stem=runtime_q['question'],options=[],statements=[],command_word='describe',
+   marking={'key_type':'RUBRIC_ONLY','key':runtime_q['answer'],'accepted_answers':[],
+    'numeric_tolerance':None,'marks':3,'negative_marks':0,
+    'rubric':json.loads(runtime_q['marking_config'])['rubric'],'explanation':'Synthetic guided example.'})
+  q['architecture'].update(independent_mastery_eligible=False,independent_mastery_weight=0)
+  q['question_checksum_sha256']=integration._object_checksum(q,'question_checksum_sha256')
+  env['payload_checksum_sha256']=integration.payload_checksum(env['payload']);self.admit(env)
+  if BASELINE:return
+  chapter=subject_items('year11','Biology')[0]['name']
+  scope=next(iter(catalogue._release_scope_counts(self.c,'year11','Biology').values()))
+  self.assertEqual((scope['scored_count'],scope['guided_count']),(0,1))
+  page=self.client.get('/student/catalogue/year11/Biology',base_url='https://localhost')
+  self.assertIn('guided practice, no score',page.text)
+  self.assertIn('response_mode=GUIDED_SELF_ASSESSMENT',page.text)
+  response=self.request_start(response_mode=guided.MODE,scope='chapter',chapter=chapter,count='1')
+  assessment=self.session_for(response);aid=assessment['id']
+  self.assertEqual(self.client.get('/test/session/'+str(aid),base_url='https://localhost').status_code,200)
+  saved=self.client.post('/test/session/'+str(aid),data={'_csrf_token':'synthetic-csrf','response_present':'1',
+       'answer':'[SYNTHETIC] saved guided response','action':'review'},base_url='https://localhost')
+  self.assertIn(saved.status_code,(200,302))
+  with patch.object(sm,'mark_question_result',side_effect=AssertionError('Guided practice must not be scored')):
+   submitted=self.client.post('/test/session/'+str(aid)+'/submit',data={'_csrf_token':'synthetic-csrf'},base_url='https://localhost')
+  self.assertEqual(submitted.status_code,302)
+  self.assertEqual(self.c.execute('SELECT count(*) FROM attempts WHERE assessment_session_id=?',(aid,)).fetchone()[0],0)
+
+ def test_withdrawn_release_cannot_use_superseded_session_fallback(self):
+  env=self.envelope('withdraw-session');self.admit(env)
+  qid=self.c.execute('SELECT id FROM questions WHERE ph_question_id=?',(env['payload']['questions'][0]['question_id'],)).fetchone()[0]
+  aid=sm.create_assessment_session(self.c,uid,'practice',None,[qid],{'programme':'FSc Part 1','subject':'Biology'})
+  self.c.execute("UPDATE integration_ph_content_releases SET local_status='WITHDRAWN' WHERE release_id=?",(env['payload']['release']['release_id'],));self.c.commit()
+  reply=self.client.post('/test/session/'+str(aid)+'/submit',data={'_csrf_token':'synthetic-csrf'},base_url='https://localhost')
+  self.assertEqual(reply.status_code,409)
+  self.assertEqual(self.c.execute('SELECT count(*) FROM attempts WHERE assessment_session_id=?',(aid,)).fetchone()[0],0)
 
 if __name__=='__main__':
  suite=unittest.defaultTestLoader.loadTestsFromTestCase(BiologyReceiverTests)
