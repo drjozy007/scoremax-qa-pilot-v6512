@@ -1,15 +1,15 @@
 # ScoreMax Biology receiver readiness — 27 October 2026
 
-RECEIVER READY: NO for the live service until the qualified receiver overlay is promoted and its live checks pass. The engineering candidate is ready for that promotion. Academic population and the first actual Biology delivery are separate pending steps.
+RECEIVER READY: YES for bounded governed Biology receiving on the live ScoreMax service. Exact code promotion, native startup and live tester save/resume/submit/results checks passed. This is receiver compatibility readiness: the actual new Biology chapter transfer, its actual-byte capacity admission, academic population and new physical-mobile/custom-domain confirmation remain pending. Public-domain probes from this environment reset even though Render reports both domains verified with issued certificates; the Render origin passed the authenticated student journey.
 
 ## Accepted baseline and exact candidate
-- Accepted public source: 9df838d46ad82633904f252108ba434be90f9bb3; current live deploy dep-dbfn4tgn74is73f17p2g.
+- Accepted public source: 9df838d46ad82633904f252108ba434be90f9bb3; retained application rollback deploy dep-dbfn4tgn74is73f17p2g.
 - Qualified engineering commit: 1b21042012af0b1aefce79c4cc86f2182d4f6b75, branch fix/scoremax-streamed-backup-20261022.
 - Runtime: 261 files; SHA-256 ddb4ee4a1398c0e5ac2300e4711b7a1befadd7e4ef067dfc21bc28de118cdc9c.
 - Build command: python -B scripts/materialize_scoremax_biology_receiver_20261027.py && pip install -r scoremax_runtime_v669b/requirements.txt
 - The build verifies the frozen public runtime and applies only five reviewable source deltas. AI candidate code is not applied.
-- Render service srv-daj5fbm7bikc73aq2gdg, existing Standard plan, one instance, 5 GB disk. No compute, disk, secret, start-command, access or exposure change is proposed.
-- Auto-deploy is off. The attempted build-setting save returned Unauthorized and was cancelled; no deploy was triggered. Render browser reauthentication is pending.
+- Render service srv-daj5fbm7bikc73aq2gdg, existing Standard plan, one instance, 5 GB disk. No compute, disk, secret, start-command, access or exposure change was made.
+- Live deployment: dep-dbg9ct942hec73e04t7g, exact commit 1b21042012af0b1aefce79c4cc86f2182d4f6b75, finished 2026-10-27T12:19:16.369421Z. Auto-deploy remains off; only the build materializer changed.
 
 ## ALREADY SUPPORTED
 Reuse the native signed receiver, strict envelope/manifest/member checksums, exact idempotency keys and durable delivery receipts, immutable question-version store, separate release memberships, explicit product authorisations, staging, activation, withdrawal, native scoring contracts, governed guided self-assessment, assessment answer pins, persistence, results, access and mastery safeguards. Bulk membership/version receiving already uses a transaction per package, rather than a transaction per question. No new importer, database, staging system, dashboard or marking engine was introduced.
@@ -43,7 +43,7 @@ The architecture supports repeated governed batches and deeper chapter inventori
 
 ## STUDENT EXPERIENCE
 Focused native HTTP/Jinja tests cover chapter navigation/counts/sections, type selection before sampling, chapter-isolated topics, broad MDCAT practice/MCQ-only mocks, guided-only navigation and unscored submission, exact historical saved-session resume/submission/result, and withdrawn-content denial. Accepted responsive styles and prior physical-phone login/practice/question evidence are retained.
-The new controls have not been visually verified in a desktop browser or on a physical phone. The disposable localhost preview could not be loaded; a subsequent file preview was blocked by the browser URL policy. No policy bypass or substitute claim of visual verification was made. Native server-side tests passed. The first actual chapter journey must include desktop and mobile verification.
+The promoted controls were visually verified in the existing authorised tester browser. A ten-question MDCAT Biology MCQ practice saved an answer, resumed after reload with that selection intact, saved all ten, and submitted once for native feedback and a 10/10 result. Read-only storage verification confirmed exactly one FINAL attempt and ten distinct answer rows. This is an operational test using existing governed content, not an independent academic marking benchmark. FSc I Biology showed its twelve-chapter structure and existing 388-question chapter; MDCAT showed 59 questions in the existing populated unit; all thirteen unpopulated FSc II Biology chapters stayed unavailable. Screenshots and UI evidence are retained locally. New controls have not yet been verified on a physical phone; the first actual chapter journey must include that check.
 
 ## DEPLOYMENT, TESTS AND ROLLBACK
 [Focused Linux run](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/40488611459) passed at exact candidate 1b21042012af0b1aefce79c4cc86f2182d4f6b75:
@@ -55,7 +55,7 @@ The new controls have not been visually verified in a desktop browser or on a ph
 - Artifact 12726635799; ZIP SHA-256 a4e837ba087e7f7d6652f3b33462101617a7201b5e71589c21d8aca1b037d048; retained 14 days. Source compatibility and condensed receipts are preserved beside this handoff.
 Earlier failed jobs remain failed: fixture provenance/access errors and one real fresh-schema index-order defect were corrected before this final success. No failed memory result was relabelled.
 
-Promotion procedure: confirm branch head and exact build materializer; save the Biology-only build command; keep auto-deploy off; trigger one exact qualified revision; monitor the resulting deploy through live; verify runtime fingerprint, unchanged native startup/guard and database health, ordinary public responses and authorised student scopes. Do not import or activate content as part of this code promotion.
+Completed promotion: selected the exact qualified commit in Render and deployed it once. Render reports live; a read-only live audit matched the complete 261-file qualified runtime fingerprint and unchanged native guard SHA. The native startup guard passed database/backup integrity and foreign-key checks. All four indexes are present; 1,841 active Approved questions remain. At the audit, free disk was 4,254,679,040 bytes, DB 104,386,560 bytes and WAL 127,752 bytes. Memory events high/max/OOM/OOM-kill were zero before and after the tester journey. CPU startup counters recorded 10 throttled periods / 1.696290 seconds cumulatively at the audit; this is disclosed, not a zero-throttling claim or a new Gate D/production exception. No 5xx request logs matched the bounded 12:19:16–12:27:53 UTC post-deploy check. Read-only audits made no DB writes; the normal application created one completed tester practice. No question imports or activations occurred. See BIOLOGY_RECEIVER_DEPLOYMENT_RESULT_20261027.json for exact receipts.
 
 Rollback target: retained public deploy dep-dbfn4tgn74is73f17p2g / commit 9df838d46ad82633904f252108ba434be90f9bb3. Roll back application code using the retained build; do not restore an old database over subsequent student work. If rebuilding instead, restore the accepted public build command. Retain the additive indexes. Verify deploy status, unchanged guard, normal student session and result access; keep auto-deploy off. A disk-backed service has a deployment interruption, and code rollback does not roll back its disk.
 

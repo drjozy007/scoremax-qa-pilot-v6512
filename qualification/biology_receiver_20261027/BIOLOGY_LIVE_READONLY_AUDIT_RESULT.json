@@ -1,0 +1,45 @@
+{
+  "AI_calls": 0,
+  "activations": 0,
+  "active_approved_questions": 1841,
+  "additive_indexes": {
+    "idx_answer_question_attempt": "CREATE INDEX idx_answer_question_attempt ON attempt_answers(question_db_id,attempt_id)",
+    "idx_ph_membership_question_version": "CREATE INDEX idx_ph_membership_question_version ON integration_ph_release_question_membership(question_id,question_version_id,release_id,release_version)",
+    "idx_ph_version_local_question": "CREATE INDEX idx_ph_version_local_question ON integration_ph_question_version_store(local_question_db_id,question_id,question_version_id)",
+    "idx_questions_ph_identity": "CREATE INDEX idx_questions_ph_identity ON questions(ph_projection_owner,ph_question_id)"
+  },
+  "commit": "1b21042012af0b1aefce79c4cc86f2182d4f6b75",
+  "cpu_stat": {
+    "burst_usec": 0,
+    "core_sched.force_idle_usec": 0,
+    "nr_bursts": 0,
+    "nr_periods": 585,
+    "nr_throttled": 10,
+    "system_usec": 3634454,
+    "throttled_usec": 1696290,
+    "usage_usec": 10808087,
+    "user_usec": 7173632
+  },
+  "database_file_bytes": {
+    "scoremax.db": 104386560,
+    "scoremax.db-shm": 32768,
+    "scoremax.db-wal": 127752
+  },
+  "disk_free_bytes": 4254679040,
+  "disk_total_bytes": 5196382208,
+  "guard_sha256": "c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195",
+  "imports": 0,
+  "memory_events": {
+    "high": 0,
+    "low": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_group_kill": 0,
+    "oom_kill": 0
+  },
+  "question_rows": 1941,
+  "readonly_database": true,
+  "result": "BIOLOGY_LIVE_READ_ONLY_AUDIT_PASS",
+  "runtime_files": 261,
+  "runtime_sha256": "ddb4ee4a1398c0e5ac2300e4711b7a1befadd7e4ef067dfc21bc28de118cdc9c"
+}

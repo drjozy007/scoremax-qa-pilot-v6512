@@ -1,0 +1,18 @@
+{
+  "answer_count": 10,
+  "assessment_session": 8,
+  "attempt_id": 5,
+  "distinct_answer_questions": 10,
+  "marking_status": "FINAL",
+  "memory_events": {
+    "high": 0,
+    "low": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_group_kill": 0,
+    "oom_kill": 0
+  },
+  "native_score": 100,
+  "readonly_database": true,
+  "single_final_attempt": true
+}

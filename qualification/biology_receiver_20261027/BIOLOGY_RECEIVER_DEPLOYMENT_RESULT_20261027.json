@@ -1,0 +1,155 @@
+{
+  "status": "BIOLOGY_RECEIVER_LIVE",
+  "receiver_ready": true,
+  "scope": "Existing bounded governed receiver compatibility; actual new chapter transfer and mobile/custom-domain verification pending",
+  "deployed_commit": "1b21042012af0b1aefce79c4cc86f2182d4f6b75",
+  "deploy_id": "dep-dbg9ct942hec73e04t7g",
+  "service_id": "srv-daj5fbm7bikc73aq2gdg",
+  "deploy_status": "live",
+  "finished_at_utc": "2026-10-27T12:19:16.369421Z",
+  "runtime_sha256": "ddb4ee4a1398c0e5ac2300e4711b7a1befadd7e4ef067dfc21bc28de118cdc9c",
+  "startup_guard": {
+    "integrity": "ok",
+    "fk": 0,
+    "backup_integrity": "ok",
+    "backup_fk": 0,
+    "backup_sha256": "2971662a9eeeca750084c07ce11d83be373c20c2adb6c00d8d20a8494c022151",
+    "preimport_baseline_preserved": true,
+    "native_power_house_questions": 1841,
+    "membership_rows": 4164,
+    "release_rows": 28,
+    "unbound_questions": 0
+  },
+  "live_readonly_audit": {
+    "AI_calls": 0,
+    "activations": 0,
+    "active_approved_questions": 1841,
+    "additive_indexes": {
+      "idx_answer_question_attempt": "CREATE INDEX idx_answer_question_attempt ON attempt_answers(question_db_id,attempt_id)",
+      "idx_ph_membership_question_version": "CREATE INDEX idx_ph_membership_question_version ON integration_ph_release_question_membership(question_id,question_version_id,release_id,release_version)",
+      "idx_ph_version_local_question": "CREATE INDEX idx_ph_version_local_question ON integration_ph_question_version_store(local_question_db_id,question_id,question_version_id)",
+      "idx_questions_ph_identity": "CREATE INDEX idx_questions_ph_identity ON questions(ph_projection_owner,ph_question_id)"
+    },
+    "commit": "1b21042012af0b1aefce79c4cc86f2182d4f6b75",
+    "cpu_stat": {
+      "burst_usec": 0,
+      "core_sched.force_idle_usec": 0,
+      "nr_bursts": 0,
+      "nr_periods": 585,
+      "nr_throttled": 10,
+      "system_usec": 3634454,
+      "throttled_usec": 1696290,
+      "usage_usec": 10808087,
+      "user_usec": 7173632
+    },
+    "database_file_bytes": {
+      "scoremax.db": 104386560,
+      "scoremax.db-shm": 32768,
+      "scoremax.db-wal": 127752
+    },
+    "disk_free_bytes": 4254679040,
+    "disk_total_bytes": 5196382208,
+    "guard_sha256": "c1bff2fcbe000a05aeab4401b9267dd1e460425c485aa6efc683c642fed47195",
+    "imports": 0,
+    "memory_events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "question_rows": 1941,
+    "readonly_database": true,
+    "result": "BIOLOGY_LIVE_READ_ONLY_AUDIT_PASS",
+    "runtime_files": 261,
+    "runtime_sha256": "ddb4ee4a1398c0e5ac2300e4711b7a1befadd7e4ef067dfc21bc28de118cdc9c"
+  },
+  "tester_persistence": {
+    "answer_count": 10,
+    "assessment_session": 8,
+    "attempt_id": 5,
+    "distinct_answer_questions": 10,
+    "marking_status": "FINAL",
+    "memory_events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "native_score": 100,
+    "readonly_database": true,
+    "single_final_attempt": true
+  },
+  "student_browser": {
+    "existing_authorised_tester": true,
+    "assessment_session_id": 8,
+    "result_id": 5,
+    "programme": "MDCAT",
+    "subject": "Biology",
+    "chapter": "MDCAT::BIOLOGY::UNIT::04",
+    "selected_format": "MCQ",
+    "questions": 10,
+    "save_reload_resume_selected_answer_preserved": true,
+    "all_ten_saved": true,
+    "submitted_once": true,
+    "native_feedback_and_result_visible": true,
+    "score_percent": 100,
+    "independent_academic_benchmark": false,
+    "fsc1_biology_chapters": 12,
+    "fsc1_existing_chapter_scored_count": 388,
+    "mdcat_existing_chapter_scored_count": 59,
+    "fsc2_biology_chapters": 13,
+    "fsc2_unpopulated_unavailable": true,
+    "desktop_controls_visually_verified": true,
+    "new_controls_physical_mobile_verified": false
+  },
+  "custom_domain": {
+    "apex": "scoremax.pk",
+    "apex_verified": true,
+    "www_verified": true,
+    "apex_certificate": "Certificate Issued",
+    "www_certificate": "Certificate Issued",
+    "www_redirects_to_apex": true,
+    "public_login_probe": "CONNECTION_RESET_FROM_THIS_ENVIRONMENT",
+    "render_origin_tester_journey": "PASS",
+    "dns_or_tls_configuration_changes": 0,
+    "physical_mobile_followup_pending": true
+  },
+  "observed_post_deploy_5xx_logs": {
+    "start_utc": "2026-10-27T12:19:16Z",
+    "end_utc": "2026-10-27T12:27:53.00391132Z",
+    "matching_logs": 0
+  },
+  "deployment_settings": {
+    "auto_deploy": "no",
+    "instances": 1,
+    "plan": "standard",
+    "disk_GB": 5,
+    "start_command_changed": false,
+    "environment_secrets_changed": false
+  },
+  "rollback": {
+    "commit": "9df838d46ad82633904f252108ba434be90f9bb3",
+    "deploy": "dep-dbfn4tgn74is73f17p2g",
+    "cold_application_rollback_against_candidate_database_passed": true,
+    "database_restore_needed": false,
+    "qualified_ci_run": 40488611459
+  },
+  "production_operations": {
+    "code_deployments": 1,
+    "tester_practice_sessions_completed": 1,
+    "real_question_imports": 0,
+    "question_activations": 0,
+    "power_house_operations": 0,
+    "AI_calls": 0,
+    "paid_compute_increases": 0
+  },
+  "remaining": [
+    "Actual governed Biology chapter delivery and exact-byte capacity admission, ACK/count reconciliation and authorised activation",
+    "Desktop/mobile first actual chapter student journey; no per-chapter full qualification",
+    "Public domain/mobile followup: Render verification/certificates are valid but this environment receives a connection reset"
+  ]
+}
