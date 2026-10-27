@@ -81,6 +81,7 @@ class BiologyReceiverTests(unittest.TestCase):
    scoremax_ready=1,ph_projection_owner='',source_type='ISOLATED_SYNTHETIC_TEST',rights_status='ScoreMax Original',
    content_environment='PRODUCTION',country='Pakistan',family_key='SYN-FAMILY-'+str(self.counter),
    ph_curriculum_snapshot_json=json.dumps({'section_id':section,'display':{'section':'Existing section '+section}}))
+  q['family_key']=sm.upsert_question_family(self.c,q,review_status='Approved',active=1)
   columns={r[1] for r in self.c.execute('PRAGMA table_info(questions)')};q={k:v for k,v in q.items() if k in columns}
   result=self.c.execute('INSERT INTO questions('+','.join(q)+') VALUES('+','.join('?' for _ in q)+')',tuple(q.values())).lastrowid
   self.c.commit();return result
