@@ -5,6 +5,8 @@ from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 RUNTIME=Path(sys.argv.pop(1)).resolve()
+ROLLBACK='--rollback-existing' in sys.argv
+if ROLLBACK:sys.argv.remove('--rollback-existing')
 BASELINE='--baseline-probe' in sys.argv
 if BASELINE:sys.argv.remove('--baseline-probe')
 sys.path.insert(0,str(ROOT/'.test_deps'));sys.path.insert(0,str(RUNTIME))
@@ -47,6 +49,34 @@ fixture_ns={'copy':copy,'json':json}
 exec(compile(ast.Module(body=nodes,type_ignores=[]),str(fixture_path),'exec'),fixture_ns)
 SPECS=fixture_ns['SPECS']
 from guided_fixture_helpers import fixture as guided_fixture
+if ROLLBACK:
+ expected=json.loads((WORK/'ROLLBACK_EXPECTATIONS.json').read_text())
+ connection=sm.db()
+ user=connection.execute('SELECT * FROM users WHERE id=?',(expected['user_id'],)).fetchone()
+ stored=connection.execute('SELECT * FROM integration_ph_question_version_store WHERE question_id=?',(expected['question_id'],)).fetchone()
+ assert stored['question_checksum_sha256']==expected['question_checksum_sha256']
+ indexes={row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='index'")}
+ assert {'idx_ph_membership_question_version','idx_ph_version_local_question','idx_questions_ph_identity','idx_answer_question_attempt'}<=indexes
+ with app.test_client() as client:
+  with client.session_transaction(base_url='https://localhost') as state:
+   state.update(user_id=user['id'],role='student',session_version=user['session_version'],_csrf_token='synthetic-csrf')
+  resumed=client.get('/test/session/'+str(expected['assessment_id']),base_url='https://localhost')
+  assert resumed.status_code==200
+  submitted=client.post('/test/session/'+str(expected['assessment_id'])+'/submit',data={'_csrf_token':'synthetic-csrf'},base_url='https://localhost')
+  assert submitted.status_code==302
+  attempt=connection.execute('SELECT * FROM attempts WHERE assessment_session_id=?',(expected['assessment_id'],)).fetchone()
+  assert attempt['score']==100 and attempt['marking_status']=='FINAL'
+  assert client.get(submitted.location,base_url='https://localhost').status_code==200
+ answer=connection.execute('SELECT * FROM attempt_answers WHERE attempt_id=?',(attempt['id'],)).fetchone()
+ assert answer['ph_question_version_id']==expected['question_version_id']
+ assert answer['selected_answer']=='B'
+ assert list(connection.execute('PRAGMA integrity_check'))[0][0]=='ok'
+ result={'status':'ACCEPTED_PUBLIC_COLD_ROLLBACK_COMPATIBILITY_PASS','source_commit':'9df838d46ad82633904f252108ba434be90f9bb3',
+  'candidate_database_reused_without_restore':True,'additive_indexes_retained':4,'guard_unchanged':True,
+  'native_resume_submit_result_passed':True,'source_versions_and_saved_answers_preserved':True,'production_data_used':False}
+ Path('/evidence/ACCEPTED_PUBLIC_ROLLBACK_RESULT.json').write_text(json.dumps(result,indent=2)+'\n')
+ print('BIOLOGY_ROLLBACK_RESULT='+json.dumps(result));connection.close();sys.exit(0)
+
 c=sm.db()
 uid=c.execute("""INSERT INTO users(role,system_user_id,full_name,email,username,password_hash,account_status,
  email_verified,is_demo_account,academic_level,active_programme,subjects)
@@ -331,5 +361,17 @@ if __name__=='__main__':
   'tests':outcome.testsRun,'failures':len(outcome.failures),'errors':len(outcome.errors),
   'production_data_used':False,'power_house_accessed':False,'historical_transfers_or_acks_replayed':False,
   'academic_banks_generated':False,'paid_AI_calls':0,'live_activation':False}
+ if outcome.wasSuccessful() and not BASELINE:
+  sm.DB=WORK/'state/scoremax.db';os.environ['SCOREMAX_DB']=str(sm.DB)
+  case=BiologyReceiverTests('test_reverse_membership_lookup_uses_covering_index')
+  case.c=sm.db();case.counter=0
+  seed=case.envelope('rollback-restart');case.admit(seed)
+  source_q=seed['payload']['questions'][0]
+  qid=case.c.execute('SELECT id FROM questions WHERE ph_question_id=?',(source_q['question_id'],)).fetchone()[0]
+  aid=sm.create_assessment_session(case.c,uid,'practice',None,[qid],{'programme':'FSc Part 1','subject':'Biology'})
+  sm.save_assessment(case.c,aid,answers={str(qid):'B'});case.c.commit();case.c.close()
+  expected={'user_id':uid,'assessment_id':aid,'question_id':source_q['question_id'],
+   'question_version_id':source_q['question_version_id'],'question_checksum_sha256':source_q['question_checksum_sha256']}
+  (WORK/'ROLLBACK_EXPECTATIONS.json').write_text(json.dumps(expected))
  print('BIOLOGY_RECEIVER_RESULT='+json.dumps(summary))
  sys.exit(0 if outcome.wasSuccessful() else 1)
