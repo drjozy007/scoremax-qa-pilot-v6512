@@ -113,6 +113,22 @@ class SharedPractice(unittest.TestCase):
             with self.assertRaisesRegex(engine.QuestionContractError,'AUTHORITY_CONFLICT'):
                 receiver._ph_validate_scored_or_guided_assessment(bad)
 
+    def test_guided_preserves_distinct_rubric_instructions_and_accepted_evidence(self):
+        case=deepcopy(next(c for c in CASES if c['kind']=='SAQ'))
+        source=case['source'];old=source['Marking_Rubric']
+        source['Marking_Rubric']=old.replace('1. 1 mark — ','1. 1 mark — Describe this source criterion: ',1)
+        q=projected(case)
+        import guided_self_assessment
+        view=guided_self_assessment.guidance(q)
+        self.assertIn(source['Marking_Rubric'],view['source_guidance'])
+        points=json.loads(q['marking_config'])['rubric']['required_mark_points']
+        self.assertTrue(points[0]['source_rubric_criterion'].startswith('Describe this source criterion: '))
+        self.assertNotEqual(points[0]['description'],points[0]['source_rubric_criterion'])
+        with self.assertRaisesRegex(engine.QuestionContractError,'GUIDED_PRACTICE_HAS_NO_MARKS'):
+            self.mark(q,source['Model_Answer'])
+        source['Marking_Rubric']=source['Marking_Rubric'].replace('1. 1 mark —','1. 99 marks —',1)
+        with self.assertRaisesRegex(ValueError,'RUBRIC_CONFLICT'):projected(case)
+
     def test_bad_source_or_contract_is_held_independently(self):
         original=next(c for c in CASES if c['kind']=='CLOZE')
         for field,value in [('Canonical_Answers','G99=invented'),('Gap_Count',2),('Auto_Marking_Eligibility','UNKNOWN'),('Learner_Question','Different source stem')]:

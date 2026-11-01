@@ -35,7 +35,7 @@ def materialize_accepted(keep_accepted_source=False):
  return {'files':261,'runtime_sha256':EXPECTED,'accepted_public_commit':'9df838d46ad82633904f252108ba434be90f9bb3',
          'AI_candidate_applied':False,'power_house_changes':False,'historical_qualifications_replayed':0}
 
-SHARED_EXPECTED='c9ca36ff6a29ea659f442558f1ebccd1da84eb012ac01760c58b2774141b2aff'
+SHARED_EXPECTED='2a87c88f58652b948ab64c12493eac4d10b264664d5bb2c75b8ff292e8d49e42'
 def materialize(keep_accepted_source=False):
  root=REPO/'scoremax_runtime_v669b'
  if root.exists() and digest(root)==(262,SHARED_EXPECTED):

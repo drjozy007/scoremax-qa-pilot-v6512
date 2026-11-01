@@ -119,6 +119,7 @@ def apply(root):
     text = replace(text, "source.get('Learner_Output_Type') != 'TEXT_SHORT_RESPONSE'", "source.get('Learner_Output_Type') not in ('TEXT_SHORT_RESPONSE','TEXT')")
     text = replace(text, "evidence = str(source.get('Canonical_Accepted_Evidence') or '').split(' | ')\n    weights = str(source.get('Mark_Point_Values') or '').split(';')", "evidence_text = str(source.get('Canonical_Accepted_Evidence') or '')\n    evidence = evidence_text.split(' || ') if ' || ' in evidence_text else evidence_text.split(' | ')\n    import re\n    weights = re.split(r'[;|]',str(source.get('Mark_Point_Values') or ''))")
     text = replace(text, "'source_master_sha256': source.get('_PH_Original_Master_SHA256'),", "'source_master_sha256': source_workbook_sha256 or source.get('_PH_Original_Master_SHA256'),")
+    text = replace(text, "('Partial_Credit_Rule', 'Contradiction_Rule', 'Unacceptable_Near_Misses')", "('Marking_Rubric', 'Acceptable_Alternatives', 'Partial_Credit_Rule', 'Contradiction_Rule', 'Unacceptable_Near_Misses')")
     changes[p] = text
 
     p = root/'app.py'; text = p.read_text()

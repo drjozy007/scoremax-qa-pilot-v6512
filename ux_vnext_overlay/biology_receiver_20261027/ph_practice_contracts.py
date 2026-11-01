@@ -159,14 +159,20 @@ def source_saq_rubric(source):
     points = re.split(r'\s*\|\s*', literal)
     if len(points) != int(count):
         raise ValueError('SOURCE_STRUCTURED_MARK_RUBRIC_CONFLICT')
+    criteria = []
     for i, (text, clause, weight) in enumerate(zip(points, clauses, weights), 1):
         match = re.fullmatch(r'\s*'+str(i)+r'\.\s*([0-9]+(?:\.[0-9]+)?)\s+marks?\s*[—–:-]\s*(.+?)\s*', text)
-        if not match or number(match[1]) != weight or match[2] != clause:
+        if not match or number(match[1]) != weight:
             raise ValueError('SOURCE_STRUCTURED_MARK_RUBRIC_CONFLICT')
+        # A rubric instruction and its accepted evidence have distinct source roles.
+        # Retain both verbatim; do not infer or certify their semantic equivalence.
+        # Native academic clearance remains required and this mode awards no marks.
+        criteria.append(match[2])
     body = {'version': 'PH-SAQ-SCORING-CONTRACT-1', 'maximum_marks': float(maximum),
             'auto_marking_eligibility': 'RUBRIC_SEMANTICALLY_SCORABLE', 'scoring_type': 'SEMANTIC_MARK_POINT',
-            'required_mark_points': [{'id': 'p'+str(i), 'description': text, 'marks': float(weight)}
-                                     for i, (text, weight) in enumerate(zip(clauses, weights), 1)],
+            'required_mark_points': [{'id': 'p'+str(i), 'description': text, 'marks': float(weight),
+                                     'source_rubric_criterion': criterion}
+                                     for i, (text, weight, criterion) in enumerate(zip(clauses, weights, criteria), 1)],
             'source_scoring_policies': {k: v for k, v in source.items() if k.endswith('_Rule') or k in
                                        ('Unacceptable_Near_Misses', 'Marking_Rubric', 'Acceptable_Alternatives')},
             'source_marking_evidence_sha256': digest(source), 'academic_approval_conferred': False}
