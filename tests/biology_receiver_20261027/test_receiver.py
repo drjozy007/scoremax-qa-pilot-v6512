@@ -159,7 +159,7 @@ class BiologyReceiverTests(unittest.TestCase):
    item=subject_items('year11' if year==11 else 'year12','Biology')[0]
    match=catalogue._catalogue_item_scope(result,item)
    if BASELINE:self.assertIsNone(match)
-   else:self.assertEqual(match['count'],1);self.assertEqual(match['chapter'],item['name'])
+   else:self.assertEqual(match['count'],1);self.assertEqual(match['chapter'],env['payload']['release']['chapter_id'])
   OBSERVATIONS.append({'opaque_governed_chapter_mapping':not BASELINE})
 
  def test_question_format_is_filtered_before_sampling(self):
