@@ -162,6 +162,44 @@ class BiologyReceiverTests(unittest.TestCase):
    else:self.assertEqual(match['count'],1);self.assertEqual(match['chapter'],env['payload']['release']['chapter_id'])
   OBSERVATIONS.append({'opaque_governed_chapter_mapping':not BASELINE})
 
+ def test_original_split_chapter_labels_keep_one_learner_inventory(self):
+  # Reproduce the accepted Biology Ch1 incident: MCQs and other formats used
+  # two complete human labels while PH releases retained opaque identity.
+  labels=('1 — Biodiversity and Classification','Chapter 1 — Biodiversity & Classification')
+  expected=set()
+  for number,label in enumerate(labels):
+   env=self.envelope('ch1-label-'+str(number),year=11)
+   question=env['payload']['questions'][0]
+   question['curriculum']['display']['chapter']=label
+   question['question_checksum_sha256']=integration._object_checksum(question,'question_checksum_sha256')
+   env['payload_checksum_sha256']=integration.payload_checksum(env['payload'])
+   self.admit(env)
+   expected.add(question['question_id'])
+  # Same chapter number in another programme, another chapter and unactivated
+  # inventory must not enter this FSc Part 1 learner count or selection.
+  other_year=self.envelope('other-year',year=12)
+  other_year['payload']['questions'][0]['curriculum']['display']['chapter']=labels[0]
+  other_year['payload']['questions'][0]['question_checksum_sha256']=integration._object_checksum(other_year['payload']['questions'][0],'question_checksum_sha256')
+  other_year['payload_checksum_sha256']=integration.payload_checksum(other_year['payload'])
+  self.admit(other_year)
+  self.admit(self.envelope('other-chapter',year=11,chapter_index=1))
+  inactive=self.envelope('inactive-label',year=11)
+  inactive['payload']['questions'][0]['curriculum']['display']['chapter']=labels[1]
+  inactive['payload']['questions'][0]['question_checksum_sha256']=integration._object_checksum(inactive['payload']['questions'][0],'question_checksum_sha256')
+  inactive['payload_checksum_sha256']=integration.payload_checksum(inactive['payload'])
+  self.admit(inactive,activate=False)
+  if BASELINE:return
+  for label in labels:
+   scope,args=sm._programme_chapter_scope_sql('FSc Part 1',label,'q')
+   rows=self.c.execute(f"SELECT q.id,q.ph_question_id FROM questions q WHERE {sm.live_question_clause('q')} AND lower(q.subject)=lower(?) AND {scope}",['Biology']+args).fetchall()
+   self.assertEqual({r['ph_question_id'] for r in rows},expected,label)
+   page=self.client.get('/student/chapter',query_string={'subject':'Biology','chapter':label},base_url='https://localhost')
+   self.assertEqual(page.status_code,200,page.text[:300])
+   self.assertIn('2 scored practice questions',page.text,label)
+   session=self.session_for(self.request_start(scope='chapter',chapter=label,count='2'))
+   self.assertEqual({int(x) for x in session['question_ids'].split(',')},{r['id'] for r in rows},label)
+  OBSERVATIONS.append({'original_biology_label_split_blocked':True,'scored_items':2,'separate_authority_fenced':True})
+
  def test_question_format_is_filtered_before_sampling(self):
   expected=self.local('TF')
   for _ in range(4):self.local('MCQ')
