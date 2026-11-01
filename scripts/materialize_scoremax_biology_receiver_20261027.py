@@ -7,7 +7,7 @@ PUBLIC='bed7d678f3c43d10d85ab31c699ad78994e0764670890c2fd0c4c77c2629f69c'
 def digest(root):
  manifest={p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file()}
  return len(manifest),hashlib.sha256(json.dumps(manifest,sort_keys=True,separators=(',',':')).encode()).hexdigest()
-def materialize(keep_accepted_source=False):
+def materialize_accepted(keep_accepted_source=False):
  root=REPO/'scoremax_runtime_v669b'
  if root.exists() and digest(root)==(261,EXPECTED):return {'replayed':True,'files':261,'runtime_sha256':EXPECTED}
  if not root.exists():
@@ -34,6 +34,17 @@ def materialize(keep_accepted_source=False):
  assert digest(root)==(261,EXPECTED),'BIOLOGY_RUNTIME_MISMATCH'
  return {'files':261,'runtime_sha256':EXPECTED,'accepted_public_commit':'9df838d46ad82633904f252108ba434be90f9bb3',
          'AI_candidate_applied':False,'power_house_changes':False,'historical_qualifications_replayed':0}
+
+SHARED_EXPECTED='c9ca36ff6a29ea659f442558f1ebccd1da84eb012ac01760c58b2774141b2aff'
+def materialize(keep_accepted_source=False):
+ root=REPO/'scoremax_runtime_v669b'
+ if root.exists() and digest(root)==(262,SHARED_EXPECTED):
+  return {'replayed':True,'files':262,'runtime_sha256':SHARED_EXPECTED,'learner_activation':False}
+ accepted=materialize_accepted(keep_accepted_source)
+ spec=importlib.util.spec_from_file_location('shared_practice_delta',REPO/'ux_vnext_overlay/biology_receiver_20261027/shared_practice_runtime.py')
+ module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);delta=module.apply(root)
+ assert digest(root)==(262,SHARED_EXPECTED),'SHARED_PRACTICE_RUNTIME_MISMATCH'
+ return {**accepted,**delta,'files':262,'runtime_sha256':SHARED_EXPECTED,'accepted_receiver_runtime_sha256':EXPECTED}
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--keep-accepted-source',action='store_true');args=p.parse_args()
  print('SCOREMAX_BIOLOGY_RUNTIME='+json.dumps(materialize(args.keep_accepted_source),sort_keys=True))

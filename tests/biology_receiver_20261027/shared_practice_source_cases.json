@@ -1,0 +1,118 @@
+[
+  {
+    "fixture_kind": "SYNTHETIC_UNIT_ONLY",
+    "kind": "CLOZE",
+    "workbook_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "Question_ID": "UNIT-CLOZE-1",
+      "Question_Type": "CLOZE_CONSTRUCTED_RESPONSE",
+      "Cloze_Subtype": "CLOZE_SINGLE_GAP",
+      "Learner_Question": "Sample: ________.",
+      "Gap_Count": 1,
+      "Gap_IDs": "unit-gap-1",
+      "Canonical_Answers": "G1=Alpha",
+      "Acceptable_Alternatives": "G1=Alpha alternative",
+      "Answer_Set_Closure_Status": "FINITE_CLOSED",
+      "Auto_Marking_Eligibility": "YES_DETERMINISTIC",
+      "Answer_Normalization_Rules": "G1:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH",
+      "Total_Practice_Score": 1,
+      "Source_Locator": "SYNTHETIC_UNIT_ONLY"
+    }
+  },
+  {
+    "fixture_kind": "SYNTHETIC_UNIT_ONLY",
+    "kind": "CLOZE",
+    "workbook_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "Question_ID": "UNIT-CLOZE-2",
+      "Question_Type": "CLOZE_CONSTRUCTED_RESPONSE",
+      "Cloze_Subtype": "CLOZE_DOUBLE_GAP",
+      "Learner_Question": "Sample: ________, ________.",
+      "Gap_Count": 2,
+      "Gap_IDs": "unit-gap-1 | unit-gap-2",
+      "Canonical_Answers": "G1=Alpha | G2=Beta",
+      "Acceptable_Alternatives": "G1=Alpha alternative; G2=Beta alternative",
+      "Answer_Set_Closure_Status": "FINITE_CLOSED",
+      "Auto_Marking_Eligibility": "YES_DETERMINISTIC",
+      "Answer_Normalization_Rules": "G1:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH ; G2:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH",
+      "Total_Practice_Score": 2,
+      "Source_Locator": "SYNTHETIC_UNIT_ONLY"
+    }
+  },
+  {
+    "fixture_kind": "SYNTHETIC_UNIT_ONLY",
+    "kind": "CLOZE",
+    "workbook_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "Question_ID": "UNIT-CLOZE-3",
+      "Question_Type": "CLOZE_CONSTRUCTED_RESPONSE",
+      "Cloze_Subtype": "CLOZE_TRIPLE_GAP",
+      "Learner_Question": "Sample: ________, ________, ________.",
+      "Gap_Count": 3,
+      "Gap_IDs": "unit-gap-1 | unit-gap-2 | unit-gap-3",
+      "Canonical_Answers": "G1=Alpha | G2=Beta | G3=Gamma",
+      "Acceptable_Alternatives": "G1=Alpha alternative; G2=Beta alternative; G3=Gamma alternative",
+      "Answer_Set_Closure_Status": "FINITE_CLOSED",
+      "Auto_Marking_Eligibility": "YES_DETERMINISTIC",
+      "Answer_Normalization_Rules": "G1:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH ; G2:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH ; G3:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH",
+      "Total_Practice_Score": 3,
+      "Source_Locator": "SYNTHETIC_UNIT_ONLY"
+    }
+  },
+  {
+    "fixture_kind": "SYNTHETIC_UNIT_ONLY",
+    "kind": "CLOZE",
+    "workbook_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "Question_ID": "UNIT-CLOZE-4",
+      "Question_Type": "CLOZE_CONSTRUCTED_RESPONSE",
+      "Cloze_Subtype": "CLOZE_PARAGRAPH_MULTI_GAP",
+      "Learner_Question": "Sample: ________, ________, ________, ________.",
+      "Gap_Count": 4,
+      "Gap_IDs": "unit-gap-1 | unit-gap-2 | unit-gap-3 | unit-gap-4",
+      "Canonical_Answers": "G1=Alpha | G2=Beta | G3=Gamma | G4=Delta",
+      "Acceptable_Alternatives": "G1=Alpha alternative; G2=Beta alternative; G3=Gamma alternative; G4=Delta alternative",
+      "Answer_Set_Closure_Status": "FINITE_CLOSED",
+      "Auto_Marking_Eligibility": "YES_DETERMINISTIC",
+      "Answer_Normalization_Rules": "G1:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH ; G2:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH ; G3:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH ; G4:TRIM_OUTER_WHITESPACE; FULL_RESPONSE_EXACT_AFTER_CASE_NORMALIZATION; EXPLICIT_ALTERNATIVES_ONLY; NO_FUZZY_MATCH",
+      "Total_Practice_Score": 4,
+      "Source_Locator": "SYNTHETIC_UNIT_ONLY"
+    }
+  },
+  {
+    "fixture_kind": "SYNTHETIC_UNIT_ONLY",
+    "kind": "SAQ",
+    "workbook_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "Question_ID": "UNIT-SAQ-2",
+      "Capability_Status": "READY",
+      "Required_Produced_Representation": "NONE",
+      "Learner_Output_Type": "TEXT",
+      "Learner_Question": "Describe the unit sample.",
+      "Model_Answer": "First criterion. Second criterion.",
+      "Marks": 2,
+      "Mark_Point_Count": 2,
+      "Mark_Point_Values": "1|1",
+      "Canonical_Accepted_Evidence": "First criterion. || Second criterion.",
+      "Marking_Rubric": "1. 1 mark \u2014 First criterion. | 2. 1 mark \u2014 Second criterion."
+    }
+  },
+  {
+    "fixture_kind": "SYNTHETIC_UNIT_ONLY",
+    "kind": "SAQ",
+    "workbook_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "Question_ID": "UNIT-SAQ-3",
+      "Capability_Status": "READY",
+      "Required_Produced_Representation": "NONE",
+      "Learner_Output_Type": "TEXT",
+      "Learner_Question": "Describe the unit sample.",
+      "Model_Answer": "First criterion. Second criterion. Third criterion.",
+      "Marks": 3,
+      "Mark_Point_Count": 3,
+      "Mark_Point_Values": "1|1|1",
+      "Canonical_Accepted_Evidence": "First criterion. || Second criterion. || Third criterion.",
+      "Marking_Rubric": "1. 1 mark \u2014 First criterion. | 2. 1 mark \u2014 Second criterion. | 3. 1 mark \u2014 Third criterion."
+    }
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "scoremax_integration_v1.py": {
+    "init_schema": "ff41cdcde6c479d5f6116f31a4a6369ecc2d832e735ae35171bdc8d030a1ea60",
+    "_governance_ready": "17a15addcd163150dd540539d820b7f3b973557a40e8af97613c10b957d72686",
+    "signature": "238ef4d25839e7feaac5a6b5cf25e77dc2bc48017be08b41331f36a19e0d5d03",
+    "verify_inbound_http": "290a58e6a5189de92bbcf90aaa4bee2d98a24ec612c5c0dcb9014522081cc22e",
+    "_stage_question_version": "10448d1cf1425eb2ecf5e6d89b460ccc0e609d61fc7bb7d98fa798378157526b",
+    "_stage_stimulus_version": "f18a5845ba84927d8565a0761a349b48683075680034adf35247e8aeb6a087c6",
+    "_record_inbound": "0aac19e7dd8d1f9a06ad94fc768821ac395bd22405b1a74547f49e8ed5293d07",
+    "_register_inbound": "03eacf2da69047b3e788975f02473bf44c78ed9f469a7c05ac27d55e7042fa06",
+    "_activate_release": "20c683eddfe170578aaa803531ba62995e395fa04503d30025bf9bdc7eedbdfb",
+    "activate_due_releases": "45d3d390f6d6bb8d9fe68b130d9ff48ff49a37c7621fa0dac428d887bb290482",
+    "authorize_product_activation": "a3b0c1cdeb76cc204aaae0f076f6114055933438d18e6f080561ae84e328816a"
+  },
+  "app.py": {
+    "live_question_clause": "d174b02ecd8975d4baeff6133b766da600625ba290556965a364d8d6e4675b5a"
+  }
+}

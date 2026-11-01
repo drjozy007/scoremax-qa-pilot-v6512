@@ -26,7 +26,8 @@ def apply(root: Path) -> None:
     parsed = ast.parse(source)
     matches = [node for node in parsed.body
                if isinstance(node, ast.FunctionDef)
-               and node.name == "admit_content_envelope"]
+               and node.name == "admit_content_envelope"
+               and SCORED_ANCHOR in ast.get_source_segment(source, node)]
     if len(matches) != 1:
         raise RuntimeError("SCOREMAX_NATIVE_ADMISSION_FUNCTION_DRIFT")
     node = matches[0]
@@ -98,10 +99,21 @@ def _ph_semantic_errors_with_governed_guided(questions, stimuli, schema_version)
     lookup = {str(s.get("stimulus_id")): s for s in stimuli
               if isinstance(s, dict) and s.get("stimulus_id")}
     valid = set()
+    valid_cloze = set()
     for index, question in enumerate(questions):
         content = question.get("content") or {}
         marking = content.get("marking") or {}
-        if str(marking.get("key_type") or "").upper() != "RUBRIC_ONLY":
+        rubric = marking.get("rubric") or {}
+        if (isinstance(rubric, dict) and set(rubric) == {"cloze_gap_contract"}
+                and str(content.get("question_family_type") or "").upper() == "CLOZE_CONSTRUCTED_RESPONSE"):
+            try:
+                projection = _projection(question, lookup)
+                question_contracts.validate_assessment_contract(projection)
+                valid_cloze.add(index)
+            except (question_contracts.QuestionContractError, KeyError, TypeError, ValueError):
+                pass
+        if (str(marking.get("key_type") or "").upper() != "RUBRIC_ONLY"
+                and not (isinstance(rubric, dict) and "guided_self_assessment" in rubric)):
             continue
         try:
             projection = _projection(question, lookup)
@@ -114,11 +126,13 @@ def _ph_semantic_errors_with_governed_guided(questions, stimuli, schema_version)
                 and decision.get("scoring_authorised") is False):
             valid.add(index)
     return [err for err in errors if not (
-        err.get("code") == "UNSUPPORTED_RUBRIC_ONLY_DELIVERY"
-        and err.get("path") in {
+        (err.get("code") == "UNSUPPORTED_RUBRIC_ONLY_DELIVERY" and err.get("path") in {
             f"payload.questions[{index}].content.marking.key_type"
             for index in valid
-        }
+        }) or (err.get("code") == "MARKING_MODE_INCOHERENT" and err.get("path") in {
+            f"payload.questions[{index}].content.marking.rubric"
+            for index in valid | valid_cloze
+        })
     )]
 
 '''
