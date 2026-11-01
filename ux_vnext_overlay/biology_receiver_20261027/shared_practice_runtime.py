@@ -205,6 +205,7 @@ def apply(root):
             SELECT 1 FROM chapter_catalogue selected_ch
             JOIN chapter_catalogue equivalent_ch ON equivalent_ch.active=1
               AND lower(equivalent_ch.subject)=lower(selected_ch.subject)
+              AND lower(trim(equivalent_ch.programme))=lower(trim(selected_ch.programme))
               AND ltrim(equivalent_ch.chapter_number,'0')=ltrim(selected_ch.chapter_number,'0')
               AND lower(trim(replace(equivalent_ch.chapter_name,'&','and')))=
                   lower(trim(replace(selected_ch.chapter_name,'&','and')))
