@@ -223,17 +223,14 @@ def _scoremax_human_chapter_key(chapter):
     # can be opaque; matching only cr.chapter_id misses legacy MCQ projections.
     # Permit equivalent complete human labels ONLY for active, PH-owned versions,
     # leaving opaque source IDs and every existing release fence unchanged.
-    old_q_clause="    chapter_clause=f\"(lower(COALESCE({table_alias}.chapter,''))=lower(?) OR {ph_chapter})\""
-    new_q_clause="""    chapter_clause=(
-      f"(lower(COALESCE({table_alias}.chapter,''))=lower(?)"
-      f" OR (COALESCE({table_alias}.ph_projection_owner,'')='POWER_HOUSE'"
-      f" AND ?<>'' AND replace(replace(lower(trim(COALESCE({table_alias}.chapter,''))), 'chapter ', ''), '&', 'and')=?)"
-      f" OR {ph_chapter})"
-    )"""
-    import re
-    clause_pattern=r"(?m)^    chapter_clause=f\\\"\\(lower\\(COALESCE\\(\\{table_alias\\}\\.chapter,''\\)\\)=lower\\(\\?\\) OR \\{ph_chapter\\}\\)\\\"$"
-    text,count=re.subn(clause_pattern,new_q_clause.rstrip(),text)
-    if count!=1:raise RuntimeError('SHARED_PRACTICE_CHAPTER_CLAUSE_ANCHOR_DRIFT '+repr([line for line in text.splitlines() if 'chapter_clause' in line][:8]))
+
+    # Current assembled runtime already has a separate legacy_chapter predicate;
+    # add a PH-owned, human-label-only alternative without altering its native
+    # active-release, programme, checksum and withdrawal fences.
+    old_q_clause='    chapter_clause=f"({legacy_chapter} OR {ph_chapter})"'
+    new_q_clause="""    alias_chapter=f\"(COALESCE({table_alias}.ph_projection_owner,'')='POWER_HOUSE' AND ?<>'' AND replace(replace(lower(trim(COALESCE({table_alias}.chapter,''))), 'chapter ', ''), '&', 'and')=?)\"
+    chapter_clause=f"({legacy_chapter} OR {alias_chapter} OR {ph_chapter})\""""
+    text=replace(text,old_q_clause,new_q_clause)
     old_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or '')]"
     new_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or ''),_scoremax_human_chapter_key(chapter),_scoremax_human_chapter_key(chapter)]+vals+[str(chapter or ''),_scoremax_human_chapter_key(chapter)]"
     text=replace(text,old_args,new_args)
