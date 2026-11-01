@@ -157,5 +157,44 @@ def apply(root):
     # Write only after every exact source anchor and Python compilation passed.
     for p,text in changes.items(): p.write_text(text,encoding='utf8')
     (root/'ph_practice_contracts.py').write_bytes(Path(__file__).with_name('ph_practice_contracts.py').read_bytes())
+    # All native destinations use their governed membership identity for routing.
+    # Different source display labels must not split one chapter's formats.
+    p=root/'app.py'; text=p.read_text()
+    text=replace(text,"CASE WHEN q.ph_projection_owner='POWER_HOUSE' AND lower(scoremax_release_programme(r.programme_id,v.curriculum_json))='mdcat'\n        THEN r.chapter_id ELSE q.chapter END chapter",
+                       "CASE WHEN q.ph_projection_owner='POWER_HOUSE' THEN r.chapter_id ELSE q.chapter END chapter")
+    anchor="    # The existing MDCAT catalogue supplies presentation labels only.\n"
+    text=replace(text,anchor,'''    # Resolve a PH chapter key from exact ACTIVE authorised memberships. Human
+    # labels come from governed display fields, never opaque-ID parsing.
+    source_key=str(source_chapter or '').strip()
+    programme_key=canonical_programme(programme)
+    if programme_key!='MDCAT':
+        rows=c.execute("""SELECT r.programme_id,v.curriculum_json FROM integration_ph_content_releases r
+          JOIN integration_ph_release_question_membership m ON m.release_id=r.release_id AND m.release_version=r.release_version
+          JOIN integration_ph_question_version_store v ON v.question_id=m.question_id AND v.question_version_id=m.question_version_id
+          WHERE r.chapter_id=? AND lower(replace(r.subject_id,'_',' '))=lower(?) AND r.local_status='ACTIVE'
+            AND EXISTS(SELECT 1 FROM integration_ph_product_activation_authorizations a
+              WHERE a.release_id=r.release_id AND a.release_version=r.release_version
+                AND a.package_checksum_sha256=r.package_checksum_sha256 AND a.activation_status IN ('AUTHORIZED','ACTIVATED'))
+          ORDER BY r.id,m.ordinal""",(source_key,str(subject))).fetchall()
+        labels={}
+        for row in rows:
+            if canonical_programme(question_contracts.programme_for_release(row['programme_id'],row['curriculum_json']))!=programme_key:continue
+            display=(json.loads(row['curriculum_json']).get('display') or {})
+            number=str(display.get('chapter_number') or '').strip()
+            raw=str(display.get('chapter') or '').strip()
+            if not number or not raw:continue
+            name=parse_chapter_identity(raw).get('chapter_name') or raw
+            identity=(number.lstrip('0'),re.sub(r'[^a-z0-9]+',' ',name.casefold().replace('&',' and ')).strip())
+            labels.setdefault(identity,(number,name))
+        if len(labels)==1:
+            number,name=next(iter(labels.values()))
+            return {'chapter':source_key,'chapter_number':number,'chapter_name':name,
+                    'display_label':_chapter_display_label(number,name,name),
+                    'identity_status':'COMPLETE_GOVERNED_METADATA','metadata_source':'POWER_HOUSE_ACTIVE_MEMBERSHIP'}
+        if len(labels)>1:
+            return {'chapter':source_key,'chapter_number':'','chapter_name':'',
+                    'display_label':source_key,'identity_status':'GOVERNED_METADATA_CONFLICT','metadata_source':'POWER_HOUSE_ACTIVE_MEMBERSHIP'}
+'''+anchor)
+    compile(text,str(p),'exec');p.write_text(text,encoding='utf8');changes[p]=True
     return {'contract':MARKER,'changed_files':[p.relative_to(root).as_posix() for p in changes],
             'new_files':['ph_practice_contracts.py'],'learner_activation':False,'schema_changes':False}
