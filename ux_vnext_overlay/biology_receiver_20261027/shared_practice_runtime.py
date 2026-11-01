@@ -195,6 +195,31 @@ def apply(root):
             return {'chapter':source_key,'chapter_number':'','chapter_name':'',
                     'display_label':source_key,'identity_status':'GOVERNED_METADATA_CONFLICT','metadata_source':'POWER_HOUSE_ACTIVE_MEMBERSHIP'}
 '''+anchor)
+    # Reuse the existing governed chapter catalogue to recognise cosmetic human-readable
+    # label variants. Never rewrite opaque IDs, question records or release memberships.
+    # Active, signed release-authorisation and withdrawal gates remain in the native query.
+    chapter_before = "        AND lower(trim(cr.chapter_id))=lower(?)\n    ))\"\"\""
+    chapter_after = '''        AND (
+          lower(trim(cr.chapter_id))=lower(?)
+          OR EXISTS (
+            SELECT 1 FROM chapter_catalogue selected_ch
+            JOIN chapter_catalogue equivalent_ch ON equivalent_ch.active=1
+              AND lower(equivalent_ch.subject)=lower(selected_ch.subject)
+              AND ltrim(equivalent_ch.chapter_number,'0')=ltrim(selected_ch.chapter_number,'0')
+              AND lower(trim(replace(equivalent_ch.chapter_name,'&','and')))=
+                  lower(trim(replace(selected_ch.chapter_name,'&','and')))
+            WHERE selected_ch.active=1 AND lower(selected_ch.subject)=lower(cr.subject_id)
+              AND lower(trim(selected_ch.source_chapter))=lower(trim(?))
+              AND selected_ch.chapter_number<>'' AND selected_ch.chapter_name<>''
+              AND equivalent_ch.chapter_number<>'' AND equivalent_ch.chapter_name<>''
+              AND lower(trim(equivalent_ch.source_chapter))=lower(trim(cr.chapter_id))
+          )
+        )
+    ))"""'''
+    text=replace(text,chapter_before,chapter_after)
+    old_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or '')]"
+    new_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or ''),str(chapter or '')]"
+    text=replace(text,old_args,new_args)
     compile(text,str(p),'exec');p.write_text(text,encoding='utf8');changes[p]=True
     return {'contract':MARKER,'changed_files':[p.relative_to(root).as_posix() for p in changes],
             'new_files':['ph_practice_contracts.py'],'learner_activation':False,'schema_changes':False}
