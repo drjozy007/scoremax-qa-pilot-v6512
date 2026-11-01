@@ -240,6 +240,7 @@ def _scoremax_human_chapter_key(chapter):
         ).fetchone()"""
     card=replace(card,old_card,new_card)
     compile(card,str(p),'exec');p.write_text(card,encoding='utf8');changes[p]=True
+    p=root/'app.py'
     compile(text,str(p),'exec');p.write_text(text,encoding='utf8');changes[p]=True
     return {'contract':MARKER,'changed_files':[p.relative_to(root).as_posix() for p in changes],
             'new_files':['ph_practice_contracts.py'],'learner_activation':False,'schema_changes':False}
