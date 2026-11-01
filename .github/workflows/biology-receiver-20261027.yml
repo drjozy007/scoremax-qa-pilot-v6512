@@ -1,7 +1,7 @@
 name: ScoreMax Biology receiver delta
 on:
   push:
-    branches: [fix/scoremax-streamed-backup-20261022]
+    branches: [fix/scoremax-streamed-backup-20261022, fix/shared-ph-cloze-guided-contract-20261031]
     paths:
       - scripts/materialize_scoremax_biology_receiver_20261027.py
       - scripts/qualify_native_manifest_pull.py
