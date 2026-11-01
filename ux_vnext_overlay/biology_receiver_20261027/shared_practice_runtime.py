@@ -233,7 +233,7 @@ def _scoremax_human_chapter_key(chapter):
     import re
     clause_pattern=r"(?m)^    chapter_clause=f\\\"\\(lower\\(COALESCE\\(\\{table_alias\\}\\.chapter,''\\)\\)=lower\\(\\?\\) OR \\{ph_chapter\\}\\)\\\"$"
     text,count=re.subn(clause_pattern,new_q_clause.rstrip(),text)
-    if count!=1:raise RuntimeError('SHARED_PRACTICE_CHAPTER_CLAUSE_ANCHOR_DRIFT')
+    if count!=1:raise RuntimeError('SHARED_PRACTICE_CHAPTER_CLAUSE_ANCHOR_DRIFT '+repr([line for line in text.splitlines() if 'chapter_clause' in line][:8]))
     old_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or '')]"
     new_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or ''),_scoremax_human_chapter_key(chapter),_scoremax_human_chapter_key(chapter)]+vals+[str(chapter or ''),_scoremax_human_chapter_key(chapter)]"
     text=replace(text,old_args,new_args)
