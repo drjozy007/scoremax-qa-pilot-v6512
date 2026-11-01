@@ -43,7 +43,8 @@ def materialize(keep_accepted_source=False):
  accepted=materialize_accepted(keep_accepted_source)
  spec=importlib.util.spec_from_file_location('shared_practice_delta',REPO/'ux_vnext_overlay/biology_receiver_20261027/shared_practice_runtime.py')
  module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);delta=module.apply(root)
- assert digest(root)==(262,SHARED_EXPECTED),'SHARED_PRACTICE_RUNTIME_MISMATCH'
+ actual=digest(root)
+ assert actual==(262,SHARED_EXPECTED),f'SHARED_PRACTICE_RUNTIME_MISMATCH expected={(262,SHARED_EXPECTED)} observed={actual}'
  return {**accepted,**delta,'files':262,'runtime_sha256':SHARED_EXPECTED,'accepted_receiver_runtime_sha256':EXPECTED}
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--keep-accepted-source',action='store_true');args=p.parse_args()
