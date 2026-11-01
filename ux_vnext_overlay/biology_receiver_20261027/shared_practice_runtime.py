@@ -222,6 +222,24 @@ def _scoremax_human_chapter_key(chapter):
     old_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or '')]"
     new_args="    return f'({programme_sql}) AND {chapter_clause}',params+[str(chapter or '')]+vals+[str(chapter or ''),_scoremax_human_chapter_key(chapter)]"
     text=replace(text,old_args,new_args)
+    # The learner chapter card has its own legacy exact-label count. Use the same
+    # activated governed chapter scope as practice selection; never count staged or
+    # withdrawn questions, and never replace the underlying release identity.
+    p=root/'ux_student_batch.py';card=p.read_text()
+    old_card="""        live_row=conn.execute(
+            f"SELECT COUNT(*) n FROM questions q WHERE {runtime.live_question_clause('q')} "
+            f"AND lower(COALESCE(q.subject,''))=lower(?) "
+            f"AND lower(COALESCE(q.chapter,''))=lower(?) AND {programme_clause}",
+            [subject,source_chapter]+programme_params,
+        ).fetchone()"""
+    new_card="""        chapter_sql,chapter_params=runtime._programme_chapter_scope_sql(programme,source_chapter,'q')
+        live_row=conn.execute(
+            f"SELECT COUNT(*) n FROM questions q WHERE {runtime.live_question_clause('q')} "
+            f"AND lower(COALESCE(q.subject,''))=lower(?) AND {chapter_sql}",
+            [subject]+chapter_params,
+        ).fetchone()"""
+    card=replace(card,old_card,new_card)
+    compile(card,str(p),'exec');p.write_text(card,encoding='utf8');changes[p]=True
     compile(text,str(p),'exec');p.write_text(text,encoding='utf8');changes[p]=True
     return {'contract':MARKER,'changed_files':[p.relative_to(root).as_posix() for p in changes],
             'new_files':['ph_practice_contracts.py'],'learner_activation':False,'schema_changes':False}
