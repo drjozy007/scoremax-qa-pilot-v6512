@@ -35,17 +35,17 @@ def materialize_accepted(keep_accepted_source=False):
  return {'files':261,'runtime_sha256':EXPECTED,'accepted_public_commit':'9df838d46ad82633904f252108ba434be90f9bb3',
          'AI_candidate_applied':False,'power_house_changes':False,'historical_qualifications_replayed':0}
 
-SHARED_EXPECTED='f07dcd3ed91d61c88c0fc8d4750d5b8b5236b5a90d9889d0df67e9a8fdcc644f'
+SHARED_EXPECTED='00c47dd7ee35fe1c1a3254be8a67b54ad1143ccceeaf816d1147a94f45cbbfa1'
 def materialize(keep_accepted_source=False):
  root=REPO/'scoremax_runtime_v669b'
- if root.exists() and digest(root)==(262,SHARED_EXPECTED):
-  return {'replayed':True,'files':262,'runtime_sha256':SHARED_EXPECTED,'learner_activation':False}
+ if root.exists() and digest(root)==(263,SHARED_EXPECTED):
+  return {'replayed':True,'files':263,'runtime_sha256':SHARED_EXPECTED,'learner_activation':False}
  accepted=materialize_accepted(keep_accepted_source)
  spec=importlib.util.spec_from_file_location('shared_practice_delta',REPO/'ux_vnext_overlay/biology_receiver_20261027/shared_practice_runtime.py')
  module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);delta=module.apply(root)
  actual=digest(root)
- assert actual==(262,SHARED_EXPECTED),f'SHARED_PRACTICE_RUNTIME_MISMATCH expected={(262,SHARED_EXPECTED)} observed={actual}'
- return {**accepted,**delta,'files':262,'runtime_sha256':SHARED_EXPECTED,'accepted_receiver_runtime_sha256':EXPECTED}
+ assert actual==(263,SHARED_EXPECTED),f'SHARED_PRACTICE_RUNTIME_MISMATCH expected={(263,SHARED_EXPECTED)} observed={actual}'
+ return {**accepted,**delta,'files':263,'runtime_sha256':SHARED_EXPECTED,'accepted_receiver_runtime_sha256':EXPECTED}
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--keep-accepted-source',action='store_true');args=p.parse_args()
  print('SCOREMAX_BIOLOGY_RUNTIME='+json.dumps(materialize(args.keep_accepted_source),sort_keys=True))
