@@ -254,5 +254,10 @@ def _scoremax_human_chapter_key(chapter):
     compile(card,str(p),'exec');p.write_text(card,encoding='utf8');changes[p]=True
     p=root/'app.py'
     compile(text,str(p),'exec');p.write_text(text,encoding='utf8');changes[p]=True
+    spec=importlib.util.spec_from_file_location('formal_mastery_boundary',Path(__file__).with_name('mastery_evidence_boundary_runtime.py'))
+    boundary=importlib.util.module_from_spec(spec);spec.loader.exec_module(boundary)
+    formal=boundary.apply(root)
     return {'contract':MARKER,'changed_files':[p.relative_to(root).as_posix() for p in changes],
-            'new_files':['ph_practice_contracts.py'],'learner_activation':False,'schema_changes':False}
+            'new_files':['ph_practice_contracts.py','ph_mastery_evidence.py'],
+            'formal_mastery_evidence_policy':formal['policy'],
+            'learner_activation':False,'schema_changes':False}

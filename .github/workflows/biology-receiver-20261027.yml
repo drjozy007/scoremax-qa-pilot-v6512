@@ -1,7 +1,7 @@
 name: ScoreMax Biology receiver delta
 on:
   push:
-    branches: [fix/scoremax-streamed-backup-20261022, fix/shared-ph-cloze-guided-contract-20261031]
+    branches: [fix/scoremax-streamed-backup-20261022, fix/shared-ph-cloze-guided-contract-20261031, fix/ph-formal-mastery-evidence-20261103]
     paths:
       - scripts/materialize_scoremax_biology_receiver_20261027.py
       - scripts/qualify_native_manifest_pull.py
@@ -20,6 +20,8 @@ jobs:
           persist-credentials: false
       - name: Reuse accepted public source and materialise Biology-only delta
         run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py --keep-accepted-source
+      - name: Verify formal mastery excludes dependent Power House evidence
+        run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py
       - name: Build only the targeted receiver harness
         run: timeout 240 docker build -f tests/biology_receiver_20261027/Dockerfile -t scoremax-biology-receiver .
       - name: Reproduce gaps, verify fixes and affected regressions with network disabled
