@@ -227,6 +227,32 @@ class FormalMasteryEvidence(unittest.TestCase):
         self.env['process_mastery_result'](c,{'id':1,'student_id':1,'meta_json':json.dumps(meta)},
                                            1,100,[q['id'] for q in rows])
 
+    def test_effective_practice_stays_out_of_official_mock_and_readiness_pools(self):
+        source=(RUNTIME/'app.py').read_text()
+        pool=next(node for node in ast.parse(source).body
+                  if isinstance(node,ast.FunctionDef) and node.name=='blueprint_question_pool')
+        namespace={'_powerhouse_blueprint_payload':lambda value:value,
+                   'live_question_clause':lambda alias:'1=1',
+                   'canonical_question_type':lambda row:'TRUE_FALSE',
+                   'LIVE_MARKABLE_TYPES':{'TRUE_FALSE'},
+                   'safe_json':lambda value,default:json.loads(value) if value else default}
+        exec(compile(ast.Module(body=[pool],type_ignores=[]),'<mock-pool>','exec'),namespace)
+        conn=sqlite3.connect(':memory:')
+        self.addCleanup(conn.close)
+        conn.row_factory=sqlite3.Row
+        conn.execute("""CREATE TABLE questions(id,subject,ph_projection_owner,ph_market_id,
+            ph_programme_id,ph_subject_id,scoremax_ready,rights_status,calibration_status,
+            response_count,ph_provenance_snapshot_json)""")
+        legacy='{"lineage":{"original_question_id":"existing"}}'
+        practice='{"lineage":{"effective_practice_projection":{"official_mock_eligible":false}}}'
+        conn.executemany("""INSERT INTO questions VALUES
+            (?, 'Biology','POWER_HOUSE','market','programme','subject',1,'owned',NULL,0,?)""",
+            [(1,legacy),(2,practice)])
+        blueprint={'market_id':'market','programme_id':'programme','subject_id':'subject'}
+        select=namespace['blueprint_question_pool']
+        self.assertEqual([row['id'] for row in select(conn,blueprint,'subject')],[1])
+        self.assertEqual([row['id'] for row in select(conn,blueprint,'subject',official=False)],[1,2])
+
     @unittest.skipUnless(os.environ.get('PH_MASTERY_ACCEPTED_APP'),'Accepted build source is supplied for the native preflight')
     def test_installer_is_exact_and_idempotent(self):
         with tempfile.TemporaryDirectory() as td:
@@ -246,7 +272,7 @@ class FormalMasteryEvidence(unittest.TestCase):
                 self.assertEqual((root/'app.py').read_bytes(),altered)
 
     @unittest.skipUnless(os.environ.get('PH_MASTERY_ACCEPTED_APP'),'Accepted build source is supplied for the native preflight')
-    def test_only_five_formal_functions_changed_in_the_existing_app(self):
+    def test_only_formal_and_mock_pool_functions_changed_in_the_existing_app(self):
         before=Path(os.environ['PH_MASTERY_ACCEPTED_APP']).read_text();after=(RUNTIME/'app.py').read_text()
         def source_map(s):
             lines=s.splitlines(keepends=True)
@@ -254,7 +280,7 @@ class FormalMasteryEvidence(unittest.TestCase):
         a=source_map(before);b=source_map(after);self.assertEqual(set(a),set(b))
         self.assertEqual({k for k in a if a[k]!=b[k]},
             {'build_mastery_form','chapter_mastery_opportunity','select_mastery_coverage_questions',
-             'attach_mastery_coverage','process_mastery_result'})
+             'attach_mastery_coverage','process_mastery_result','blueprint_question_pool','assemble_blueprint_practice'})
 
 
 if __name__=='__main__':unittest.main()
