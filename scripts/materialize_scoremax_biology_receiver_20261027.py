@@ -36,16 +36,28 @@ def materialize_accepted(keep_accepted_source=False):
          'AI_candidate_applied':False,'power_house_changes':False,'historical_qualifications_replayed':0}
 
 SHARED_EXPECTED='00c47dd7ee35fe1c1a3254be8a67b54ad1143ccceeaf816d1147a94f45cbbfa1'
+EFFECTIVE_PRACTICE_EXPECTED='0aea3be7568b8e6d83d362e0f55a5a64187ebfa1fdd75ef4ca1c45f7dc2cafa8'
+
 def materialize(keep_accepted_source=False):
  root=REPO/'scoremax_runtime_v669b'
- if root.exists() and digest(root)==(263,SHARED_EXPECTED):
-  return {'replayed':True,'files':263,'runtime_sha256':SHARED_EXPECTED,'learner_activation':False}
- accepted=materialize_accepted(keep_accepted_source)
- spec=importlib.util.spec_from_file_location('shared_practice_delta',REPO/'ux_vnext_overlay/biology_receiver_20261027/shared_practice_runtime.py')
- module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);delta=module.apply(root)
+ current=digest(root) if root.exists() else None
+ if current==(263,EFFECTIVE_PRACTICE_EXPECTED):
+  return {'replayed':True,'files':263,'runtime_sha256':EFFECTIVE_PRACTICE_EXPECTED,'learner_activation':False}
+ accepted={}
+ delta={}
+ overlays=REPO/'ux_vnext_overlay/biology_receiver_20261027'
+ if current!=(263,SHARED_EXPECTED):
+  accepted=materialize_accepted(keep_accepted_source)
+  spec=importlib.util.spec_from_file_location('shared_practice_delta',overlays/'shared_practice_runtime.py')
+  module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);delta=module.apply(root)
+  actual=digest(root)
+  assert actual==(263,SHARED_EXPECTED),f'SHARED_PRACTICE_RUNTIME_MISMATCH expected={(263,SHARED_EXPECTED)} observed={actual}'
+ spec=importlib.util.spec_from_file_location('effective_practice_mock',overlays/'effective_practice_mock_runtime.py')
+ module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);module.apply(root)
  actual=digest(root)
- assert actual==(263,SHARED_EXPECTED),f'SHARED_PRACTICE_RUNTIME_MISMATCH expected={(263,SHARED_EXPECTED)} observed={actual}'
- return {**accepted,**delta,'files':263,'runtime_sha256':SHARED_EXPECTED,'accepted_receiver_runtime_sha256':EXPECTED}
+ assert actual==(263,EFFECTIVE_PRACTICE_EXPECTED),f'EFFECTIVE_PRACTICE_RUNTIME_MISMATCH observed={actual}'
+ return {**accepted,**delta,'files':263,'runtime_sha256':EFFECTIVE_PRACTICE_EXPECTED,
+         'accepted_receiver_runtime_sha256':EXPECTED,'effective_practice_official_mock_exclusion':True}
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--keep-accepted-source',action='store_true');args=p.parse_args()
  print('SCOREMAX_BIOLOGY_RUNTIME='+json.dumps(materialize(args.keep_accepted_source),sort_keys=True))
