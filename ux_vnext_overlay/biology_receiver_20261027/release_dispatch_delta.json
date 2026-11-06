@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "path": "scoremax_integration_v1.py",
+      "before_sha256": "96edba8c60509e7b9d84db40ea79bb5efbb2d25d0b68ca00bd03483da6804881",
+      "after_sha256": "3b794320ed608e213e23271caccddaacc0ed430a3ae0e89ff0a5f19a29f335f2",
+      "hunks": [
+        {
+          "old": "      ORDER BY m.ordinal,m.id\"\"\",(str(release_id),str(release_version))).fetchall()\n\ndef _projection(q,stimuli):\n    base=_projection_base(q,stimuli)\n    return effective_projection(base,q.get('content') or {})\n",
+          "new": "      ORDER BY m.ordinal,m.id\"\"\",(str(release_id),str(release_version))).fetchall()\n\ndef _projection(q,stimuli):\n    base=_projection_base(q,stimuli)\n    return effective_projection(base,q.get('content') or {})\n\n\ndef dispatch_release_handoff_ack_once(c, *, after_outbox_id, limit=2, timeout=8):\n    \"\"\"Drain exact callbacks for newly admitted FSc science and native MDCAT releases.\"\"\"\n    if type(after_outbox_id) is not int or after_outbox_id < 0:\n        raise ValueError('Explicit acknowledgement outbox watermark required')\n    count = max(1, min(2, int(limit)))\n    now = utcnow()\n    rows = c.execute(\"\"\"\n        SELECT o.id FROM integration_outbox o\n        JOIN ph_bridge_delivery_events_v6611d e ON e.outbox_message_id=o.message_id\n        JOIN integration_ph_content_releases r\n          ON r.release_id=e.release_id AND r.release_version=e.release_version\n         AND r.package_checksum_sha256=e.package_checksum_sha256\n        WHERE o.id>? AND o.contract_name='SM_PH_CONTENT_DELIVERY_ACK_V1'\n          AND r.subject_id IN ('BIOLOGY','CHEMISTRY','PHYSICS')\n          AND (r.programme_id IN ('FSC_PART_I','FSC_PART_II') OR\n               (r.programme_id='MDCAT' AND r.release_id LIKE 'REL::AUTO::PH-RP-MDCAT-%-SRC-%-REL-%'))\n          AND ((e.delivery_state='IMPORTED_STAGED' AND r.local_status IN ('STAGED','ACTIVE'))\n               OR (e.delivery_state='ACTIVATED_LEARNER_LIVE' AND r.local_status='ACTIVE'\n                   AND EXISTS (SELECT 1 FROM integration_ph_product_activation_authorizations a\n                               WHERE a.release_id=r.release_id AND a.release_version=r.release_version\n                                 AND a.package_checksum_sha256=r.package_checksum_sha256\n                                 AND a.activation_status='ACTIVATED')))\n          AND ((o.status IN ('PENDING','RETRY') AND\n                (o.next_attempt_at IS NULL OR o.next_attempt_at='' OR o.next_attempt_at<=?))\n               OR (o.status='IN_FLIGHT' AND o.claim_expires_at<>'' AND o.claim_expires_at<=?))\n        ORDER BY o.id LIMIT ?\n        \"\"\", (after_outbox_id, now, now, count)).fetchall()\n    if not rows:\n        return None\n    return dispatch_due(c, limit=count, timeout=timeout, outbox_ids=[row['id'] for row in rows])\n\n\ndef start_release_handoff_ack_worker(connect):\n    \"\"\"Attach the existing leased callback dispatcher to the ScoreMax process.\"\"\"\n    import threading\n\n    configured = os.getenv('SCOREMAX_PH_ACK_DISPATCH_AFTER_ID', '').strip()\n    if not configured:\n        return\n    if not configured.isascii() or not configured.isdecimal() or int(configured) <= 0:\n        print('[release-handoff] Invalid ScoreMax watermark. Worker disabled.', flush=True)\n        return\n    watermark = int(configured)\n    sleep = threading.Event()\n\n    def run():\n        while not sleep.wait(15):\n            c = None\n            try:\n                c = connect()\n                dispatch_release_handoff_ack_once(c, after_outbox_id=watermark)\n            except Exception as exc:\n                print('[release-handoff] ScoreMax cycle failed: ' + type(exc).__name__, flush=True)\n            finally:\n                if c is not None:\n                    c.close()\n\n    threading.Thread(target=run, name='scoremax-release-handoff', daemon=True).start()\n    print('[release-handoff] ScoreMax scoped worker running', flush=True)\n"
+        }
+      ]
+    },
+    {
+      "path": "scoremax_production.py",
+      "before_sha256": "5a41148cd3480ca2312766b404ded65f49cbf768add8f011bd748afb8d3fe4b7",
+      "after_sha256": "7f0204fb5f1680d64c874e1d219901afba143e4144bd752c1a76ed02e9526b1f",
+      "hunks": [
+        {
+          "old": "    _emergency_return_dispatch=_emergency_return_integration.dispatch_due(_emergency_return_conn,limit=20,timeout=8)",
+          "new": "    if _emergency_return_os.environ.get('SCOREMAX_PH_ACK_DISPATCH_AFTER_ID', '').strip():\n        # Existing incident and withdrawal retries still run at startup. Historical\n        # delivery acknowledgements stay outside the new continuous cutover scope.\n        now = _emergency_return_integration.utcnow()\n        pending = [r[0] for r in _emergency_return_conn.execute(\"\"\"\n            SELECT id FROM integration_outbox\n            WHERE contract_name<>'SM_PH_CONTENT_DELIVERY_ACK_V1'\n              AND ((status IN ('PENDING','RETRY') AND\n                    (next_attempt_at IS NULL OR next_attempt_at='' OR next_attempt_at<=?))\n                   OR (status='IN_FLIGHT' AND claim_expires_at<>'' AND claim_expires_at<=?))\n            ORDER BY created_at,id LIMIT 20\n        \"\"\", (now, now))]\n        if pending:\n            _emergency_return_dispatch=_emergency_return_integration.dispatch_due(\n                _emergency_return_conn,limit=20,timeout=8,outbox_ids=pending)\n    else:\n        _emergency_return_dispatch=_emergency_return_integration.dispatch_due(_emergency_return_conn,limit=20,timeout=8)"
+        },
+        {
+          "old": "application=scoremax.app\n",
+          "new": "_emergency_return_integration.start_release_handoff_ack_worker(scoremax.db)\napplication=scoremax.app\n"
+        }
+      ]
+    }
+  ]
+}

@@ -61,7 +61,7 @@ def materialize_effective_practice(keep_accepted_source=False):
 PRACTICE_AVAILABILITY_EXPECTED='9b5803827fc9b19ec879d82bb02968d54df90b8921308dc24dddf97117599419'
 
 
-def materialize(keep_accepted_source=False):
+def materialize_practice_availability(keep_accepted_source=False):
  root=REPO/'scoremax_runtime_v669b'
  expected=(263,PRACTICE_AVAILABILITY_EXPECTED)
  if root.exists() and digest(root)==expected:
@@ -84,6 +84,34 @@ def materialize(keep_accepted_source=False):
  assert digest(root)==expected,'PRACTICE_AVAILABILITY_RUNTIME_MISMATCH'
  return {**metadata,'files':263,'runtime_sha256':PRACTICE_AVAILABILITY_EXPECTED,
          'practice_availability_access_qualified':True,'learner_activation':False}
+
+RELEASE_DISPATCH_EXPECTED='61d18d49affa4ed6d3b972f9971160c3c1c78debca622d447f469eb81493a7b2'
+
+
+def materialize(keep_accepted_source=False):
+ root=REPO/'scoremax_runtime_v669b'
+ expected=(263,RELEASE_DISPATCH_EXPECTED)
+ if root.exists() and digest(root)==expected:
+  return {'replayed':True,'files':263,'runtime_sha256':RELEASE_DISPATCH_EXPECTED,'learner_activation':False}
+ metadata=materialize_practice_availability(keep_accepted_source)
+ source=REPO/'ux_vnext_overlay/biology_receiver_20261027/release_dispatch_delta.json'
+ rows=json.loads(source.read_text(encoding='utf8'))['files']
+ assert {row['path'] for row in rows}=={'scoremax_integration_v1.py','scoremax_production.py'}
+ for row in rows:
+  path=root/row['path']
+  original=path.read_bytes()
+  assert hashlib.sha256(original).hexdigest()==row['before_sha256'],row['path']
+  text=original.decode('utf8')
+  for hunk in row['hunks']:
+   assert text.count(hunk['old'])==1,('RELEASE_DISPATCH_SOURCE_ANCHOR',row['path'])
+   text=text.replace(hunk['old'],hunk['new'],1)
+  compile(text,str(path),'exec')
+  assert hashlib.sha256(text.encode()).hexdigest()==row['after_sha256'],row['path']
+  path.write_text(text,encoding='utf8',newline='\n')
+ assert digest(root)==expected,'RELEASE_DISPATCH_RUNTIME_MISMATCH'
+ return {**metadata,'files':263,'runtime_sha256':RELEASE_DISPATCH_EXPECTED,
+         'scoped_ack_dispatch':True,'learner_activation':False}
+
 
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--keep-accepted-source',action='store_true');args=p.parse_args()
