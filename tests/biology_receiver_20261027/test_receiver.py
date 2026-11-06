@@ -195,7 +195,7 @@ class BiologyReceiverTests(unittest.TestCase):
    self.assertEqual({r['ph_question_id'] for r in rows},expected,label)
    page=self.client.get('/student/chapter',query_string={'subject':'Biology','chapter':label},base_url='https://localhost')
    self.assertEqual(page.status_code,200,page.text[:300])
-   self.assertIn('2 scored practice questions',page.text,label)
+   self.assertIn('2 active scored questions · 0 accessible',page.text,label)
    # The routed selection pool and learner-facing count must agree for both labels;
    # practice-start eligibility/blueprints are exercised in the dedicated tests.
   OBSERVATIONS.append({'original_biology_label_split_blocked':True,'scored_items':2,'separate_authority_fenced':True})
@@ -242,6 +242,56 @@ class BiologyReceiverTests(unittest.TestCase):
    mcq=self.local('MCQ',programme='MDCAT')
    session=self.session_for(self.request_start(programme='MDCAT',mode='mock'))
    self.assertEqual(session['question_ids'],str(mcq))
+
+ @unittest.skipIf(BASELINE,'Availability is a candidate-only regression')
+ def test_access_qualified_practice_counts_and_selection(self):
+  chapter='MDCAT::BIOLOGY::UNIT::16'
+  self.programme('MDCAT')
+  source=self.envelope('practice-access')
+  question=source['payload']['questions'][0]
+  question['architecture'].update(evidence_role='DEPENDENT',independent_mastery_eligible=False,
+                                  independent_mastery_weight=0,mastery_ceiling='EXAM_READY')
+  question['question_checksum_sha256']=integration._object_checksum(question,'question_checksum_sha256')
+  source['payload_checksum_sha256']=integration.payload_checksum(source['payload'])
+  self.admit(source)
+  destination=self.envelope('practice-access-mdcat',question=question)
+  destination['payload']['release'].update(programme_id='MDCAT',chapter_id=chapter)
+  destination['payload_checksum_sha256']=integration.payload_checksum(destination['payload'])
+  self.admit(destination)
+  scope={'programme':'MDCAT','scope':'chapter','chapter':chapter}
+  page=self.client.get('/student/catalogue/mdcat/Biology',base_url='https://localhost')
+  self.assertIn('1 active · 0 accessible',page.text)
+  self.assertIn('Active questions require access above Foundation.',page.text)
+  blocked=self.request_start(**scope)
+  self.assertIn('/test/setup?',blocked.location)
+  self.assertIn('above your Foundation access ceiling',self.client.get(blocked.location,base_url='https://localhost').text)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM assessment_sessions').fetchone()[0],0)
+
+  self.c.execute("UPDATE users SET access_override_code='level_1_access' WHERE id=?",(uid,))
+  self.c.commit()
+  self.assertEqual(sm.get_access_profile(self.c,uid)['mastery_ceiling'],'Exam Ready')
+  page=self.client.get('/student/catalogue/mdcat/Biology',base_url='https://localhost')
+  self.assertIn('1 active · 1 accessible',page.text)
+  empty_level=self.request_start(**scope,level='Foundation')
+  self.assertIn('Choose Mixed within my Access',self.client.get(empty_level.location,base_url='https://localhost').text)
+  empty_format=self.request_start(**scope,question_type='true_false')
+  self.assertIn('No questions in this format',self.client.get(empty_format.location,base_url='https://localhost').text)
+  empty_unit=self.request_start(programme='MDCAT',scope='chapter',chapter='EMPTY-UNIT')
+  self.assertIn('not yet populated',self.client.get(empty_unit.location,base_url='https://localhost').text)
+  practice=self.session_for(self.request_start(**scope,level='Exam Ready'))
+  item_id=int(practice['question_ids'])
+  row=self.c.execute('SELECT * FROM questions WHERE id=?',(item_id,)).fetchone()
+  self.assertEqual(row['ph_question_id'],question['question_id'])
+  self.assertEqual(row['ph_independent_mastery_weight'],0)
+  self.client.post('/test/session/'+str(practice['id']),data={
+      '_csrf_token':'synthetic-csrf','response_present':'1','answer':'B','action':'review'},base_url='https://localhost')
+  result=self.client.post('/test/session/'+str(practice['id'])+'/submit',data={'_csrf_token':'synthetic-csrf'},base_url='https://localhost')
+  self.assertEqual(result.status_code,302,result.text[:300])
+  self.assertIn('Correct',self.client.get(result.location,base_url='https://localhost').text)
+  answer=self.c.execute('SELECT * FROM attempt_answers WHERE question_db_id=?',(item_id,)).fetchone()
+  self.assertEqual(answer['ph_question_version_id'],question['question_version_id'])
+  self.assertEqual(answer['ph_release_id'],destination['payload']['release']['release_id'])
+  self.assertEqual(answer['is_correct'],1)
 
  def test_signed_admission_and_accepted_replay_skip_compilation(self):
   env=self.envelope('signed')
@@ -344,10 +394,10 @@ class BiologyReceiverTests(unittest.TestCase):
   page=self.client.get('/student/catalogue/year11/Biology',base_url='https://localhost')
   self.assertEqual(page.status_code,200)
   if not BASELINE:
-   self.assertIn('1 question available',page.text)
+   self.assertIn('1 active · 0 accessible',page.text)
    chapter_page=self.client.get('/student/chapter',query_string={'subject':'Biology','chapter':chapter},base_url='https://localhost')
    self.assertEqual(chapter_page.status_code,200,chapter_page.text[:200])
-   self.assertIn('Governed section A',chapter_page.text);self.assertIn('1 scored practice questions',chapter_page.text)
+   self.assertIn('Governed section A',chapter_page.text);self.assertIn('1 active scored questions · 0 accessible',chapter_page.text)
    setup=self.client.get('/test/setup',query_string={'subject':'Biology','chapter':chapter,'scope':'chapter'},base_url='https://localhost')
    self.assertEqual(setup.status_code,200);self.assertIn('name="question_type"',setup.text);self.assertIn('name="section"',setup.text)
   self.assertIn('@media(max-width:600px)',page.text)
