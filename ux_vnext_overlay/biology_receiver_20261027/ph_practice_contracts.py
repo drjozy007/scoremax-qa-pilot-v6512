@@ -87,12 +87,6 @@ def compile_cloze(source, stem, workbook_sha):
     return body
 
 
-_NORMALIZED_SCORING_POLICY = 'ALL_GAPS_EXACT_WITH_SOURCE_NORMALIZATION'
-_GAP_NORMALIZATIONS = frozenset({
-    'EXACT', 'CASEFOLD', 'CASEFOLD_COLLAPSE_SPACES', 'CASEFOLD_COLLAPSE_WHITESPACE',
-})
-
-
 def validate_cloze(contract, stem, maximum):
     if not isinstance(contract, dict):
         raise ValueError('CLOZE_STRUCTURED_CONTRACT_REQUIRED')
@@ -120,30 +114,16 @@ def validate_cloze(contract, stem, maximum):
             raise ValueError('CLOZE_ACCEPTED_ANSWERS_REQUIRED')
     if any(not isinstance(x, str) or not x or len(x) > 200 for x in ids) or len(set(ids)) != count:
         raise ValueError('CLOZE_GAP_IDENTITY')
-    scoring = body.get('scoring_policy')
-    if scoring == _NORMALIZED_SCORING_POLICY:
-        if any(not isinstance(gap.get('normalization'), str) or gap['normalization'] not in _GAP_NORMALIZATIONS for gap in gaps):
-            raise ValueError('CLOZE_MARKING_POLICY_CONFLICT')
-    elif scoring != 'ALL_GAPS_EXACT' or any('normalization' in gap for gap in gaps):
-        raise ValueError('CLOZE_MARKING_POLICY_CONFLICT')
-    if (body.get('case_sensitive') is not False or body.get('trim_spaces') is not True
-            or number(maximum) != number(body.get('maximum_marks'))):
+    if (body.get('scoring_policy') != 'ALL_GAPS_EXACT' or body.get('case_sensitive') is not False
+            or body.get('trim_spaces') is not True or number(maximum) != number(body.get('maximum_marks'))):
         raise ValueError('CLOZE_MARKING_POLICY_CONFLICT')
     return deepcopy(contract)
 
 
 def response_mapping(response, gaps):
     """One independently named answer per source gap, including explicit blanks."""
-    def unique_keys(pairs):
-        value = {}
-        for key, answer in pairs:
-            if key in value:
-                raise ValueError('CLOZE_DUPLICATE_RESPONSE_GAP')
-            value[key] = answer
-        return value
-
     try:
-        value = json.loads(response, object_pairs_hook=unique_keys) if isinstance(response, str) else response
+        value = json.loads(response) if isinstance(response, str) else response
     except (ValueError, TypeError) as exc:
         raise ValueError('CLOZE_GAP_RESPONSE_OBJECT_REQUIRED') from exc
     if not isinstance(value, dict) or set(value) != {g['id'] for g in gaps}:
@@ -153,26 +133,13 @@ def response_mapping(response, gaps):
     return value
 
 
-def _normalize_gap_answer(value, mode):
-    value = value.strip()
-    if mode == 'EXACT':
-        return value
-    if mode == 'CASEFOLD_COLLAPSE_SPACES':
-        value = re.sub(r' +', ' ', value)
-    elif mode == 'CASEFOLD_COLLAPSE_WHITESPACE':
-        value = re.sub(r'\s+', ' ', value)
-    return value.casefold()
-
-
 def score_gaps(contract, response):
     gaps = contract['gaps']
     submitted = response_mapping(response, gaps)
-    normalized = contract['scoring_policy'] == _NORMALIZED_SCORING_POLICY
-    checks = {}
-    for gap in gaps:
-        mode = gap['normalization'] if normalized else 'CASEFOLD'
-        accepted = {_normalize_gap_answer(answer, mode) for answer in gap['accepted_answers']}
-        checks[gap['id']] = _normalize_gap_answer(submitted[gap['id']], mode) in accepted
+    checks = {g['id']: submitted[g['id']].strip().casefold() in
+              {x.strip().casefold() for x in g['accepted_answers']} for g in gaps}
+    # Source total is preserved. Partial marks require a separate explicit source allocation.
+    # No inferred weights, fuzzy matches, cross-gap permutations or AI fallbacks.
     return all(checks.values()), checks
 
 
