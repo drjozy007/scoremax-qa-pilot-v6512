@@ -85,7 +85,7 @@ def materialize_practice_availability(keep_accepted_source=False):
  return {**metadata,'files':263,'runtime_sha256':PRACTICE_AVAILABILITY_EXPECTED,
          'practice_availability_access_qualified':True,'learner_activation':False}
 
-RELEASE_DISPATCH_EXPECTED='61d18d49affa4ed6d3b972f9971160c3c1c78debca622d447f469eb81493a7b2'
+RELEASE_DISPATCH_EXPECTED='ce3989897be46c2c01f2d7d726168843165f2d18111b02b48f1c18a3dec5d2e6'
 
 
 def materialize(keep_accepted_source=False):
@@ -96,7 +96,7 @@ def materialize(keep_accepted_source=False):
  metadata=materialize_practice_availability(keep_accepted_source)
  source=REPO/'ux_vnext_overlay/biology_receiver_20261027/release_dispatch_delta.json'
  rows=json.loads(source.read_text(encoding='utf8'))['files']
- assert {row['path'] for row in rows}=={'scoremax_integration_v1.py','scoremax_production.py'}
+ assert {row['path'] for row in rows}=={'scoremax_integration_v1.py','scoremax_production.py','ph_practice_contracts.py'}
  for row in rows:
   path=root/row['path']
   original=path.read_bytes()
