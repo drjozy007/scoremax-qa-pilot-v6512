@@ -25,6 +25,25 @@
           "new": "_emergency_return_integration.start_release_handoff_ack_worker(scoremax.db)\napplication=scoremax.app\n"
         }
       ]
+    },
+    {
+      "path": "ph_practice_contracts.py",
+      "before_sha256": "a39b1fd507366b31502369ded68496ce0893f9e188851c6d2453c45c5d91ce1f",
+      "after_sha256": "8c845f8438e681a7f0ff5e54bf7c3cdb15fd1923f36e4a0fac5faaa5b1285ed0",
+      "hunks": [
+        {
+          "old": "def validate_cloze(",
+          "new": "_NORMALIZED_SCORING_POLICY = 'ALL_GAPS_EXACT_WITH_SOURCE_NORMALIZATION'\n_GAP_NORMALIZATIONS = frozenset({\n    'EXACT', 'CASEFOLD', 'CASEFOLD_COLLAPSE_SPACES', 'CASEFOLD_COLLAPSE_WHITESPACE',\n})\n\n\ndef validate_cloze("
+        },
+        {
+          "old": "    if (body.get('scoring_policy') != 'ALL_GAPS_EXACT' or body.get('case_sensitive') is not False\n            or body.get('trim_spaces') is not True or number(maximum) != number(body.get('maximum_marks'))):\n        raise ValueError('CLOZE_MARKING_POLICY_CONFLICT')\n",
+          "new": "    scoring = body.get('scoring_policy')\n    if scoring == _NORMALIZED_SCORING_POLICY:\n        if any(not isinstance(gap.get('normalization'), str) or gap['normalization'] not in _GAP_NORMALIZATIONS for gap in gaps):\n            raise ValueError('CLOZE_MARKING_POLICY_CONFLICT')\n    elif scoring != 'ALL_GAPS_EXACT' or any('normalization' in gap for gap in gaps):\n        raise ValueError('CLOZE_MARKING_POLICY_CONFLICT')\n    if (body.get('case_sensitive') is not False or body.get('trim_spaces') is not True\n            or number(maximum) != number(body.get('maximum_marks'))):\n        raise ValueError('CLOZE_MARKING_POLICY_CONFLICT')\n"
+        },
+        {
+          "old": "def response_mapping(response, gaps):\n    \"\"\"One independently named answer per source gap, including explicit blanks.\"\"\"\n    try:\n        value = json.loads(response) if isinstance(response, str) else response\n    except (ValueError, TypeError) as exc:\n        raise ValueError('CLOZE_GAP_RESPONSE_OBJECT_REQUIRED') from exc\n    if not isinstance(value, dict) or set(value) != {g['id'] for g in gaps}:\n        raise ValueError('CLOZE_RESPONSE_GAP_IDENTITY')\n    if any(not isinstance(x, str) or len(x) > 1000 for x in value.values()):\n        raise ValueError('CLOZE_GAP_RESPONSE_INVALID')\n    return value\n\n\ndef score_gaps(contract, response):\n    gaps = contract['gaps']\n    submitted = response_mapping(response, gaps)\n    checks = {g['id']: submitted[g['id']].strip().casefold() in\n              {x.strip().casefold() for x in g['accepted_answers']} for g in gaps}\n    # Source total is preserved. Partial marks require a separate explicit source allocation.\n    # No inferred weights, fuzzy matches, cross-gap permutations or AI fallbacks.\n    return all(checks.values()), checks\n\n\n",
+          "new": "def response_mapping(response, gaps):\n    \"\"\"One independently named answer per source gap, including explicit blanks.\"\"\"\n    def unique_keys(pairs):\n        value = {}\n        for key, answer in pairs:\n            if key in value:\n                raise ValueError('CLOZE_DUPLICATE_RESPONSE_GAP')\n            value[key] = answer\n        return value\n\n    try:\n        value = json.loads(response, object_pairs_hook=unique_keys) if isinstance(response, str) else response\n    except (ValueError, TypeError) as exc:\n        raise ValueError('CLOZE_GAP_RESPONSE_OBJECT_REQUIRED') from exc\n    if not isinstance(value, dict) or set(value) != {g['id'] for g in gaps}:\n        raise ValueError('CLOZE_RESPONSE_GAP_IDENTITY')\n    if any(not isinstance(x, str) or len(x) > 1000 for x in value.values()):\n        raise ValueError('CLOZE_GAP_RESPONSE_INVALID')\n    return value\n\n\ndef _normalize_gap_answer(value, mode):\n    value = value.strip()\n    if mode == 'EXACT':\n        return value\n    if mode == 'CASEFOLD_COLLAPSE_SPACES':\n        value = re.sub(r' +', ' ', value)\n    elif mode == 'CASEFOLD_COLLAPSE_WHITESPACE':\n        value = re.sub(r'\\s+', ' ', value)\n    return value.casefold()\n\n\ndef score_gaps(contract, response):\n    gaps = contract['gaps']\n    submitted = response_mapping(response, gaps)\n    normalized = contract['scoring_policy'] == _NORMALIZED_SCORING_POLICY\n    checks = {}\n    for gap in gaps:\n        mode = gap['normalization'] if normalized else 'CASEFOLD'\n        accepted = {_normalize_gap_answer(answer, mode) for answer in gap['accepted_answers']}\n        checks[gap['id']] = _normalize_gap_answer(submitted[gap['id']], mode) in accepted\n    return all(checks.values()), checks\n\n\n"
+        }
+      ]
     }
   ]
 }
