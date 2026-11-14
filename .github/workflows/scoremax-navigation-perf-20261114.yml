@@ -11,6 +11,7 @@ on:
       - scripts/scoremax_mastery_card_projection_20261114.py
       - scripts/scoremax_request_evidence_reuse_20261114.py
       - scripts/scoremax_catalogue_subject_pushdown_20261114.py
+      - scripts/scoremax_navigation_index_migration_20261114.py
       - tests/navigation_perf_20261114/**
       - .github/workflows/scoremax-navigation-perf-20261114.yml
 permissions:
@@ -24,7 +25,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check delta syntax
-        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py scripts/scoremax_request_evidence_reuse_20261114.py scripts/scoremax_catalogue_subject_pushdown_20261114.py
+        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py scripts/scoremax_request_evidence_reuse_20261114.py scripts/scoremax_catalogue_subject_pushdown_20261114.py scripts/scoremax_navigation_index_migration_20261114.py
       - name: Run focused query equivalence tests
         run: python -m unittest discover -s tests/navigation_perf_20261114 -v
       - name: Benchmark baseline and candidate evidence indexing
