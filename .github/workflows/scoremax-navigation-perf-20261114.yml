@@ -8,6 +8,7 @@ on:
       - scripts/scoremax_navigation_perf_delta_20261114.py
       - scripts/scoremax_navigation_grouped_scope_delta_20261114.py
       - scripts/scoremax_navigation_batch_student_evidence_20261114.py
+      - scripts/scoremax_mastery_card_projection_20261114.py
       - tests/navigation_perf_20261114/**
       - .github/workflows/scoremax-navigation-perf-20261114.yml
 permissions:
@@ -21,7 +22,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check delta syntax
-        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py
+        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py
       - name: Run focused query equivalence tests
         run: python -m unittest discover -s tests/navigation_perf_20261114 -v
       - name: Benchmark baseline and candidate evidence indexing
@@ -75,11 +76,14 @@ jobs:
         run: python -B scripts/scoremax_navigation_grouped_scope_delta_20261114.py scoremax_runtime_v669b
       - name: Batch immutable eligible chapter evidence on candidate
         run: python -B scripts/scoremax_navigation_batch_student_evidence_20261114.py scoremax_runtime_v669b
+      - name: Narrow mastery-card query payload without changing academic rules
+        run: python -B scripts/scoremax_mastery_card_projection_20261114.py scoremax_runtime_v669b
       - name: Prove idempotence and compiled runtime
         run: |
           python -B scripts/scoremax_navigation_perf_delta_20261114.py scoremax_runtime_v669b
           python -B scripts/scoremax_navigation_grouped_scope_delta_20261114.py scoremax_runtime_v669b
           python -B scripts/scoremax_navigation_batch_student_evidence_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_mastery_card_projection_20261114.py scoremax_runtime_v669b
           python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/ux_student_batch.py
       - name: Verify formal mastery and dependent-evidence exclusions against candidate
         run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py -v
