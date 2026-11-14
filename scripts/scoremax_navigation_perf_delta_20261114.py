@@ -17,7 +17,7 @@ CACHE_ENTRY = """def _subject_map(c, student_id):
     # Read-only GET requests; never retain results across users or HTTP requests.
     from flask import g, has_request_context, request
     _cache_on=has_request_context() and request.method=='GET'
-    _cache_key=('_subject_map',student_id)
+    _cache_key=('_subject_map',student_id,student_programme(c,student_id))
     if _cache_on:
         _cached=getattr(g,'_scoremax_subject_map_cache',{})
         if _cache_key in _cached:
