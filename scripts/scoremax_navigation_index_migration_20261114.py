@@ -25,6 +25,10 @@ INDEXES={
    "CREATE INDEX idx_sm_nav_programme_20261114 ON questions(lower(COALESCE(programme,'')),lower(subject))",
  "idx_sm_nav_qualification_20261114":
    "CREATE INDEX idx_sm_nav_qualification_20261114 ON questions(lower(COALESCE(qualification,'')),lower(subject))",
+ # Exact expression used by the governed student chapter and mastery predicates.
+ # Does not change programme, family, release or mastery gates.
+ "idx_sm_nav_coalesced_subject_chapter_20261114":
+   "CREATE INDEX idx_sm_nav_coalesced_subject_chapter_20261114 ON questions(lower(COALESCE(subject,'')),chapter,id)",
 }
 
 def quickcheck(connection):
@@ -39,8 +43,9 @@ def census(connection):
                           "integration_ph_content_releases","integration_ph_release_question_membership")}
 
 def existing_indexes(connection):
+    marks=",".join("?" for _ in INDEXES)
     return {row[0]:row[1] for row in connection.execute(
-        "SELECT name,sql FROM sqlite_master WHERE type='index' AND name IN (?,?,?,?)",
+        f"SELECT name,sql FROM sqlite_master WHERE type='index' AND name IN ({marks})",
         tuple(INDEXES))}
 
 def migrate(database: Path, backup: Path|None, apply: bool=False):
