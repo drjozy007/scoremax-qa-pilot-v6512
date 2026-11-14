@@ -24,6 +24,21 @@ jobs:
         run: python -m unittest discover -s tests/navigation_perf_20261114 -v
       - name: Reconstruct exact accepted ScoreMax runtime without production data
         run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+      - name: Inspect exact generated student read paths
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          s=Path('scoremax_runtime_v669b/app.py').read_text()
+          tree=ast.parse(s)
+          for name in ('_subject_map','chapter_mastery_opportunity','db'):
+              n=next((x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name==name),None)
+              print('=== SCOREMAX_SOURCE',name,'===')
+              if n:
+                  src=ast.get_source_segment(s,n) or ''
+                  print(src[:14000])
+              else:print('MISSING')
+          PY
       - name: Apply bounded post-hash performance delta
         run: python -B scripts/scoremax_navigation_perf_delta_20261114.py scoremax_runtime_v669b
       - name: Prove idempotence and compiled runtime
