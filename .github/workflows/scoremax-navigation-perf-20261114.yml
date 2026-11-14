@@ -120,6 +120,8 @@ jobs:
         run: python -B scripts/scoremax_request_evidence_reuse_20261114.py scoremax_runtime_v669b
       - name: Push governed catalogue subject constraint into existing placement SQL
         run: python -B scripts/scoremax_catalogue_subject_pushdown_20261114.py scoremax_runtime_v669b
+      - name: Preserve pre-fusion optimized runtime for paired 100k benchmark
+        run: cp -a scoremax_runtime_v669b /tmp/nav-prefused
       - name: Fuse exact governed subject discovery with inventory grouping
         run: python -B scripts/scoremax_fused_subject_inventory_20261114.py scoremax_runtime_v669b
       - name: Prove idempotence and compiled runtime
@@ -169,7 +171,30 @@ jobs:
       - name: Characterize 100800 questions and 1000 distinct students with 100k frozen answers
         run: |
           python tests/navigation_perf_20261114/benchmark_student_routes.py seed /tmp/scoremax-nav-baseline /tmp/nav-100k/state/scoremax.db --per-chapter 2100 --additional-learners 999 --answers-per-learner 100
-          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --label 100k-questions-1000-students --candidate-indexes --profile --sql-profile | tee /tmp/nav-100k.log
+          mkdir -p /tmp/nav-100k-prefused/state
+          cp /tmp/nav-100k/state/scoremax.db /tmp/nav-100k-prefused/state/scoremax.db
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/nav-prefused /tmp/nav-100k-prefused/state/scoremax.db --label 100k-pre-fused --candidate-indexes | tee /tmp/nav-100k-prefused.log
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --label 100k-fused --candidate-indexes | tee /tmp/nav-100k.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def read(path):
+              return json.loads(next(line.split('=',1)[1] for line in Path(path).read_text().splitlines()
+                  if line.startswith('SCOREMAX_ROUTE_BENCH=')))['routes']
+          before=read('/tmp/nav-100k-prefused.log')
+          after=read('/tmp/nav-100k.log')
+          for path,old in before.items():
+              new=after[path]
+              assert old['status']==new['status']==200,(path,old,new)
+              assert old['body_sha256']==new['body_sha256'],('FUSED_HTML_DRIFT',path)
+              print('SCOREMAX_PAIRED_FUSION_100K='+json.dumps({
+                  'route':path,'pre_fusion_median_ms':old['median_ms'],
+                  'fused_median_ms':new['median_ms'],
+                  'delta_ms':round(new['median_ms']-old['median_ms'],2),
+                  'improvement_pct':round((old['median_ms']-new['median_ms'])/old['median_ms']*100,1),
+                  'source':'paired_same_run_separate_disposable_db_unprofiled',
+                  'concurrency_qualified':False},sort_keys=True))
+          PY
           python - <<'PY'
           import json
           from pathlib import Path
