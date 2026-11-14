@@ -93,16 +93,19 @@ if args.mode=="seed":
 else:
     c=sm.db()
     if args.candidate_indexes:
-        # Disposable-only schema experiment. Never changes live Render SQLite.
-        indexes=[
-          "CREATE INDEX IF NOT EXISTS nav_test_subject_programme ON questions(lower(subject),lower(COALESCE(programme,'')),chapter)",
-          "CREATE INDEX IF NOT EXISTS nav_test_subject_qualification ON questions(lower(subject),lower(COALESCE(qualification,'')),chapter)",
-          "CREATE INDEX IF NOT EXISTS nav_test_programme ON questions(lower(COALESCE(programme,'')),lower(subject))",
-          "CREATE INDEX IF NOT EXISTS nav_test_qualification ON questions(lower(COALESCE(qualification,'')),lower(subject))"
-        ]
-        for statement in indexes:c.execute(statement)
-        c.commit()
-        print("SCOREMAX_DISPOSABLE_INDEX_PROBE="+json.dumps({"indexes":len(indexes)}))
+        # Exercise the exact explicit migration, not a test-only substitute.
+        import importlib.util
+        c.close()
+        tool=Path(__file__).resolve().parents[2]/"scripts"/"scoremax_navigation_index_migration_20261114.py"
+        spec=importlib.util.spec_from_file_location("scoremax_nav_index_migration",tool)
+        module=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        backup=root/"backup"/"navigation_preindex_snapshot.db"
+        planned=module.migrate(args.database,backup,apply=False)
+        done=module.migrate(args.database,backup,apply=True)
+        print("SCOREMAX_DISPOSABLE_INDEX_PROBE="+json.dumps(
+            {"plan":planned["status"],"result":done["status"],"indexes":len(module.INDEXES)}))
+        c=sm.db()
     row=c.execute("SELECT id,COALESCE(session_version,0) AS session_version FROM users WHERE system_user_id=?",(STUDENT,)).fetchone()
     if not row:raise RuntimeError("MISSING_SYNTHETIC_STUDENT")
     client=app.test_client()
