@@ -84,13 +84,38 @@ if args.mode=="seed":
                 c.execute("INSERT INTO questions("+",".join(item)+") VALUES("+",".join("?" for _ in item)+")",tuple(item.values()))
     attempt_id=c.execute("INSERT INTO attempts(student_id,scope,programme,subject,score,total_count,correct_count) VALUES (?,?,?,?,?,?,?)",
               (uid,"subject","FSc Part 1","Biology",70,240,168)).lastrowid
-    question_ids=[row[0] for row in c.execute("SELECT id FROM questions WHERE subject='Biology' ORDER BY id LIMIT 2400")]
-    c.executemany("INSERT INTO attempt_answers(attempt_id,question_db_id,selected_answer,is_correct) VALUES (?,?,?,?)",
-         [(attempt_id,qid,"A",int(i%3!=0)) for i,qid in enumerate(question_ids)])
+    # Frozen FINAL evidence is the governed learner-navigation hot path. Earlier
+    # synthetic seeds inserted unanswered/unfinalised rows, giving a misleading
+    # estimate of actual per-student evidence validation work.
+    source_rows=c.execute(
+        "SELECT id,subject,chapter,topic,family_id,level FROM questions "
+        "WHERE subject='Biology' ORDER BY id LIMIT 2400").fetchall()
+    answer_rows=[]
+    for i,q in enumerate(source_rows):
+        context={"schema":"SM-EVIDENCE-CONTEXT-1","question_db_id":q["id"],
+                 "programme":"FSc Part 1","subject":q["subject"],"chapter":q["chapter"],
+                 "topic":q["topic"],"family_id":q["family_id"],"level":q["level"]}
+        context["checksum_sha256"]=hashlib.sha256(
+            sm.integration_v1.canonical_json(context).encode()).hexdigest()
+        correct=int(i%3!=0)
+        answer_rows.append((attempt_id,q["id"],"A",correct,"FINAL",1,correct,
+                            json.dumps(context,sort_keys=True,separators=(",",":"))))
+    c.execute("UPDATE attempts SET marking_status='FINAL',mastery_evidence_eligible=1,"
+              "guided_mode=0,assessment_kind='practice' WHERE id=?",(attempt_id,))
+    c.executemany(
+        "INSERT INTO attempt_answers(attempt_id,question_db_id,selected_answer,is_correct,"
+        "marking_status,mastery_evidence_eligible,marks_awarded,evidence_context_json)"
+        " VALUES (?,?,?,?,?,?,?,?)",answer_rows)
     c.commit()
+    eligible=sm.learner_answer_evidence(c,uid,"FSc Part 1")
+    if len(eligible)!=len(answer_rows) or any(
+        row["context_authority"]!="FROZEN_CONTEXT" for row in eligible):
+        raise RuntimeError("BENCHMARK_FINAL_EVIDENCE_NOT_QUALIFIED")
     c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     c.close()
-    print("SCOREMAX_SYNTHETIC_SEED="+json.dumps({"questions":4*12*args.per_chapter,"attempt_answers":len(question_ids),"student_id":uid}))
+    print("SCOREMAX_SYNTHETIC_SEED="+json.dumps({"questions":4*12*args.per_chapter,
+       "attempt_answers":len(answer_rows),"final_evidence":len(eligible),
+       "student_id":uid,"fixture":"frozen_final_eligible"}))
 else:
     c=sm.db()
     if args.candidate_indexes:
