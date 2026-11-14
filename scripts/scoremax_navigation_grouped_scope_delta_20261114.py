@@ -35,9 +35,9 @@ NEW_ANCHOR="""    # SCOREMAX_NAV_GROUPED_INVENTORY_20261114: one identical gover
 """
 OLD_COUNT="        qcount=c.execute(f\"SELECT COUNT(*) n FROM questions q WHERE {live_question_clause('q')} AND {subject_scope}\",params).fetchone()['n']"
 NEW_COUNT="        qcount=scoped_counts.get(subject.lower(),0)"
-OLD_CHAPTER="""        chapter_rows=c.execute(f""" + "'''" + """SELECT q.chapter,MIN(q.id) first_id FROM questions q WHERE {live_question_clause('q')}
+OLD_CHAPTER = '''        chapter_rows=c.execute(f"""SELECT q.chapter,MIN(q.id) first_id FROM questions q WHERE {live_question_clause('q')}
           AND {scope_clause} AND lower(q.subject)=lower(?) AND COALESCE(q.chapter,'')<>''
-          GROUP BY q.chapter ORDER BY first_id""" + "'''" + """,scope_params+[display]).fetchall()"""
+          GROUP BY q.chapter ORDER BY first_id""",scope_params+[display]).fetchall()'''
 NEW_CHAPTER="        chapter_rows=scoped_chapters.get(display.lower(),[])"
 
 def apply(root:Path):
