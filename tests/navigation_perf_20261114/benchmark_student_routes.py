@@ -21,6 +21,7 @@ parser.add_argument("database",type=Path)
 parser.add_argument("--label",default="baseline")
 parser.add_argument("--per-chapter",type=int,default=20)
 parser.add_argument("--profile",action="store_true")
+parser.add_argument("--candidate-indexes",action="store_true")
 args=parser.parse_args()
 
 root=args.database.parent.parent.resolve()
@@ -91,6 +92,17 @@ if args.mode=="seed":
     print("SCOREMAX_SYNTHETIC_SEED="+json.dumps({"questions":4*12*args.per_chapter,"attempt_answers":len(question_ids),"student_id":uid}))
 else:
     c=sm.db()
+    if args.candidate_indexes:
+        # Disposable-only schema experiment. Never changes live Render SQLite.
+        indexes=[
+          "CREATE INDEX IF NOT EXISTS nav_test_subject_programme ON questions(lower(subject),lower(COALESCE(programme,'')),chapter)",
+          "CREATE INDEX IF NOT EXISTS nav_test_subject_qualification ON questions(lower(subject),lower(COALESCE(qualification,'')),chapter)",
+          "CREATE INDEX IF NOT EXISTS nav_test_programme ON questions(lower(COALESCE(programme,'')),lower(subject))",
+          "CREATE INDEX IF NOT EXISTS nav_test_qualification ON questions(lower(COALESCE(qualification,'')),lower(subject))"
+        ]
+        for statement in indexes:c.execute(statement)
+        c.commit()
+        print("SCOREMAX_DISPOSABLE_INDEX_PROBE="+json.dumps({"indexes":len(indexes)}))
     row=c.execute("SELECT id,COALESCE(session_version,0) AS session_version FROM users WHERE system_user_id=?",(STUDENT,)).fetchone()
     if not row:raise RuntimeError("MISSING_SYNTHETIC_STUDENT")
     client=app.test_client()
