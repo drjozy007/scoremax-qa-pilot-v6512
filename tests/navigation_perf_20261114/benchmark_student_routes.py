@@ -19,6 +19,8 @@ parser.add_argument("mode",choices=["seed","measure"])
 parser.add_argument("runtime",type=Path)
 parser.add_argument("database",type=Path)
 parser.add_argument("--label",default="baseline")
+parser.add_argument("--per-chapter",type=int,default=20)
+parser.add_argument("--profile",action="store_true")
 args=parser.parse_args()
 
 root=args.database.parent.parent.resolve()
@@ -62,27 +64,31 @@ if args.mode=="seed":
     for subject in ("Biology","Chemistry","Physics","Mathematics"):
         for chapter_n in range(1,13):
             chapter="Synthetic Chapter "+str(chapter_n)
-            for n in range(20):
+            family_cache={}
+            for n in range(args.per_chapter):
                 key=f"SYN-{subject}-{chapter_n}-{n}"
-                q=dict(question_id=key,family_id=key,country="Pakistan",
+                family=f"SYN-FAMILY-{subject}-{chapter_n}-{n%20}"
+                q=dict(question_id=key,family_id=family,country="Pakistan",
                        qualification="FSc Part 1",programme="FSc Part 1",
                        subject=subject,chapter=chapter,topic="Synthetic Topic",
                        qtype="single_choice",level="Foundation",question="Synthetic question only",
                        option_a="A",option_b="B",option_c="C",option_d="D",answer="A",
                        status="Approved",review_status="Approved",active=1,is_demo=0,
                        source_type="ISOLATED_SYNTHETIC_TEST")
-                q["family_key"]=sm.upsert_question_family(c,q,review_status="Approved",active=1)
+                if family not in family_cache:
+                    family_cache[family]=sm.upsert_question_family(c,q,review_status="Approved",active=1)
+                q["family_key"]=family_cache[family]
                 item={k:v for k,v in q.items() if k in columns}
                 c.execute("INSERT INTO questions("+",".join(item)+") VALUES("+",".join("?" for _ in item)+")",tuple(item.values()))
     attempt_id=c.execute("INSERT INTO attempts(student_id,scope,programme,subject,score,total_count,correct_count) VALUES (?,?,?,?,?,?,?)",
               (uid,"subject","FSc Part 1","Biology",70,240,168)).lastrowid
-    question_ids=[row[0] for row in c.execute("SELECT id FROM questions WHERE subject='Biology' ORDER BY id LIMIT 240")]
+    question_ids=[row[0] for row in c.execute("SELECT id FROM questions WHERE subject='Biology' ORDER BY id LIMIT 2400")]
     c.executemany("INSERT INTO attempt_answers(attempt_id,question_db_id,selected_answer,is_correct) VALUES (?,?,?,?)",
          [(attempt_id,qid,"A",int(i%3!=0)) for i,qid in enumerate(question_ids)])
     c.commit()
     c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     c.close()
-    print("SCOREMAX_SYNTHETIC_SEED="+json.dumps({"questions":960,"attempt_answers":240,"student_id":uid}))
+    print("SCOREMAX_SYNTHETIC_SEED="+json.dumps({"questions":4*12*args.per_chapter,"attempt_answers":len(question_ids),"student_id":uid}))
 else:
     c=sm.db()
     row=c.execute("SELECT id,COALESCE(session_version,0) AS session_version FROM users WHERE system_user_id=?",(STUDENT,)).fetchone()
@@ -97,9 +103,16 @@ else:
     for path in routes:
         measurements=[];status=None;digest=None
         for i in range(3):
+            if args.profile and i==0:
+                import cProfile, pstats, io
+                pr=cProfile.Profile();pr.enable()
             start=perf_counter()
             response=client.get(path,base_url="https://localhost")
             duration_ms=(perf_counter()-start)*1000
+            if args.profile and i==0:
+                pr.disable(); out=io.StringIO()
+                pstats.Stats(pr,stream=out).sort_stats("cumtime").print_stats(22)
+                print("SCOREMAX_ROUTE_PROFILE="+json.dumps({"label":args.label,"route":path,"profile":out.getvalue()}))
             if response.status_code!=200:
                 raise RuntimeError(f"HTTP_FAILED:{path}:{response.status_code}:{response.location}")
             measurements.append(duration_ms)
