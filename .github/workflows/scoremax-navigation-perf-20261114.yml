@@ -42,6 +42,18 @@ jobs:
                   print(src[:14000])
               else:print('MISSING')
           PY
+      - name: Inspect exact runtime chapter-card assembly
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          path=Path('scoremax_runtime_v669b/ux_student_batch.py')
+          source=path.read_text()
+          for node in ast.parse(source).body:
+              if isinstance(node,ast.FunctionDef) and node.name in {'_chapter_snapshots','_subject_snapshot'}:
+                  print('SCOREMAX_CHAPTER_CARD_FN='+node.name)
+                  print(ast.get_source_segment(source,node))
+          PY
       - name: Preserve exact baseline runtime for side-by-side route tests
         run: cp -a scoremax_runtime_v669b /tmp/scoremax-nav-baseline
       - name: Apply bounded post-hash performance delta
