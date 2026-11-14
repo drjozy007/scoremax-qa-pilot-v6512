@@ -43,6 +43,18 @@ jobs:
                   print(src[:14000])
               else:print('MISSING')
           PY
+      - name: Inspect exact canonical question-type fields
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          for filename, names in (('question_contract_engine.py',{'runtime_type_from_row','canonical_runtime_type'}),('app.py',{'canonical_question_type','question_coverage_nodes'})):
+              src=Path('scoremax_runtime_v669b',filename).read_text()
+              for n in ast.parse(src).body:
+                  if isinstance(n,ast.FunctionDef) and n.name in names:
+                      print('SCOREMAX_FIELD_DEPENDENCY='+filename+':'+n.name)
+                      print(ast.get_source_segment(src,n))
+          PY
       - name: Inspect exact runtime chapter-card assembly
         run: |
           python - <<'PY'
