@@ -164,6 +164,8 @@ jobs:
                 'max_ms':metric['max_ms'],'single_request_target_met':metric['median_ms']<1500,
                 'concurrency_qualified':False,'governed_release_qualified':False},sort_keys=True))
           PY
+      - name: Characterize 1, 10 and 50 concurrent requests from distinct synthetic students
+        run: python tests/navigation_perf_20261114/benchmark_parallel_requests.py scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --levels 1,10,50 --path /student/learn-vnext
       - name: Verify canonical runtime entrypoint remains unchanged
         run: |
           python - <<'PY'
