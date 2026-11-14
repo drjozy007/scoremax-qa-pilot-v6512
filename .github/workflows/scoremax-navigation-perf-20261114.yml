@@ -35,7 +35,7 @@ jobs:
           from pathlib import Path
           s=Path('scoremax_runtime_v669b/app.py').read_text()
           tree=ast.parse(s)
-          for name in ('_subject_map','chapter_mastery_opportunity','db','inject_ui_preferences','practice_scope_placements','learner_answer_evidence','mdcat_subject_map','select_mastery_coverage_questions','mastery_coverage_contract','_chapter_snapshots'):
+          for name in ('_subject_map','chapter_mastery_opportunity','db','inject_ui_preferences','practice_scope_placements','learner_answer_evidence','mdcat_subject_map','select_mastery_coverage_questions','mastery_coverage_contract','_chapter_snapshots','question_coverage_nodes','mastery_evidence_band_levels'):
               n=next((x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name==name),None)
               print('=== SCOREMAX_SOURCE',name,'===')
               if n:
