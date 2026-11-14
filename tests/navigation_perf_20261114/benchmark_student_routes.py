@@ -30,6 +30,7 @@ args=parser.parse_args()
 
 # Optional disposable-only SQL instrumentation. Never injected in production.
 _sql_profile={}
+_sql_examples={}
 if args.sql_profile and args.mode=="measure":
     _original_connect=sqlite3.connect
     class TimedConnection(sqlite3.Connection):
@@ -46,6 +47,8 @@ if args.sql_profile and args.mode=="measure":
                 prev=_sql_profile.setdefault(fingerprint,[0,0.0])
                 prev[0]+=1
                 prev[1]+=elapsed
+                if normalized.upper().startswith(('SELECT ','WITH ')) and fingerprint not in _sql_examples:
+                    _sql_examples[fingerprint]=(str(statement),tuple(parameters))
     def profiled_connect(*a,**k):
         k.setdefault("factory",TimedConnection)
         return _original_connect(*a,**k)
@@ -233,12 +236,35 @@ else:
         payload=response.data
         if args.sql_profile:
             top=sorted(_sql_profile.items(),key=lambda pair:-pair[1][1])[:12]
+            # The query plan is captured from the same disposable database,
+            # with the native SQL functions registered, but never reveals values.
+            # This is diagnosis only, not a production EXPLAIN or schema migration.
+            plans=[]
+            plan_conn=sm.db()
+            try:
+                for sql,values in top[:7]:
+                    if sql not in _sql_examples:
+                        continue
+                    statement,parameters=_sql_examples[sql]
+                    try:
+                        details=[row[3] for row in plan_conn.execute(
+                            "EXPLAIN QUERY PLAN "+statement,parameters).fetchall()]
+                    except Exception as exc:
+                        details=["PLAN_UNAVAILABLE:"+type(exc).__name__]
+                    plans.append({"query_shape":sql[:200],
+                                  "execute_ms":round(values[1],3),
+                                  "plan":details[:16]})
+            finally:
+                plan_conn.close()
             print("SCOREMAX_SQL_ROUTE_PROFILE="+json.dumps({
                 "route":path,
                 "top_sql":[{"statement":sql,"execute_calls":values[0],
                             "total_execute_ms":round(values[1],3)}
                            for sql,values in top]},sort_keys=True))
+            print("SCOREMAX_SQL_QUERY_PLANS="+json.dumps({
+                "route":path,"plans":plans},sort_keys=True))
             _sql_profile.clear()
+            _sql_examples.clear()
         results[path]={"status":status,"median_ms":round(median(measurements),2),
                        "html_bytes":len(payload),"gzip_estimated_bytes":len(gzip.compress(payload)),
                        "response_cache_control":response.headers.get("Cache-Control",""),
