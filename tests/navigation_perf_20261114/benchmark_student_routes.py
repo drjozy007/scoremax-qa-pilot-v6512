@@ -24,8 +24,32 @@ parser.add_argument("--per-chapter",type=int,default=20)
 parser.add_argument("--additional-learners",type=int,default=0)
 parser.add_argument("--answers-per-learner",type=int,default=100)
 parser.add_argument("--profile",action="store_true")
+parser.add_argument("--sql-profile",action="store_true")
 parser.add_argument("--candidate-indexes",action="store_true")
 args=parser.parse_args()
+
+# Optional disposable-only SQL instrumentation. Never injected in production.
+_sql_profile={}
+if args.sql_profile and args.mode=="measure":
+    _original_connect=sqlite3.connect
+    class TimedConnection(sqlite3.Connection):
+        def execute(self, statement, parameters=(), /):
+            start=perf_counter()
+            try:
+                return super().execute(statement,parameters)
+            finally:
+                elapsed=(perf_counter()-start)*1000
+                normalized=" ".join(str(statement).split())
+                # Group identical query shapes; the SQL contains only synthetic
+                # fixture query structure, never learner answers or credentials.
+                fingerprint=normalized[:500]
+                prev=_sql_profile.setdefault(fingerprint,[0,0.0])
+                prev[0]+=1
+                prev[1]+=elapsed
+    def profiled_connect(*a,**k):
+        k.setdefault("factory",TimedConnection)
+        return _original_connect(*a,**k)
+    sqlite3.connect=profiled_connect
 
 root=args.database.parent.parent.resolve()
 for name in ("state","backup","intake"):
@@ -203,6 +227,14 @@ else:
             digest=hashlib.sha256(response.data).hexdigest()
             status=response.status_code
         payload=response.data
+        if args.sql_profile:
+            top=sorted(_sql_profile.items(),key=lambda pair:-pair[1][1])[:12]
+            print("SCOREMAX_SQL_ROUTE_PROFILE="+json.dumps({
+                "route":path,
+                "top_sql":[{"statement":sql,"execute_calls":values[0],
+                            "total_execute_ms":round(values[1],3)}
+                           for sql,values in top]},sort_keys=True))
+            _sql_profile.clear()
         results[path]={"status":status,"median_ms":round(median(measurements),2),
                        "html_bytes":len(payload),"gzip_estimated_bytes":len(gzip.compress(payload)),
                        "response_cache_control":response.headers.get("Cache-Control",""),
