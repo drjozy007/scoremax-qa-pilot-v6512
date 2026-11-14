@@ -208,6 +208,10 @@ else:
     routes=["/student/learn-vnext","/student/subject/Biology",
             "/student/chapter?subject=Biology&chapter=Synthetic%20Chapter%201",
             "/student/catalogue/year11/Biology"]
+    # Exclude app initialization, schema qualification and index DDL from
+    # the first page's SQL report; those are not student GET requests.
+    if args.sql_profile:
+        _sql_profile.clear()
     for path in routes:
         measurements=[];status=None;digest=None
         for i in range(3):
