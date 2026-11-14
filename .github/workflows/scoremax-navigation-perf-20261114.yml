@@ -22,6 +22,8 @@ jobs:
         run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py
       - name: Run focused query equivalence tests
         run: python -m unittest discover -s tests/navigation_perf_20261114 -v
+      - name: Benchmark baseline and candidate evidence indexing
+        run: python tests/navigation_perf_20261114/benchmark_evidence_index.py
       - name: Reconstruct exact accepted ScoreMax runtime without production data
         run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py
       - name: Inspect exact generated student read paths
