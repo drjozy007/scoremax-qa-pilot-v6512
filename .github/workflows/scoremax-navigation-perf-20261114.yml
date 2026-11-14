@@ -183,6 +183,21 @@ jobs:
           PY
       - name: Characterize 1, 10 and 50 concurrent requests from distinct synthetic students
         run: python tests/navigation_perf_20261114/benchmark_parallel_requests.py scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --levels 1,10,50 --path /student/learn-vnext
+      - name: Characterize real Gunicorn HTTP 1-worker versus 2-worker concurrency
+        run: |
+          python tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --workers 1,2 --threads 4 --levels 1,10,50 --port 18761 | tee /tmp/nav-gunicorn.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(line.split('=',1)[1])
+                for line in Path('/tmp/nav-gunicorn.log').read_text().splitlines()
+                if line.startswith('SCOREMAX_GUNICORN_ISOLATED_HTTP=')]
+          assert {(x['workers'],x['distinct_students']) for x in rows}=={
+            (worker,n) for worker in (1,2) for n in (1,10,50)}
+          for x in rows:
+              assert x['max_ms']<120000,('LOAD_PROBE_TIMEOUT',x)
+              print('SCOREMAX_GUNICORN_CAPACITY_CHARACTERIZATION='+json.dumps(x,sort_keys=True))
+          PY
       - name: Verify canonical runtime entrypoint remains unchanged
         run: |
           python - <<'PY'
