@@ -21,6 +21,8 @@ parser.add_argument("runtime",type=Path)
 parser.add_argument("database",type=Path)
 parser.add_argument("--label",default="baseline")
 parser.add_argument("--per-chapter",type=int,default=20)
+parser.add_argument("--additional-learners",type=int,default=0)
+parser.add_argument("--answers-per-learner",type=int,default=100)
 parser.add_argument("--profile",action="store_true")
 parser.add_argument("--candidate-indexes",action="store_true")
 args=parser.parse_args()
@@ -111,11 +113,48 @@ if args.mode=="seed":
     if len(eligible)!=len(answer_rows) or any(
         row["context_authority"]!="FROZEN_CONTEXT" for row in eligible):
         raise RuntimeError("BENCHMARK_FINAL_EVIDENCE_NOT_QUALIFIED")
+    # Scale the database with distinct learners and their own FINAL attempts.
+    # No copied production identities, question wording, or learner records.
+    others=args.additional_learners
+    sample_size=args.answers_per_learner
+    if others<0 or sample_size<0 or sample_size>len(source_rows):
+        raise RuntimeError("INVALID_SYNTHETIC_LEARNER_SCALE")
+    sample_answers=[tuple(row[1:]) for row in answer_rows[:sample_size]]
+    for student_n in range(others):
+        synthetic_id="SYN-STUDENT-SCALE-"+str(student_n)
+        other_uid=c.execute("""INSERT INTO users(role,system_user_id,full_name,email,
+            username,password_hash,account_status,email_verified,is_demo_account,
+            academic_level,active_programme,subjects)
+            VALUES('student',?,?,?,?,?,'active',1,0,'FSc Part 1','FSc Part 1',?)""",
+            (synthetic_id,"Synthetic Scale Student",
+             f"perf-scale-{student_n}@scoremax.invalid",
+             f"perf-scale-{student_n}","not-a-real-hash",
+             "Biology,Chemistry,Physics,Mathematics")).lastrowid
+        other_attempt=c.execute("""INSERT INTO attempts(student_id,scope,programme,
+            subject,score,total_count,correct_count,marking_status,
+            mastery_evidence_eligible,guided_mode,assessment_kind)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (other_uid,"subject","FSc Part 1","Biology",70,sample_size,
+             sample_size*2//3,"FINAL",1,0,"practice")).lastrowid
+        c.executemany(
+            "INSERT INTO attempt_answers(attempt_id,question_db_id,selected_answer,is_correct,"
+            "marking_status,mastery_evidence_eligible,marks_awarded,evidence_context_json)"
+            " VALUES (?,?,?,?,?,?,?,?)",
+            [(other_attempt,)+row for row in sample_answers])
+    c.commit()
+    if others:
+        verify=c.execute("SELECT id FROM users WHERE system_user_id=?",(
+            "SYN-STUDENT-SCALE-"+str(others-1),)).fetchone()
+        subset=sm.learner_answer_evidence(c,verify["id"],"FSc Part 1")
+        if len(subset)!=sample_size:
+            raise RuntimeError("SCALE_STUDENT_EVIDENCE_ISOLATION_FAILED")
     c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     c.close()
     print("SCOREMAX_SYNTHETIC_SEED="+json.dumps({"questions":4*12*args.per_chapter,
-       "attempt_answers":len(answer_rows),"final_evidence":len(eligible),
-       "student_id":uid,"fixture":"frozen_final_eligible"}))
+       "attempt_answers":len(answer_rows)+others*sample_size,
+       "final_evidence_primary":len(eligible),
+       "distinct_learners":others+1,"student_id":uid,
+       "fixture":"frozen_final_eligible_multi_user"}))
 else:
     c=sm.db()
     if args.candidate_indexes:
