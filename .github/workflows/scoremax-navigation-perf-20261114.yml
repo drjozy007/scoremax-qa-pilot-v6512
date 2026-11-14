@@ -141,6 +141,25 @@ jobs:
                    'index_additional_ms':round(x['median_ms']-z,2),
                    'improvement_pct':round((a-z)/a*100,1) if a else None},sort_keys=True))
           PY
+      - name: Characterize 100800 questions and 1000 distinct students with 100k frozen answers
+        run: |
+          python tests/navigation_perf_20261114/benchmark_student_routes.py seed /tmp/scoremax-nav-baseline /tmp/nav-100k/state/scoremax.db --per-chapter 2100 --additional-learners 999 --answers-per-learner 100
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --label 100k-questions-1000-students --candidate-indexes | tee /tmp/nav-100k.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          line=next(x for x in Path('/tmp/nav-100k.log').read_text().splitlines()
+                    if x.startswith('SCOREMAX_ROUTE_BENCH='))
+          routes=json.loads(line.split('=',1)[1])['routes']
+          for path,metric in routes.items():
+              assert metric['status']==200,(path,metric)
+              assert metric['max_ms']<15000,('100K_NAVIGATION_UNACCEPTABLE',path,metric)
+              print('SCOREMAX_100K_LEARNER_SCALE_CHARACTERIZATION='+json.dumps({
+                'route':path,'questions':100800,'students':1000,
+                'saved_answers':102300,'median_ms':metric['median_ms'],
+                'max_ms':metric['max_ms'],'single_request_target_met':metric['median_ms']<1500,
+                'concurrency_qualified':False,'governed_release_qualified':False},sort_keys=True))
+          PY
       - name: Verify canonical runtime entrypoint remains unchanged
         run: |
           python - <<'PY'
