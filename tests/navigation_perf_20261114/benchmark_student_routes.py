@@ -27,6 +27,8 @@ for name in ("state","backup","intake"):
 os.environ.update({
     "SCOREMAX_ENV":"production",
     "SCOREMAX_SECRET":"navigation-isolated-synthetic-secret-2026-not-for-production",
+    "SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD":"synthetic-only-admin-secret-20261114",
+    "SCOREMAX_BOOTSTRAP_ADMIN_EMAIL":"synthetic-admin@scoremax.invalid",
     "SCOREMAX_SMTP_HOST":"smtp.invalid",
     "SCOREMAX_SMTP_FROM":"test@scoremax.invalid",
     "SCOREMAX_SEND_EMAIL_VERIFICATION":"0",
