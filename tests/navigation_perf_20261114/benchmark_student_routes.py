@@ -103,8 +103,12 @@ else:
         backup=root/"backup"/"navigation_preindex_snapshot.db"
         planned=module.migrate(args.database,backup,apply=False)
         done=module.migrate(args.database,backup,apply=True)
+        repeat=module.migrate(args.database,backup,apply=True)
+        if done["status"]!="APPLIED" or repeat["status"]!="ALREADY_APPLIED":
+            raise RuntimeError("INDEX_MIGRATION_NOT_IDEMPOTENT")
         print("SCOREMAX_DISPOSABLE_INDEX_PROBE="+json.dumps(
-            {"plan":planned["status"],"result":done["status"],"indexes":len(module.INDEXES)}))
+            {"plan":planned["status"],"result":done["status"],
+             "repeat":repeat["status"],"indexes":len(module.INDEXES)}))
         c=sm.db()
     row=c.execute("SELECT id,COALESCE(session_version,0) AS session_version FROM users WHERE system_user_id=?",(STUDENT,)).fetchone()
     if not row:raise RuntimeError("MISSING_SYNTHETIC_STUDENT")
