@@ -88,6 +88,22 @@ jobs:
                       print('SCOREMAX_RESIDUAL_SOURCE='+filename+':'+node.name)
                       print(snippet[:22000])
           PY
+      - name: Inspect chapter scope, chapter page, and chapter-card availability sources
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          targets={
+            'app.py': {'_programme_chapter_scope_sql','chapter_page','chapter_identity','student_weak_areas'},
+            'ux_student_batch.py': {'_chapter_snapshots','_catalogue_for_student'},
+          }
+          for file,names in targets.items():
+              source=Path('scoremax_runtime_v669b',file).read_text()
+              for node in ast.parse(source).body:
+                  if isinstance(node,ast.FunctionDef) and node.name in names:
+                      print('SCOREMAX_CHAPTER_SOURCE='+file+':'+node.name)
+                      print((ast.get_source_segment(source,node) or '')[:26000])
+          PY
       - name: Preserve exact baseline runtime for side-by-side route tests
         run: cp -a scoremax_runtime_v669b /tmp/scoremax-nav-baseline
       - name: Apply bounded post-hash performance delta
