@@ -68,6 +68,24 @@ jobs:
                   print('SCOREMAX_CHAPTER_CARD_FN='+node.name)
                   print(ast.get_source_segment(source,node))
           PY
+      - name: Inspect residual catalogue and coach hot paths in accepted runtime
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          work={
+            'app.py':{'scoremax_coach','scoremax_coach_candidates','inject_ui_preferences','practice_scope_placements','live_question_clause','_programme_scope_sql'},
+            'ux_catalogue_browser.py':{'_release_scope_counts','catalogue_subject'},
+            'ux_student_batch.py':{'_subject_snapshot','_learn_context'},
+          }
+          for filename,names in work.items():
+              source=Path('scoremax_runtime_v669b',filename).read_text()
+              for node in ast.parse(source).body:
+                  if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name in names:
+                      snippet=ast.get_source_segment(source,node) or ''
+                      print('SCOREMAX_RESIDUAL_SOURCE='+filename+':'+node.name)
+                      print(snippet[:22000])
+          PY
       - name: Preserve exact baseline runtime for side-by-side route tests
         run: cp -a scoremax_runtime_v669b /tmp/scoremax-nav-baseline
       - name: Apply bounded post-hash performance delta
