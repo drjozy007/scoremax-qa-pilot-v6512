@@ -6,6 +6,7 @@ SQLite database for each variant; no ScoreMax deployment or network requests.
 """
 import argparse
 import hashlib
+import gzip
 import json
 import os
 from pathlib import Path
@@ -137,7 +138,11 @@ else:
             measurements.append(duration_ms)
             digest=hashlib.sha256(response.data).hexdigest()
             status=response.status_code
+        payload=response.data
         results[path]={"status":status,"median_ms":round(median(measurements),2),
+                       "html_bytes":len(payload),"gzip_estimated_bytes":len(gzip.compress(payload)),
+                       "response_cache_control":response.headers.get("Cache-Control",""),
+                       "response_content_encoding":response.headers.get("Content-Encoding",""),
                        "min_ms":round(min(measurements),2),"max_ms":round(max(measurements),2),
                        "body_sha256":digest}
     c.close()
