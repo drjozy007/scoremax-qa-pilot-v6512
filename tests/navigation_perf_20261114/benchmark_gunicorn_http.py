@@ -67,7 +67,7 @@ def make_environment(database):
         "SCOREMAX_CONTENT_INTAKE_DIR":str(root/"intake"),
         "SCOREMAX_INSTANCE_COUNT":"1",
         "WEB_CONCURRENCY":"1",
-        "SCOREMAX_PUBLIC_BASE_URL":"http://127.0.0.1",
+        "SCOREMAX_PUBLIC_BASE_URL":"https://localhost",
     })
     return env
 
