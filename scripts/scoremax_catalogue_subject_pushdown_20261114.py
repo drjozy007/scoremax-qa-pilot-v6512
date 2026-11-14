@@ -32,7 +32,13 @@ NEW_SETUP="""    live=practice_pool_clause(guided)
         "THEN replace(r.subject_id,'_',' ') ELSE q.subject END)=lower(?)"
         if _pushdown else "")
     subject_filter_params=[scope] if _pushdown else []
+    # The catalogue counts placements; it never consumes question_type.
+    # Keep the canonical interpreter in the unchanged, unfiltered caller path.
+    type_projection=("NULL" if subject_filter else
+        "scoremax_question_type(q.ph_response_contract,q.qtype,q.answer_config,q.marking_config)")
 """
+OLD_TYPE="scoremax_question_type(q.ph_response_contract,q.qtype,q.answer_config,q.marking_config) question_type,"
+NEW_TYPE="{type_projection} question_type,"
 CAT_OLD="for row in practice_scope_placements(conn,programme,guided):"
 CAT_NEW="for row in practice_scope_placements(conn,programme,guided,subject):"
 
@@ -53,6 +59,7 @@ def apply(root:Path):
     if MARKER in app_before:
         if (app_before.count(MARKER)!=1 or
             NEW_DEF not in app_before or NEW_SQL not in app_before or
+            NEW_TYPE not in app_before or
             CAT_NEW not in cat_before):
             raise RuntimeError("CATALOGUE_SUBJECT_PARTIAL_REPLAY")
         return {"status":"already_applied","read_only":True}
@@ -73,6 +80,7 @@ def apply(root:Path):
     new_app=one(app_func,OLD_DEF,NEW_DEF,"app:def")
     new_app=one(new_app,OLD_SETUP,NEW_SETUP,"app:setup")
     new_app=one(new_app,OLD_SQL,NEW_SQL,"app:sql")
+    new_app=one(new_app,OLD_TYPE,NEW_TYPE,"app:type_projection")
     new_cat=one(cat_func,CAT_OLD,CAT_NEW,"catalogue:call")
     app_after=one(app_before,app_func,new_app,"app:func")
     cat_after=one(cat_before,cat_func,new_cat,"catalogue:func")
