@@ -1,5 +1,7 @@
 name: ScoreMax student navigation performance candidate
 on:
+  pull_request:
+    branches: [fix/scoremax-streamed-backup-20261022]
   push:
     branches: [perf/student-navigation-batch-20261114]
     paths:
