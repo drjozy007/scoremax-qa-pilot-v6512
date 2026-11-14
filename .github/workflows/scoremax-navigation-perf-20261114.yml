@@ -13,7 +13,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,12 +41,40 @@ jobs:
                   print(src[:14000])
               else:print('MISSING')
           PY
+      - name: Preserve exact baseline runtime for side-by-side route tests
+        run: cp -a scoremax_runtime_v669b /tmp/scoremax-nav-baseline
       - name: Apply bounded post-hash performance delta
         run: python -B scripts/scoremax_navigation_perf_delta_20261114.py scoremax_runtime_v669b
       - name: Prove idempotence and compiled runtime
         run: |
           python -B scripts/scoremax_navigation_perf_delta_20261114.py scoremax_runtime_v669b
           python -m py_compile scoremax_runtime_v669b/app.py
+      - name: Benchmark actual Flask student routes in separate isolated runtimes
+        run: |
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          python tests/navigation_perf_20261114/benchmark_student_routes.py seed /tmp/scoremax-nav-baseline /tmp/nav-seed/state/scoremax.db
+          mkdir -p /tmp/nav-base/state /tmp/nav-candidate/state
+          cp /tmp/nav-seed/state/scoremax.db /tmp/nav-base/state/scoremax.db
+          cp /tmp/nav-seed/state/scoremax.db /tmp/nav-candidate/state/scoremax.db
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/scoremax-nav-baseline /tmp/nav-base/state/scoremax.db --label baseline | tee /tmp/nav-baseline.log
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-candidate/state/scoremax.db --label candidate | tee /tmp/nav-candidate.log
+      - name: Compare synthetic route response performance
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def read(path):
+              line=next(line for line in Path(path).read_text().splitlines() if line.startswith('SCOREMAX_ROUTE_BENCH='))
+              return json.loads(line.split('=',1)[1])['routes']
+          base=read('/tmp/nav-baseline.log');candidate=read('/tmp/nav-candidate.log')
+          for route,b in base.items():
+              c=candidate[route]
+              assert b['status']==c['status']==200,(route,b,c)
+              a=b['median_ms'];z=c['median_ms']
+              print('SCOREMAX_ROUTE_COMPARISON='+json.dumps({'route':route,'baseline_ms':a,
+                   'candidate_ms':z,'delta_ms':round(z-a,2),
+                   'improvement_pct':round((a-z)/a*100,1) if a else None},sort_keys=True))
+          PY
       - name: Verify canonical runtime entrypoint remains unchanged
         run: |
           python - <<'PY'
