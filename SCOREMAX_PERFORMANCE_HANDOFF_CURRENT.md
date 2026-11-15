@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — durable shadow stage passed; full capacity qualification pending  
+**Updated:** 15 November 2026, UTC — 100k shadow-query speedup verified; concurrent launch gate still FAILED  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## 0. Resume here — what the next session MUST do
@@ -48,6 +48,15 @@
 - **Design is OFF by default and NOT installed in ScoreMax runtime.** The script is a disposable offline research/qualification candidate. Real PH membership diversity, all production writer coverage, full transactional installer safety and concurrency/submission capacity still **PENDING**.
 - **Risks:** 15 dynamic/indirect authority-writer candidates remain unresolved; triggers impose per-row overhead even when their single epoch update is coalesced. Measure 300/1,500 and 100k import/write overhead before deployment.
 - **Decision:** Do not merge or deploy. Keep p95 under 1.5 s with 50 concurrent users as P0 acceptance; pursue only demonstrably faster indexed reads with exact native parity and bounded rollback.
+
+## 1C. Verified checkpoint — 15 November 2026: 100k indexed shadow read qualification
+
+- **Implementation:** existing PR #55 file `scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py`, commit `1f17e0b3f7d585ea0e919759c5a0ad301de456e2`, qualification [run 43703778124](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43703778124), job **132780356402**. Full run **FAILED intentionally at existing P0 concurrency gate**, while durable-shadow tests **PASSED**.
+- **ABBA benchmark on 100,000 synthetic questions (1,500 actual-structure synthetic PH links, 97,000 additional synthetic legacy rows):** FSc Part 1 inventory aggregation native **136.187 ms**, indexed shadow **12.729 ms**, **90.7% faster**; MDCAT native **136.303 ms**, shadow **12.382 ms**, **90.9% faster**. Exact grouped counts matched native. These are single SQLite query timings, NOT HTTP page p95 or live data qualification.
+- **Tested derived state:** 21 source-table INSERT/UPDATE/DELETE triggers across 7 governed tables, durable SQLite table with (programme, internal question id, subject, chapter), source epoch/dirty flag, atomic BEGIN IMMEDIATE rebuild, live-reader parity assertion, transaction-pinned read, stale native fallback, crash/restart recovery. **97,000-row synthetic bulk insert ~500.637 ms; 100k rebuild ~936.216 ms in isolated runner**. 1,500-row update increments epoch once, source rollback does not invalidate clean snapshot.
+- **P0 concurrency still FAILED** because the projection has **not** been connected to student navigation. 50 students, actual local Gunicorn: one worker **20.502 s p95**, two workers **17.354 s p95**. CI red is correct, and production is unchanged.
+- **Risks / next gates:** 15 dynamic/indirect writer candidates not certified; current prototype's DDL installer is disposable and must be hardened into a backup/manifest/rollback-safe migration; need real PH mixed-format/multi-programme corpus and simultaneous writer-reader replay; need opt-in real navigation integration and full HTML/academic/QA gates before any deploy.
+- **Decision:** Proceed to a **feature-OFF, shadow-only ScoreMax integration candidate**, reusing native SQL/identity and with authoritative fallback on dirty/missing/uncertain state. Do not claim 90% whole-page improvement, do not provision PostgreSQL or change Render instances, and do not weaken release p95 thresholds.
 
 ## 2. Why this is P0: observed evidence vs inference
 
