@@ -33,6 +33,7 @@ def arguments():
     parser.add_argument("--threads",type=int,default=4)
     parser.add_argument("--port",type=int,default=18761)
     parser.add_argument("--route",default="/student/learn-vnext")
+    parser.add_argument("--require-shadow-fresh",action="store_true")
     return parser.parse_args()
 
 def snapshot(db):
@@ -112,6 +113,13 @@ def main():
     if not workers or not levels or min(workers)<1 or max(workers)>4 or min(levels)<1 or max(levels)>50:
         raise RuntimeError("PROBE_UNSAFE_LOAD_OPTIONS")
     before=snapshot(db)
+    if args.require_shadow_fresh:
+        if os.environ.get("SCOREMAX_NAV_SHADOW_ENABLED")!="1":
+            raise RuntimeError("SHADOW_HTTP_PROBE_OPTIN_REQUIRED")
+        with closing(sqlite3.connect(db.as_uri()+"?mode=ro",uri=True)) as source:
+            status=source.execute("SELECT epoch,dirty,snapshot_epoch FROM sm_shadow_visibility_authority WHERE id=1").fetchone()
+            if not status or status[1]!=0 or status[0]!=status[2]:
+                raise RuntimeError("SHADOW_HTTP_START_STATE_STALE")
     env=make_environment(db)
     # The parent is the only place that creates cookies. Never log cookies,
     # identifiers, synthetic credentials or any real database content.
@@ -156,7 +164,13 @@ def main():
                             [(x["status"],x["bytes"]) for x in observations]))
                     durations=sorted(x["ms"] for x in observations)
                     p95=durations[max(0,math.ceil(.95*n)-1)]
+                    if args.require_shadow_fresh:
+                        with closing(sqlite3.connect(db.as_uri()+"?mode=ro",uri=True)) as state_conn:
+                            values=state_conn.execute("SELECT epoch,dirty,snapshot_epoch FROM sm_shadow_visibility_authority WHERE id=1").fetchone()
+                            if values is None or values[1]!=0 or values[0]!=values[2]:
+                                raise RuntimeError("SHADOW_HTTP_DIRTY_DURING_NAVIGATION")
                     print("SCOREMAX_GUNICORN_ISOLATED_HTTP="+json.dumps({
+                       "shadow_enabled":args.require_shadow_fresh,
                        "workers":worker_count,"threads_per_worker":args.threads,
                        "distinct_students":n,"route":args.route,
                        "median_ms":round(median(durations),2),"p95_ms":p95,
