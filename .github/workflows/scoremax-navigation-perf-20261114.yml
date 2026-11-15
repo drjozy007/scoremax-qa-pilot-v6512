@@ -193,6 +193,22 @@ jobs:
                    'code_only_ms':x['median_ms'],'candidate_ms':z,'delta_ms':round(z-a,2),
                    'index_additional_ms':round(x['median_ms']-z,2),
                    'improvement_pct':round((a-z)/a*100,1) if a else None},sort_keys=True))
+          # Verify hidden student templates: no navigational/coach content drift.
+          def hidden(path):
+              line=next(line for line in Path(path).read_text().splitlines()
+                        if line.startswith('SCOREMAX_HIDDEN_ROUTE_PROBE='))
+              return json.loads(line.split('=',1)[1])['routes']
+          hidden_base=hidden('/tmp/nav-baseline.log')
+          hidden_code=hidden('/tmp/nav-code-only.log')
+          hidden_candidate=hidden('/tmp/nav-candidate.log')
+          assert set(hidden_base)=={'community_home','science_genius_home'}
+          for endpoint, original in hidden_base.items():
+              for other in (hidden_code[endpoint],hidden_candidate[endpoint]):
+                  assert other['status']==original['status'],('HIDDEN_ROUTE_STATUS_DRIFT',endpoint)
+                  assert other['body_sha256']==original['body_sha256'],('HIDDEN_ROUTE_CONTENT_DRIFT',endpoint)
+              print('SCOREMAX_HIDDEN_TEMPLATE_PARITY='+json.dumps({
+                  'endpoint':endpoint,'status':original['status'],
+                  'body_sha256_equal':True,'hidden_ui_unchanged':True},sort_keys=True))
           PY
       - name: Characterize 100800 questions and 1000 distinct students with 100k frozen answers
         run: |
