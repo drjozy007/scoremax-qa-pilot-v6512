@@ -19,6 +19,7 @@ on:
       - scripts/scoremax_visibility_writer_surface_audit_20261115.py
       - scripts/scoremax_governed_concurrent_contract_20261115.py
       - scripts/scoremax_transaction_boundary_inspection_20261115.py
+      - scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py
       - scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
       - scripts/scoremax_shadow_navigation_v1.py
       - scripts/scoremax_nav_shadow_integration_delta_20261115.py
@@ -39,7 +40,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check delta syntax
-        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py scripts/scoremax_request_evidence_reuse_20261114.py scripts/scoremax_catalogue_subject_pushdown_20261114.py scripts/scoremax_navigation_index_migration_20261114.py scripts/scoremax_fused_subject_inventory_20261114.py scripts/scoremax_evidence_scalar_copy_20261115.py scripts/scoremax_governed_visibility_relational_probe_20261115.py scripts/scoremax_visibility_epoch_rehearsal_20261115.py scripts/scoremax_visibility_writer_surface_audit_20261115.py scripts/scoremax_governed_concurrent_contract_20261115.py scripts/scoremax_transaction_boundary_inspection_20261115.py scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py scripts/scoremax_shadow_navigation_v1.py scripts/scoremax_nav_shadow_integration_delta_20261115.py scripts/scoremax_build_shadow_disposable_20261115.py scripts/scoremax_hidden_template_work_guard_20261115.py scripts/scoremax_chapter_mastery_local_bundle_20261115.py scripts/scoremax_mastery_epoch_prefilter_20261115.py
+        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py scripts/scoremax_request_evidence_reuse_20261114.py scripts/scoremax_catalogue_subject_pushdown_20261114.py scripts/scoremax_navigation_index_migration_20261114.py scripts/scoremax_fused_subject_inventory_20261114.py scripts/scoremax_evidence_scalar_copy_20261115.py scripts/scoremax_governed_visibility_relational_probe_20261115.py scripts/scoremax_visibility_epoch_rehearsal_20261115.py scripts/scoremax_visibility_writer_surface_audit_20261115.py scripts/scoremax_governed_concurrent_contract_20261115.py scripts/scoremax_transaction_boundary_inspection_20261115.py scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py scripts/scoremax_shadow_navigation_v1.py scripts/scoremax_nav_shadow_integration_delta_20261115.py scripts/scoremax_build_shadow_disposable_20261115.py scripts/scoremax_hidden_template_work_guard_20261115.py scripts/scoremax_chapter_mastery_local_bundle_20261115.py scripts/scoremax_mastery_epoch_prefilter_20261115.py
       - name: Run focused query equivalence tests
         run: python -m unittest discover -s tests/navigation_perf_20261114 -v
       - name: Benchmark baseline and candidate evidence indexing
@@ -180,6 +181,10 @@ jobs:
           python -m py_compile scoremax_runtime_v669b/app.py
       - name: Verify formal mastery and dependent-evidence exclusions against candidate
         run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py -v
+      - name: Verify actual concurrent assessment POST marking and session idempotency
+        run: |
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          python -B scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py scoremax_runtime_v669b
       - name: Benchmark actual Flask student routes in separate isolated runtimes
         run: |
           pip install -r scoremax_runtime_v669b/requirements.txt
