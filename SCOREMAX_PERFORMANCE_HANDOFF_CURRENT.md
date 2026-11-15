@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — 100k shadow-query speedup verified; concurrent launch gate still FAILED  
+**Updated:** 15 November 2026, UTC — opt-in shadow 100k navigation parity PASSED, capacity still FAILED  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## 0. Resume here — what the next session MUST do
@@ -57,6 +57,14 @@
 - **P0 concurrency still FAILED** because the projection has **not** been connected to student navigation. 50 students, actual local Gunicorn: one worker **20.502 s p95**, two workers **17.354 s p95**. CI red is correct, and production is unchanged.
 - **Risks / next gates:** 15 dynamic/indirect writer candidates not certified; current prototype's DDL installer is disposable and must be hardened into a backup/manifest/rollback-safe migration; need real PH mixed-format/multi-programme corpus and simultaneous writer-reader replay; need opt-in real navigation integration and full HTML/academic/QA gates before any deploy.
 - **Decision:** Proceed to a **feature-OFF, shadow-only ScoreMax integration candidate**, reusing native SQL/identity and with authoritative fallback on dirty/missing/uncertain state. Do not claim 90% whole-page improvement, do not provision PostgreSQL or change Render instances, and do not weaken release p95 thresholds.
+
+## 1D. Verified checkpoint — 15 November 2026: opt-in navigation integration, default OFF
+
+- **Build:** `scripts/scoremax_shadow_navigation_v1.py` and source-bound installer `scripts/scoremax_nav_shadow_integration_delta_20261115.py`. Existing ScoreMax `_subject_map` fused inventory query now has an opt-in indexed alternative **only when `SCOREMAX_NAV_SHADOW_ENABLED=1`**, with native full-governance fallback on disabled, missing, stale, invalid or empty scope. Default feature **OFF**. No active production schema, app release or Power House modification.
+- **CI evidence:** [Run 43704992024](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43704992024), job 132784043163. Source-bound install/idempotence, formal mastery checks, four-route HTML equivalence and snapshot freshness **PASSED**; overall CI **FAILED AS DESIGNED at existing P0 50-user gate** because that gate still exercised default native (shadow OFF).
+- 100,800 **synthetic legacy** question bank, single-process Flask serial A→B route medians: Learning native **674.10ms** vs shadow **536.09ms** (20.5% directional); Subject 1042.37→911.00ms (12.6%); Chapter 1133.71→1007.06ms (11.2%); Catalogue 1025.09→893.85ms (12.8%). **All four HTML SHA-256 payload hashes identical**, all four shadow epochs remained clean and matched, on-disk projection rebuild after app startup **724.809ms**, 21 triggers present. A→B cache warming remains a confounder; do not promote these to live acceptance.
+- Existing default native Gunicorn 50-student p95 from same run **14.334s (one worker) / 11.818s (two workers)** — still FAIL, **not** a measurement with the shadow enabled. Next test must exercise shadow on via actual Gunicorn and assert persistent freshness throughout.
+- **Principal risk:** only `_subject_map` inventory benefits so far; repeated chapter mastery, availability and publication reads remain. 15 indirect/dynamic governance writers not certified; real Power House 300/1500 heterogeneous memberships and concurrent student submissions not yet tested. Do not deploy this candidate or claim thousands-of-learners capacity.
 
 ## 2. Why this is P0: observed evidence vs inference
 
