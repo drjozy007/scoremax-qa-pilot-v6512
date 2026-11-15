@@ -26,6 +26,7 @@ parser.add_argument("--answers-per-learner",type=int,default=100)
 parser.add_argument("--profile",action="store_true")
 parser.add_argument("--sql-profile",action="store_true")
 parser.add_argument("--candidate-indexes",action="store_true")
+parser.add_argument("--prepare-shadow-after-startup",action="store_true")
 args=parser.parse_args()
 
 # Optional disposable-only SQL instrumentation. Never injected in production.
@@ -202,6 +203,19 @@ else:
             {"plan":planned["status"],"result":done["status"],
              "repeat":repeat["status"],"indexes":len(module.INDEXES)}))
         c=sm.db()
+    if args.prepare_shadow_after_startup:
+        if (os.environ.get("SCOREMAX_NAV_SHADOW_ENABLED")!="1"
+            or not str(args.database.resolve()).startswith("/tmp/")):
+            raise RuntimeError("SHADOW_BENCHMARK_REQUIRES_EXPLICIT_DISPOSABLE_OPTIN")
+        sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"scripts"))
+        from scoremax_persistent_shadow_visibility_candidate_20261115 import install,rebuild,source_state
+        installed=install(c)
+        outcome=rebuild(c,sm._programme_scope_sql,sm._programme_aliases,
+                        sm.live_question_clause('q'))
+        print("SCOREMAX_SHADOW_AFTER_BOOTSTRAP="+json.dumps({
+            "triggers":installed,"rebuild_ms":outcome["rebuild_ms"],
+            "size":outcome["sizes"],"state":source_state(c),
+            "production_runtime_updated":False},sort_keys=True),flush=True)
     row=c.execute("SELECT id,COALESCE(session_version,0) AS session_version FROM users WHERE system_user_id=?",(STUDENT,)).fetchone()
     if not row:raise RuntimeError("MISSING_SYNTHETIC_STUDENT")
     client=app.test_client()
@@ -265,6 +279,15 @@ else:
                 "route":path,"plans":plans},sort_keys=True))
             _sql_profile.clear()
             _sql_examples.clear()
+        if args.prepare_shadow_after_startup:
+            try:
+                state=source_state(c)
+                print("SCOREMAX_SHADOW_NAV_ROUTE_STATE="+json.dumps({
+                    "route":path,"dirty":state["dirty"],
+                    "epochs_match":state["epoch"]==state["snapshot_epoch"],
+                    "live_production_data_used":False},sort_keys=True),flush=True)
+            except Exception as exc:
+                raise RuntimeError("SHADOW_NAV_STATE_UNAVAILABLE:"+type(exc).__name__)
         results[path]={"status":status,"median_ms":round(median(measurements),2),
                        "html_bytes":len(payload),"gzip_estimated_bytes":len(gzip.compress(payload)),
                        "response_cache_control":response.headers.get("Cache-Control",""),
