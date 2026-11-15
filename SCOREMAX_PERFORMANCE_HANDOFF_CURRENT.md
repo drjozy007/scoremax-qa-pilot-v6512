@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — writer-surface audit verified; production baseline rechecked  
+**Updated:** 15 November 2026, UTC — durable shadow stage passed; full capacity qualification pending  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## 0. Resume here — what the next session MUST do
@@ -39,6 +39,15 @@
 - Explicit native writers include `_activate_release`, `_stage_question_version`, `_withdraw_release`, `authorize_product_activation`, `_withdraw_one`, family edits, admin question edits, import and rollback. This confirms a shared invalidation boundary is viable but not yet proven exhaustive.
 - Observed Gunicorn test in that run (synthetic CI only): 50-user p95 **22.885 s** with one worker and **22.480 s** with two. **P0 remains FAILED**. No student writes exercised, real PH fixture still PENDING.
 - **Decision:** Do **not** activate a materialised eligibility cache until every dynamic source mutation and transactional boundary is reviewed. Next: implement a **disposable-only, feature-OFF-derived visibility projection** with indexed reads, transactional stale fallback and rollback; independently test 300/1,500/100k scale, write amplification and native parity before runtime integration.
+
+## 1B. Latest checkpoint — 15 November 2026: durable shadow projection qualification
+
+- **Candidate built only on disposable data:** `scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py`, commit **1f17e0b3f7d585ea0e919759c5a0ad301de456e2**; [CI run 43703778124](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43703778124), job 132780356402.
+- Focused durable-shadow stage **PASSED**. The test reconstructs ScoreMax's effective native publication function as the original family-approval gate **plus** the guided/self-marking exclusion wrapper. It verifies additive derived tables and indexed membership, transactional invalidation, native question-ID equivalence, fallback on stale state, 1,500-row bulk mutation coalescing, and restart/rollback recovery in a temporary SQLite database.
+- **100,000-question synthetic ABBA query measurement** added. At this checkpoint the focused script has passed, but detailed timing and the full CI capacity gate are to be reconciled from completed run logs before accepting any performance claim.
+- **Design is OFF by default and NOT installed in ScoreMax runtime.** The script is a disposable offline research/qualification candidate. Real PH membership diversity, all production writer coverage, full transactional installer safety and concurrency/submission capacity still **PENDING**.
+- **Risks:** 15 dynamic/indirect authority-writer candidates remain unresolved; triggers impose per-row overhead even when their single epoch update is coalesced. Measure 300/1,500 and 100k import/write overhead before deployment.
+- **Decision:** Do not merge or deploy. Keep p95 under 1.5 s with 50 concurrent users as P0 acceptance; pursue only demonstrably faster indexed reads with exact native parity and bounded rollback.
 
 ## 2. Why this is P0: observed evidence vs inference
 
