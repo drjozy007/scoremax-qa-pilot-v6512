@@ -231,6 +231,28 @@ jobs:
               assert x['max_ms']<120000,('LOAD_PROBE_TIMEOUT',x)
               print('SCOREMAX_GUNICORN_CAPACITY_CHARACTERIZATION='+json.dumps(x,sort_keys=True))
           PY
+      - name: P0 launch capacity gate — refuse slow concurrent student responses
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/nav-gunicorn.log')
+          rows=[json.loads(line.split('=',1)[1]) for line in p.read_text().splitlines()
+                if line.startswith('SCOREMAX_GUNICORN_ISOLATED_HTTP=')]
+          required={(workers,n) for workers in (1,2) for n in (1,10,50)}
+          observed={(r['workers'],r['distinct_students']) for r in rows}
+          assert observed==required,('CAPACITY_SCENARIO_MISSING',sorted(required-observed))
+          violations=[(r['workers'],r['distinct_students'],r['p95_ms'])
+                      for r in rows if r['p95_ms']>=1500]
+          print('SCOREMAX_P0_CAPACITY_GATE='+json.dumps({
+            'criterion':'p95_lt_1500_ms',
+            'status':'FAILED' if violations else 'PASSED',
+            'violations':violations,
+            'governed_data_qualification':False,
+            'render_live_qualification':False
+          },sort_keys=True),flush=True)
+          assert not violations,'SCOREMAX_P0_CAPACITY_GATE_FAILED'
+          PY
       - name: Verify canonical runtime entrypoint remains unchanged
         run: |
           python - <<'PY'
