@@ -118,9 +118,8 @@ def main(runtime:Path):
                     base_url="https://localhost")
                 if response.status_code not in (200,302):
                     raise RuntimeError(f"SAVED_ANSWER_ROUTE_FAILED:{response.status_code}")
-                stored=c.execute("SELECT answers_json FROM assessment_sessions WHERE id=?",
-                                 (assessment_id,)).fetchone()
-                if stored is None or not stored["answers_json"]:
+                stored=sm.get_assessment_session(c,assessment_id,uid)
+                if stored is None or str(qid) not in sm.load_answers(stored):
                     raise RuntimeError("ANSWER_NOT_SAVED_BEFORE_SUBMIT")
             c.commit()
             tasks=[(user_ids[0],session_ids[0][0])]*8 + [
