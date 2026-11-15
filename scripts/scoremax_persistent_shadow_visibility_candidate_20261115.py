@@ -160,6 +160,8 @@ def main(root:Path):
     connection=fixture()
     connection.create_function("scoremax_release_programme",2,contracts.programme_for_release,deterministic=True)
     connection.executescript("""ALTER TABLE questions ADD COLUMN family_key TEXT;
+      ALTER TABLE questions ADD COLUMN subject TEXT DEFAULT 'Biology';
+      ALTER TABLE questions ADD COLUMN chapter TEXT DEFAULT 'Synthetic Chapter 1';
       ALTER TABLE questions ADD COLUMN status TEXT DEFAULT 'Approved';
       ALTER TABLE questions ADD COLUMN review_status TEXT DEFAULT 'Approved';
       ALTER TABLE questions ADD COLUMN active INTEGER DEFAULT 1;
