@@ -34,6 +34,7 @@ def main(runtime):
             "SCOREMAX_INSTANCE_COUNT":"1","WEB_CONCURRENCY":"1",
             "SCOREMAX_PUBLIC_BASE_URL":"https://localhost",
             "SCOREMAX_POWER_HOUSE_BASE_URL":"https://powerhouse.invalid",
+            "SCOREMAX_SMTP_HOST":"smtp.invalid","SCOREMAX_SMTP_FROM":"test@scoremax.invalid",
             "SCOREMAX_SEND_EMAIL_VERIFICATION":"0","SCOREMAX_REQUIRE_EMAIL_VERIFICATION":"0",
             "SCOREMAX_PUBLIC_STUDENT_OPENING":"0",
             "SCOREMAX_ENFORCE_PAYWALL":"0",
