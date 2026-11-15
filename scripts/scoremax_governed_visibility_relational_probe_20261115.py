@@ -197,6 +197,7 @@ def main(root:Path):
         check("partial_projection_cannot_borrow_legacy_visibility")
         c.execute("UPDATE questions SET programme='' WHERE id=1501")
         check("ph_ignores_legacy_programme_and_uses_signed_release")
+        from statistics import median
         for p in ("FSc Part 1","MDCAT"):
             aliases=contracts.programme_aliases(p)
             stmt,params=candidate_sql(aliases)
@@ -204,6 +205,23 @@ def main(root:Path):
             print("SCOREMAX_GOVERNED_RELATION_PLAN="+json.dumps({
                 "programme":p,"steps":plan[:20],"source":"synthetic_query_plan",
                 "persistent_projection_created":False},sort_keys=True),flush=True)
+            native_clause,native_params=native(aliases,"q")
+            old_stmt="SELECT q.id FROM questions q WHERE "+native_clause+" ORDER BY q.id"
+            timings={"native":[],"release_driven":[]}
+            # ABBA reduces systematic cache-order bias; synthetic fixture only.
+            for mode in ("native","release_driven","release_driven","native")*3:
+                statement,arguments=(old_stmt,native_params) if mode=="native" else (stmt,params)
+                started=perf_counter()
+                rows=c.execute(statement,arguments).fetchall()
+                ms=(perf_counter()-started)*1000
+                timings[mode].append(ms)
+                if not rows:raise RuntimeError("GOVERNED_TIMING_EMPTY")
+            print("SCOREMAX_GOVERNED_RELATION_TIMING="+json.dumps({
+                "programme":p,"questions":3000,"shared_ph_questions":1500,
+                "native_median_ms":round(median(timings["native"]),3),
+                "release_driven_median_ms":round(median(timings["release_driven"]),3),
+                "source":"ABBA_disposable_fixture","target_runtime_switched":False,
+                "governed_production_equivalence":False},sort_keys=True),flush=True)
         print("SCOREMAX_GOVERNED_RELATION_CONTRACT_PASS",flush=True)
     finally:
         c.close()
