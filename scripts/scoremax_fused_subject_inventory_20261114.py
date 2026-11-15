@@ -6,7 +6,7 @@ candidate uses one SELECT grouped by *exact* subject and chapter, reconstructs
 both original result shapes, and never changes publication/PH scope semantics.
 
 SQLite lower() and Python Unicode casefold differ; keep the original exact
-subject order, SQL lowercase grouping, and Python .lower() lookup unchanged.
+subject order, SQL lowercase grouping, and database-native lower() lookup.
 """
 from __future__ import annotations
 import ast,hashlib,json
@@ -48,6 +48,13 @@ NEW_GROUP='''    # SCOREMAX_NAV_GROUPED_INVENTORY_20261114: one identical govern
         scoped_chapters.setdefault(key,[]).append(item)
     for chapters in scoped_chapters.values():
         chapters.sort(key=lambda item:item['first_id'])
+    # Use the database's own lower(), not Python Unicode lower/casefold.
+    # This matches the original native WHERE lower(q.subject)=lower(?).
+    _sqlite_subject_keys={}
+    def _sqlite_subject_key(label):
+        if label not in _sqlite_subject_keys:
+            _sqlite_subject_keys[label]=c.execute('SELECT lower(?)',(label,)).fetchone()[0]
+        return _sqlite_subject_keys[label]
     data=[]
     for subject in visible:
 '''
@@ -78,7 +85,7 @@ def apply(root:Path):
         return {"status":"already_applied","read_only":True,"compatible_shadow":shadow_safe}
     if segment.count(OLD_LIVE)!=1 or segment.count(NEW_ANCHOR)!=1:
         raise RuntimeError("FUSED_INVENTORY_SOURCE_DRIFT")
-    if "scoped_counts.get(subject.lower(),0)" not in segment or "scoped_chapters.get(display.lower(),[])" not in segment:
+    if "scoped_counts.get(_sqlite_subject_key(subject),0)" not in segment or "scoped_chapters.get(_sqlite_subject_key(display),[])" not in segment:
         raise RuntimeError("FUSED_INVENTORY_EXISTING_BOUNDS_DRIFT")
     if before.count(segment)!=1:raise RuntimeError("FUSED_INVENTORY_NONUNIQUE_SOURCE")
     updated=segment.replace(OLD_LIVE,NEW_LIVE,1).replace(NEW_ANCHOR,NEW_GROUP,1)

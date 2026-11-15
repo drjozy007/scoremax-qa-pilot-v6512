@@ -30,15 +30,22 @@ NEW_ANCHOR="""    # SCOREMAX_NAV_GROUPED_INVENTORY_20261114: one identical gover
               {'chapter':row['chapter'],'first_id':row['first_id']})
     for chapters in scoped_chapters.values():
         chapters.sort(key=lambda item:item['first_id'])
+    # Use the database's own lower(), not Python Unicode lower/casefold.
+    # This matches the original native WHERE lower(q.subject)=lower(?).
+    _sqlite_subject_keys={}
+    def _sqlite_subject_key(label):
+        if label not in _sqlite_subject_keys:
+            _sqlite_subject_keys[label]=c.execute('SELECT lower(?)',(label,)).fetchone()[0]
+        return _sqlite_subject_keys[label]
     data=[]
     for subject in visible:
 """
 OLD_COUNT="        qcount=c.execute(f\"SELECT COUNT(*) n FROM questions q WHERE {live_question_clause('q')} AND {subject_scope}\",params).fetchone()['n']"
-NEW_COUNT="        qcount=scoped_counts.get(subject.lower(),0)"
+NEW_COUNT="        qcount=scoped_counts.get(_sqlite_subject_key(subject),0)"
 OLD_CHAPTER = '''        chapter_rows=c.execute(f"""SELECT q.chapter,MIN(q.id) first_id FROM questions q WHERE {live_question_clause('q')}
           AND {scope_clause} AND lower(q.subject)=lower(?) AND COALESCE(q.chapter,'')<>''
           GROUP BY q.chapter ORDER BY first_id""",scope_params+[display]).fetchall()'''
-NEW_CHAPTER="        chapter_rows=scoped_chapters.get(display.lower(),[])"
+NEW_CHAPTER="        chapter_rows=scoped_chapters.get(_sqlite_subject_key(display),[])"
 
 def apply(root:Path):
     path=Path(root)/"app.py"

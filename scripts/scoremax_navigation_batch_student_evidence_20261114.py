@@ -17,13 +17,13 @@ NEW_ANCHOR="""    # SCOREMAX_NAV_CHAPTER_EVIDENCE_ONCE_20261114: same authoritat
     validated_evidence=runtime.learner_answer_evidence(conn,student_id,programme,subject)
     evidence_by_chapter={}
     for row in validated_evidence:
-        key=str(row['chapter'] or '').strip().casefold()
+        key=str(row['chapter'] or '').casefold()  # native stored context is NOT stripped
         evidence_by_chapter.setdefault(key,[]).append(row)
     out=[]
     for idx,item in enumerate(browse_items,1):
 """
 OLD_STATS="        stats=runtime.evidence_summary(runtime.learner_answer_evidence(conn,student_id,programme,subject,source_chapter))"
-NEW_STATS="        stats=runtime.evidence_summary(evidence_by_chapter.get(source_chapter.strip().casefold(),[]))"
+NEW_STATS="        stats=runtime.evidence_summary((evidence_by_chapter.get(source_chapter.strip().casefold(),[]) if source_chapter else validated_evidence))"
 
 def apply(root:Path):
     path=Path(root)/"ux_student_batch.py"
