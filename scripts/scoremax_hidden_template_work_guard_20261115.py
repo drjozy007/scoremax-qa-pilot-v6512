@@ -39,7 +39,7 @@ def apply(root):
     if "show_subject_nav=endpoint in set().union(" not in fn or        "show_coach=endpoint not in {" not in fn:
         raise RuntimeError("HIDDEN_TEMPLATE_VISIBILITY_POLICY_DRIFT")
     replaced=fn.replace(OLD_NAV,NEW_NAV,1).replace(OLD_COACH,NEW_COACH,1)
-    replaced=replaced.replace(NEW_NAV, "    # "+MARKER+": preserve the accepted visibility flag.\n    "+NEW_NAV,1)
+    replaced=replaced.replace(NEW_NAV, NEW_NAV+"  # "+MARKER+": native flag unchanged",1)
     after=before.replace(fn,replaced,1)
     compile(after,str(path),"exec")
     a,b=functions(before),functions(after)
