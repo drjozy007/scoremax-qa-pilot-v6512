@@ -307,6 +307,19 @@ jobs:
               assert r['shadow_enabled'] and not r['ph_governed_fixture_qualified']
               print('SCOREMAX_SHADOW_GUNICORN_CAPACITY='+json.dumps(r,sort_keys=True),flush=True)
           PY
+      - name: Measure Subject chapter cards under real shadow-enabled Gunicorn concurrency
+        run: |
+          SCOREMAX_NAV_SHADOW_ENABLED=1 python tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/nav-100k-shadow-optin/state/scoremax.db --workers 1,2 --threads 4 --levels 1,10,50 --port 18851 --route /student/subject/Biology --require-shadow-fresh | tee /tmp/nav-shadow-subject-http.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(l.split('=',1)[1]) for l in Path('/tmp/nav-shadow-subject-http.log').read_text().splitlines()
+                if l.startswith('SCOREMAX_GUNICORN_ISOLATED_HTTP=')]
+          assert {(r['workers'],r['distinct_students']) for r in rows}=={(w,n) for w in (1,2) for n in (1,10,50)}
+          for r in rows:
+              assert r['shadow_enabled'] and r['route']=='/student/subject/Biology'
+              print('SCOREMAX_CHAPTER_MASTERY_SHADOW_GUNICORN='+json.dumps(r,sort_keys=True),flush=True)
+          PY
       - name: Characterize 1, 10 and 50 concurrent requests from distinct synthetic students
         run: python tests/navigation_perf_20261114/benchmark_parallel_requests.py scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --levels 1,10,50 --path /student/learn-vnext
       - name: Characterize real Gunicorn HTTP 1-worker versus 2-worker concurrency
