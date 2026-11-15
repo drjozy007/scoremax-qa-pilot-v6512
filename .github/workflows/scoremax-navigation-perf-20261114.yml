@@ -232,6 +232,36 @@ jobs:
                 'max_ms':metric['max_ms'],'single_request_target_met':metric['median_ms']<1500,
                 'concurrency_qualified':False,'governed_release_qualified':False},sort_keys=True))
           PY
+      - name: Compare native versus opt-in shadow navigation on identical 100k disposable databases
+        run: |
+          mkdir -p /tmp/nav-100k-shadow-native/state /tmp/nav-100k-shadow-optin/state
+          cp /tmp/nav-100k/state/scoremax.db /tmp/nav-100k-shadow-native/state/scoremax.db
+          cp /tmp/nav-100k/state/scoremax.db /tmp/nav-100k-shadow-optin/state/scoremax.db
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k-shadow-native/state/scoremax.db --label shadow-native | tee /tmp/nav-shadow-native.log
+          SCOREMAX_NAV_SHADOW_ENABLED=1 python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k-shadow-optin/state/scoremax.db --label shadow-optin --prepare-shadow-after-startup | tee /tmp/nav-shadow-optin.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def read(path,tag):
+              return [json.loads(line.split('=',1)[1]) for line in Path(path).read_text().splitlines()
+                      if line.startswith(tag)]
+          base=read('/tmp/nav-shadow-native.log','SCOREMAX_ROUTE_BENCH=')[0]['routes']
+          shadow=read('/tmp/nav-shadow-optin.log','SCOREMAX_ROUTE_BENCH=')[0]['routes']
+          states=read('/tmp/nav-shadow-optin.log','SCOREMAX_SHADOW_NAV_ROUTE_STATE=')
+          assert len(states)==4,('SHADOW_ROUTES_NOT_MEASURED',states)
+          assert all(not x['dirty'] and x['epochs_match'] for x in states),('SHADOW_STALE_DURING_GET',states)
+          for route,a in base.items():
+              b=shadow[route]
+              assert a['status']==b['status']==200,(route,a,b)
+              assert a['body_sha256']==b['body_sha256'],('SHADOW_LEARNER_HTML_CHANGED',route)
+              print('SCOREMAX_SHADOW_NAV_100K_AB='+json.dumps({
+                  'route':route,'native_median_ms':a['median_ms'],
+                  'shadow_median_ms':b['median_ms'],
+                  'improvement_pct':round((a['median_ms']-b['median_ms'])/a['median_ms']*100,1),
+                  'native_html_equal':True,'real_ph_fixture':False,
+                  'live_render_qualified':False,'feature_default_off':True
+              },sort_keys=True),flush=True)
+          PY
       - name: Characterize 1, 10 and 50 concurrent requests from distinct synthetic students
         run: python tests/navigation_perf_20261114/benchmark_parallel_requests.py scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --levels 1,10,50 --path /student/learn-vnext
       - name: Characterize real Gunicorn HTTP 1-worker versus 2-worker concurrency
