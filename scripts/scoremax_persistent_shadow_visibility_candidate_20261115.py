@@ -52,37 +52,45 @@ def native_live(root:Path):
     exec(compile(ast.Module(body=[nodes[1]],type_ignores=[]),str(path),"exec"),ns)
     return ns["live_question_clause"]("q")
 
-def install(conn):
-    # Disposable fixture only. Real deployment would require a separately
-    # verified migration manifest and full existing writer coverage.
-    if conn.in_transaction:conn.commit()
+def install(conn,_inject_ddl_failure=False):
+    # Disposable fixture only. No implicit commit of the caller's transaction.
+    # SQLite executescript() would silently commit prior work; execute each
+    # DDL statement inside an explicit atomic BEGIN IMMEDIATE instead.
+    if conn.in_transaction:
+        raise RuntimeError("SHADOW_INSTALL_REFUSES_OPEN_TRANSACTION")
     conn.execute("BEGIN IMMEDIATE")
     try:
-        conn.executescript("""CREATE TABLE IF NOT EXISTS sm_shadow_visibility_authority(
+        statements=(
+          """CREATE TABLE IF NOT EXISTS sm_shadow_visibility_authority(
           id INTEGER PRIMARY KEY CHECK(id=1),
           epoch INTEGER NOT NULL DEFAULT 0,
           dirty INTEGER NOT NULL CHECK(dirty IN (0,1)) DEFAULT 1,
           snapshot_epoch INTEGER NOT NULL DEFAULT -1,
           first_dirty_table TEXT DEFAULT '',
-          first_dirty_action TEXT DEFAULT '');
-        INSERT OR IGNORE INTO sm_shadow_visibility_authority(id,epoch,dirty,snapshot_epoch)
-          VALUES(1,0,1,-1);
-        CREATE TABLE IF NOT EXISTS sm_shadow_visibility_member(
+          first_dirty_action TEXT DEFAULT '')""",
+          """INSERT OR IGNORE INTO sm_shadow_visibility_authority(id,epoch,dirty,snapshot_epoch)
+          VALUES(1,0,1,-1)""",
+          """CREATE TABLE IF NOT EXISTS sm_shadow_visibility_member(
           programme TEXT NOT NULL,
           question_db_id INTEGER NOT NULL,
           subject TEXT,
           chapter TEXT,
-          PRIMARY KEY(programme,question_db_id));
-        CREATE INDEX IF NOT EXISTS sm_shadow_visibility_lookup
-          ON sm_shadow_visibility_member(programme,subject,chapter,question_db_id);
-        CREATE TABLE IF NOT EXISTS sm_shadow_visibility_manifest(
+          PRIMARY KEY(programme,question_db_id))""",
+          """CREATE INDEX IF NOT EXISTS sm_shadow_visibility_lookup
+          ON sm_shadow_visibility_member(programme,subject,chapter,question_db_id)""",
+          """CREATE TABLE IF NOT EXISTS sm_shadow_visibility_manifest(
           programme TEXT PRIMARY KEY,
           snapshot_epoch INTEGER NOT NULL,
           member_count INTEGER NOT NULL CHECK(member_count>=0),
-          visible_count INTEGER NOT NULL CHECK(visible_count>=0));
-        """)
-        # SQLite executescript() may commit transaction; installation is
-        # disposable-only. Refresh/read operations below use explicit txn.
+          visible_count INTEGER NOT NULL CHECK(visible_count>=0))""",
+        )
+        for statement in statements:
+            conn.execute(statement)
+        if not conn.in_transaction:
+            raise RuntimeError("SHADOW_INSTALL_DDL_ATOMICITY_LOST")
+        if _inject_ddl_failure:
+            raise RuntimeError("SHADOW_INJECTED_DDL_FAILURE")
+        # Refresh/read operations below use independent explicit transactions.
         # Derived tables are untrusted if they change outside a governed rebuild.
         # Their own mutations also invalidate a formerly clean snapshot.
         for table in (*WATCHED,"sm_shadow_visibility_member","sm_shadow_visibility_manifest"):
@@ -197,6 +205,33 @@ def main(root:Path):
       UPDATE questions SET family_key='FAM-'||id;
       INSERT INTO question_families SELECT family_key,'Approved',1 FROM questions;
     """)
+    # Prove that interrupted DDL cannot leave a partial schema or commit
+    # any unrelated caller transaction. No production migration is attempted.
+    with closing(sqlite3.connect(":memory:")) as probe:
+        probe.executescript("""CREATE TABLE questions(id INTEGER);
+          CREATE TABLE question_families(id INTEGER);
+          CREATE TABLE integration_ph_question_version_store(id INTEGER);
+          CREATE TABLE integration_ph_release_question_membership(id INTEGER);
+          CREATE TABLE integration_ph_content_releases(id INTEGER);
+          CREATE TABLE integration_ph_product_activation_authorizations(id INTEGER);
+          CREATE TABLE ph_bridge_staged_withdrawal_exclusions_v6611e(id INTEGER);""")
+        try:
+            install(probe,_inject_ddl_failure=True)
+        except RuntimeError as failure:
+            if str(failure)!="SHADOW_INJECTED_DDL_FAILURE":raise
+        else:
+            raise RuntimeError("SHADOW_INJECTED_DDL_FAILURE_NOT_CAUGHT")
+        remains=probe.execute("""SELECT name FROM sqlite_master
+           WHERE name LIKE 'sm_shadow_%'""").fetchall()
+        if remains:raise RuntimeError("SHADOW_DDL_PARTIAL_ROLLBACK:"+str(remains))
+        probe.execute("BEGIN")
+        try:
+            install(probe)
+        except RuntimeError as failure:
+            if str(failure)!="SHADOW_INSTALL_REFUSES_OPEN_TRANSACTION":raise
+        else:
+            raise RuntimeError("SHADOW_INSTALL_COMMITTED_CALLER_TXN")
+        finally:probe.rollback()
     try:
         triggers=install(connection)
         result=rebuild(connection,scope,contracts.programme_aliases,live)
@@ -337,6 +372,8 @@ def main(root:Path):
           "native_question_set_parity":True,
           "derived_table_tamper_invalidation":True,
           "manifest_count_guard":True,
+          "atomic_ddl_failure_rollback":True,
+          "caller_transaction_never_committed":True,
           "real_ph_fixture":False,"production_migration":False,
           "runtime_enabled":False,"production_data_touched":False
         },sort_keys=True),flush=True)
