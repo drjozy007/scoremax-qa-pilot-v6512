@@ -167,9 +167,34 @@ def main():
                         **startup_state,"workers":worker_count
                     },sort_keys=True),flush=True)
                     if startup_state["dirty"] or startup_state["epoch"]!=startup_state["snapshot_epoch"]:
-                        raise RuntimeError("SHADOW_DIRTIED_DURING_HTTP_STARTUP:"+
-                          str(startup_state["first_dirty_table"])+":"+
-                          str(startup_state["first_dirty_action"]))
+                        # ScoreMax's existing startup performs governed question
+                        # UPDATEs. The trigger MUST invalidate the projection.
+                        # Rebuild explicitly only in this disposable rehearsal
+                        # *after* Gunicorn workers initialize and *before* student
+                        # load. Never mask the dirty state or bypass triggers.
+                        scripts=Path(__file__).resolve().parents[2]/"scripts"
+                        sys.path.insert(0,str(scripts))
+                        from scoremax_persistent_shadow_visibility_candidate_20261115 import rebuild
+                        import question_contract_engine as contracts
+                        with closing(sqlite3.connect(db)) as refresh_db:
+                            refresh_db.row_factory=sqlite3.Row
+                            refresh_db.create_function(
+                                "scoremax_release_programme",2,
+                                contracts.programme_for_release,deterministic=True)
+                            outcome=rebuild(
+                                refresh_db,scoremax_production.scoremax._programme_scope_sql,
+                                scoremax_production.scoremax._programme_aliases,
+                                scoremax_production.scoremax.live_question_clause("q"))
+                        print("SCOREMAX_SHADOW_POST_STARTUP_REFRESH="+json.dumps({
+                            "workers":worker_count,"initial_dirty":True,
+                            "initial_source_table":startup_state["first_dirty_table"],
+                            "initial_action":startup_state["first_dirty_action"],
+                            "rebuild_ms":outcome["rebuild_ms"],
+                            "explicit_disposable_rebuild_only":True
+                        },sort_keys=True),flush=True)
+                    verified=read_shadow_state(db)
+                    if verified["dirty"] or verified["epoch"]!=verified["snapshot_epoch"]:
+                        raise RuntimeError("SHADOW_POST_STARTUP_REBUILD_NOT_FRESH")
                 for n in levels:
                     barrier=threading.Barrier(n) if n>1 else None
                     start=time.perf_counter()
