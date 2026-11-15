@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — adversarial semantic review recorded; latest indexed mastery prefilter P0 capacity FAILED  
+**Updated:** 15 November 2026, UTC — semantic parity fixes and disposable shadow hardening CI in progress; P0 release blocked  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## Adversarial source review — 15 Nov 2026 (independent read-only audit)
@@ -20,6 +20,14 @@
 7. **Scale/storage/migration:** current request evidence reader loads all FINAL programme answers then filters in Python, so cost grows with learner history even if page only displays one chapter. The disposable shadow installer itself acknowledges `executescript()` can commit DDL, so it is **not** production rollback-safe. A shared DB conversion must preserve native SQL `lower`, UDF, NULL, JSON, identity, signed release and exactly-once grading semantics; benchmark SQLite WAL/lock, ingestion-trigger amplification and crash recovery before cutover.
 
 **Adversarial verdict:** Existing PR remains **DRAFT / UNDEPLOYED / P0 BLOCKED**. Targeted synthetic HTML parity does not cover these edge cases. Add precise chapter-whitespace and Unicode count regressions, corrupted/partial shadow projection cases, per-student and per-programme isolation, practice-only zero-weight, shared PH FSc/MDCAT membership, R2/withdrawal, mastered-then-corrected histories, concurrent grade/ACK/withdrawal and crash/restart tests. Preserve accepted formal mastery ledger and strict 50-concurrent p95 <1.5s target; no deployment or feature enablement.
+
+## 15 Nov 2026 — risk remediation implementation (PR #55 only)
+
+**Implemented, not deployed:** Commit `a5a1ed62957b083cca26c3c8efec2f8f551475f5` corrects the two independently identified semantic divergences. Chapter evidence is now grouped using the native frozen-context chapter key without stripping the source value, with the original empty-request behavior preserved; grouped/fused inventory now obtains subject lookup keys using SQLite `lower(?)`, matching native SQLite subject equality. Added `test_navigation_native_semantic_parity_20261115.py` with chapter whitespace/empty/Unicode and inventory subject case/Unicode/chapters scenarios. CI 43747360964 passed focused tests, generated runtime, HTML/route equivalence and synthetic performance stages; failed solely at the existing hard P0 concurrency gate. No live enablement.
+
+**Shadow candidate safeguard, still research only:** Commit `21cfb152da39b8583b4ae4e4e626f5844f22fa42` introduced a per-programme epoch/row-count manifest, shadow-table mutation invalidation triggers, snapshot-pinned mastery prefilter and partial-projection fallback tests. Focused CI initially discovered a **bad test fixture assumption** (hardcoded synthetic question ID absent from FSc projection). Corrected at `717fadeb6aa2b7b7a6724785431e446a7d001050` by selecting an actual governed member and asserting an UPDATE. [CI 43748178182](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43748178182) has passed syntax, focused tests, source reconstruction, writer audit and disposable durable shadow/rollback stage at this checkpoint; final run status and capacity gate must be checked, not inferred. `SCOREMAX_NAV_SHADOW_ENABLED` remains **OFF** by default; no production schema or data change.
+
+**Critical residual limits:** The manifest detects incomplete row sets and watched derived-table mutations, but it is **not a proof of all authority writer coverage**, cryptographic correctness, or heterogeneous governed PH parity. Fifteen dynamic writer candidates remain uncertified. Do not enable shadow or migrate DB until every writer/rollback path is verified, real FSc/MDCAT shared memberships and practice-only mastery equivalence pass, concurrent writes/ACK/withdrawal are qualified, and p95 <1.5s at 50 is met. Preserve 18c8c706 live ScoreMax. No Postgres provisioned; PR remains draft.
 
 ## 0. Resume here — what the next session MUST do
 
