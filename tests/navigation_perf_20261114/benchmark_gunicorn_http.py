@@ -108,6 +108,20 @@ def wait_until_ready(process,port):
         time.sleep(.5)
     raise RuntimeError("GUNICORN_NOT_READY_80S")
 
+def wait_until_all_workers_initialised(process,ready_file,workers):
+    # Gunicorn post_worker_init runs AFTER each worker has imported and
+    # initialised the app. A single successful homepage request only proves
+    # ONE worker is ready; other workers can still mutate governed questions.
+    until=time.monotonic()+65
+    while time.monotonic()<until:
+        if process.poll() is not None:
+            raise RuntimeError("GUNICORN_DIED_DURING_WORKER_INIT")
+        ready=ready_file.read_text().splitlines() if ready_file.exists() else []
+        if len(set(x for x in ready if x.strip()))>=workers:
+            return
+        time.sleep(.2)
+    raise RuntimeError("GUNICORN_ALL_WORKERS_NOT_READY:"+str(workers))
+
 def main():
     args=arguments()
     runtime=args.runtime.resolve();db=args.database.resolve()
@@ -152,7 +166,19 @@ def main():
     del serializer
     for i,worker_count in enumerate(workers):
         port=args.port+i
+        # Isolated runner only: a post-worker-init sentinel confirms every
+        # worker completed app bootstrap BEFORE we rebuild derived visibility.
+        # No production command, SQLite trigger or startup safeguard changes.
+        marker=Path(tempfile.gettempdir())/f"scoremax-perf-ready-{os.getpid()}-{i}.txt"
+        config=Path(tempfile.gettempdir())/f"scoremax-perf-worker-{os.getpid()}-{i}.py"
+        marker.unlink(missing_ok=True)
+        config.write_text(
+            "def post_worker_init(worker):\\n"
+            "    with open("+repr(str(marker))+", 'a', encoding='utf8') as stream:\\n"
+            "        stream.write(str(worker.pid)+'\\\\n')\\n",
+            encoding="utf8")
         command=[sys.executable,"-m","gunicorn","scoremax_production:application",
+                 "--config",str(config),
                  "--workers",str(worker_count),"--threads",str(args.threads),
                  "--bind",f"127.0.0.1:{port}","--timeout","120",
                  "--access-logfile","-","--error-logfile","-"]
@@ -161,6 +187,7 @@ def main():
                                   stderr=subprocess.STDOUT,start_new_session=True)
             try:
                 wait_until_ready(proc,port)
+                wait_until_all_workers_initialised(proc,marker,worker_count)
                 if args.require_shadow_fresh:
                     startup_state=read_shadow_state(db)
                     print("SCOREMAX_SHADOW_HTTP_STARTUP_STATE="+json.dumps({
@@ -239,6 +266,8 @@ def main():
                     except subprocess.TimeoutExpired:
                         os.killpg(proc.pid,signal.SIGKILL)
                         proc.wait(timeout=10)
+                config.unlink(missing_ok=True)
+                marker.unlink(missing_ok=True)
     after=snapshot(db)
     if before!=after:raise RuntimeError("PROTECTED_TABLE_ROW_COUNTS_CHANGED")
     print("SCOREMAX_GUNICORN_PROTECTED_CENSUS_UNCHANGED",flush=True)
