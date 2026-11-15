@@ -228,6 +228,45 @@ def main():
         pg_result=qualify(postgres_store)
         if sqlite_result!=pg_result:
             raise RuntimeError("CROSS_BACKEND_TRANSACTION_RESULT_DRIFT")
+        # Deliberate cross-dialect semantic checks. Native SQLite lower()
+        # is ASCII-only, while PostgreSQL lower() follows Unicode case rules.
+        # If this changes programme/subject matching, question eligibility
+        # or mastery could silently drift during a migration.
+        values=("BIOLOGY","Biology","FÍSICA","İSTANBUL","Mathematics","",None,"A_B")
+        with closing(sqlite_store.connect()) as sq,closing(postgres_store.connect()) as pg:
+            pairs=[]
+            for value in values:
+                before=sq.execute("SELECT lower(?)",(value,)).fetchone()[0]
+                pg_native=pg.execute("SELECT lower(%s)",(value,)).fetchone()[0]
+                pg_compatible=pg.execute("""SELECT translate(%s,
+                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')""",
+                    (value,)).fetchone()[0]
+                if pg_compatible!=before:
+                    raise RuntimeError("POSTGRES_SQLITE_ASCII_LOWER_PARITY_FAILED:"+repr(value))
+                pairs.append({"value":value,"sqlite_lower":before,
+                    "postgres_lower":pg_native,"compatible_lower":pg_compatible,
+                    "native_dialect_mismatch":before!=pg_native})
+            differences=[x["value"] for x in pairs if x["native_dialect_mismatch"]]
+            if "FÍSICA" not in differences:
+                raise RuntimeError("DIALECT_DIFFERENCE_FIXTURE_DID_NOT_DETECT_UNICODE")
+            # Preserve NULL and text ordering behavior in the future SQL
+            # adapter; simple casefold/lower substitution is NOT sufficient.
+            native_null=[r[0] for r in sq.execute(
+                "SELECT v FROM (SELECT NULL AS v UNION ALL SELECT 'X' AS v) ORDER BY v")]
+            pg_null=[r[0] for r in pg.execute(
+                "SELECT v FROM (SELECT NULL::text AS v UNION ALL SELECT 'X'::text AS v) t ORDER BY v")]
+            if native_null==pg_null:
+                raise RuntimeError("DIALECT_NULL_ORDER_FIXTURE_INCONCLUSIVE")
+        print("SCOREMAX_POSTGRES_DIALECT_MIGRATION_GATE="+json.dumps({
+            "source":"real_ephemeral_SQLite_and_Postgres16",
+            "cases":pairs,
+            "native_unicode_lower_mismatch_detected":True,
+            "ascii_lower_compatibility_query_passed":True,
+            "native_null_sort_difference_detected":True,
+            "application_queries_translated":False,
+            "full_scoremax_migration_ready":False,
+            "cutover":"BLOCKED_UNTIL_ALL_NATIVE_QUERY_SEMANTICS_MAPPED"
+        },sort_keys=True),flush=True)
         print("SCOREMAX_SHARED_STORE_CONTRACT_PASS="+json.dumps({
             "result":"SYNTHETIC_TRANSACTION_PARITY_PASS",
             "backend_a":"sqlite_disposable",
