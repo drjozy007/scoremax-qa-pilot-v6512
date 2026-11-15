@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — opt-in shadow 100k navigation parity PASSED, capacity still FAILED  
+**Updated:** 15 November 2026, UTC — shadow Gunicorn concurrency tested, P0 capacity still FAILED  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## 0. Resume here — what the next session MUST do
@@ -65,6 +65,15 @@
 - 100,800 **synthetic legacy** question bank, single-process Flask serial A→B route medians: Learning native **674.10ms** vs shadow **536.09ms** (20.5% directional); Subject 1042.37→911.00ms (12.6%); Chapter 1133.71→1007.06ms (11.2%); Catalogue 1025.09→893.85ms (12.8%). **All four HTML SHA-256 payload hashes identical**, all four shadow epochs remained clean and matched, on-disk projection rebuild after app startup **724.809ms**, 21 triggers present. A→B cache warming remains a confounder; do not promote these to live acceptance.
 - Existing default native Gunicorn 50-student p95 from same run **14.334s (one worker) / 11.818s (two workers)** — still FAIL, **not** a measurement with the shadow enabled. Next test must exercise shadow on via actual Gunicorn and assert persistent freshness throughout.
 - **Principal risk:** only `_subject_map` inventory benefits so far; repeated chapter mastery, availability and publication reads remain. 15 indirect/dynamic governance writers not certified; real Power House 300/1500 heterogeneous memberships and concurrent student submissions not yet tested. Do not deploy this candidate or claim thousands-of-learners capacity.
+
+## 1E. Verified checkpoint — 15 November 2026: shadow Gunicorn HTTP concurrency
+
+- Build commit **964594be0929369cd5186561cf4a4949ff81d547**, [CI run 43709920671](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43709920671), job 132799041118. Overall run FAILED at **intentionally enforced P0 1.5s gate** after shadow-enabled HTTP and freshness steps PASSED.
+- Worker startup performs governed UPDATE questions and correctly dirties the source-epoch snapshot. The **disposable test harness only** now explicitly rebuilds after Gunicorn startup and before student load. Rebuild duration ~972ms (one worker) and ~998ms (two workers); no production startup/rebuild or worker setting changed.
+- 50 synthetic distinct concurrent learners on /student/learn-vnext, 100,800 synthetic legacy questions, 1,000 synthetic accounts: native p95 **18.197s (one worker)**, **16.164s (two workers)**; opt-in shadow p95 **12.280s (one worker)**, **11.890s (two workers)**. At 10: native **3.857s / 3.828s**, shadow **2.902s / 2.635s**. Sequential nonrandomised CI measurements only; not verified on actual governed PH memberships or live Render.
+- Shadow source and snapshot epochs stayed clean across load; protected user/question/attempt/mastery/release row-count census unchanged. **Candidate improvement 26–33% at 50 students remains provisional; P0 capacity still FAILED by large margin.** No answer submissions or signed Power House ACK/withdrawal traffic were exercised.
+- Live ScoreMax remains commit **18c8c70640362aebb531651422c606bb7cf0dfaa**; PR #55 draft/undeployed, opt-in feature default OFF. Power House and production database untouched.
+- Immediate next engineering target: profile and reduce remaining synchronous learner navigation computation (chapter mastery/availability, shared Jinja context, evidence and coach), using governed subject/programme partitioning. Audit all 15 unresolved dynamic writers before any live cache installation; qualify real PH 300/1,500, concurrent submissions and signed bridge. Keep p95 <1.5s at 50 concurrent and strict rollback gates.
 
 ## 2. Why this is P0: observed evidence vs inference
 
@@ -168,6 +177,7 @@ Latest [run 43700240005](https://github.com/drjozy007/scoremax-qa-pilot-v6512/ac
 | 15 Nov | Native vs release-driven PH visibility parity in 10 scenarios PASSED; alternate query slower by ABBA and **rejected** |
 | 15 Nov | 18-scenario transactional eligibility epoch/rollback rehearsal PASSED; **no live derived projection exists** |
 | 15 Nov | Current living handoff established. Future substantive work must update these current facts and PR #55's link |
+| 15 Nov | Post-startup shadow Gunicorn parity PASSED; 50-user p95 12.280s / 11.890s, P0 still FAILED, run 43709920671 |
 
 ## 9. Update contract for every future progress checkpoint
 
