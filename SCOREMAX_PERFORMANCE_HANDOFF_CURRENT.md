@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC (GitHub/Render state verified in this session)  
+**Updated:** 15 November 2026, UTC — writer-surface audit verified; production baseline rechecked  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## 0. Resume here — what the next session MUST do
@@ -29,6 +29,16 @@
 | Student status | Do not assume zero pilot users or no new releases solely from older checkpoints. Current live users, released inventory and ACK counts require live, read-only reconciliation |
 
 **Protected baseline:** Keep ScoreMax commit **18c8c706...** and current production DB/WAL/backup lineage intact. No PR #55 migration or runtime code has been deployed to the live service.
+
+## 1A. Latest checkpoint — 15 November 2026: real writer-surface inventory
+
+- **Source-locked implementation:** `scripts/scoremax_visibility_writer_surface_audit_20261115.py` added to **existing PR #55**, latest implementation commit **acfbd6ab47e4d9303c120661b0888fa06b73ff5d**. Production untouched.
+- **CI:** [Run 43702523991](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43702523991), job 132776539228. Focused source writer audit **PASSED**; overall CI **FAILED at intentionally enforced P0 p95 capacity gate** (not a production regression).
+- The generated accepted runtime contains direct SQL mutation sites in all seven governed authority tables: **questions (26 function/module locations), question_families (10), PH question version store (6), PH release membership (4), PH release table (5), product activation authorisations (3), staged withdrawal exclusions (2)**. These are *lexical function/module locations*, not audited unique transactional writers.
+- **15 flagged dynamic/indirect-write candidates** across app.py, integration, bridge and auxiliary engines still need manual inspection. Some may be false positives; none is certified safe or ignored merely because it is dynamic. Source audit reports `all_writers_certified=false`.
+- Explicit native writers include `_activate_release`, `_stage_question_version`, `_withdraw_release`, `authorize_product_activation`, `_withdraw_one`, family edits, admin question edits, import and rollback. This confirms a shared invalidation boundary is viable but not yet proven exhaustive.
+- Observed Gunicorn test in that run (synthetic CI only): 50-user p95 **22.885 s** with one worker and **22.480 s** with two. **P0 remains FAILED**. No student writes exercised, real PH fixture still PENDING.
+- **Decision:** Do **not** activate a materialised eligibility cache until every dynamic source mutation and transactional boundary is reviewed. Next: implement a **disposable-only, feature-OFF-derived visibility projection** with indexed reads, transactional stale fallback and rollback; independently test 300/1,500/100k scale, write amplification and native parity before runtime integration.
 
 ## 2. Why this is P0: observed evidence vs inference
 
