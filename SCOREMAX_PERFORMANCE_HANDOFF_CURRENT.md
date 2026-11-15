@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — unexpected submit rollback and PostgreSQL dialect semantics exercised; P0 launch remains blocked  
+**Updated:** 15 November 2026, UTC — unexpected-submit recovery + PostgreSQL dialect and snapshot isolation tests passed; production launch P0 blocked  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## Adversarial source review — 15 Nov 2026 (independent read-only audit)
@@ -67,6 +67,16 @@
 **PostgreSQL cutover semantic safeguard:** `92b0bfc6fed96701d8294172a4b77bef303d9156` extends the existing ephemeral PostgreSQL 16 / SQLite synthetic parity CI. Exact same inputs include non-ASCII subject labels such as `FÍSICA`, `İSTANBUL`, ASCII cases, blanks and NULL; demonstrates native `lower()` Unicode behavior divergence and default NULL ordering difference, while PostgreSQL explicit ASCII `translate()` matches SQLite default `lower()` for the tested cases. [CI 43763007063](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43763007063) `shared_transactional_store` job **PASS**. These are migration hazards requiring explicit SQL/query parity; **do not use PostgreSQL lower(), Python lower()/casefold(), implicit database collations or NULL sort order as drop-in replacements**. No actual accepted ScoreMax runtime queries have been ported; PostgreSQL production cutover is **NOT READY**.
 
 **Current decision:** Retain live ScoreMax `18c8c70640362aebb531651422c606bb7cf0dfaa`; PR #55 stays DRAFT, shadow OFF. Formal mastery after governance correction, real PH FSc/MDCAT member fixture, concurrent real signed PH return+marking+withdrawals, full writer invalidation certification, actual Postgres application-backend migration with exact source field/identity preservation and rollback, browser/mobile and **p95 <1.5s at 50 concurrent students** are still required. Do not claim broad-launch readiness or guarantee that future defects cannot occur. Reconcile latest full CI conclusion separately from the focused PASS jobs.
+
+## 15 Nov 2026 — PostgreSQL snapshot isolation and transactional retry qualification
+
+**Source, committed candidate only:** `57212e5434c65d664ee4dc9401bd361118a05adc` preserves native assessment/mastery/PH contract code but adds source-locked rollback/connection cleanup on unexpected `submit_assessment_v4` exceptions. In a disposable real Flask POST, an injected exception *after* attempted writes yields HTTP 500, fully rolls back attempt/answers/session state, frees the write lock, and the same session retries to one FINAL result. The existing 16 concurrent synthetic submissions remain exact-once. [CI run 43762854420](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43762854420) `transaction_paths` SUCCESS; its speed gate remains a separate unresolved P0. This is not deployed.
+
+**Differential storage semantics:** `92b0bfc6fed96701d8294172a4b77bef303d9156` proves SQLite default ASCII-only `lower()` and NULL sort differ from PostgreSQL, and an explicit PostgreSQL `translate()` expression matches tested SQLite lowercase semantics. `53b0d35b18f1da5ad561bcb7eaabcf45c74a58f4` separately demonstrates SQLite WAL pinned reads remain stable across another writer's withdrawal, but PostgreSQL default `READ COMMITTED` can see the subsequent change during the same read transaction; `REPEATABLE READ` gives the tested equivalent pinned snapshot. [CI run 43763287744](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43763287744) `shared_transactional_store` SUCCESS, with explicit `SCOREMAX_POSTGRES_ISOLATION_MIGRATION_GATE` and `SCOREMAX_POSTGRES_DIALECT_MIGRATION_GATE` diagnostics.
+
+**A migration must explicitly pin a read transaction for multi-statement governed learner requests**, while a submit/withdrawal transaction must coordinate current authority, academic marking and immutable history atomically. Do not globally switch every transaction to repeatable read without first proving effect on locking, retries, timeouts and concurrent writes. PostgreSQL translation must cover the *entire* accepted ScoreMax SQL surface, user-defined functions, collation/ordering, NULL/time semantics, PH signed interfaces, SQLite row identity and historical mastery; the small ephemeral database **does not** certify this. No shared PostgreSQL service provisioned, no production migration performed.
+
+**Release remains P0 BLOCKED:** no full ScoreMax PostgreSQL backend/real-content data conversion, no real PH signed end-to-end concurrent delivery+ack+withdrawal, no certified all-writer shadow invalidation, no 50-user p95<1.5s performance acceptance, and no safe production cutover. Existing PR #55 remains DRAFT and ScoreMax live at `18c8c70640362aebb531651422c606bb7cf0dfaa`.
 
 ## 0. Resume here — what the next session MUST do
 
