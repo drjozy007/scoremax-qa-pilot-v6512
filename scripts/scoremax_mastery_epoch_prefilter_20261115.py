@@ -15,17 +15,14 @@ from scoremax_mastery_card_projection_20261114 import FIELDS
 MARKER="SCOREMAX_MASTERY_EPOCH_PREFILTER_20261115"
 SELECT="SELECT "+",".join("q."+k for k in FIELDS)+" FROM questions q WHERE {' AND '.join(clauses)}"
 OLD="    all_rows=c.execute(f\""+SELECT+"\",params).fetchall()"
-NEW="""    # SCOREMAX_MASTERY_EPOCH_PREFILTER_20261115: only when the
-    # existing published visibility projection is explicitly enabled.
-    # Preserve *all* mastery-specific academic checks and requirements.
+NEW = """    # SCOREMAX_MASTERY_EPOCH_PREFILTER_20261115: optional native-governed prefilter
     from scoremax_shadow_navigation_v1 import try_shadow_mastery_rows
     _shadow_mastery_rows=(
-        try_shadow_mastery_rows(c,programme,clauses[:-1],params[:2],"""
-        +repr(FIELDS)+""")
+        try_shadow_mastery_rows(c,programme,clauses[:-1],params[:2],["id","level","family_id","difficulty","ph_knowledge_node_ids_json","ph_question_id","ph_question_version_id","ph_question_checksum_sha256","ph_release_id","ph_evidence_role","ph_dependency_type","ph_projection_owner","source_type","ph_independent_mastery_weight","ph_response_contract","qtype","answer_config","marking_config"])
         if programme and len(clauses)==6 else None
     )
     if _shadow_mastery_rows is None:
-        all_rows=c.execute(f\""""+SELECT+"""\",params).fetchall()
+        all_rows=c.execute(f"SELECT q.id,q.level,q.family_id,q.difficulty,q.ph_knowledge_node_ids_json,q.ph_question_id,q.ph_question_version_id,q.ph_question_checksum_sha256,q.ph_release_id,q.ph_evidence_role,q.ph_dependency_type,q.ph_projection_owner,q.source_type,q.ph_independent_mastery_weight,q.ph_response_contract,q.qtype,q.answer_config,q.marking_config FROM questions q WHERE {' AND '.join(clauses)}",params).fetchall()
     else:
         all_rows=_shadow_mastery_rows"""
 
