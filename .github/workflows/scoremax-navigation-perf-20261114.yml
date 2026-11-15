@@ -23,6 +23,7 @@ on:
       - scripts/scoremax_shared_database_preflight_20261115.py
       - scripts/scoremax_ephemeral_postgres_contract_20261115.py
       - scripts/scoremax_native_ack_lease_rehearsal_20261115.py
+      - scripts/scoremax_synthetic_signed_ack_roundtrip_20261115.py
       - scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
       - scripts/scoremax_shadow_navigation_v1.py
       - scripts/scoremax_nav_shadow_integration_delta_20261115.py
@@ -431,5 +432,7 @@ jobs:
         run: python -B scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py scoremax_runtime_v669b
       - name: Verify native Power House outbox claim leases under concurrent workers
         run: python -B scripts/scoremax_native_ack_lease_rehearsal_20261115.py scoremax_runtime_v669b
+      - name: Verify signed Power House withdrawal ACK contract against fake HTTPS peer
+        run: python -B scripts/scoremax_synthetic_signed_ack_roundtrip_20261115.py scoremax_runtime_v669b
       - name: Verify cross-market withdrawal and release-source concurrency
         run: python -B scripts/scoremax_governed_concurrent_contract_20261115.py scoremax_runtime_v669b
