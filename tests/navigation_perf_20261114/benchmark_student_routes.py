@@ -294,5 +294,20 @@ else:
                        "response_content_encoding":response.headers.get("Content-Encoding",""),
                        "min_ms":round(min(measurements),2),"max_ms":round(max(measurements),2),
                        "body_sha256":digest}
+    # Hidden navigation controls must remain bit-for-bit equivalent too.
+    # Derive routes from accepted Flask endpoint names; never invent URLs.
+    hidden_endpoints=("community_home","science_genius_home")
+    hidden_probes={}
+    for endpoint in hidden_endpoints:
+        matches=[str(rule) for rule in app.url_map.iter_rules()
+                 if rule.endpoint==endpoint and "GET" in rule.methods and not rule.arguments]
+        if not matches:raise RuntimeError("HIDDEN_ROUTE_NOT_PRESENT:"+endpoint)
+        target_path=sorted(matches,key=len)[0]
+        response=client.get(target_path,base_url="https://localhost")
+        hidden_probes[endpoint]={"status":response.status_code,
+             "body_sha256":hashlib.sha256(response.data).hexdigest(),
+             "bytes":len(response.data),"endpoint":endpoint}
+    print("SCOREMAX_HIDDEN_ROUTE_PROBE="+json.dumps({
+        "label":args.label,"routes":hidden_probes},sort_keys=True),flush=True)
     c.close()
     print("SCOREMAX_ROUTE_BENCH="+json.dumps({"label":args.label,"routes":results},sort_keys=True))
