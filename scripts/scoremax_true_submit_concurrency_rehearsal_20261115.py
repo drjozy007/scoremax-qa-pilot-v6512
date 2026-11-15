@@ -163,6 +163,65 @@ def main(runtime:Path):
                     raise RuntimeError("PRACTICE_WRONGFULLY_AWARDED_MASTERY_RECORD")
             if c.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]!=3:
                 raise RuntimeError("CROSS_SESSION_ATTEMPTS_DUPLICATED")
+            # Fail *after* frozen answer and attempt rows are written, before
+            # the transaction commits, then verify the same session can retry.
+            if "SCOREMAX_SUBMIT_UNEXPECTED_ROLLBACK_20261115" not in (
+                runtime/"app.py").read_text(encoding="utf8"):
+                raise RuntimeError("UNEXPECTED_EXCEPTION_SOURCE_GUARD_NOT_APPLIED")
+            from unittest.mock import patch
+            failure_uid=user_ids[0]
+            failure_qid=session_ids[0][1]
+            failure_answer=session_ids[0][2]
+            extra=sm.create_assessment_session(c,failure_uid,"practice",None,
+                [failure_qid],{"programme":"FSc Part 1","subject":"Biology",
+                  "scope":"chapter","chapters":"Synthetic Chapter 1"})
+            c.commit()
+            if not extra:raise RuntimeError("FAILURE_REHEARSAL_SESSION_MISSING")
+            extra_client=client_for(failure_uid)
+            saved=extra_client.post(f"/test/session/{extra}",
+                data={"_csrf_token":"synthetic-csrf","response_present":"1",
+                      "answer":failure_answer,"action":"review"},
+                base_url="https://localhost")
+            if saved.status_code not in (200,302):
+                raise RuntimeError("FAILURE_REHEARSAL_ANSWER_SAVE_FAILED")
+            def fail_after_write(*args,**kwargs):
+                output=original_save(*args,**kwargs)
+                if kwargs.get("status")=="submitted" and kwargs.get("commit") is False:
+                    raise RuntimeError("INJECTED_AFTER_ATTEMPT_AND_ANSWER_INSERT")
+                return output
+            original_save=sm.save_assessment
+            with patch.object(sm,"save_assessment",side_effect=fail_after_write):
+                failed=extra_client.post(f"/test/session/{extra}/submit",
+                    data={"_csrf_token":"synthetic-csrf"},
+                    base_url="https://localhost")
+            if failed.status_code!=500:
+                raise RuntimeError("UNEXPECTED_ERROR_DID_NOT_PROPAGATE_AS_500:"+
+                    str(failed.status_code))
+            if c.execute("SELECT COUNT(*) FROM attempts WHERE assessment_session_id=?",
+                (extra,)).fetchone()[0]:
+                raise RuntimeError("FAILED_SUBMISSION_LEFT_ORPHAN_ATTEMPT")
+            check=c.execute("SELECT status,submitted_attempt_id FROM assessment_sessions WHERE id=?",
+                (extra,)).fetchone()
+            if check["status"]!="in_progress" or check["submitted_attempt_id"]:
+                raise RuntimeError("FAILED_SUBMISSION_CHANGED_FROZEN_SESSION")
+            # A fresh connection must obtain a write lock immediately.
+            with closing(sm.db()) as retry_conn:
+                retry_conn.execute("BEGIN IMMEDIATE")
+                retry_conn.execute("ROLLBACK")
+            retried=extra_client.post(f"/test/session/{extra}/submit",
+                data={"_csrf_token":"synthetic-csrf"},
+                base_url="https://localhost")
+            if retried.status_code!=302:
+                raise RuntimeError("ROLLED_BACK_SUBMISSION_CANNOT_RETRY:"+
+                    str(retried.status_code))
+            if c.execute("SELECT COUNT(*) FROM attempts WHERE assessment_session_id=?",
+                (extra,)).fetchone()[0]!=1:
+                raise RuntimeError("RECOVERED_SUBMISSION_DUPLICATE_OR_MISSING")
+            print("SCOREMAX_SUBMIT_UNEXPECTED_ERROR_RECOVERY_PASS="+json.dumps({
+                "unexpected_failure_propagated_as_500":True,
+                "attempt_answer_and_session_rollback":True,
+                "write_lock_released":True,"same_session_retry_finalised_once":True,
+                "production_data_touched":False},sort_keys=True),flush=True)
             if c.execute("PRAGMA integrity_check").fetchone()[0]!="ok":
                 raise RuntimeError("DISPOSABLE_DATABASE_CORRUPTED")
             print("SCOREMAX_REAL_SUBMIT_CONCURRENCY_PASS="+json.dumps({
