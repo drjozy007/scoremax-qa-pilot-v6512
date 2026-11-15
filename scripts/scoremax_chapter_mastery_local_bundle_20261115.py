@@ -11,7 +11,7 @@ No cross-request/shared cache, no schema, no academic or release policy edit.
 Direct chapter_mastery_opportunity callers keep their original execution.
 """
 from __future__ import annotations
-import ast, hashlib, json
+import ast, hashlib, json, textwrap
 from pathlib import Path
 
 MARKER="SCOREMAX_CHAPTER_MASTERY_LOCAL_BUNDLE_20261115"
@@ -19,28 +19,28 @@ OLD_HEADER="def chapter_mastery_opportunity(c,student_id,subject,chapter,program
 NEW_HEADER="def chapter_mastery_opportunity(c,student_id,subject,chapter,programme='',_read_bundle=None):"
 OLD_BLUEPRINT="governing_blueprint=active_assessment_blueprint(c,programme) if programme else None"
 NEW_BLUEPRINT="""if _read_bundle is None or not programme:
-        governing_blueprint=active_assessment_blueprint(c,programme) if programme else None
-    else:
-        _b=_read_bundle.setdefault('blueprints',{})
-        if programme not in _b:
-            _b[programme]=active_assessment_blueprint(c,programme)
-        governing_blueprint=_b[programme]"""
-OLD_POLICY="    policy=mastery_policy(c,level)"
-NEW_POLICY="""    if _read_bundle is None:
-        policy=mastery_policy(c,level)
-    else:
-        _p=_read_bundle.setdefault('policies',{})
-        if level not in _p:
-            _p[level]=mastery_policy(c,level)
-        policy=_p[level]"""
+    governing_blueprint=active_assessment_blueprint(c,programme) if programme else None
+else:
+    _b=_read_bundle.setdefault('blueprints',{})
+    if programme not in _b:
+        _b[programme]=active_assessment_blueprint(c,programme)
+    governing_blueprint=_b[programme]"""
+OLD_POLICY="policy=mastery_policy(c,level)"
+NEW_POLICY="""if _read_bundle is None:
+    policy=mastery_policy(c,level)
+else:
+    _p=_read_bundle.setdefault('policies',{})
+    if level not in _p:
+        _p[level]=mastery_policy(c,level)
+    policy=_p[level]"""
 OLD_ACCESS="access=get_access_profile(c,student_id)"
 NEW_ACCESS="""if _read_bundle is None:
-        access=get_access_profile(c,student_id)
-    else:
-        _a=_read_bundle.setdefault('access',{})
-        if student_id not in _a:
-            _a[student_id]=get_access_profile(c,student_id)
-        access=_a[student_id]"""
+    access=get_access_profile(c,student_id)
+else:
+    _a=_read_bundle.setdefault('access',{})
+    if student_id not in _a:
+        _a[student_id]=get_access_profile(c,student_id)
+    access=_a[student_id]"""
 OLD_CHAPTER_LOC="    out=[]\n    for idx,item in enumerate(browse_items,1):"
 NEW_CHAPTER_LOC="    _mastery_card_bundle={}  # "+MARKER+": one subject-page local read bundle\n    out=[]\n    for idx,item in enumerate(browse_items,1):"
 OLD_CARD_CALL="""        mastery=runtime.chapter_mastery_opportunity(
@@ -61,6 +61,24 @@ def replace_once(content,old,new,who):
         raise RuntimeError("MASTERy_BUNDLE_SOURCE_DRIFT:"+who+":"+str(content.count(old)))
     return content.replace(old,new,1)
 
+def replace_statement_block(source,statement,new_block,where):
+    # Match a complete original Python line; derive indentation from THAT line
+    # rather than embedding guessed four/eight-space indentation in a delta.
+    # This supports both loop-body and function-body replacements reliably.
+    lines=source.splitlines(keepends=True)
+    found=[i for i,line in enumerate(lines) if line.strip()==statement.strip()]
+    if len(found)!=1:
+        raise RuntimeError("MASTERY_BUNDLE_STATEMENT_DRIFT:"+where+":"+str(len(found)))
+    index=found[0]
+    original=lines[index]
+    indent=original[:len(original)-len(original.lstrip(' \\t'))]
+    block=textwrap.dedent(new_block).strip('\\n').splitlines()
+    if not block or any(not part.strip() for part in block):
+        raise RuntimeError("MASTERY_BUNDLE_INVALID_BLOCK:"+where)
+    lines[index]='\\n'.join(indent+part for part in block)
+    if original.endswith('\\n'):lines[index]+='\\n'
+    return ''.join(lines)
+
 def extract(src,name):
     nodes=[n for n in ast.parse(src).body if isinstance(n,ast.FunctionDef) and n.name==name]
     if len(nodes)!=1:raise RuntimeError("MASTERY_BUNDLE_FUNCTION_CARDINALITY:"+name)
@@ -75,14 +93,17 @@ def apply(root):
     mastery=extract(before,"chapter_mastery_opportunity")
     cards=extract(card_before,"_chapter_snapshots")
     if MARKER in cards:
+        guards=("_b=_read_bundle.setdefault('blueprints',{})",
+                "_p=_read_bundle.setdefault('policies',{})",
+                "_a=_read_bundle.setdefault('access',{})",
+                "_read_bundle=None")
         if (cards.count(MARKER)!=1 or NEW_CARD_CALL not in cards
             or NEW_CHAPTER_LOC not in cards or NEW_HEADER not in mastery
-            or NEW_BLUEPRINT not in mastery or NEW_POLICY not in mastery
-            or NEW_ACCESS not in mastery):
+            or any(marker not in mastery for marker in guards)):
             raise RuntimeError("MASTERY_BUNDLE_PARTIAL_REPLAY")
         return {"status":"already_applied","request_local":True}
-    for old in (OLD_HEADER,OLD_BLUEPRINT,OLD_POLICY,OLD_ACCESS):
-        if mastery.count(old)!=1:raise RuntimeError("MASTERY_BUNDLE_MASTER_FUNC_DRIFT:"+old[:65])
+    if mastery.count(OLD_HEADER)!=1:
+        raise RuntimeError("MASTERY_BUNDLE_HEADER_DRIFT")
     for old in (OLD_CHAPTER_LOC,OLD_CARD_CALL):
         if cards.count(old)!=1:raise RuntimeError("MASTERY_BUNDLE_CARD_FUNC_DRIFT:"+old[:65])
     for required in (
@@ -97,10 +118,11 @@ def apply(root):
         if required not in mastery:raise RuntimeError("MASTERY_BUNDLE_GOVERNANCE_DRIFT:"+required)
     if "SCOREMAX_NAV_CHAPTER_EVIDENCE_ONCE_20261114" not in cards:
         raise RuntimeError("MASTERY_BUNDLE_ACCEPTED_EVIDENCE_BATCH_MISSING")
-    changed=mastery
-    for old,new in ((OLD_HEADER,NEW_HEADER),(OLD_BLUEPRINT,NEW_BLUEPRINT),
-                    (OLD_POLICY,NEW_POLICY),(OLD_ACCESS,NEW_ACCESS)):
-        changed=replace_once(changed,old,new,"mastery")
+    changed=replace_once(mastery,OLD_HEADER,NEW_HEADER,"mastery_header")
+    for old,new,where in ((OLD_BLUEPRINT,NEW_BLUEPRINT,"blueprint"),
+                          (OLD_POLICY,NEW_POLICY,"policy"),
+                          (OLD_ACCESS,NEW_ACCESS,"access")):
+        changed=replace_statement_block(changed,old,new,where)
     card_changed=replace_once(cards,OLD_CHAPTER_LOC,NEW_CHAPTER_LOC,"local_cards")
     card_changed=replace_once(card_changed,OLD_CARD_CALL,NEW_CARD_CALL,"mastery_call")
     after=replace_once(before,mastery,changed,"mastery_ast")
