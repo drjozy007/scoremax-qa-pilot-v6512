@@ -14,7 +14,8 @@ REQUIRED={
  "app.py":("submit_assessment_v4","guided_submit_session","process_mastery_result"),
  "scoremax_integration_v1.py":("_activate_release","_withdraw_release",
      "_claim_due","dispatch_due","_dispatch_target",
-     "dispatch_release_handoff_ack_once"),
+     "dispatch_release_handoff_ack_once",
+     "_envelope","_queue","_receipt","_dispatch_receipt_errors"),
  "scoremax_ph_bridge_v6611d.py":("_withdraw_one","admit_withdrawal_envelope","dispatch_target"),
 }
 TOKENS=("attempt_answers","mastery_records","marking_status","mastery_evidence_eligible",
