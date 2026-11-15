@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — chapter mastery read bundle qualified on synthetic fixtures; 50-user P0 still FAILED  
+**Updated:** 15 November 2026, UTC — indexed mastery prefilter subject load tested; P0 capacity FAILED  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## 0. Resume here — what the next session MUST do
@@ -22,9 +22,9 @@
 | Hosting architecture | Frankfurt, Render Standard, **1 vCPU / 2 GiB**, single instance, 1 Gunicorn worker / 4 threads, SQLite on persistent disk (reported 5 GB). Verify actual disk and free capacity before any migration |
 | Database scaling constraint | Render service with attached persistent disk is not currently horizontally scalable by simply adding web instances. Multiple Gunicorn processes on the same SQLite disk alone have **failed** the target |
 | Shared storage | Last checked workspace had **no managed PostgreSQL** and **no Key Value** instance to reuse. Do not provision a new one without measured, qualified migration/rollback design |
-| **PR #55** | **OPEN / DRAFT / NOT MERGED**; latest qualified code+CI candidate **0545346c5f9a540b44d7d08585fe780581a8538d** (15 Nov); verify new head in GitHub before mutation |
+| **PR #55** | **OPEN / DRAFT / NOT MERGED**; latest tested candidate **c5de643ef864650d8f284bcbba64e141bf14002e**; current performance P0 failed. Verify head before any mutation |
 | PR base | **18c8c70640362aebb531651422c606bb7cf0dfaa** at time of this handoff |
-| Most recent CI | [Run 43716120025](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43716120025), job 132817917450; read-bundle/idempotence/HTML parity PASSED, **FAILED intentionally at P0 performance gate** |
+| Most recent CI | [Run 43739147439](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43739147439), job 132888240293; fresh-shadow/adversarial source tests PASSED; 50-concurrent Learning/Subject performance **FAILED P0** |
 | **Power House** | Separate live production operation. Service **srv-da08cfdbedkc73a5qdr0**, governed DB **/data/power_house_review.db**. **Not inspected or modified in this performance workstream.** Verify its own latest accepted state independently if integration evidence is needed |
 | Student status | Do not assume zero pilot users or no new releases solely from older checkpoints. Current live users, released inventory and ACK counts require live, read-only reconciliation |
 
@@ -92,6 +92,16 @@
 - **Scale:** 100,800 synthetic questions, 1,000 synthetic accounts, 102,300 FINAL saved answers. Latest isolated navigation medians: Learning **0.856s**, Subject **1.304s**, Chapter **1.431s**, Catalogue **1.291s**. They are runner-specific, not stable comparative gains or live p95. Shadow-enabled Gunicorn 50 distinct concurrent GETs p95 **12.335s (1 worker)** / **11.876s (2 workers)**; native default-off p95 **16.826s / 15.154s**; still **FAILED** the 1.5-second P0 threshold. These are isolated sequential nonrandomized synthetic runs, no real PH shared-release fixture or concurrent submissions.
 - **Decision:** retain bounded code in DRAFT pending richer test evidence, but **do not treat it as a capacity resolution**. The remaining architectural blocker is high per-request CPU/SQL cost plus a single persistent SQLite service/1-vCPU instance. Another modest reduction will not achieve 50-user p95. Prioritise a governed chapter availability/mastery aggregate or indexed read-model backed by release-state mutation coverage and a qualified shared transactional database path; do not silently relax academic eligibility or add cross-user caches.
 - **Unchanged:** LIVE ScoreMax Render at `18c8c70640362aebb531651422c606bb7cf0dfaa`; Power House delivery, learner accounts and both live databases untouched; PR #55 still DRAFT and unmerged. **Next:** verify real FSc/MDCAT 300/1,500 heterogeneous release fixtures, 15 indirect writers and startup invalidation; prove multi-client read+submission+mark/ACK safety, Render-equivalent performance, migration/rollback and low-bandwidth behavior before any deploy.
+
+## 1H. Verified checkpoint — 15 November 2026: opt-in mastery eligibility prefilter & Subject-page concurrency
+
+- **Current candidate** (default OFF, only PR #55): helper in `scripts/scoremax_shadow_navigation_v1.py` and source-anchored `scripts/scoremax_mastery_epoch_prefilter_20261115.py`. Fuses the existing *fresh*, programme-keyed derived visibility into the chapter-mastery question list as a prefilter; original native SQL is retained as fail-closed fallback. Does NOT change mastery selection, previous family evidence, chapter-specific calibration, independent eligibility, marking, curriculum authority or learner UX. Test-only helper remains unqualified on real PH data and must **not** be enabled in live ScoreMax.
+- **Focused adverse tests**: `tests/navigation_perf_20261114/test_shadow_mastery_prefilter.py` checks FSc/MDCAT partition, missing/stale/dirty fallback, disabled feature, invalid field rejection and live active predicate. Synthetic fixture only; does NOT certify 15 unresolved indirect writers or real source/version/release diversity.
+- **Systemic startup safety finding**: Two-worker Gunicorn import/boot legitimately modifies `questions` AFTER the first worker becomes responsive, which invalidated the snapshot during GET testing. Replaced weak first-homepage readiness with test-only Gunicorn `post_worker_init` signals for **every worker**. Only after all workers finish app bootstrap does the disposable harness rebuild the derived snapshot; any later dirty epoch still causes test FAILURE. Production has no qualified coordinated refresh lifecycle.
+- **Qualification:** [CI run 43739147439](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43739147439), job **132888240293**, head `c5de643ef864650d8f284bcbba64e141bf14002e`: focused source/adversarial tests, four-page HTML equivalence and fresh-shadow Gunicorn tests PASSED; full CI **FAILED at existing P0 p95<1.5s latency gate**. No live code, database, Power House or Render worker count was changed.
+- **100,800 synthetic questions / 1,000 synthetic users / 102,300 finalised answers**: opt-in shadow single-request route medians (A→B, runner-specific) Learning **0.566s**, Subject **0.966s**, Chapter **1.061s**, Catalogue **0.940s**. Same HTML payloads as native in these four routes; A→B cache warming and source heterogeneity remain unqualified.
+- **True HTTP p95, 50 simultaneous synthetic learners, shadow-enabled**: Learning **9.855s (1 worker) / 9.436s (2 workers)**; **Subject chapter cards 29.781s (1 worker) / 23.810s (2 workers)**. Subject is the actual newly targeted route; NO native Subject concurrent comparator was run in this qualification, so do not claim a percent improvement from the prefilter. It remains **15–20× slower** than 1.5s target on Subject; 6–7× on Learning. These figures are isolated CI, not Render or real PH governed corpus.
+- **Decision: release blocked, candidate unaccepted.** Opt-in prefilter may be kept as a research fixture but must not be deployed or switched on in production. Do not stack further marginal Python/SQLite patches seeking a few percent. Next systemic work must quantify actual CPU time and I/O/lock waits on representative real PH, and validate a shared transactional database/independently scalable web architecture with safe migration, write/ACK/withdrawal consistency, rollback and low-bandwidth mobile checks. A single persistent SQLite Render instance has not demonstrated 50 active learners at p95 <1.5s, let alone thousands. Keep latest P0 gate red.
 
 ## 2. Why this is P0: observed evidence vs inference
 
@@ -198,6 +208,7 @@ Latest [run 43700240005](https://github.com/drjozy007/scoremax-qa-pilot-v6512/ac
 | 15 Nov | Post-startup shadow Gunicorn parity PASSED; 50-user p95 12.280s / 11.890s, P0 still FAILED, run 43709920671 |
 | 15 Nov | Hidden-template guard built and tested; 4 navigation + 2 hidden-route output checks passed, but shadow 50-user p95 16.626s / 16.502s, P0 FAILED, run 43712653072 |
 | 15 Nov | Source-derived, install-order-safe chapter mastery local read bundle tested; 50 concurrent shadow p95 12.335s / 11.876s, P0 FAILED; run 43716120025 |
+| 15 Nov | Mastery epoch prefilter & all-worker readiness tested; 50 concurrent Subject p95 29.781s / 23.810s, Learning 9.855s / 9.436s; P0 FAILED, run 43739147439 |
 
 ## 9. Update contract for every future progress checkpoint
 
