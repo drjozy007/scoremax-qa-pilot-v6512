@@ -69,9 +69,20 @@ def apply(root:Path):
         raise RuntimeError("EVIDENCE_READER_NOT_UNIQUE")
     func=ast.get_source_segment(before,matches[0]) or ""
     if MARKER in func:
-        if func.count(MARKER)!=1 or NEW_HEAD not in func or NEW_TAIL not in func:
+        # Approved follow-on immutable-scalar clone optimisation modifies only
+        # the copy helper. Recognise its exact governed markers, not arbitrary
+        # variations of the original evidence reader.
+        scalar="SCOREMAX_EVIDENCE_SCALAR_COPY_20261115" in func
+        if scalar:
+            from scoremax_evidence_scalar_copy_20261115 import (
+                NEW_KEY,NEW_ASSIGN,NEW_CACHE_RETURN,NEW_TAIL_RETURN)
+            expected=(NEW_KEY,NEW_ASSIGN,NEW_CACHE_RETURN,NEW_TAIL_RETURN)
+        else:
+            expected=(NEW_HEAD,NEW_TAIL)
+        if func.count(MARKER)!=1 or any(value not in func for value in expected):
             raise RuntimeError("EVIDENCE_REQUEST_CACHE_PARTIAL_REPLAY")
-        return {"status":"already_applied","read_only":True}
+        return {"status":"already_applied","read_only":True,
+                "compatible_scalar_clone":scalar}
     checks=((HEAD,1),(FILTER_SUBJECT,1),(FILTER_CHAPTER,1),(TAIL,1))
     for snippet,count in checks:
         if func.count(snippet)!=count:
