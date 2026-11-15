@@ -31,12 +31,16 @@ def native_live(root:Path):
     path=root/"app.py"
     tree=ast.parse(path.read_text(encoding="utf8"))
     nodes=[x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=="live_question_clause"]
-    if len(nodes)!=1:raise RuntimeError("SHADOW_NATIVE_LIVE_CLAUSE_MISSING")
-    src=ast.get_source_segment(path.read_text(encoding="utf8"),nodes[0]) or ""
+    if not nodes:raise RuntimeError("SHADOW_NATIVE_LIVE_CLAUSE_MISSING")
+    # Generated ScoreMax may contain an earlier accepted definition that is
+    # superseded later in the module. Python's effective binding is the last
+    # top-level definition; never use the first arbitrarily.
+    effective=max(nodes,key=lambda n:n.lineno)
+    src=ast.get_source_segment(path.read_text(encoding="utf8"),effective) or ""
     for token in ("question_families","review_status","active","is_demo"):
         if token not in src:raise RuntimeError("SHADOW_SOURCE_LIVE_POLICY_DRIFT:"+token)
     ns={"SCOREMAX_ENV":"production"}
-    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),"exec"),ns)
+    exec(compile(ast.Module(body=[effective],type_ignores=[]),str(path),"exec"),ns)
     return ns["live_question_clause"]("q")
 
 def install(conn):
