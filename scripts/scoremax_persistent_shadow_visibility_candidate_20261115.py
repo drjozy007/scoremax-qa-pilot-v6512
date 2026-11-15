@@ -75,10 +75,17 @@ def install(conn):
           PRIMARY KEY(programme,question_db_id));
         CREATE INDEX IF NOT EXISTS sm_shadow_visibility_lookup
           ON sm_shadow_visibility_member(programme,subject,chapter,question_db_id);
+        CREATE TABLE IF NOT EXISTS sm_shadow_visibility_manifest(
+          programme TEXT PRIMARY KEY,
+          snapshot_epoch INTEGER NOT NULL,
+          member_count INTEGER NOT NULL CHECK(member_count>=0),
+          visible_count INTEGER NOT NULL CHECK(visible_count>=0));
         """)
         # SQLite executescript() may commit transaction; installation is
         # disposable-only. Refresh/read operations below use explicit txn.
-        for table in WATCHED:
+        # Derived tables are untrusted if they change outside a governed rebuild.
+        # Their own mutations also invalidate a formerly clean snapshot.
+        for table in (*WATCHED,"sm_shadow_visibility_member","sm_shadow_visibility_manifest"):
             for action in ("INSERT","UPDATE","DELETE"):
                 name="sm_shadow_dirty_"+table+"_"+action.lower()
                 conn.execute(f"""CREATE TRIGGER IF NOT EXISTS {name} AFTER {action}
@@ -94,7 +101,7 @@ def install(conn):
         conn.rollback()
         raise
     trigger_count=conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name LIKE 'sm_shadow_dirty_%'").fetchone()[0]
-    if trigger_count != len(WATCHED)*3:raise RuntimeError("SHADOW_TRIGGER_SET_INCOMPLETE")
+    if trigger_count != (len(WATCHED)+2)*3:raise RuntimeError("SHADOW_TRIGGER_SET_INCOMPLETE")
     return trigger_count
 
 def native_rows(conn,programme,scope,aliases,live):
@@ -108,7 +115,11 @@ def rebuild(conn,scope,aliases,live):
     conn.execute("BEGIN IMMEDIATE")
     try:
         epoch,dirty=conn.execute("SELECT epoch,dirty FROM sm_shadow_visibility_authority WHERE id=1").fetchone()
+        # Mark dirty before changing derived tables; this keeps rebuild internal
+        # work from appearing as a new authoritative source mutation.
+        conn.execute("UPDATE sm_shadow_visibility_authority SET dirty=1 WHERE id=1")
         conn.execute("DELETE FROM sm_shadow_visibility_member")
+        conn.execute("DELETE FROM sm_shadow_visibility_manifest")
         sizes={}
         for programme in PROGRAMMES:
             rows=native_rows(conn,programme,scope,aliases,live)
@@ -121,6 +132,10 @@ def rebuild(conn,scope,aliases,live):
             if rows != snapshot:
                 raise RuntimeError("SHADOW_REBUILD_NATIVE_DRIFT:"+programme)
             sizes[programme]=len(rows)
+            visible_count=sum(1 for r in rows if r[1] not in (None,''))
+            conn.execute("""INSERT INTO sm_shadow_visibility_manifest(
+              programme,snapshot_epoch,member_count,visible_count)
+              VALUES(?,?,?,?)""",(programme,epoch,len(rows),visible_count))
         conn.execute("""UPDATE sm_shadow_visibility_authority SET
             snapshot_epoch=?,dirty=0,first_dirty_table='',first_dirty_action='' WHERE id=1""",(epoch,))
         conn.commit()
@@ -136,7 +151,12 @@ def read(conn,programme,scope,aliases,live):
     conn.execute("BEGIN")
     try:
         state=conn.execute("SELECT epoch,dirty,snapshot_epoch FROM sm_shadow_visibility_authority WHERE id=1").fetchone()
-        fresh=(state["dirty"]==0 and state["epoch"]==state["snapshot_epoch"])
+        manifest=conn.execute("""SELECT member_count FROM sm_shadow_visibility_manifest
+          WHERE programme=? AND snapshot_epoch=?""",(programme,state["snapshot_epoch"])).fetchone()
+        actual_count=conn.execute("""SELECT COUNT(*) FROM sm_shadow_visibility_member
+          WHERE programme=?""",(programme,)).fetchone()[0]
+        fresh=(state["dirty"]==0 and state["epoch"]==state["snapshot_epoch"]
+               and manifest is not None and manifest["member_count"]==actual_count)
         if fresh:
             rows=[(r["question_db_id"],r["subject"],r["chapter"]) for r in conn.execute(
                 "SELECT question_db_id,subject,chapter FROM sm_shadow_visibility_member WHERE programme=? ORDER BY question_db_id",
@@ -185,6 +205,19 @@ def main(root:Path):
             route,rows=read(connection,programme,scope,contracts.programme_aliases,live)
             assert route=="SHADOW"
             assert rows==native_rows(connection,programme,scope,contracts.programme_aliases,live)
+        # Even same-cardinality shadow tampering must invalidate the cache.
+        # This tests the derived-table UPDATE trigger (row-count alone cannot
+        # detect a subject/chapter substitution).
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute("""UPDATE sm_shadow_visibility_member
+             SET subject='CORRUPTED_NON_NATIVE'
+             WHERE programme='FSc Part 1' AND question_db_id=1""")
+        connection.commit()
+        if source_state(connection)["dirty"]!=1:
+            raise RuntimeError("SHADOW_DERIVED_CONTENT_MUTATION_NOT_INVALIDATED")
+        if read(connection,"FSc Part 1",scope,contracts.programme_aliases,live)[0]!="AUTHORITATIVE_FALLBACK":
+            raise RuntimeError("SHADOW_CORRUPT_PROJECTED_ROW_EXPOSED")
+        rebuild(connection,scope,contracts.programme_aliases,live)
         # First source change in one transaction increments at most once; all
         # following 1500 row changes remain dirty without 1500 state writes.
         before=source_state(connection)["epoch"]
@@ -295,6 +328,8 @@ def main(root:Path):
           "interrupted_cache_fallback_safe":True,
           "persisted_restart_recovery":True,
           "native_question_set_parity":True,
+          "derived_table_tamper_invalidation":True,
+          "manifest_count_guard":True,
           "real_ph_fixture":False,"production_migration":False,
           "runtime_enabled":False,"production_data_touched":False
         },sort_keys=True),flush=True)

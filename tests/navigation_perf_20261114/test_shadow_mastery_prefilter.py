@@ -36,6 +36,11 @@ class MasteryScopeProjection(unittest.TestCase):
         INSERT INTO sm_shadow_visibility_member VALUES('FSc Part 1',1,'Biology','Chapter 1');
         INSERT INTO sm_shadow_visibility_member VALUES('MDCAT',2,'Biology','Chapter 1');
         INSERT INTO sm_shadow_visibility_member VALUES('FSc Part 1',4,'Chemistry','Chapter 1');
+        CREATE TABLE sm_shadow_visibility_manifest(
+          programme TEXT PRIMARY KEY,snapshot_epoch INTEGER,
+          member_count INTEGER,visible_count INTEGER);
+        INSERT INTO sm_shadow_visibility_manifest VALUES
+          ('FSc Part 1',4,2,2),('MDCAT',4,1,1);
         """)
         self.clauses=["q.active=1","q.subject=?","q.chapter=?"]
         self.params=["Biology","Chapter 1"]
@@ -66,6 +71,15 @@ class MasteryScopeProjection(unittest.TestCase):
     def test_unsafe_projection_column_rejected(self):
         self.assertIsNone(module.try_shadow_mastery_rows(
             self.conn,"FSc Part 1",self.clauses,self.params,("id; DROP TABLE questions",)))
+    def test_partial_nonempty_mastery_membership_fails_closed(self):
+        self.conn.execute("""DELETE FROM sm_shadow_visibility_member
+             WHERE programme='FSc Part 1' AND question_db_id=4""")
+        self.assertIsNone(self.select("FSc Part 1"))
+
+    def test_missing_manifest_fails_closed(self):
+        self.conn.execute("DROP TABLE sm_shadow_visibility_manifest")
+        self.assertIsNone(self.select("FSc Part 1"))
+
     def test_live_predicates_remain_required(self):
         self.conn.execute("UPDATE sm_shadow_visibility_member SET question_db_id=3 WHERE programme='FSc Part 1' AND question_db_id=1")
         self.assertEqual(len(self.select("FSc Part 1")),0)

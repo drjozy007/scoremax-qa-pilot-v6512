@@ -28,6 +28,11 @@ class ShadowNavigationSafety(unittest.TestCase):
              ('FSc Part 1',3,'BIOLOGY','Chapter B'),
              ('MDCAT',1,'Biology','OPAQUE::BIOLOGY::UNIT::14'),
              ('FSc Part 2',4,'Physics','Chapter 2');
+          CREATE TABLE sm_shadow_visibility_manifest(
+            programme TEXT PRIMARY KEY,snapshot_epoch INTEGER,
+            member_count INTEGER,visible_count INTEGER);
+          INSERT INTO sm_shadow_visibility_manifest VALUES
+            ('FSc Part 1',3,3,3),('MDCAT',3,1,1),('FSc Part 2',3,1,1);
         """)
     def tearDown(self):self.c.close()
     def get(self,programme="FSc Part 1",flag="1"):
@@ -52,12 +57,26 @@ class ShadowNavigationSafety(unittest.TestCase):
         self.c.execute("UPDATE sm_shadow_visibility_authority SET dirty=0,epoch=4")
         self.assertIsNone(self.get())
         self.c.execute("UPDATE sm_shadow_visibility_authority SET snapshot_epoch=4")
+        self.assertIsNone(self.get())  # manifest epoch is still 3
+        self.c.execute("UPDATE sm_shadow_visibility_manifest SET snapshot_epoch=4")
         self.assertEqual(sum(x["question_count"] for x in self.get()),3)
     def test_missing_or_corrupt_projection_never_leaks(self):
         self.c.execute("DROP TABLE sm_shadow_visibility_member")
         self.assertIsNone(self.get())
         self.c.execute("DROP TABLE sm_shadow_visibility_authority")
         self.assertIsNone(self.get())
+    def test_partial_nonempty_projection_uses_native_fallback(self):
+        self.c.execute("""DELETE FROM sm_shadow_visibility_member
+            WHERE programme='FSc Part 1' AND question_db_id=2""")
+        self.assertEqual(self.c.execute("""SELECT COUNT(*) FROM sm_shadow_visibility_member
+            WHERE programme='FSc Part 1'""").fetchone()[0],2)
+        # Even with a falsely clean epoch, the manifest catches lost rows.
+        self.assertIsNone(self.get())
+
+    def test_missing_manifest_uses_native_fallback(self):
+        self.c.execute("DROP TABLE sm_shadow_visibility_manifest")
+        self.assertIsNone(self.get())
+
     def test_no_cached_rows_uses_native_fallback(self):
         self.c.execute("DELETE FROM sm_shadow_visibility_member WHERE programme='FSc Part 1'")
         self.assertIsNone(self.get())
