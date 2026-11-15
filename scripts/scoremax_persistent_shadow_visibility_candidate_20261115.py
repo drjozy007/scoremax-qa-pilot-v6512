@@ -208,10 +208,17 @@ def main(root:Path):
         # Even same-cardinality shadow tampering must invalidate the cache.
         # This tests the derived-table UPDATE trigger (row-count alone cannot
         # detect a subject/chapter substitution).
+        selected=connection.execute("""SELECT question_db_id FROM sm_shadow_visibility_member
+            WHERE programme='FSc Part 1' LIMIT 1""").fetchone()
+        if not selected:
+            raise RuntimeError("SHADOW_TAMPER_FIXTURE_NO_FSC_MEMBER")
         connection.execute("BEGIN IMMEDIATE")
-        connection.execute("""UPDATE sm_shadow_visibility_member
+        cur=connection.execute("""UPDATE sm_shadow_visibility_member
              SET subject='CORRUPTED_NON_NATIVE'
-             WHERE programme='FSc Part 1' AND question_db_id=1""")
+             WHERE programme='FSc Part 1' AND question_db_id=?""",
+             (selected["question_db_id"],))
+        if cur.rowcount!=1:
+            raise RuntimeError("SHADOW_TAMPER_FIXTURE_DID_NOT_UPDATE_ROW")
         connection.commit()
         if source_state(connection)["dirty"]!=1:
             raise RuntimeError("SHADOW_DERIVED_CONTENT_MUTATION_NOT_INVALIDATED")
