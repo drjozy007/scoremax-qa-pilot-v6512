@@ -44,6 +44,15 @@ def snapshot(db):
             "integration_ph_product_activation_authorizations",
             "ph_bridge_staged_withdrawal_exclusions_v6611e")}
 
+def read_shadow_state(database):
+    with closing(sqlite3.connect(database.as_uri()+"?mode=ro",uri=True)) as connection:
+        row=connection.execute("""SELECT epoch,dirty,snapshot_epoch,
+            first_dirty_table,first_dirty_action
+            FROM sm_shadow_visibility_authority WHERE id=1""").fetchone()
+        if row is None:raise RuntimeError("SHADOW_HTTP_AUTHORITY_STATE_MISSING")
+        return {"epoch":row[0],"dirty":row[1],"snapshot_epoch":row[2],
+                "first_dirty_table":row[3],"first_dirty_action":row[4]}
+
 def make_environment(database):
     root=database.parent.parent
     for name in ("state","backup","intake"):
@@ -152,6 +161,15 @@ def main():
                                   stderr=subprocess.STDOUT,start_new_session=True)
             try:
                 wait_until_ready(proc,port)
+                if args.require_shadow_fresh:
+                    startup_state=read_shadow_state(db)
+                    print("SCOREMAX_SHADOW_HTTP_STARTUP_STATE="+json.dumps({
+                        **startup_state,"workers":worker_count
+                    },sort_keys=True),flush=True)
+                    if startup_state["dirty"] or startup_state["epoch"]!=startup_state["snapshot_epoch"]:
+                        raise RuntimeError("SHADOW_DIRTIED_DURING_HTTP_STARTUP:"+
+                          str(startup_state["first_dirty_table"])+":"+
+                          str(startup_state["first_dirty_action"]))
                 for n in levels:
                     barrier=threading.Barrier(n) if n>1 else None
                     start=time.perf_counter()
@@ -165,10 +183,14 @@ def main():
                     durations=sorted(x["ms"] for x in observations)
                     p95=durations[max(0,math.ceil(.95*n)-1)]
                     if args.require_shadow_fresh:
-                        with closing(sqlite3.connect(db.as_uri()+"?mode=ro",uri=True)) as state_conn:
-                            values=state_conn.execute("SELECT epoch,dirty,snapshot_epoch FROM sm_shadow_visibility_authority WHERE id=1").fetchone()
-                            if values is None or values[1]!=0 or values[0]!=values[2]:
-                                raise RuntimeError("SHADOW_HTTP_DIRTY_DURING_NAVIGATION")
+                        state=read_shadow_state(db)
+                        if state["dirty"] or state["epoch"]!=state["snapshot_epoch"]:
+                            print("SCOREMAX_SHADOW_HTTP_DIRTY_SOURCE="+json.dumps({
+                                **state,"workers":worker_count,"students":n
+                            },sort_keys=True),flush=True)
+                            raise RuntimeError("SHADOW_HTTP_DIRTY_DURING_NAVIGATION:"+
+                                str(state["first_dirty_table"])+":"+
+                                str(state["first_dirty_action"]))
                     print("SCOREMAX_GUNICORN_ISOLATED_HTTP="+json.dumps({
                        "shadow_enabled":args.require_shadow_fresh,
                        "workers":worker_count,"threads_per_worker":args.threads,
