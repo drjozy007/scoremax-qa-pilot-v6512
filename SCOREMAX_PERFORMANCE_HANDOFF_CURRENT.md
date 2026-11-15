@@ -1,7 +1,7 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 15 November 2026, UTC — shadow Gunicorn concurrency tested, P0 capacity still FAILED  
+**Updated:** 15 November 2026, UTC — hidden-context guard tested; 50-user P0 capacity still FAILED  
 **Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
 
 ## 0. Resume here — what the next session MUST do
@@ -22,9 +22,9 @@
 | Hosting architecture | Frankfurt, Render Standard, **1 vCPU / 2 GiB**, single instance, 1 Gunicorn worker / 4 threads, SQLite on persistent disk (reported 5 GB). Verify actual disk and free capacity before any migration |
 | Database scaling constraint | Render service with attached persistent disk is not currently horizontally scalable by simply adding web instances. Multiple Gunicorn processes on the same SQLite disk alone have **failed** the target |
 | Shared storage | Last checked workspace had **no managed PostgreSQL** and **no Key Value** instance to reuse. Do not provision a new one without measured, qualified migration/rollback design |
-| **PR #55** | **OPEN / DRAFT / NOT MERGED**; candidate head **1f461ac02b64f51cea5043a409828b7352b3be56** (verify) |
+| **PR #55** | **OPEN / DRAFT / NOT MERGED**; most recent source+CI candidate **fefe7f0c1cfc3bebde547a13e1ad168f3510a3f0**; handoff-only commits advance the branch head (verify live GitHub) |
 | PR base | **18c8c70640362aebb531651422c606bb7cf0dfaa** at time of this handoff |
-| Most recent CI | [Run 43700240005](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43700240005), job 132769574659; **FAILED intentionally at P0 performance gate**, after functional/governance rehearsal stages passed |
+| Most recent CI | [Run 43712653072](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43712653072), job 132807380380; functional/HTML parity PASSED, **FAILED intentionally at P0 performance gate** |
 | **Power House** | Separate live production operation. Service **srv-da08cfdbedkc73a5qdr0**, governed DB **/data/power_house_review.db**. **Not inspected or modified in this performance workstream.** Verify its own latest accepted state independently if integration evidence is needed |
 | Student status | Do not assume zero pilot users or no new releases solely from older checkpoints. Current live users, released inventory and ACK counts require live, read-only reconciliation |
 
@@ -74,6 +74,15 @@
 - Shadow source and snapshot epochs stayed clean across load; protected user/question/attempt/mastery/release row-count census unchanged. **Candidate improvement 26–33% at 50 students remains provisional; P0 capacity still FAILED by large margin.** No answer submissions or signed Power House ACK/withdrawal traffic were exercised.
 - Live ScoreMax remains commit **18c8c70640362aebb531651422c606bb7cf0dfaa**; PR #55 draft/undeployed, opt-in feature default OFF. Power House and production database untouched.
 - Immediate next engineering target: profile and reduce remaining synchronous learner navigation computation (chapter mastery/availability, shared Jinja context, evidence and coach), using governed subject/programme partitioning. Audit all 15 unresolved dynamic writers before any live cache installation; qualify real PH 300/1,500, concurrent submissions and signed bridge. Keep p95 <1.5s at 50 concurrent and strict rollback gates.
+
+## 1F. Verified checkpoint — 15 November 2026: hidden shared-template guard and real load
+
+- **Candidate:** `scripts/scoremax_hidden_template_work_guard_20261115.py`, implementation commit `65b44c3645ed1c44a99fba17bb32178504a7508e`, corrected marker formatting in `9399fd500c7c47c98c7cb13355f895cae95d91cd`, and extra hidden-route HTML parity test code+workflow at `fefe7f0c1cfc3bebde547a13e1ad168f3510a3f0`. These are *draft build-time changes*, not accepted production.
+- **CI:** [run 43712653072](https://github.com/drjozy007/scoremax-qa-pilot-v6512/actions/runs/43712653072), job `132807380380`: build/idempotence and formal-mastery gates PASSED; baseline-vs-candidate exact HTML body checks PASSED for four learner navigation routes plus `science_genius_home` (HTTP 200). `community_home` had an HTTP 302 redirect; status/body equality PASSED but did not test its protected page after authorisation.
+- **Scale provenance:** synthetic 100,800 legacy questions, 1,000 distinct accounts, 102,300 finalised answers, not actual heterogeneous PH memberships. Shadow-enabled Gunicorn /student/learn-vnext 50 concurrent p95 **16.626s with one worker**, **16.502s with two**. Native/default-off p95 **22.406s / 21.562s** in the same run. These are sequential single-run synthetic measurements and do **not** establish production speedup.
+- **Result:** Functional equivalence PASSED within measured coverage; **P0 concurrency acceptance FAILED** (target p95 <1.5s). Do not declare the hidden-work guard a systemic fix; the code is not integrated into production and any improvement of pages with hidden navigation is unquantified. Keep owner-facing UX untouched.
+- **Priority decision:** no more speculative micro-patches just to change a percent. Evidence shows the remaining dominant cost is eager whole-chapter mastery/availability and shared context/coach computation: 203 SQLite executes on the Learning page, ~441 on Subject, and dynamic question-type processing on Chapter. Inspect multi-chapter query aggregation and native visibility projection under genuine PH contracts first. Any new cache must preserve atomic writer invalidation; 15 dynamic/indirect writer candidates are still unresolved.
+- **Next actions:** (1) profile the full request path with exact real PH 300/1,500 diverse fixtures; (2) reduce chapter/mastery-query explosion using source-locked batching or safely derived aggregate; (3) mixed 50-user GET+submit+mark+Power House ACK/withdrawal under proper transactional storage and Render-equivalent CPU; (4) verify live compression/asset payload and mobile throttling; (5) backup/rollback + owner acceptance. Do not merge, redeploy or alter live account/database/dispatcher states.
 
 ## 2. Why this is P0: observed evidence vs inference
 
@@ -178,6 +187,7 @@ Latest [run 43700240005](https://github.com/drjozy007/scoremax-qa-pilot-v6512/ac
 | 15 Nov | 18-scenario transactional eligibility epoch/rollback rehearsal PASSED; **no live derived projection exists** |
 | 15 Nov | Current living handoff established. Future substantive work must update these current facts and PR #55's link |
 | 15 Nov | Post-startup shadow Gunicorn parity PASSED; 50-user p95 12.280s / 11.890s, P0 still FAILED, run 43709920671 |
+| 15 Nov | Hidden-template guard built and tested; 4 navigation + 2 hidden-route output checks passed, but shadow 50-user p95 16.626s / 16.502s, P0 FAILED, run 43712653072 |
 
 ## 9. Update contract for every future progress checkpoint
 
