@@ -222,6 +222,66 @@ def main(root:Path):
                 assert rows==native_rows(disk,"MDCAT",scope,contracts.programme_aliases,live)
                 rebuild(disk,scope,contracts.programme_aliases,live)
                 assert read(disk,"MDCAT",scope,contracts.programme_aliases,live)[0]=="SHADOW"
+        # Characterize the same governed read shape at 100,000 synthetic
+        # questions. The added 97,000 legacy items do not pretend to be PH
+        # memberships; the existing 1,500 PH-linked records remain unchanged.
+        count_extra=97000
+        started=perf_counter()
+        connection.executemany("""INSERT INTO questions(
+            id,programme,qualification,ph_projection_owner,family_key,
+            subject,chapter,status,review_status,active,is_demo,
+            marking_config,ph_is_auto_markable)
+            VALUES(?,?,?,NULL,?,?,?,?,?,1,0,'{}',1)""",
+            [(3001+j,"FSc Part 1" if j%2==0 else "MDCAT",
+              "FSc Part 1" if j%2==0 else "MDCAT","FAM-"+str(3001+j),
+              "Biology" if j%3 else "Chemistry",
+              "Synthetic Chapter "+str((j%12)+1),"Approved","Approved")
+             for j in range(count_extra)])
+        connection.executemany(
+           "INSERT INTO question_families VALUES(?,'Approved',1)",
+           [("FAM-"+str(3001+j),) for j in range(count_extra)])
+        connection.commit()
+        if source_state(connection)["dirty"]!=1:
+            raise RuntimeError("SHADOW_100K_BULK_INSERT_NOT_INVALIDATED")
+        insertion_ms=round((perf_counter()-started)*1000,3)
+        large=rebuild(connection,scope,contracts.programme_aliases,live)
+        actual_total=connection.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+        if actual_total != 100000:raise RuntimeError("SHADOW_100K_FIXTURE_SIZE_DRIFT")
+        timings={}
+        for programme in ("FSc Part 1","MDCAT"):
+            clause,args=scope(contracts.programme_aliases(programme),"q")
+            native_sql=("SELECT lower(q.subject) subject,COUNT(*) n FROM questions q WHERE "
+                       +live+" AND "+clause+" GROUP BY lower(q.subject) ORDER BY subject")
+            shadow_sql=("SELECT lower(subject) subject,COUNT(*) n FROM sm_shadow_visibility_member "
+                        "WHERE programme=? GROUP BY lower(subject) ORDER BY subject")
+            recorded={"native":[],"shadow":[]}
+            expected=None
+            for route in ("native","shadow","shadow","native")*3:
+                started=perf_counter()
+                rows=connection.execute(native_sql,args).fetchall() if route=="native" else connection.execute(shadow_sql,(programme,)).fetchall()
+                grouped=[(r["subject"],r["n"]) for r in rows]
+                measured=(perf_counter()-started)*1000
+                if expected is None:expected=grouped
+                if grouped!=expected:raise RuntimeError("SHADOW_100K_AGGREGATION_PARITY_FAILED:"+programme)
+                recorded[route].append(measured)
+            native_ms=round(median(recorded["native"]),3)
+            shadow_ms=round(median(recorded["shadow"]),3)
+            timings[programme]={"native_ms":native_ms,"shadow_ms":shadow_ms,
+                 "improvement_pct":round((native_ms-shadow_ms)/native_ms*100,1) if native_ms else 0}
+            print("SCOREMAX_SHADOW_100K_ABBA="+json.dumps({
+                "programme":programme,"questions":actual_total,
+                "native_ms":native_ms,"shadow_ms":shadow_ms,
+                "source":"disposable_synthetic_query_only_ABBA",
+                "native_aggregation_parity":True,
+                "runtime_switched":False,"real_ph_equivalence":False
+            },sort_keys=True),flush=True)
+        print("SCOREMAX_SHADOW_100K_CHARACTERIZATION="+json.dumps({
+            "question_rows":actual_total,"bulk_insert_rows":count_extra,
+            "bulk_insert_ms":insertion_ms,"rebuild_ms":large["rebuild_ms"],
+            "shadow_counts":large["sizes"],"timings":timings,
+            "source_epoch":source_state(connection),
+            "production_data_touched":False,
+            "capacity_qualified":False},sort_keys=True),flush=True)
         print("SCOREMAX_PERSISTENT_SHADOW_PROJECTION_PASS="+json.dumps({
           "schema":SCHEMA_MARK,"source_tables":len(WATCHED),"installed_triggers":triggers,
           "initial_sizes":result["sizes"],"post_bulk_sizes":after["sizes"],
