@@ -56,7 +56,7 @@ def main(runtime:Path):
                if (isinstance(n,ast.FunctionDef) and n.name in {"question","rubric_question"})
                or (isinstance(n,ast.Assign) and any(
                     isinstance(t,ast.Name) and t.id in {"SPECS","RUBRIC"}
-                    for t in n.targets)))]
+                    for t in n.targets))]
         fixtures={"copy":copy,"json":json}
         exec(compile(ast.Module(body=nodes,type_ignores=[]),"<approved-synthetic-fixture>","exec"),fixtures)
         if "MCQ" not in fixtures["SPECS"]:raise RuntimeError("MCQ_SYNTHETIC_FIXTURE_MISSING")
@@ -122,7 +122,6 @@ def main(runtime:Path):
                                  (assessment_id,)).fetchone()
                 if stored is None or not stored["answers_json"]:
                     raise RuntimeError("ANSWER_NOT_SAVED_BEFORE_SUBMIT")
-                client.close if False else None
             c.commit()
             tasks=[(user_ids[0],session_ids[0][0])]*8 + [
                    (user_ids[1],session_ids[1][0])]*4 + [
