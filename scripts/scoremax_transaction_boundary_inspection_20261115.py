@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 REQUIRED={
- "app.py":("submit_assessment_v4","process_mastery_result"),
+ "app.py":("submit_assessment_v4","guided_submit_session","process_mastery_result"),
  "scoremax_integration_v1.py":("_activate_release","_withdraw_release"),
  "scoremax_ph_bridge_v6611d.py":("_withdraw_one",),
 }
