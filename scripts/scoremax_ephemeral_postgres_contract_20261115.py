@@ -91,6 +91,7 @@ class Store:
         with closing(self.connect()) as c:
             if self.kind=="sqlite":
                 c.executescript(CREATE_SQLITE)
+                c.execute("PRAGMA journal_mode=WAL")
             else:
                 c.execute("BEGIN")
                 for name in ("outbox","answers","attempts","withdrawals",
@@ -217,6 +218,34 @@ def qualify(store):
         "question_withdrawal_isolated":True,"practice_mastery_exclusion":True,
         "failed_transaction_rollback":True,"exactly_once_event_keys":True}
 
+
+def snapshot_isolation_rehearsal(store,repeatable):
+    """Show if a mid-request withdrawal changes an existing read snapshot."""
+    with closing(store.connect()) as reader,closing(store.connect()) as writer:
+        if store.kind=="sqlite":
+            reader.execute("BEGIN")
+        else:
+            reader.execute("BEGIN ISOLATION LEVEL "+
+              ("REPEATABLE READ" if repeatable else "READ COMMITTED"))
+        initial=reader.execute("""SELECT status FROM releases
+            WHERE release_id='REL-MDCAT'""").fetchone()[0]
+        if initial!="ACTIVE":
+            raise RuntimeError("ISOLATION_PRECONDITION_DRIFT")
+        store.begin(writer)
+        try:
+            writer.execute(store.q("""UPDATE releases SET status='STAGED'
+                WHERE release_id={p}"""),("REL-MDCAT",))
+            writer.commit()
+        except Exception:
+            writer.rollback()
+            raise
+        still=reader.execute("""SELECT status FROM releases
+            WHERE release_id='REL-MDCAT'""").fetchone()[0]
+        reader.rollback()
+    store.change_release("UPDATE releases SET status='ACTIVE' WHERE release_id={p}",
+                         ("REL-MDCAT",))
+    return still
+
 def main():
     dsn=os.environ.get("SCOREMAX_EPHEMERAL_POSTGRES_DSN","")
     if "127.0.0.1" not in dsn and "localhost" not in dsn:
@@ -228,6 +257,20 @@ def main():
         pg_result=qualify(postgres_store)
         if sqlite_result!=pg_result:
             raise RuntimeError("CROSS_BACKEND_TRANSACTION_RESULT_DRIFT")
+        sqlite_stable=snapshot_isolation_rehearsal(sqlite_store,True)
+        postgres_default=snapshot_isolation_rehearsal(postgres_store,False)
+        postgres_pinned=snapshot_isolation_rehearsal(postgres_store,True)
+        if (sqlite_stable!="ACTIVE" or postgres_default!="STAGED"
+            or postgres_pinned!="ACTIVE"):
+            raise RuntimeError("POSTGRES_GOVERNED_READ_SNAPSHOT_SEMANTICS_DRIFT:"+
+                repr((sqlite_stable,postgres_default,postgres_pinned)))
+        print("SCOREMAX_POSTGRES_ISOLATION_MIGRATION_GATE="+json.dumps({
+            "sqlite_pinned_snapshot":True,
+            "postgres_read_committed_is_not_equivalent":True,
+            "postgres_repeatable_read_pins_snapshot":True,
+            "real_postgres_application_transaction_layer":False,
+            "cutover":"BLOCKED_UNTIL_ALL_GOVERNED_READ_TRANSACTIONS_ADAPTED"
+        },sort_keys=True),flush=True)
         # Deliberate cross-dialect semantic checks. Native SQLite lower()
         # is ASCII-only, while PostgreSQL lower() follows Unicode case rules.
         # If this changes programme/subject matching, question eligibility
