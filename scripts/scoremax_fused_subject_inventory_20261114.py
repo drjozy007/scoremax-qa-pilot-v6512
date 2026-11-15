@@ -64,9 +64,18 @@ def apply(root:Path):
     if len(f)!=1:raise RuntimeError("FUSED_INVENTORY_SUBJECT_MAP_DRIFT")
     segment=ast.get_source_segment(before,f[0]) or ""
     if MARKER in segment:
-        if segment.count(MARKER)!=1 or NEW_LIVE not in segment or NEW_GROUP not in segment:
+        # The governed opt-in shadow successor wraps only the fused inventory
+        # SELECT, preserving the native query as an indented fail-closed
+        # fallback. Accept that exact marked successor, not arbitrary drift.
+        shadow="SCOREMAX_NAV_SHADOW_OPTIN_20261115" in segment
+        shadow_safe=(shadow and segment.count("SCOREMAX_NAV_SHADOW_OPTIN_20261115")==1
+                     and "inventory=try_shadow_inventory(c,programme)" in segment
+                     and "if inventory is None:" in segment
+                     and "SELECT q.subject subject,lower(q.subject) subject_key" in segment)
+        if (segment.count(MARKER)!=1 or NEW_GROUP not in segment
+            or not (NEW_LIVE in segment or shadow_safe)):
             raise RuntimeError("FUSED_INVENTORY_PARTIAL_REPLAY")
-        return {"status":"already_applied","read_only":True}
+        return {"status":"already_applied","read_only":True,"compatible_shadow":shadow_safe}
     if segment.count(OLD_LIVE)!=1 or segment.count(NEW_ANCHOR)!=1:
         raise RuntimeError("FUSED_INVENTORY_SOURCE_DRIFT")
     if "scoped_counts.get(subject.lower(),0)" not in segment or "scoped_chapters.get(display.lower(),[])" not in segment:
