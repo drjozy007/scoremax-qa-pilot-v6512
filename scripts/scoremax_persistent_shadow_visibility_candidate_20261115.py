@@ -32,15 +32,24 @@ def native_live(root:Path):
     tree=ast.parse(path.read_text(encoding="utf8"))
     nodes=[x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=="live_question_clause"]
     if not nodes:raise RuntimeError("SHADOW_NATIVE_LIVE_CLAUSE_MISSING")
-    # Generated ScoreMax may contain an earlier accepted definition that is
-    # superseded later in the module. Python's effective binding is the last
-    # top-level definition; never use the first arbitrarily.
-    effective=max(nodes,key=lambda n:n.lineno)
-    src=ast.get_source_segment(path.read_text(encoding="utf8"),effective) or ""
+    # Accepted ScoreMax wraps the original family approval gate with a
+    # guided/self-marking release fence. Reconstruct the two source functions
+    # in their actual definition order, including the captured original
+    # binding; do not accidentally test only the earlier weaker definition.
+    nodes=sorted(nodes,key=lambda n:n.lineno)
+    source=path.read_text(encoding="utf8")
+    if len(nodes)!=2:raise RuntimeError("SHADOW_LIVE_WRAPPER_CARDINALITY_DRIFT")
+    base=ast.get_source_segment(source,nodes[0]) or ""
+    wrapper=ast.get_source_segment(source,nodes[1]) or ""
     for token in ("question_families","review_status","active","is_demo"):
-        if token not in src:raise RuntimeError("SHADOW_SOURCE_LIVE_POLICY_DRIFT:"+token)
+        if token not in base:raise RuntimeError("SHADOW_SOURCE_LIVE_POLICY_DRIFT:"+token)
+    for token in ("_self_marking_original_live_question_clause_v2",
+                  "ph_is_auto_markable","guided_self_assessment"):
+        if token not in wrapper:raise RuntimeError("SHADOW_GUIDED_RELEASE_FENCE_DRIFT:"+token)
     ns={"SCOREMAX_ENV":"production"}
-    exec(compile(ast.Module(body=[effective],type_ignores=[]),str(path),"exec"),ns)
+    exec(compile(ast.Module(body=[nodes[0]],type_ignores=[]),str(path),"exec"),ns)
+    ns["_self_marking_original_live_question_clause_v2"]=ns["live_question_clause"]
+    exec(compile(ast.Module(body=[nodes[1]],type_ignores=[]),str(path),"exec"),ns)
     return ns["live_question_clause"]("q")
 
 def install(conn):
@@ -155,6 +164,8 @@ def main(root:Path):
       ALTER TABLE questions ADD COLUMN review_status TEXT DEFAULT 'Approved';
       ALTER TABLE questions ADD COLUMN active INTEGER DEFAULT 1;
       ALTER TABLE questions ADD COLUMN is_demo INTEGER DEFAULT 0;
+      ALTER TABLE questions ADD COLUMN marking_config TEXT DEFAULT '{}';
+      ALTER TABLE questions ADD COLUMN ph_is_auto_markable INTEGER DEFAULT 1;
       CREATE TABLE question_families(family_key TEXT PRIMARY KEY,review_status TEXT,active INTEGER);
       UPDATE questions SET family_key='FAM-'||id;
       INSERT INTO question_families SELECT family_key,'Approved',1 FROM questions;
