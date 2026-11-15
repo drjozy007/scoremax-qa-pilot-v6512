@@ -14,6 +14,7 @@ on:
       - scripts/scoremax_navigation_index_migration_20261114.py
       - scripts/scoremax_fused_subject_inventory_20261114.py
       - scripts/scoremax_evidence_scalar_copy_20261115.py
+      - scripts/scoremax_governed_visibility_relational_probe_20261115.py
       - tests/navigation_perf_20261114/**
       - .github/workflows/scoremax-navigation-perf-20261114.yml
 permissions:
@@ -27,13 +28,15 @@ jobs:
         with:
           persist-credentials: false
       - name: Check delta syntax
-        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py scripts/scoremax_request_evidence_reuse_20261114.py scripts/scoremax_catalogue_subject_pushdown_20261114.py scripts/scoremax_navigation_index_migration_20261114.py scripts/scoremax_fused_subject_inventory_20261114.py scripts/scoremax_evidence_scalar_copy_20261115.py
+        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py scripts/scoremax_request_evidence_reuse_20261114.py scripts/scoremax_catalogue_subject_pushdown_20261114.py scripts/scoremax_navigation_index_migration_20261114.py scripts/scoremax_fused_subject_inventory_20261114.py scripts/scoremax_evidence_scalar_copy_20261115.py scripts/scoremax_governed_visibility_relational_probe_20261115.py
       - name: Run focused query equivalence tests
         run: python -m unittest discover -s tests/navigation_perf_20261114 -v
       - name: Benchmark baseline and candidate evidence indexing
         run: python tests/navigation_perf_20261114/benchmark_evidence_index.py
       - name: Reconstruct exact accepted ScoreMax runtime without production data
         run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+      - name: Prove candidate release-driven visibility relation matches canonical PH and legacy scopes
+        run: python -B scripts/scoremax_governed_visibility_relational_probe_20261115.py scoremax_runtime_v669b
       - name: Inspect exact generated student read paths
         run: |
           python - <<'PY'
