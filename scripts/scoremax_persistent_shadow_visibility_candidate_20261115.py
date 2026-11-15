@@ -62,7 +62,9 @@ def install(conn):
           id INTEGER PRIMARY KEY CHECK(id=1),
           epoch INTEGER NOT NULL DEFAULT 0,
           dirty INTEGER NOT NULL CHECK(dirty IN (0,1)) DEFAULT 1,
-          snapshot_epoch INTEGER NOT NULL DEFAULT -1);
+          snapshot_epoch INTEGER NOT NULL DEFAULT -1,
+          first_dirty_table TEXT DEFAULT '',
+          first_dirty_action TEXT DEFAULT '');
         INSERT OR IGNORE INTO sm_shadow_visibility_authority(id,epoch,dirty,snapshot_epoch)
           VALUES(1,0,1,-1);
         CREATE TABLE IF NOT EXISTS sm_shadow_visibility_member(
@@ -83,7 +85,8 @@ def install(conn):
                     ON {table}
                     BEGIN
                     UPDATE sm_shadow_visibility_authority
-                    SET epoch=epoch+1,dirty=1
+                    SET epoch=epoch+1,dirty=1,
+                        first_dirty_table='{table}',first_dirty_action='{action}'
                     WHERE id=1 AND dirty=0;
                     END""")
         conn.commit()
@@ -118,7 +121,8 @@ def rebuild(conn,scope,aliases,live):
             if rows != snapshot:
                 raise RuntimeError("SHADOW_REBUILD_NATIVE_DRIFT:"+programme)
             sizes[programme]=len(rows)
-        conn.execute("UPDATE sm_shadow_visibility_authority SET snapshot_epoch=?,dirty=0 WHERE id=1",(epoch,))
+        conn.execute("""UPDATE sm_shadow_visibility_authority SET
+            snapshot_epoch=?,dirty=0,first_dirty_table='',first_dirty_action='' WHERE id=1""",(epoch,))
         conn.commit()
     except Exception:
         conn.rollback()
@@ -148,7 +152,8 @@ def read(conn,programme,scope,aliases,live):
         raise
 
 def source_state(conn):
-    return dict(conn.execute("SELECT epoch,dirty,snapshot_epoch FROM sm_shadow_visibility_authority WHERE id=1").fetchone())
+    return dict(conn.execute("""SELECT epoch,dirty,snapshot_epoch,first_dirty_table,first_dirty_action
+          FROM sm_shadow_visibility_authority WHERE id=1""").fetchone())
 
 def main(root:Path):
     root=root.resolve()
