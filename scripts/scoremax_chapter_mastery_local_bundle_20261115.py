@@ -71,12 +71,12 @@ def replace_statement_block(source,statement,new_block,where):
         raise RuntimeError("MASTERY_BUNDLE_STATEMENT_DRIFT:"+where+":"+str(len(found)))
     index=found[0]
     original=lines[index]
-    indent=original[:len(original)-len(original.lstrip(' \\t'))]
-    block=textwrap.dedent(new_block).strip('\\n').splitlines()
+    indent=original[:len(original)-len(original.lstrip(' \t'))]
+    block=textwrap.dedent(new_block).strip('\n').splitlines()
     if not block or any(not part.strip() for part in block):
         raise RuntimeError("MASTERY_BUNDLE_INVALID_BLOCK:"+where)
-    lines[index]='\\n'.join(indent+part for part in block)
-    if original.endswith('\\n'):lines[index]+='\\n'
+    lines[index]='\n'.join(indent+part for part in block)
+    if original.endswith('\n'):lines[index]+='\n'
     return ''.join(lines)
 
 def extract(src,name):
