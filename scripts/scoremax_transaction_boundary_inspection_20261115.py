@@ -12,8 +12,10 @@ from pathlib import Path
 
 REQUIRED={
  "app.py":("submit_assessment_v4","guided_submit_session","process_mastery_result"),
- "scoremax_integration_v1.py":("_activate_release","_withdraw_release"),
- "scoremax_ph_bridge_v6611d.py":("_withdraw_one",),
+ "scoremax_integration_v1.py":("_activate_release","_withdraw_release",
+     "_claim_due","dispatch_due","_dispatch_target",
+     "dispatch_release_handoff_ack_once"),
+ "scoremax_ph_bridge_v6611d.py":("_withdraw_one","admit_withdrawal_envelope","dispatch_target"),
 }
 TOKENS=("attempt_answers","mastery_records","marking_status","mastery_evidence_eligible",
         "BEGIN","commit(","rollback(","ACK","acknowledg","withdraw","idempot")
