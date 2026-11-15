@@ -19,12 +19,12 @@ OLD_HEADER="def chapter_mastery_opportunity(c,student_id,subject,chapter,program
 NEW_HEADER="def chapter_mastery_opportunity(c,student_id,subject,chapter,programme='',_read_bundle=None):"
 OLD_BLUEPRINT="governing_blueprint=active_assessment_blueprint(c,programme) if programme else None"
 NEW_BLUEPRINT="""if _read_bundle is None or not programme:
-    governing_blueprint=active_assessment_blueprint(c,programme) if programme else None
-else:
-    _b=_read_bundle.setdefault('blueprints',{})
-    if programme not in _b:
-        _b[programme]=active_assessment_blueprint(c,programme)
-    governing_blueprint=_b[programme]"""
+        governing_blueprint=active_assessment_blueprint(c,programme) if programme else None
+    else:
+        _b=_read_bundle.setdefault('blueprints',{})
+        if programme not in _b:
+            _b[programme]=active_assessment_blueprint(c,programme)
+        governing_blueprint=_b[programme]"""
 OLD_POLICY="    policy=mastery_policy(c,level)"
 NEW_POLICY="""    if _read_bundle is None:
         policy=mastery_policy(c,level)
@@ -35,12 +35,12 @@ NEW_POLICY="""    if _read_bundle is None:
         policy=_p[level]"""
 OLD_ACCESS="access=get_access_profile(c,student_id)"
 NEW_ACCESS="""if _read_bundle is None:
-    access=get_access_profile(c,student_id)
-else:
-    _a=_read_bundle.setdefault('access',{})
-    if student_id not in _a:
-        _a[student_id]=get_access_profile(c,student_id)
-    access=_a[student_id]"""
+        access=get_access_profile(c,student_id)
+    else:
+        _a=_read_bundle.setdefault('access',{})
+        if student_id not in _a:
+            _a[student_id]=get_access_profile(c,student_id)
+        access=_a[student_id]"""
 OLD_CHAPTER_LOC="    out=[]\n    for idx,item in enumerate(browse_items,1):"
 NEW_CHAPTER_LOC="    _mastery_card_bundle={}  # "+MARKER+": one subject-page local read bundle\n    out=[]\n    for idx,item in enumerate(browse_items,1):"
 OLD_CARD_CALL="""        mastery=runtime.chapter_mastery_opportunity(
