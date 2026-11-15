@@ -37,11 +37,12 @@ def main(root):
                     if table in body and not any(m.group(1).lower()==table for m in SQL_RE.finditer(body)):
                         hazards.append((str(file.relative_to(root)),name,table,"DYNAMIC_OR_INDIRECT_WRITE"))
     rows={table:sorted(out.get(table,set())) for table in WATCHED}
-    for table in WATCHED:
-        if not rows[table]:
-            raise RuntimeError("AUTHORITY_TABLE_WITHOUT_DETECTED_WRITER:"+table)
+    absent=[table for table in WATCHED if not rows[table]]
+    # No lexical match is an audit gap, NOT evidence that a table is immutable.
+    # Native receivers may use dynamic table names or helper-built SQL.
     print("SCOREMAX_VISIBILITY_WRITER_AUDIT="+json.dumps({
        "source":"generated_existing_runtime","tables":rows,
+       "unresolved_without_direct_lexical_writer":absent,
        "indirect_ambiguity":sorted(set(hazards))[:150],
        "all_writers_certified":False,"production_db_access":False,
        "recommended_action":"manual_review_dynamic_writers_and_atomic_invalidation_before_live_migration"
