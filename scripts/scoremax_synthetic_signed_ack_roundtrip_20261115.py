@@ -50,7 +50,10 @@ def main(runtime):
             payload={
                 "export_public_id":"SYNTHETIC-EXPORT-001",
                 "population_sha256":"a"*64,
-                "items":[],
+                "items":[{"item_public_id":"SYNTHETIC-ITEM-001",
+                          "question_public_id":"SYNTHETIC-QUESTION-001",
+                          "state":"NOT_PRESENT",
+                          "historical_attempts_preserved":True}],
                 "historical_attempts_preserved":True,
                 "scoremax_release":RELEASE,
                 "release_authority_conferred":False,
