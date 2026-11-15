@@ -25,6 +25,7 @@ def main(runtime):
         os.environ.update({
             "SCOREMAX_ENV":"production",
             "SCOREMAX_SECRET":"test-only-signed-ack-session-secret-long-string",
+            "SCOREMAX_STAGING_SESSION_SECRET":"test-only-staging-session-secret-long-string",
             "SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD":"synthetic-only-admin",
             "SCOREMAX_BOOTSTRAP_ADMIN_EMAIL":"synthetic-admin@scoremax.invalid",
             "SCOREMAX_DB":str(root/"state"/"scoremax.db"),
