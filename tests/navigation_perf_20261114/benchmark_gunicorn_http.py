@@ -173,10 +173,11 @@ def main():
         config=Path(tempfile.gettempdir())/f"scoremax-perf-worker-{os.getpid()}-{i}.py"
         marker.unlink(missing_ok=True)
         config.write_text(
-            "def post_worker_init(worker):\\n"
-            "    with open("+repr(str(marker))+", 'a', encoding='utf8') as stream:\\n"
-            "        stream.write(str(worker.pid)+'\\\\n')\\n",
-            encoding="utf8")
+            "\n".join([
+                "def post_worker_init(worker):",
+                "    with open("+repr(str(marker))+", 'a', encoding='utf8') as stream:",
+                "        stream.write(str(worker.pid)+'\\n')",
+            ])+"\n",encoding="utf8")
         command=[sys.executable,"-m","gunicorn","scoremax_production:application",
                  "--config",str(config),
                  "--workers",str(worker_count),"--threads",str(args.threads),
