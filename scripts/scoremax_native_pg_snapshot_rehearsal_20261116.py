@@ -196,9 +196,12 @@ def enforce_staging_uniqueness(pg,source,namespace,table,columns):
         sql.Identifier(table),col_spec))
     # Make duplicate-value re-insertion fail while the candidate import is
     # still in a transaction. This probes the ACTUAL PostgreSQL constraint.
-    nonempty=pg.execute(sql.SQL("SELECT {} FROM {}.{} LIMIT 1").format(
+    nonempty=pg.execute(sql.SQL("SELECT {} FROM {}.{} WHERE {} LIMIT 1").format(
        sql.SQL(",").join(sql.Identifier(x) for x in fields),
-       sql.Identifier(namespace),sql.Identifier(table))).fetchone()
+       sql.Identifier(namespace),sql.Identifier(table),
+       sql.SQL(" AND ").join(
+           sql.SQL("{} IS NOT NULL").format(sql.Identifier(x)) for x in fields)
+       )).fetchone()
     if nonempty is None or any(v is None for v in nonempty):
         raise RuntimeError("NATIVE_EXACT_ONCE_KEY_FIXTURE_NOT_EXERCISED:"+table)
     statement=sql.SQL("INSERT INTO {}.{} ({}) VALUES ({})").format(
