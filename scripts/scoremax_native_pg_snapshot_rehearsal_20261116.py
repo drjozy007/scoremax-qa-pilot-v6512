@@ -226,7 +226,10 @@ def perform_copy(source, dsn, inject_failure=False):
                                  "integration_ph_content_releases",
                                  "integration_ph_question_version_store",
                                  "integration_ph_release_question_membership",
-                                 "integration_ph_product_activation_authorizations"):
+                                 "integration_ph_product_activation_authorizations",
+                                 "integration_outbox","integration_receipts",
+                                 "mastery_records","mastery_form_results","mastery_history",
+                                 "ph_bridge_staged_withdrawal_exclusions_v6611e"):
                     if result[required]["rows"]<1:
                         raise RuntimeError("UNEXERCISED_NATIVE_CORE_LEDGER:"+required)
                 # Source snapshot remains pinned while staging checks pass.
