@@ -76,6 +76,29 @@ jobs:
             ratio=after["median_ms"]/max(1,before["median_ms"])
             result[name]={"native_ms":before["median_ms"],"candidate_ms":after["median_ms"],"ratio":round(ratio,3)}
           print("SCOREMAX_SQLITE_HTML_PARITY_PASS="+json.dumps(result,sort_keys=True))
+          # Validate the entire anonymous authentication boundary against
+          # the same accepted native runtime, not just HTML for logged-in users.
+          def anon(path):
+            for line in Path(path).read_text().splitlines():
+              if line.startswith("SCOREMAX_ANONYMOUS_NAVIGATION_PARITY="):
+                return json.loads(line.split("=",1)[1])["routes"]
+            raise AssertionError("MISSING_ANONYMOUS_PARITY:"+path)
+          anonymous_base=anon("/tmp/native-route.log")
+          anonymous_candidate=anon("/tmp/candidate-route.log")
+          assert anonymous_base==anonymous_candidate,(
+            "ANONYMOUS_ACCESS_OR_REDIRECT_BEHAVIOR_CHANGED",
+            anonymous_base,anonymous_candidate)
+          for route,entry in anonymous_candidate.items():
+            assert entry["status"]!=200 and entry["status"]<500,route
+            assert "public" not in entry["cache_control"].lower(),route
+          for route,info in new.items():
+            c=info["response_cache_control"].lower()
+            assert "public" not in c and "s-maxage" not in c,(
+              "AUTHENTICATED_STUDENT_PAGE_PUBLICLY_CACHEABLE",route,c)
+          print("SCOREMAX_ANONYMOUS_ACCESS_PARITY_PASS="+json.dumps({
+            "routes":sorted(anonymous_candidate),
+            "student_navigation_protected":True,
+            "public_http_caching_forbidden":True},sort_keys=True))
           PY
       - name: Test accepted academic marking, frozen answers and mastery evidence under SQLite candidate
         run: |
