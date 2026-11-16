@@ -7,13 +7,32 @@ PostgreSQL application migration or a production write-lock implementation.
 """
 from __future__ import annotations
 from contextlib import closing
+import ast
 import json
 from pathlib import Path
 import sqlite3
 import sys
 import tempfile
 
-from scoremax_native_pg_snapshot_rehearsal_20261116 import TABLES
+def copied_tables_from_source():
+    # Read the migration manifest without importing its psycopg runtime.
+    # Audit tools must not depend on a database adapter merely to inspect
+    # a source file; missing manifests fail before any readiness claim.
+    script=Path(__file__).with_name("scoremax_native_pg_snapshot_rehearsal_20261116.py")
+    parsed=ast.parse(script.read_text(encoding="utf8"))
+    for node in parsed.body:
+        if isinstance(node,ast.Assign) and any(
+            isinstance(target,ast.Name) and target.id=="TABLES"
+            for target in node.targets):
+            tables=ast.literal_eval(node.value)
+            if not isinstance(tables,tuple) or not all(
+                isinstance(t,str) for t in tables):
+                raise RuntimeError("INVALID_POSTGRES_COVERAGE_MANIFEST")
+            return tables
+    raise RuntimeError("MISSING_POSTGRES_COVERAGE_MANIFEST")
+
+
+TABLES=copied_tables_from_source()
 
 
 def writer_fence_rehearsal():
