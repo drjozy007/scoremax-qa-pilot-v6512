@@ -42,6 +42,13 @@ TABLES = (
 IDENT = re.compile(r"^[a-z_][a-z0-9_]*$")
 SCHEMA_PREFIX = "sm_snapshot_rehearsal_"
 
+# These exact-once boundaries are already enforced by SQLite. Do not call an
+# imported PostgreSQL database safe if they are absent after source conversion.
+CRITICAL_UNIQUES={
+    "attempts":("assessment_session_id",),
+    "integration_outbox":("contract_name","idempotency_key"),
+}
+
 
 def declared_type(value):
     """Explicitly map SQLite affinity, never make guessed application semantics."""
@@ -133,6 +140,58 @@ def schema_for(conn, table):
     return columns
 
 
+
+def source_has_strict_unique(conn,table,expected):
+    """Require an actual unconditional SQLite BINARY unique index."""
+    indices=conn.execute('PRAGMA index_list("'+table+'")').fetchall()
+    for index in indices:
+        # sequence, name, unique, origin, partial
+        if not index[2] or index[4]:
+            continue
+        name=index[1]
+        key_cols=[(row[2],row[4])
+                  for row in conn.execute('PRAGMA index_xinfo("'+name+'")')
+                  if row[5]]
+        if tuple(x[0] for x in key_cols)==tuple(expected) and all(
+            c=="BINARY" for _,c in key_cols):
+            return True
+    return False
+
+
+def enforce_staging_uniqueness(pg,source,namespace,table):
+    fields=CRITICAL_UNIQUES.get(table)
+    if fields is None:
+        return False
+    if not source_has_strict_unique(source,table,fields):
+        raise RuntimeError("NATIVE_EXACT_ONCE_UNIQUE_INDEX_MISSING:"+table)
+    index_name="sm_rehearsal_unique_"+table
+    col_spec=sql.SQL(",").join(sql.SQL("{} COLLATE {}").format(
+        sql.Identifier(x),sql.Identifier("C")) for x in fields)
+    pg.execute(sql.SQL("CREATE UNIQUE INDEX {} ON {}.{} ({})").format(
+        sql.Identifier(index_name),sql.Identifier(namespace),
+        sql.Identifier(table),col_spec))
+    # Make duplicate-value re-insertion fail while the candidate import is
+    # still in a transaction. This probes the ACTUAL PostgreSQL constraint.
+    nonempty=pg.execute(sql.SQL("SELECT {} FROM {}.{} LIMIT 1").format(
+       sql.SQL(",").join(sql.Identifier(x) for x in fields),
+       sql.Identifier(namespace),sql.Identifier(table))).fetchone()
+    if nonempty is None or any(v is None for v in nonempty):
+        raise RuntimeError("NATIVE_EXACT_ONCE_KEY_FIXTURE_NOT_EXERCISED:"+table)
+    statement=sql.SQL("INSERT INTO {}.{} ({}) VALUES ({})").format(
+       sql.Identifier(namespace),sql.Identifier(table),
+       sql.SQL(",").join(sql.Identifier(x) for x in fields),
+       sql.SQL(",").join(sql.Placeholder() for _ in fields))
+    from psycopg.errors import UniqueViolation
+    try:
+        with pg.transaction():
+            pg.execute(statement,nonempty)
+    except UniqueViolation:
+        pass
+    else:
+        raise RuntimeError("POSTGRES_EXACT_ONCE_INDEX_NOT_ENFORCED:"+table)
+    return True
+
+
 def staging_source_snapshot(source):
     if not source.is_file() or source.is_symlink() or not source.resolve().is_relative_to(Path("/tmp")):
         raise RuntimeError("DISPOSABLE_TMP_SQLITE_ONLY")
@@ -206,7 +265,10 @@ def perform_copy(source, dsn, inject_failure=False):
                     actual_count, actual_sha = fingerprint_rows(actual_data, fields)
                     if (actual_count, actual_sha) != (expected_count, expected_sha):
                         raise RuntimeError("MIGRATED_SOURCE_RECORD_MISMATCH:" + table)
+                    unique_enforced=enforce_staging_uniqueness(
+                        pg,reader,namespace,table)
                     result[table] = {
+                        "critical_unique_enforced":unique_enforced,
                         "rows": expected_count,
                         "columns": len(fields),
                         "row_fingerprint": expected_sha[:16],
@@ -278,6 +340,7 @@ def main():
         "source_to_pg_each_value_sha256_equal":True,
         "native_saved_submission_and_frozen_answer_migrated":True,
         "source_PK_identity_preserved":True,
+        "attempt_and_outbox_exact_once_indexes_enforced":True,
         "all_or_nothing_injected_rollback":True,
         "temporary_schema_cleaned":True,
         "production_data_accessed":False,
