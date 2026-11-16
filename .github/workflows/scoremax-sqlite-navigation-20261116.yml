@@ -225,28 +225,39 @@ jobs:
           python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db --apply
       - name: Measure additive SQLite index disk footprint and rollback-only bulk write cost
         run: python -B scripts/scoremax_sqlite_index_write_cost_20261116.py /tmp/sm-index-a/state/scoremax.db /tmp/sm-index-b/state/scoremax.db
-      - name: Compare same-application no-index and indexed 1/10-student HTTP
+      - name: Counterbalance cache warmup with indexed-native-native-indexed 1/10-user runs
         run: |
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-a/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19071 | tee /tmp/sqlite-noidx.log
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-b/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19072 | tee /tmp/sqlite-indexed.log
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-b/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19071 | tee /tmp/sqlite-index-1.log
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-a/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19072 | tee /tmp/sqlite-native-1.log
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-a/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19073 | tee /tmp/sqlite-native-2.log
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-b/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19074 | tee /tmp/sqlite-index-2.log
           python - <<'PY'
-          import json
+          import json,statistics
           from pathlib import Path
-          def get(file):
-              items=[]
-              for line in Path(file).read_text().splitlines():
+          def read(path):
+              rows=[]
+              for line in Path(path).read_text().splitlines():
                   if line.startswith("SCOREMAX_GUNICORN_ISOLATED_HTTP="):
-                      items.append(json.loads(line.split("=",1)[1]))
-              assert [x["distinct_students"] for x in items]==[1,10]
-              return {x["distinct_students"]:x["p95_ms"] for x in items}
-          before,after=get("/tmp/sqlite-noidx.log"),get("/tmp/sqlite-indexed.log")
-          report={str(k):{"no_index_ms":before[k],"indexed_ms":after[k],
-                            "ratio":round(after[k]/max(1,before[k]),3)}
-                  for k in (1,10)}
-          print("SCOREMAX_SQLITE_INDEX_RESEARCH_ONLY="+json.dumps({
-              "subject_http":report,"disposable_backup_and_additive_indexes_only":True,
-              "source_question_and_mastery_values_unchanged":True,
-              "live_migration_performed":False,"recommended_for_release":False,
-              "production_disk_space_unverified":True
-              },sort_keys=True))
+                      rows.append(json.loads(line.split("=",1)[1]))
+              assert [x["distinct_students"] for x in rows]==[1,10],path
+              return {x["distinct_students"]:x["p95_ms"] for x in rows}
+          indexed=[read("/tmp/sqlite-index-1.log"),read("/tmp/sqlite-index-2.log")]
+          native=[read("/tmp/sqlite-native-1.log"),read("/tmp/sqlite-native-2.log")]
+          out={}
+          for n in (1,10):
+              a=[x[n] for x in native]
+              b=[x[n] for x in indexed]
+              mid_native=statistics.median(a)
+              mid_indexed=statistics.median(b)
+              out[str(n)]={"native_runs_ms":a,"indexed_runs_ms":b,
+                  "native_median_ms":mid_native,"indexed_median_ms":mid_indexed,
+                  "indexed_to_native_ratio":round(mid_indexed/max(1,mid_native),3)}
+          print("SCOREMAX_SQLITE_INDEX_COUNTERBALANCED_RESEARCH="+json.dumps({
+              "run_order":"indexed-native-native-indexed",
+              "subject_http":out,
+              "disposable_100800_questions":True,
+              "index_ddl_production":False,
+              "causality_not_proven_without_plan_and_write_load":True,
+              "production_migration_authorized":False
+          },sort_keys=True))
           PY
