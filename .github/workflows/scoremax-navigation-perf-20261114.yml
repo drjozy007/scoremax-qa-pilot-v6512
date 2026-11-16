@@ -30,6 +30,7 @@ on:
       - scripts/scoremax_pg_native_ph_seed_20261116.py
       - scripts/scoremax_pg_historical_preservation_seed_20261116.py
       - scripts/scoremax_sqlite_cutover_schema_adversary_20261116.py
+      - scripts/scoremax_full_schema_escrow_rehearsal_20261116.py
       - scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
       - scripts/scoremax_shadow_navigation_v1.py
       - scripts/scoremax_nav_shadow_integration_delta_20261115.py
@@ -443,6 +444,10 @@ jobs:
         env:
           SCOREMAX_EPHEMERAL_PG_REHEARSAL: "1"
         run: python -B scripts/scoremax_native_pg_snapshot_rehearsal_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db
+      - name: Prove every native table and data value is covered in temporary PostgreSQL escrow
+        env:
+          SCOREMAX_EPHEMERAL_PG_REHEARSAL: "1"
+        run: python -B scripts/scoremax_full_schema_escrow_rehearsal_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db
 
   transaction_paths:
     runs-on: ubuntu-latest
