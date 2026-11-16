@@ -309,5 +309,25 @@ else:
              "bytes":len(response.data),"endpoint":endpoint}
     print("SCOREMAX_HIDDEN_ROUTE_PROBE="+json.dumps({
         "label":args.label,"routes":hidden_probes},sort_keys=True),flush=True)
+    # A paired unauthenticated route probe must never receive protected
+    # student content merely because navigation became faster. The accepted
+    # native baseline determines the exact redirect/status/body behavior.
+    anon=app.test_client()
+    restricted=("/student/learn-vnext","/student/subject/Biology",
+        "/student/chapter?subject=Biology&chapter=Synthetic%20Chapter%201")
+    anonymous={}
+    for target in restricted:
+        response=anon.get(target,base_url="https://localhost")
+        if response.status_code==200:
+            raise RuntimeError("ANONYMOUS_LEARNER_CONTENT_EXPOSED:"+target)
+        if response.status_code>=500:
+            raise RuntimeError("ANONYMOUS_LEARNER_ROUTE_SERVER_ERROR:"+target)
+        anonymous[target]={"status":response.status_code,
+            "body_sha256":hashlib.sha256(response.data).hexdigest(),
+            "location":response.location or "",
+            "cache_control":response.headers.get("Cache-Control","")}
+    print("SCOREMAX_ANONYMOUS_NAVIGATION_PARITY="+json.dumps({
+        "label":args.label,"routes":anonymous,
+        "anonymous_protected_content_allowed":False},sort_keys=True),flush=True)
     c.close()
     print("SCOREMAX_ROUTE_BENCH="+json.dumps({"label":args.label,"routes":results},sort_keys=True))
