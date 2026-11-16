@@ -31,6 +31,7 @@ on:
       - scripts/scoremax_pg_historical_preservation_seed_20261116.py
       - scripts/scoremax_sqlite_cutover_schema_adversary_20261116.py
       - scripts/scoremax_full_schema_escrow_rehearsal_20261116.py
+      - scripts/scoremax_learn_subject_evidence_grouping_20261116.py
       - scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
       - scripts/scoremax_shadow_navigation_v1.py
       - scripts/scoremax_nav_shadow_integration_delta_20261115.py
@@ -197,6 +198,11 @@ jobs:
           python -B scripts/scoremax_submit_exception_guard_20261115.py scoremax_runtime_v669b
           python -B scripts/scoremax_submit_exception_guard_20261115.py scoremax_runtime_v669b
           python -m py_compile scoremax_runtime_v669b/app.py
+      - name: Group validated Learning overview evidence once per student GET
+        run: |
+          python -B scripts/scoremax_learn_subject_evidence_grouping_20261116.py scoremax_runtime_v669b
+          python -B scripts/scoremax_learn_subject_evidence_grouping_20261116.py scoremax_runtime_v669b
+          python -m py_compile scoremax_runtime_v669b/ux_student_batch.py
       - name: Verify formal mastery and dependent-evidence exclusions against candidate
         run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py -v
       - name: Verify actual concurrent assessment POST marking and session idempotency
