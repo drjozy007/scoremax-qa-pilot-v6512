@@ -196,22 +196,32 @@ def enforce_staging_uniqueness(pg,source,namespace,table,columns):
         sql.Identifier(table),col_spec))
     # Make duplicate-value re-insertion fail while the candidate import is
     # still in a transaction. This probes the ACTUAL PostgreSQL constraint.
-    nonempty=pg.execute(sql.SQL("SELECT {} FROM {}.{} WHERE {} LIMIT 1").format(
-       sql.SQL(",").join(sql.Identifier(x) for x in fields),
+    all_names=[x["name"] for x in columns]
+    real=pg.execute(sql.SQL("SELECT {} FROM {}.{} WHERE {} LIMIT 1").format(
+       sql.SQL(",").join(sql.Identifier(x) for x in all_names),
        sql.Identifier(namespace),sql.Identifier(table),
        sql.SQL(" AND ").join(
            sql.SQL("{} IS NOT NULL").format(sql.Identifier(x)) for x in fields)
        )).fetchone()
-    if nonempty is None or any(v is None for v in nonempty):
+    if real is None:
         raise RuntimeError("NATIVE_EXACT_ONCE_KEY_FIXTURE_NOT_EXERCISED:"+table)
+    copy_row=list(real)
+    pk=[x for x in columns if x["primary_key_rank"]>0]
+    if len(pk)!=1 or pk[0]["postgres_type"]!="BIGINT":
+        raise RuntimeError("EXACT_ONCE_TEST_NEEDS_SINGLE_INTEGER_PRIMARY_KEY:"+table)
+    pk_i=all_names.index(pk[0]["name"])
+    maximum=pg.execute(sql.SQL("SELECT MAX({}) FROM {}.{}").format(
+       sql.Identifier(pk[0]["name"]),sql.Identifier(namespace),
+       sql.Identifier(table))).fetchone()[0]
+    copy_row[pk_i]=int(maximum)+1000000
     statement=sql.SQL("INSERT INTO {}.{} ({}) VALUES ({})").format(
        sql.Identifier(namespace),sql.Identifier(table),
-       sql.SQL(",").join(sql.Identifier(x) for x in fields),
-       sql.SQL(",").join(sql.Placeholder() for _ in fields))
+       sql.SQL(",").join(sql.Identifier(x) for x in all_names),
+       sql.SQL(",").join(sql.Placeholder() for _ in all_names))
     from psycopg.errors import UniqueViolation
     try:
         with pg.transaction():
-            pg.execute(statement,nonempty)
+            pg.execute(statement,tuple(copy_row))
     except UniqueViolation:
         pass
     else:
