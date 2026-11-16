@@ -107,6 +107,8 @@ def audit_schema(path):
         if missing:raise RuntimeError("PROTECTED_NATIVE_TABLE_MISSING:"+repr(missing))
         extra=sorted(names.difference(TABLES))
         protected_indexes=0
+        protected_user_defined_indexes=0
+        protected_autoindexes=0
         protected_partial_indexes=0
         protected_expression_indexes=0
         protected_triggers=[]
@@ -141,6 +143,8 @@ def audit_schema(path):
                 expression_indexes+=int(is_expression)
                 if table in TABLES:
                     protected_indexes+=1
+                    protected_user_defined_indexes+=int(row[3]=="c")
+                    protected_autoindexes+=int(row[3] in ("pk","u"))
                     protected_partial_indexes+=int(bool(row[4]))
                     protected_expression_indexes+=int(is_expression)
             foreign_keys+=len(c.execute(
@@ -152,11 +156,16 @@ def audit_schema(path):
         return {
             "source_tables_total":len(tables),
             "protected_table_source_indexes":protected_indexes,
+            "protected_table_user_defined_indexes":protected_user_defined_indexes,
+            "protected_table_primary_or_unique_autoindexes":protected_autoindexes,
             "protected_table_partial_indexes":protected_partial_indexes,
             "protected_table_expression_indexes":protected_expression_indexes,
             "protected_table_attached_triggers":protected_triggers[:24],
             "copy_prototype_restores_only_primary_and_two_critical_unique_indexes":True,
-            "unported_source_index_count_lower_bound":max(0,protected_indexes-2),
+            "unverified_user_defined_index_definitions":max(
+                0,protected_user_defined_indexes-2),
+            "unported_source_trigger_count":len(triggers),
+            "restored_source_trigger_count":0,
             "source_schema_is_complete_in_pg":False,
             "protected_copy_tables":len(TABLES),
             "not_copied_tables":len(extra),
@@ -194,16 +203,18 @@ def main():
         # Release-blocking by design until full native SQL, schema and
         # write-epoch/fencing proof exist. Do not set false pass flags.
         if (report["not_copied_tables"]!=0 or
-            report["unported_source_index_count_lower_bound"]!=0 or
-            report["source_triggers_count"]!=0 or
+            report["unverified_user_defined_index_definitions"]!=0 or
+            report["unported_source_trigger_count"]!=0 or
             not lock["production_writer_fence_installed"] or
             not report["all_source_schema_objects_migrated"] or
             not report["all_academic_read_write_paths_migrated"]):
             raise RuntimeError("P0_FULL_SCHEMA_CUTOVER_NOT_QUALIFIED:"
                 +str(report["not_copied_tables"])+" unmigrated tables; "
                 +str(report["unmigrated_nonempty_table_count"])+" nonempty; "
-                +str(report["unported_source_index_count_lower_bound"])
-                +" protected source indexes not ported; no production writer fence")
+                +str(report["unverified_user_defined_index_definitions"])
+                +" unverified declared index definitions; "
+                +str(report["unported_source_trigger_count"])
+                +" native triggers not ported; no production writer fence")
 
 
 if __name__=="__main__":main()
