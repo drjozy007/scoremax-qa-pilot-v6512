@@ -146,9 +146,21 @@ def source_has_strict_unique(conn,table,expected):
     indices=conn.execute('PRAGMA index_list("'+table+'")').fetchall()
     for index in indices:
         # sequence, name, unique, origin, partial
-        if not index[2] or index[4]:
+        if not index[2]:
             continue
         name=index[1]
+        if index[4]:
+            # SQLite uses a partial unique index for session identity.
+            # PostgreSQL plain UNIQUE has the same NULL-distinctness on
+            # this specific one-column key. Accept only this exact source
+            # predicate, never arbitrary partial indexes.
+            defined=conn.execute("SELECT sql FROM sqlite_master WHERE name=? AND type='index'",
+                                 (name,)).fetchone()
+            ddl=(defined[0] or "") if defined else ""
+            if (tuple(expected)!=("assessment_session_id",) or
+                re.search(r"\\bWHERE\\s+assessment_session_id\\s+IS\\s+NOT\\s+NULL\\s*$",
+                          ddl,re.I) is None):
+                continue
         key_cols=[(row[2],row[4])
                   for row in conn.execute('PRAGMA index_xinfo("'+name+'")')
                   if row[5]]
