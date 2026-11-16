@@ -316,7 +316,7 @@ def source_records(conn, table, fields):
             yield tuple(row)
 
 
-def perform_copy(source, dsn, inject_failure=False):
+def perform_copy(source, dsn, inject_failure=False, inject_corruption=False):
     if "127.0.0.1" not in dsn and "localhost" not in dsn:
         raise RuntimeError("EPHEMERAL_LOCAL_POSTGRES_ONLY")
     if os.environ.get("SCOREMAX_EPHEMERAL_PG_REHEARSAL") != "1":
@@ -349,6 +349,14 @@ def perform_copy(source, dsn, inject_failure=False):
                     projection = sql.SQL("SELECT {} FROM {}.{}").format(
                         sql.SQL(",").join(sql.Identifier(n) for n in names),
                         sql.Identifier(namespace), sql.Identifier(table))
+                    if inject_corruption and table=="questions":
+                        # Tamper a real copied field to test the HASH gate.
+                        # Never touch the immutable SQLite source.
+                        pg.execute(sql.SQL("""UPDATE {}.{} SET question=%s
+                               WHERE id=(SELECT MIN(id) FROM {}.{})""").format(
+                               sql.Identifier(namespace),sql.Identifier(table),
+                               sql.Identifier(namespace),sql.Identifier(table)),
+                               ("SYNTHETIC_CORRUPTION_INJECTION",))
                     actual_data = pg.execute(projection).fetchall()
                     actual_count, actual_sha = fingerprint_rows(actual_data, fields)
                     if (actual_count, actual_sha) != (expected_count, expected_sha):
@@ -409,6 +417,15 @@ def main():
             raise
     else:
         raise RuntimeError("NO_ATOMIC_MIGRATION_ROLLBACK")
+    # Deliberate corrupted destination row must reject and roll back the
+    # entire PostgreSQL migration, not merely log a checksum discrepancy.
+    try:
+        perform_copy(path, dsn, inject_corruption=True)
+    except RuntimeError as ex:
+        if str(ex)!="MIGRATED_SOURCE_RECORD_MISMATCH:questions":
+            raise
+    else:
+        raise RuntimeError("CORRUPTED_POSTGRES_ROW_PASSED_MIGRATION")
     namespace, report = perform_copy(path, dsn)
     with closing(connect(dsn, connect_timeout=8)) as pg:
         tables = pg.execute("""SELECT COUNT(*) FROM information_schema.tables
@@ -434,6 +451,7 @@ def main():
         "attempt_and_outbox_exact_once_indexes_enforced":True,
         "native_sqlite_identity_watermark_continuation_tested":True,
         "all_or_nothing_injected_rollback":True,
+        "destination_row_tamper_rejected_and_rolled_back":True,
         "temporary_schema_cleaned":True,
         "production_data_accessed":False,
         "real_scoremax_postgres_application_enabled":False,
