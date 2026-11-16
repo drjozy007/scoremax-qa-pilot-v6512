@@ -158,7 +158,7 @@ def source_has_strict_unique(conn,table,expected):
                                  (name,)).fetchone()
             ddl=(defined[0] or "") if defined else ""
             if (tuple(expected)!=("assessment_session_id",) or
-                re.search(r"\\bWHERE\\s+assessment_session_id\\s+IS\\s+NOT\\s+NULL\\s*$",
+                re.search(r"\bWHERE\s+assessment_session_id\s+IS\s+NOT\s+NULL\s*$",
                           ddl,re.I) is None):
                 continue
         key_cols=[(row[2],row[4])
