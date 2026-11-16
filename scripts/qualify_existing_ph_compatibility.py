@@ -254,7 +254,13 @@ class ExistingPHCompatibility(unittest.TestCase):
                 self.assertIn(row['subject'],sm.commercial_access.programme_subjects(self.c,expected))
                 import ux_catalogue_browser as catalogue
                 counts=catalogue._release_scope_counts(self.c,'year11' if expected=='FSc Part 1' else 'year12',row['subject'])
-                self.assertGreaterEqual(counts.get(e['payload']['release']['chapter_id'],0),1)
+                chapter_record=counts.get(e['payload']['release']['chapter_id'])
+                # Accepted Biology receiver changed counts from int to
+                # governed chapter metadata + count. Assert exact current
+                # contract, not the pre-receiver integer test shape.
+                self.assertIsInstance(chapter_record,dict)
+                self.assertGreaterEqual(chapter_record['count'],1)
+                self.assertTrue(chapter_record['metadata_source'])
                 wrong='FSc Part 2' if expected=='FSc Part 1' else 'FSc Part 1'
                 self.assertIsNone(sm._ph_programme_scope_context(self.c,row['id'],wrong))
                 aid=sm.create_assessment_session(self.c,self.case.uid,'practice',None,[row['id']],{'programme':expected})
