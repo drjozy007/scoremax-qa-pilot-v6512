@@ -109,6 +109,26 @@ jobs:
           # The 2026-10-07 AST-extraction fixture predates the current governed
           # Biology receiver contract and is intentionally not replayed here.
           # The 29 native PH compatibility cases above are current and enforced.
+      - name: Compare native/candidate enforced-paywall FSc/MDCAT access and redirects
+        run: |
+          python -B scripts/scoremax_sqlite_enforced_access_parity_20261116.py /tmp/sm-sqlite-baseline/scoremax_runtime_v669b /tmp/sm-sqlite-reference/state/scoremax.db > /tmp/native-access.log
+          python -B scripts/scoremax_sqlite_enforced_access_parity_20261116.py scoremax_runtime_v669b /tmp/sm-sqlite-candidate/state/scoremax.db > /tmp/candidate-access.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def report(path):
+            for line in Path(path).read_text().splitlines():
+              if line.startswith("SCOREMAX_SQLITE_ENFORCED_ACCESS_PARITY="):
+                return json.loads(line.split("=",1)[1])["programme_scopes"]
+            raise RuntimeError("ENFORCED_ACCESS_REPORT_MISSING:"+path)
+          a=report("/tmp/native-access.log")
+          b=report("/tmp/candidate-access.log")
+          assert a==b,("ENFORCED_FSC_MDCAT_ACCESS_PARITY_FAILED",a,b)
+          print("SCOREMAX_SQLITE_PAYWALL_AND_PROGRAMME_SWITCH_PARITY_PASS="+json.dumps({
+            "native_candidate_exact_status_and_body_and_redirect":True,
+            "programmes":list(b),"routes_per_programme":len(b["FSc Part 1"]),
+            "production_touched":False},sort_keys=True))
+          PY
       - name: No deployment or DB migration performed
         run: |
           test ! -e scoremax_runtime_v669b/scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
