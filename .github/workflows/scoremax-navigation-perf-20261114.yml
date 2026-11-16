@@ -213,7 +213,7 @@ jobs:
           cp /tmp/nav-seed/state/scoremax.db /tmp/nav-candidate/state/scoremax.db
           python tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/scoremax-nav-baseline /tmp/nav-base/state/scoremax.db --label baseline --profile | tee /tmp/nav-baseline.log
           python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-app/state/scoremax.db --label code-only --profile | tee /tmp/nav-code-only.log
-          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-candidate/state/scoremax.db --label candidate --candidate-indexes --profile | tee /tmp/nav-candidate.log
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-candidate/state/scoremax.db --label candidate --candidate-indexes --profile --sql-profile | tee /tmp/nav-candidate.log
       - name: Compare synthetic route response performance
         run: |
           python - <<'PY'
