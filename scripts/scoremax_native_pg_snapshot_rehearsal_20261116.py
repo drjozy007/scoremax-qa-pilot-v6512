@@ -235,12 +235,13 @@ def qualify_native_pg_programme_membership(pg,src,namespace):
     This is ONLY an FSc/MDCAT shared-canonical fixture query. It does NOT
     implement the full native application SQL or its marking/rights policy.
     """
-    import question_contract_engine as contracts
-    from scoremax_governed_visibility_relational_probe_20261115 import native_scope
-    from scoremax_persistent_shadow_visibility_candidate_20261115 import native_live
     root=Path(__file__).resolve().parents[1]/"scoremax_runtime_v669b"
     if not (root/"app.py").is_file():
         raise RuntimeError("NATIVE_GENERATED_RUNTIME_NOT_AVAILABLE")
+    sys.path.insert(0,str(root))
+    import question_contract_engine as contracts
+    from scoremax_governed_visibility_relational_probe_20261115 import native_scope
+    from scoremax_persistent_shadow_visibility_candidate_20261115 import native_live
     source_scope=native_scope(root)
     source_live=native_live(root)
     src.create_function("scoremax_release_programme",2,
