@@ -113,6 +113,12 @@ def main(runtime,database):
             if not affected:raise RuntimeError("SYNTHETIC_DISPOSABLE_ANSWER_MISSING")
             conn.execute("DELETE FROM attempt_answers WHERE id=?",(affected["id"],))
             conn.commit()
+            # Request-local copies are intentionally immutable within a GET.
+            # A new GET, not an extra call during the same GET, must see the
+            # committed source change. This prevents a false stale-cache alarm.
+        with app.test_request_context("/student/learn-vnext",method="GET"):
+            if getattr(g,"_scoremax_frozen_evidence_20261114",None):
+                raise RuntimeError("OLD_REQUEST_EVIDENCE_CACHE_SURVIVED_NEW_GET")
             newest=sm.learner_answer_evidence(conn,b,"FSc Part 1","Biology")
             if len(newest)!=counts["secondary"]-1:
                 raise RuntimeError("NEW_REQUEST_STALE_AFTER_COMMITTED_ANSWER_CHANGE")
