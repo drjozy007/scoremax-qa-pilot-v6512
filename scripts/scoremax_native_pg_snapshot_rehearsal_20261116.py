@@ -163,7 +163,16 @@ def enforce_staging_uniqueness(pg,source,namespace,table):
     if fields is None:
         return False
     if not source_has_strict_unique(source,table,fields):
-        raise RuntimeError("NATIVE_EXACT_ONCE_UNIQUE_INDEX_MISSING:"+table)
+        # Only source schema metadata, no students or answer values.
+        discovered=[]
+        for _,index_name,unique,*remaining in source.execute(
+                'PRAGMA index_list("'+table+'")').fetchall():
+            detail=[{"field":r[2],"collation":r[4],"key":r[5]} for r
+                    in source.execute('PRAGMA index_xinfo("'+index_name+'")').fetchall()]
+            discovered.append({"name":index_name,"unique":bool(unique),
+                "metadata":remaining,"keys":detail})
+        raise RuntimeError("NATIVE_EXACT_ONCE_UNIQUE_INDEX_MISSING:"+table+
+                           ":METADATA="+repr(discovered))
     index_name="sm_rehearsal_unique_"+table
     col_spec=sql.SQL(",").join(sql.SQL("{} COLLATE {}").format(
         sql.Identifier(x),sql.Identifier("C")) for x in fields)
