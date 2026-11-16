@@ -426,7 +426,7 @@ jobs:
       - name: Install real accepted runtime and generate synthetic SQLite ledger
         run: |
           pip install -r scoremax_runtime_v669b/requirements.txt
-          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/scoremax-pg-snapshot/state/scoremax.db --per-chapter 4
+          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/scoremax-pg-snapshot/state/scoremax.db --per-chapter 4 --answers-per-learner 0
       - name: Exercise all-or-nothing PostgreSQL migration and exact protected-row parity
         env:
           SCOREMAX_EPHEMERAL_PG_REHEARSAL: "1"
