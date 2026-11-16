@@ -87,6 +87,15 @@ def audit_schema(path):
         missing=[n for n in TABLES if n not in names]
         if missing:raise RuntimeError("PROTECTED_NATIVE_TABLE_MISSING:"+repr(missing))
         extra=sorted(names.difference(TABLES))
+        protected_indexes=0
+        protected_partial_indexes=0
+        protected_expression_indexes=0
+        protected_triggers=[]
+        for name,kind,ddl in rows:
+            if kind=="trigger" and any(
+                    (' ON "'+table+'"') in ddl or (' ON '+table+' ') in ddl
+                    for table in TABLES):
+                protected_triggers.append(name)
         live_nonempty=[]
         check_count=0
         triggers=0
@@ -109,7 +118,12 @@ def audit_schema(path):
                 unique_count+=int(bool(row[2]))
                 partial_indexes+=int(bool(row[4]))
                 detail=c.execute('PRAGMA index_xinfo("'+row[1].replace('"','""')+'")').fetchall()
-                expression_indexes+=int(any(x[2] is None and x[5] for x in detail))
+                is_expression=any(x[2] is None and x[5] for x in detail)
+                expression_indexes+=int(is_expression)
+                if table in TABLES:
+                    protected_indexes+=1
+                    protected_partial_indexes+=int(bool(row[4]))
+                    protected_expression_indexes+=int(is_expression)
             foreign_keys+=len(c.execute(
                 'PRAGMA foreign_key_list("'+table.replace('"','""')+'")').fetchall())
         views=[n for n,t,_ in rows if t=="view"]
@@ -118,6 +132,13 @@ def audit_schema(path):
             raise RuntimeError("FULL_SCHEMA_GAP_FIXTURE_INCONCLUSIVE")
         return {
             "source_tables_total":len(tables),
+            "protected_table_source_indexes":protected_indexes,
+            "protected_table_partial_indexes":protected_partial_indexes,
+            "protected_table_expression_indexes":protected_expression_indexes,
+            "protected_table_attached_triggers":protected_triggers[:24],
+            "copy_prototype_restores_only_primary_and_two_critical_unique_indexes":True,
+            "unported_source_index_count_lower_bound":max(0,protected_indexes-2),
+            "source_schema_is_complete_in_pg":False,
             "protected_copy_tables":len(TABLES),
             "not_copied_tables":len(extra),
             "unmigrated_nonempty_table_count":len(live_nonempty),
@@ -146,7 +167,9 @@ def main():
         report,sort_keys=True),flush=True)
     print("SCOREMAX_CUTOVER_WRITER_BLINDSPOT_REPRODUCED="+json.dumps(
         lock,sort_keys=True),flush=True)
-    if report["not_copied_tables"]==0 or not lock["sqlite_pinned_snapshot_misses_concurrent_commit"]:
+    if (report["not_copied_tables"]==0 or
+        report["unmigrated_nonempty_table_count"]==0 or
+        not lock["sqlite_pinned_snapshot_misses_concurrent_commit"]):
         raise RuntimeError("CUTOVER_PRECHECK_NO_GO_NOT_DEMONSTRATED")
 
 
