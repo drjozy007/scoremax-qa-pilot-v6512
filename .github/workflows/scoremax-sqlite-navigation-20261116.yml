@@ -152,3 +152,52 @@ jobs:
           print("SCOREMAX_RELEASE_SCOPE=6000_QUESTIONS_1000_STUDENTS_100K_FROZEN_ANSWERS")
           print("SCOREMAX_BROAD_LAUNCH_CAPACITY_NOT_CERTIFIED_BY_INCREMENTAL_RELEASE")
           PY
+
+  sqlite_index_research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Rebuild sealed runtime with SQLite-only speed candidate
+        run: |
+          python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          pip install gunicorn
+      - name: Seed 100800 synthetic questions with frozen learner evidence
+        run: |
+          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/sm-index-seed/state/scoremax.db --per-chapter 2100 --additional-learners 100 --answers-per-learner 100
+          mkdir -p /tmp/sm-index-a/state /tmp/sm-index-b/state /tmp/sm-index-b/backup
+          cp /tmp/sm-index-seed/state/scoremax.db /tmp/sm-index-a/state/scoremax.db
+          cp /tmp/sm-index-seed/state/scoremax.db /tmp/sm-index-b/state/scoremax.db
+      - name: Create additive SQLite indexes only on throwaway copy after verified backup
+        run: |
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db --backup /tmp/sm-index-b/backup/preindex.db --apply
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db --apply
+      - name: Compare same-application no-index and indexed 1/10-student HTTP
+        run: |
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-a/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19071 | tee /tmp/sqlite-noidx.log
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-b/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19072 | tee /tmp/sqlite-indexed.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def get(file):
+              items=[]
+              for line in Path(file).read_text().splitlines():
+                  if line.startswith("SCOREMAX_GUNICORN_ISOLATED_HTTP="):
+                      items.append(json.loads(line.split("=",1)[1]))
+              assert [x["distinct_students"] for x in items]==[1,10]
+              return {x["distinct_students"]:x["p95_ms"] for x in items}
+          before,after=get("/tmp/sqlite-noidx.log"),get("/tmp/sqlite-indexed.log")
+          report={str(k):{"no_index_ms":before[k],"indexed_ms":after[k],
+                            "ratio":round(after[k]/max(1,before[k]),3)}
+                  for k in (1,10)}
+          print("SCOREMAX_SQLITE_INDEX_RESEARCH_ONLY="+json.dumps({
+              "subject_http":report,"disposable_backup_and_additive_indexes_only":True,
+              "source_question_and_mastery_values_unchanged":True,
+              "live_migration_performed":False,"recommended_for_release":False,
+              "production_disk_space_unverified":True
+              },sort_keys=True))
+          PY
