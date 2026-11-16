@@ -71,7 +71,76 @@ jobs:
             result[name]={"native_ms":before["median_ms"],"candidate_ms":after["median_ms"],"ratio":round(ratio,3)}
           print("SCOREMAX_SQLITE_HTML_PARITY_PASS="+json.dumps(result,sort_keys=True))
           PY
+      - name: Test accepted academic marking, frozen answers and mastery evidence under SQLite candidate
+        run: |
+          python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py -v
+          python -B scripts/qualify_assessment_contract_repair.py --report /tmp/sqlite-nav-assessment-contract.json
       - name: No deployment or DB migration performed
         run: |
           test ! -e scoremax_runtime_v669b/scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
           echo SQLITE_NAV_BUILD_ONLY_NO_PRODUCTION_CHANGE
+
+  sqlite_scaled_http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build exact SQLite-only candidate; no migration
+        run: |
+          python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
+          cp -a scoremax_runtime_v669b /tmp/scoremax-scaled-candidate
+          rm -rf scoremax_runtime_v669b
+          python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+          cp -a scoremax_runtime_v669b /tmp/scoremax-scaled-native
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          pip install gunicorn
+      - name: Seed 100800 synthetic questions and 1000 distinct users with 100k frozen answers
+        run: |
+          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed /tmp/scoremax-scaled-native /tmp/scoremax-scaled-seed/state/scoremax.db --per-chapter 2100 --additional-learners 1000 --answers-per-learner 100
+          mkdir -p /tmp/scoremax-scaled-baseline/state /tmp/scoremax-scaled-changed/state
+          cp /tmp/scoremax-scaled-seed/state/scoremax.db /tmp/scoremax-scaled-baseline/state/scoremax.db
+          cp /tmp/scoremax-scaled-seed/state/scoremax.db /tmp/scoremax-scaled-changed/state/scoremax.db
+      - name: Run native 1-worker 1-10-50 student HTTP Learning and Subject baselines
+        run: |
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-native /tmp/scoremax-scaled-baseline/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/learn-vnext --port 18971 | tee /tmp/native-learning.log
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-native /tmp/scoremax-scaled-baseline/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/subject/Biology --port 18972 | tee /tmp/native-subject.log
+      - name: Run same candidate load with all shadow and PostgreSQL features disabled
+        run: |
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-candidate /tmp/scoremax-scaled-changed/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/learn-vnext --port 18973 | tee /tmp/new-learning.log
+          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-candidate /tmp/scoremax-scaled-changed/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/subject/Biology --port 18974 | tee /tmp/new-subject.log
+      - name: Refuse performance regression and report broad launch SLA separately
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          pairs=[("/tmp/native-learning.log","/tmp/new-learning.log","Learning"),
+                 ("/tmp/native-subject.log","/tmp/new-subject.log","Subject")]
+          output={}
+          for old,new,tag in pairs:
+              def read(path):
+                  result={}
+                  for line in Path(path).read_text().splitlines():
+                      if line.startswith("SCOREMAX_GUNICORN_ISOLATED_HTTP="):
+                          item=json.loads(line.split("=",1)[1])
+                          assert item["workers"]==1
+                          result[item["distinct_students"]]=item
+                  assert set(result)=={1,10,50},(path,result.keys())
+                  return result
+              native,candidate=read(old),read(new)
+              report={}
+              for n in (1,10,50):
+                  before,after=native[n]["p95_ms"],candidate[n]["p95_ms"]
+                  report[str(n)]={"native_p95_ms":before,"candidate_p95_ms":after,
+                     "ratio":round(after/max(1,before),3),
+                     "broad_launch_sla_pass":after<1500}
+                  if after>before*1.10:
+                      raise RuntimeError(f"SQLITE_NAV_10PCT_REGRESSION:{tag}:{n}:{before}:{after}")
+              output[tag]=report
+          total=sum(output[tag]["50"]["ratio"] for tag in output)
+          if total>=1.90:
+              raise RuntimeError("SQLITE_NAV_COMBINED_SPEED_GAIN_BELOW_5PCT")
+          print("SCOREMAX_SQLITE_PAIRED_100K_HTTP_PASS="+json.dumps(output,sort_keys=True))
+          print("SCOREMAX_BROAD_LAUNCH_CAPACITY_NOT_CERTIFIED_BY_INCREMENTAL_RELEASE")
+          PY
