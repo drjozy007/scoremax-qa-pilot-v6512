@@ -39,6 +39,7 @@ jobs:
         run: |
           mkdir -p /tmp/sm-sqlite-baseline
           cp -a scoremax_runtime_v669b /tmp/sm-sqlite-candidate
+          rm -rf scoremax_runtime_v669b
           python -B scripts/materialize_scoremax_biology_receiver_20261027.py
           cp -a scoremax_runtime_v669b /tmp/sm-sqlite-baseline/scoremax_runtime_v669b
           rm -rf scoremax_runtime_v669b
