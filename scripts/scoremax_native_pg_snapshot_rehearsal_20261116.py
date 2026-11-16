@@ -222,7 +222,11 @@ def perform_copy(source, dsn, inject_failure=False):
                 if not result.get("attempt_answers") or not result.get("mastery_records"):
                     raise RuntimeError("MISSING_PROTECTED_LEDGER_CHECKS")
                 for required in ("questions","users","question_families",
-                                 "assessment_sessions","attempts","attempt_answers"):
+                                 "assessment_sessions","attempts","attempt_answers",
+                                 "integration_ph_content_releases",
+                                 "integration_ph_question_version_store",
+                                 "integration_ph_release_question_membership",
+                                 "integration_ph_product_activation_authorizations"):
                     if result[required]["rows"]<1:
                         raise RuntimeError("UNEXERCISED_NATIVE_CORE_LEDGER:"+required)
                 # Source snapshot remains pinned while staging checks pass.

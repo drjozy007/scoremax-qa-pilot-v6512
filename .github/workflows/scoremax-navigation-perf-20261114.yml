@@ -27,6 +27,7 @@ on:
       - scripts/scoremax_submit_exception_guard_20261115.py
       - scripts/scoremax_native_pg_snapshot_rehearsal_20261116.py
       - scripts/scoremax_pg_native_session_seed_20261116.py
+      - scripts/scoremax_pg_native_ph_seed_20261116.py
       - scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
       - scripts/scoremax_shadow_navigation_v1.py
       - scripts/scoremax_nav_shadow_integration_delta_20261115.py
@@ -430,6 +431,8 @@ jobs:
           python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/scoremax-pg-snapshot/state/scoremax.db --per-chapter 4 --answers-per-learner 0
       - name: Create actual native synthetic assessment session and frozen marked response
         run: python -B scripts/scoremax_pg_native_session_seed_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db scoremax_runtime_v669b
+      - name: Populate native accepted Power House shared FSc MDCAT synthetic release records
+        run: python -B scripts/scoremax_pg_native_ph_seed_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db scoremax_runtime_v669b
       - name: Exercise all-or-nothing PostgreSQL migration and exact protected-row parity
         env:
           SCOREMAX_EPHEMERAL_PG_REHEARSAL: "1"
