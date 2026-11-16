@@ -75,6 +75,9 @@ jobs:
         run: |
           python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py -v
           python -B scripts/qualify_assessment_contract_repair.py --report /tmp/sqlite-nav-assessment-contract.json
+          python -B scripts/qualify_programme_mastery_repair.py --report /tmp/sqlite-nav-programme-mastery.json
+          python -B scripts/qualify_existing_ph_compatibility.py --report /tmp/sqlite-nav-ph-compatibility.json
+          python -B scripts/qualify_ph_multi_programme_projection.py scoremax_runtime_v669b
       - name: No deployment or DB migration performed
         run: |
           test ! -e scoremax_runtime_v669b/scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
