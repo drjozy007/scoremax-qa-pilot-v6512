@@ -1,0 +1,76 @@
+name: ScoreMax SQLite-only navigation release candidate
+on:
+  push:
+    branches: [perf/sqlite-navigation-release-20261116]
+  pull_request:
+    branches: [fix/scoremax-streamed-backup-20261022]
+permissions:
+  contents: read
+jobs:
+  sqlite_navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Unit tests for native scope and source indents
+        run: python -m unittest discover -s tests/navigation_perf_20261114 -p 'test_*.py' -v
+      - name: Materialize sealed ScoreMax then bounded SQLite-only performance changes
+        run: python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
+      - name: Verify no scripts can enable shadow, PostgreSQL, or student marking changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import ast
+          p=Path('scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py').read_text()
+          module=ast.parse(p)
+          funcs={n.name for n in module.body if isinstance(n,ast.FunctionDef)}
+          assert {'main','digest','checksums','execute'}<=funcs
+          from scripts.materialize_scoremax_sqlite_nav_candidate_20261116 import STEPS,ALLOWED_CHANGED
+          assert len(STEPS)==11 and ALLOWED_CHANGED=={'app.py','ux_student_batch.py','ux_catalogue_browser.py'}
+          assert not any(any(word in s for word in ('postgres','shadow','migration','ack_lease','worker_state')) for s in STEPS)
+          PY
+      - name: Install accepted pinned requirements
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Seed identical bounded synthetic learner DB
+        run: python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/sm-sqlite-prep/state/scoremax.db --per-chapter 20 --answers-per-learner 10
+      - name: Reconstruct accepted-only runtime separately from same sealed source
+        run: |
+          mkdir -p /tmp/sm-sqlite-baseline
+          cp -a scoremax_runtime_v669b /tmp/sm-sqlite-candidate
+          python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+          cp -a scoremax_runtime_v669b /tmp/sm-sqlite-baseline/scoremax_runtime_v669b
+          rm -rf scoremax_runtime_v669b
+          mv /tmp/sm-sqlite-candidate scoremax_runtime_v669b
+          mkdir -p /tmp/sm-sqlite-reference/state /tmp/sm-sqlite-candidate/state
+          cp /tmp/sm-sqlite-prep/state/scoremax.db /tmp/sm-sqlite-reference/state/scoremax.db
+          cp /tmp/sm-sqlite-prep/state/scoremax.db /tmp/sm-sqlite-candidate/state/scoremax.db
+      - name: Compare exact synthetic page HTML, status and speed
+        run: |
+          python -B tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/sm-sqlite-baseline/scoremax_runtime_v669b /tmp/sm-sqlite-reference/state/scoremax.db --label native > /tmp/native-route.log
+          python -B tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/sm-sqlite-candidate/state/scoremax.db --label sqlite-candidate > /tmp/candidate-route.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def read(path):
+            for line in Path(path).read_text().splitlines():
+              if line.startswith("SCOREMAX_ROUTE_BENCH="):
+                return json.loads(line.split("=",1)[1])
+            raise AssertionError(path+" missing report")
+          base=read("/tmp/native-route.log")["routes"]
+          new=read("/tmp/candidate-route.log")["routes"]
+          assert base.keys()==new.keys(),(base.keys(),new.keys())
+          result={}
+          for name in base:
+            before,after=base[name],new[name]
+            for prop in ("status","body_sha256","html_bytes"):
+              assert before[prop]==after[prop],(name,prop,before[prop],after[prop])
+            ratio=after["median_ms"]/max(1,before["median_ms"])
+            result[name]={"native_ms":before["median_ms"],"candidate_ms":after["median_ms"],"ratio":round(ratio,3)}
+          print("SCOREMAX_SQLITE_HTML_PARITY_PASS="+json.dumps(result,sort_keys=True))
+          PY
+      - name: No deployment or DB migration performed
+        run: |
+          test ! -e scoremax_runtime_v669b/scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
+          echo SQLITE_NAV_BUILD_ONLY_NO_PRODUCTION_CHANGE
