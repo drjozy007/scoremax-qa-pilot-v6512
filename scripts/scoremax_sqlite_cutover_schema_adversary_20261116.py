@@ -159,8 +159,8 @@ def audit_schema(path):
 
 
 def main():
-    if len(sys.argv)!=2:
-        raise SystemExit("USAGE: script <disposable_native_sqlite_db>")
+    if len(sys.argv) not in (2,3) or (len(sys.argv)==3 and sys.argv[2]!="--assert-ready"):
+        raise SystemExit("USAGE: script <disposable_native_sqlite_db> [--assert-ready]")
     report=audit_schema(Path(sys.argv[1]))
     lock=writer_fence_rehearsal()
     print("SCOREMAX_SCHEMA_MIGRATION_COVERAGE_GAP="+json.dumps(
@@ -171,6 +171,20 @@ def main():
         report["unmigrated_nonempty_table_count"]==0 or
         not lock["sqlite_pinned_snapshot_misses_concurrent_commit"]):
         raise RuntimeError("CUTOVER_PRECHECK_NO_GO_NOT_DEMONSTRATED")
+    if len(sys.argv)==3 and sys.argv[2]=="--assert-ready":
+        # Release-blocking by design until full native SQL, schema and
+        # write-epoch/fencing proof exist. Do not set false pass flags.
+        if (report["not_copied_tables"]!=0 or
+            report["unported_source_index_count_lower_bound"]!=0 or
+            report["source_triggers_count"]!=0 or
+            not lock["production_writer_fence_installed"] or
+            not report["all_source_schema_objects_migrated"] or
+            not report["all_academic_read_write_paths_migrated"]):
+            raise RuntimeError("P0_FULL_SCHEMA_CUTOVER_NOT_QUALIFIED:"
+                +str(report["not_copied_tables"])+" unmigrated tables; "
+                +str(report["unmigrated_nonempty_table_count"])+" nonempty; "
+                +str(report["unported_source_index_count_lower_bound"])
+                +" protected source indexes not ported; no production writer fence")
 
 
 if __name__=="__main__":main()
