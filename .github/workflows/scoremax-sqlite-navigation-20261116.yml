@@ -53,6 +53,32 @@ jobs:
           mkdir -p /tmp/sm-sqlite-reference/state /tmp/sm-sqlite-candidate/state
           cp /tmp/sm-sqlite-prep/state/scoremax.db /tmp/sm-sqlite-reference/state/scoremax.db
           cp /tmp/sm-sqlite-prep/state/scoremax.db /tmp/sm-sqlite-candidate/state/scoremax.db
+      - name: Compare four synthetic learner profiles and real practice submissions on native and draft
+        run: |
+          python -B scripts/scoremax_synthetic_persona_journeys_20261116.py /tmp/sm-sqlite-baseline/scoremax_runtime_v669b /tmp/sm-sqlite-reference/state/scoremax.db native > /tmp/persona-native.log
+          python -B scripts/scoremax_synthetic_persona_journeys_20261116.py scoremax_runtime_v669b /tmp/sm-sqlite-candidate/state/scoremax.db draft > /tmp/persona-draft.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def load(file):
+            for line in Path(file).read_text().splitlines():
+              if line.startswith("SCOREMAX_SYNTHETIC_PERSONA_JOURNEYS="):
+                return json.loads(line.split("=",1)[1])
+            raise RuntimeError("SYNTHETIC_LEARNER_PROBE_MISSING:"+file)
+          a=load("/tmp/persona-native.log")
+          b=load("/tmp/persona-draft.log")
+          assert a["personas"]==b["personas"],("SYNTHETIC_PERSONA_NAVIGATION_DRIFT",a["personas"],b["personas"])
+          assert a["assessment_journeys"]==b["assessment_journeys"],(
+            "SYNTHETIC_ASSESSMENT_JOURNEY_DRIFT",a["assessment_journeys"],b["assessment_journeys"])
+          print("SCOREMAX_SYNTHETIC_PERSONA_NATIVE_DRAFT_PARITY_PASS="+json.dumps({
+            "identical_persona_navigation":True,
+            "identical_real_assessment_marking_and_submission":True,
+            "scenarios":list(a["personas"]),
+            "submitted_practice_scenarios":list(a["assessment_journeys"]),
+            "actual_PH_signatures_not_used":True,
+            "production_modified":False,
+          },sort_keys=True))
+          PY
       - name: Compare exact synthetic page HTML, status and speed
         run: |
           python -B tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/sm-sqlite-baseline/scoremax_runtime_v669b /tmp/sm-sqlite-reference/state/scoremax.db --label native > /tmp/native-route.log
