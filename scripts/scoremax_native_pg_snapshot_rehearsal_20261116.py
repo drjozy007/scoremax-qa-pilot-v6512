@@ -221,6 +221,10 @@ def perform_copy(source, dsn, inject_failure=False):
                     raise RuntimeError("SOURCE_CHANGED_DURING_SNAPSHOT")
                 if not result.get("attempt_answers") or not result.get("mastery_records"):
                     raise RuntimeError("MISSING_PROTECTED_LEDGER_CHECKS")
+                for required in ("questions","users","question_families",
+                                 "assessment_sessions","attempts","attempt_answers"):
+                    if result[required]["rows"]<1:
+                        raise RuntimeError("UNEXERCISED_NATIVE_CORE_LEDGER:"+required)
                 # Source snapshot remains pinned while staging checks pass.
                 # Committing the target is safe only in this disposable test.
             if inject_failure:
@@ -265,6 +269,7 @@ def main():
         "source_row_count":sum(x["rows"] for x in report.values()),
         "tables":report,
         "source_to_pg_each_value_sha256_equal":True,
+        "native_saved_submission_and_frozen_answer_migrated":True,
         "source_PK_identity_preserved":True,
         "all_or_nothing_injected_rollback":True,
         "temporary_schema_cleaned":True,
