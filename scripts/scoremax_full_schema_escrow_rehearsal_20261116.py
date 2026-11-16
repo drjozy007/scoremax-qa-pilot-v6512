@@ -66,6 +66,58 @@ def sqlite_snapshot(path):
     c.execute("BEGIN")
     return c
 
+def copy_source_schema_catalog(src,pg,namespace):
+    """Escrow source indexes, triggers, views, SQLite PK autoindexes and ID watermarks.
+
+    Preserve definitions as DATA, not runnable PostgreSQL DDL.
+    """
+    root=sql.Identifier(namespace)
+    pg.execute(sql.SQL("""CREATE TABLE {}.source_objects(
+        ordinal BIGINT PRIMARY KEY,payload_json TEXT NOT NULL,
+        sha256 TEXT NOT NULL)""").format(root))
+    statements=src.execute("""SELECT type,name,tbl_name,sql FROM sqlite_master
+        WHERE type IN ('table','index','trigger','view')
+        ORDER BY type,name""").fetchall()
+    if len(statements)<300:
+        raise RuntimeError("NATIVE_SCHEMA_OBJECTS_SUSPICIOUSLY_LOW")
+    info={"user_version":src.execute("PRAGMA user_version").fetchone()[0],
+          "application_id":src.execute("PRAGMA application_id").fetchone()[0],
+          "encoding":src.execute("PRAGMA encoding").fetchone()[0]}
+    seq_rows=[]
+    if any(t=="table" and name=="sqlite_sequence" for t,name,_,_ in statements):
+        seq_rows=src.execute("SELECT name,seq FROM sqlite_sequence ORDER BY name").fetchall()
+    payloads=[{"kind":"sqlite_master","record":[canonical_value(x) for x in statement]}
+              for statement in statements]
+    payloads.append({"kind":"header_pragmas","record":info})
+    payloads.append({"kind":"sqlite_sequence",
+                     "records":[[canonical_value(x) for x in r] for r in seq_rows]})
+    for ordinal,item in enumerate(payloads):
+        encoded=canonical_json(item)
+        digest=hashlib.sha256(encoded.encode("ascii")).hexdigest()
+        pg.execute(sql.SQL("""INSERT INTO {}.source_objects
+            (ordinal,payload_json,sha256) VALUES(%s,%s,%s)""").format(root),
+            (ordinal,encoded,digest))
+    replay=pg.execute(sql.SQL("""SELECT ordinal,payload_json,sha256
+           FROM {}.source_objects ORDER BY ordinal""").format(root)).fetchall()
+    if len(replay)!=len(payloads):
+        raise RuntimeError("SCHEMA_CATALOG_COUNT_MISMATCH")
+    for ordinal,payload,digest in replay:
+        if ordinal<0 or ordinal>=len(payloads) or canonical_json(payloads[ordinal])!=payload:
+            raise RuntimeError("SCHEMA_CATALOG_CONTENT_MISMATCH")
+        if hashlib.sha256(payload.encode("ascii")).hexdigest()!=digest:
+            raise RuntimeError("SCHEMA_CATALOG_SHA_MISMATCH")
+    by_type={}
+    for kind,*_ in statements:
+        by_type[kind]=by_type.get(kind,0)+1
+    return {"native_schema_objects":len(statements),
+        "escrow_schema_objects":len(statements),
+        "native_object_type_census":by_type,
+        "sqlite_sequence_watermarks":len(seq_rows),
+        "db_header_pragmas_preserved":True,
+        "sqlite_master_definitions_and_identity_watermarks_preserved":True,
+        "actual_pg_indexes_triggers_or_constraints_created":False}
+
+
 def copy_one(src,pg,namespace,inject=False):
     name=sql.Identifier(namespace)
     pg.execute(sql.SQL("CREATE SCHEMA {}").format(name))
@@ -76,6 +128,7 @@ def copy_one(src,pg,namespace,inject=False):
        table_name TEXT NOT NULL,ordinal BIGINT NOT NULL,
        payload_json TEXT NOT NULL,row_sha256 TEXT NOT NULL,
        PRIMARY KEY(table_name,ordinal))""").format(name))
+    object_report=copy_source_schema_catalog(src,pg,namespace)
     tables=table_names(src)
     count_rows=0
     nonempty=0
@@ -128,7 +181,7 @@ def copy_one(src,pg,namespace,inject=False):
     target=pg.execute(sql.SQL("SELECT COUNT(*) FROM {}.manifest").format(name)).fetchone()[0]
     if target!=len(tables):
         raise RuntimeError("ESCROW_SCHEMA_MANIFEST_INCOMPLETE")
-    return {"native_tables":len(tables),"staged_tables":int(target),
+    return {**object_report,"native_tables":len(tables),"staged_tables":int(target),
             "staged_rows":count_rows,"nonempty_tables":nonempty,
             "source_schema_sql_and_columns_preserved":True,
             "source_value_types_encoded_losslessly":True,
