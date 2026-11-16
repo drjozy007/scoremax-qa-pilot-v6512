@@ -45,7 +45,7 @@ def main(dbpath, runtime):
            if (isinstance(node,ast.FunctionDef) and node.name in {"question","rubric_question"})
             or (isinstance(node,ast.Assign) and any(
                 isinstance(t,ast.Name) and t.id in {"RUBRIC","SPECS"}
-                for t in node.targets)))]
+                for t in node.targets))]
     env={"copy":copy,"json":json}
     exec(compile(ast.Module(body=nodes,type_ignores=[]),"<accepted-questions>","exec"),env)
     with sm.db() as c:
