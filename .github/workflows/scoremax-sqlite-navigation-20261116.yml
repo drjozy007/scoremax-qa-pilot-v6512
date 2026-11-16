@@ -203,6 +203,8 @@ jobs:
           python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db
           python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db --backup /tmp/sm-index-b/backup/preindex.db --apply
           python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db --apply
+      - name: Measure additive SQLite index disk footprint and rollback-only bulk write cost
+        run: python -B scripts/scoremax_sqlite_index_write_cost_20261116.py /tmp/sm-index-a/state/scoremax.db /tmp/sm-index-b/state/scoremax.db
       - name: Compare same-application no-index and indexed 1/10-student HTTP
         run: |
           python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-a/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19071 | tee /tmp/sqlite-noidx.log
