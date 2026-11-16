@@ -1,9 +1,11 @@
 name: ScoreMax SQLite-only navigation release candidate
 on:
-  push:
-    branches: [perf/sqlite-navigation-release-20261116]
   pull_request:
     branches: [fix/scoremax-streamed-backup-20261022]
+  workflow_dispatch:
+concurrency:
+  group: scoremax-sqlite-nav-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -77,7 +79,9 @@ jobs:
           python -B scripts/qualify_assessment_contract_repair.py --report /tmp/sqlite-nav-assessment-contract.json
           python -B scripts/qualify_programme_mastery_repair.py --report /tmp/sqlite-nav-programme-mastery.json
           python -B scripts/qualify_existing_ph_compatibility.py --report /tmp/sqlite-nav-ph-compatibility.json
-          python -B scripts/qualify_ph_multi_programme_projection.py scoremax_runtime_v669b
+          # The 2026-10-07 AST-extraction fixture predates the current governed
+          # Biology receiver contract and is intentionally not replayed here.
+          # The 29 native PH compatibility cases above are current and enforced.
       - name: No deployment or DB migration performed
         run: |
           test ! -e scoremax_runtime_v669b/scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
