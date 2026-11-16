@@ -170,7 +170,7 @@ def source_has_strict_unique(conn,table,expected):
     return False
 
 
-def enforce_staging_uniqueness(pg,source,namespace,table):
+def enforce_staging_uniqueness(pg,source,namespace,table,columns):
     fields=CRITICAL_UNIQUES.get(table)
     if fields is None:
         return False
@@ -186,8 +186,11 @@ def enforce_staging_uniqueness(pg,source,namespace,table):
         raise RuntimeError("NATIVE_EXACT_ONCE_UNIQUE_INDEX_MISSING:"+table+
                            ":METADATA="+repr(discovered))
     index_name="sm_rehearsal_unique_"+table
-    col_spec=sql.SQL(",").join(sql.SQL("{} COLLATE {}").format(
-        sql.Identifier(x),sql.Identifier("C")) for x in fields)
+    data_types={x["name"]:x["postgres_type"] for x in columns}
+    col_spec=sql.SQL(",").join(
+        sql.SQL("{} COLLATE {}").format(sql.Identifier(x),sql.Identifier("C"))
+        if data_types.get(x)=="TEXT" else sql.Identifier(x)
+        for x in fields)
     pg.execute(sql.SQL("CREATE UNIQUE INDEX {} ON {}.{} ({})").format(
         sql.Identifier(index_name),sql.Identifier(namespace),
         sql.Identifier(table),col_spec))
@@ -287,7 +290,7 @@ def perform_copy(source, dsn, inject_failure=False):
                     if (actual_count, actual_sha) != (expected_count, expected_sha):
                         raise RuntimeError("MIGRATED_SOURCE_RECORD_MISMATCH:" + table)
                     unique_enforced=enforce_staging_uniqueness(
-                        pg,reader,namespace,table)
+                        pg,reader,namespace,table,fields)
                     result[table] = {
                         "critical_unique_enforced":unique_enforced,
                         "rows": expected_count,
