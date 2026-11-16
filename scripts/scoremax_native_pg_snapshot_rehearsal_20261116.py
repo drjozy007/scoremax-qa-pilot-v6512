@@ -229,6 +229,90 @@ def enforce_staging_uniqueness(pg,source,namespace,table,columns):
     return True
 
 
+def qualify_native_pg_programme_membership(pg,src,namespace):
+    """Compare actual accepted SQLite governance with a bounded PG port.
+
+    This is ONLY an FSc/MDCAT shared-canonical fixture query. It does NOT
+    implement the full native application SQL or its marking/rights policy.
+    """
+    import question_contract_engine as contracts
+    from scoremax_governed_visibility_relational_probe_20261115 import native_scope
+    from scoremax_persistent_shadow_visibility_candidate_20261115 import native_live
+    root=Path(__file__).resolve().parents[1]/"scoremax_runtime_v669b"
+    if not (root/"app.py").is_file():
+        raise RuntimeError("NATIVE_GENERATED_RUNTIME_NOT_AVAILABLE")
+    source_scope=native_scope(root)
+    source_live=native_live(root)
+    src.create_function("scoremax_release_programme",2,
+                        contracts.programme_for_release,deterministic=True)
+    query=sql.SQL("""SELECT DISTINCT q.id FROM {}.questions q
+      JOIN {}.question_families family
+        ON family.family_key=q.family_key AND family.active=1
+      JOIN {}.integration_ph_question_version_store pv
+        ON pv.local_question_db_id=q.id
+       AND pv.question_id=q.ph_question_id
+       AND pv.question_version_id=q.ph_question_version_id
+       AND pv.question_checksum_sha256=q.ph_question_checksum_sha256
+      JOIN {}.integration_ph_release_question_membership membership
+        ON membership.question_id=pv.question_id
+       AND membership.question_version_id=pv.question_version_id
+      JOIN {}.integration_ph_content_releases release
+        ON release.release_id=membership.release_id
+       AND release.release_version=membership.release_version
+      JOIN {}.integration_ph_product_activation_authorizations auth
+        ON auth.release_id=release.release_id
+       AND auth.release_version=release.release_version
+       AND auth.package_checksum_sha256=release.package_checksum_sha256
+      WHERE q.ph_projection_owner='POWER_HOUSE' AND q.active=1
+        AND q.ph_question_id=%s AND release.programme_id=%s
+        AND release.local_status='ACTIVE'
+        AND auth.activation_status IN ('AUTHORIZED','ACTIVATED')
+        AND NOT EXISTS(SELECT 1 FROM
+            {}.ph_bridge_staged_withdrawal_exclusions_v6611e ex
+          WHERE ex.release_id=membership.release_id
+            AND ex.release_version=membership.release_version
+            AND ex.question_id=membership.question_id
+            AND ex.question_version_id=membership.question_version_id)
+      ORDER BY q.id""").format(*([sql.Identifier(namespace)]*7))
+    specimen="SYN-PG-PH-CANONICAL-Q"
+    results={}
+    for programme,release_programme in (("FSc Part 1","FSC_PART_I"),("MDCAT","MDCAT")):
+        clause,arguments=source_scope(contracts.programme_aliases(programme),"q")
+        expected=[x[0] for x in src.execute("SELECT q.id FROM questions q WHERE "
+            +source_live+" AND "+clause+" AND q.ph_question_id=? ORDER BY q.id",
+            arguments+[specimen]).fetchall()]
+        actual=[x[0] for x in pg.execute(
+            query,(specimen,release_programme)).fetchall()]
+        if expected!=actual or len(expected)!=1:
+            raise RuntimeError("NATIVE_TO_POSTGRES_PH_SCOPE_DRIFT:"+programme+
+                ":"+repr((expected,actual)))
+        results[programme]=len(actual)
+    class _RollbackProbe(Exception):
+        pass
+    try:
+        with pg.transaction():
+            pg.execute(sql.SQL("""UPDATE {}.integration_ph_product_activation_authorizations
+                  SET activation_status='REVOKED'
+                  WHERE release_id='SYN-PG-PH-RELEASE-MDCAT'""").format(
+                  sql.Identifier(namespace)))
+            mdcat=[r[0] for r in pg.execute(query,(specimen,"MDCAT"))]
+            fsc=[r[0] for r in pg.execute(query,(specimen,"FSC_PART_I"))]
+            if mdcat or len(fsc)!=1:
+                raise RuntimeError("POSTGRES_CROSS_PROGRAMME_AUTHORITY_ISOLATION_DRIFT")
+            raise _RollbackProbe()
+    except _RollbackProbe:
+        pass
+    # Revoke is rolled back, and the canonical question still belongs to
+    # both authorised products through distinct programme memberships.
+    if len(pg.execute(query,(specimen,"MDCAT")).fetchall())!=1:
+        raise RuntimeError("STAGED_AUTHORITY_REVOKE_ROLLBACK_FAILED")
+    return {"native_vs_pg_fsc_mdcat_exact_ids":True,
+            "cross_programme_authorisation_revocation_isolated":True,
+            "revocation_transaction_rolled_back":True,
+            "synthetic_programme_counts":results,
+            "full_scoremax_sql_ported":False}
+
+
 def staging_source_snapshot(source):
     if not source.is_file() or source.is_symlink() or not source.resolve().is_relative_to(Path("/tmp")):
         raise RuntimeError("DISPOSABLE_TMP_SQLITE_ONLY")
@@ -377,6 +461,8 @@ def perform_copy(source, dsn, inject_failure=False, inject_corruption=False):
                     }
                     if inject_failure and index == 3:
                         raise RuntimeError("INJECTED_MID_MIGRATION_FAILURE")
+                native_scope_proof=qualify_native_pg_programme_membership(
+                    pg,reader,namespace)
                 final_version = reader.execute("PRAGMA data_version").fetchone()[0]
                 if final_version != first_version:
                     raise RuntimeError("SOURCE_CHANGED_DURING_SNAPSHOT")
@@ -397,7 +483,7 @@ def perform_copy(source, dsn, inject_failure=False, inject_corruption=False):
                 # Committing the target is safe only in this disposable test.
             if inject_failure:
                 raise RuntimeError("EXPECTED_INJECTED_ROLLBACK_WAS_NOT_RAISED")
-            return namespace, result
+            return namespace, result, native_scope_proof
     finally:
         reader.rollback()
         reader.close()
@@ -426,7 +512,7 @@ def main():
             raise
     else:
         raise RuntimeError("CORRUPTED_POSTGRES_ROW_PASSED_MIGRATION")
-    namespace, report = perform_copy(path, dsn)
+    namespace, report, native_scope_proof = perform_copy(path, dsn)
     with closing(connect(dsn, connect_timeout=8)) as pg:
         tables = pg.execute("""SELECT COUNT(*) FROM information_schema.tables
             WHERE table_schema=%s""", (namespace,)).fetchone()[0]
@@ -450,6 +536,7 @@ def main():
         "source_PK_identity_preserved":True,
         "attempt_and_outbox_exact_once_indexes_enforced":True,
         "native_sqlite_identity_watermark_continuation_tested":True,
+        "native_vs_pg_governed_fsc_mdcat_fixture":native_scope_proof,
         "all_or_nothing_injected_rollback":True,
         "destination_row_tamper_rejected_and_rolled_back":True,
         "temporary_schema_cleaned":True,
