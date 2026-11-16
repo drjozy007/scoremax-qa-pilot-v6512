@@ -129,6 +129,48 @@ jobs:
             "programmes":list(b),"routes_per_programme":len(b["FSc Part 1"]),
             "production_touched":False},sort_keys=True))
           PY
+      - name: Verify identical preserved academic and PH rows after native/candidate route visits
+        run: |
+          python - <<'PY'
+          import hashlib,sqlite3,json
+          from pathlib import Path
+          databases={
+            "native":Path("/tmp/sm-sqlite-reference/state/scoremax.db"),
+            "candidate":Path("/tmp/sm-sqlite-candidate/state/scoremax.db")}
+          protected=("users","questions","question_families",
+            "assessment_sessions","attempts","attempt_answers",
+            "mastery_records","mastery_form_results","mastery_history",
+            "integration_ph_question_version_store",
+            "integration_ph_release_question_membership",
+            "integration_ph_content_releases",
+            "integration_ph_product_activation_authorizations",
+            "ph_bridge_staged_withdrawal_exclusions_v6611e",
+            "integration_outbox","integration_receipts")
+          records={}
+          for label,path in databases.items():
+            with sqlite3.connect(path.as_uri()+"?mode=ro",uri=True) as c:
+              per={}
+              for table in protected:
+                rows=c.execute('SELECT * FROM "'+table+'"').fetchall()
+                digest=hashlib.sha256()
+                for serialized in sorted(repr(tuple(x)) for x in rows):
+                  digest.update(serialized.encode())
+                  digest.update(b'\0')
+                per[table]={"count":len(rows),"sha256":digest.hexdigest()}
+              records[label]=per
+          mismatches={table:{"native":records["native"][table],
+              "candidate":records["candidate"][table]}
+              for table in protected
+              if records["native"][table]!=records["candidate"][table]}
+          if mismatches:
+            raise RuntimeError("SQLITE_NAV_PROTECTED_DATA_DIVERGENCE:"+repr(mismatches))
+          print("SCOREMAX_SQLITE_PROTECTED_DATA_PARITY_PASS="+json.dumps({
+            "protected_tables":len(protected),
+            "rows_compared":sum(x["count"] for x in records["native"].values()),
+            "all_stored_values_identical":True,
+            "candidate_wrote_no_different_academic_or_PH_rows":True,
+            "production_data_accessed":False},sort_keys=True))
+          PY
       - name: No deployment or DB migration performed
         run: |
           test ! -e scoremax_runtime_v669b/scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
