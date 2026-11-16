@@ -64,6 +64,16 @@ def sqlite_snapshot(path):
     c=sqlite3.connect(p.as_uri()+"?mode=ro",uri=True,isolation_level=None)
     c.execute("PRAGMA query_only=ON")
     c.execute("BEGIN")
+    # Never copy a damaged source into a clean-looking PostgreSQL escrow.
+    integrity=[r[0] for r in c.execute("PRAGMA integrity_check(5)").fetchall()]
+    if integrity!=["ok"]:
+        c.rollback();c.close()
+        raise RuntimeError("NATIVE_SOURCE_SQLITE_INTEGRITY_FAILURE")
+    foreign=c.execute("PRAGMA foreign_key_check").fetchall()
+    if foreign:
+        c.rollback();c.close()
+        raise RuntimeError("NATIVE_SOURCE_SQLITE_FOREIGN_KEY_FAILURE_COUNT:"+
+                           str(len(foreign)))
     return c
 
 def copy_source_schema_catalog(src,pg,namespace):
