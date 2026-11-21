@@ -142,3 +142,38 @@ def _ph_semantic_errors_with_governed_guided(questions, stimuli, schema_version)
     path.write_text(updated, encoding="utf-8")
     print("SM_PH_GUIDED_RELEASE_BOUNDARY_BUILD_PASS exact_guided_only=true "
           "native_scored_unchanged=true activation=false", flush=True)
+
+# One contract boundary for native admission and native activation. Product
+# activation authorization and signed acknowledgements remain separate gates.
+ACTIVATION_MARKER = "SM-PH-SOURCE-BOUND-GUIDED-ACTIVATION-20261121-1"
+
+
+def apply_activation_guard(root: Path) -> None:
+    path = Path(root) / "scoremax_integration_v1.py"
+    source = path.read_text(encoding="utf-8")
+    if ACTIVATION_MARKER in source:
+        return
+    if MARKER not in source:
+        raise RuntimeError("QUALIFIED_GUIDED_ADMISSION_BOUNDARY_REQUIRED")
+    tree = ast.parse(source)
+    matches = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+               and node.name == "_self_marking_release_errors"]
+    if len(matches) != 1:
+        raise RuntimeError("NATIVE_ACTIVATION_CONTRACT_GUARD_DRIFT")
+    node = matches[0]
+    original = ast.get_source_segment(source, node)
+    if original.count(SCORED_ANCHOR) != 1:
+        raise RuntimeError("NATIVE_ACTIVATION_CONTRACT_VALIDATOR_DRIFT")
+    amended = original.replace(
+        SCORED_ANCHOR, "_ph_validate_scored_or_guided_assessment(projection)", 1
+    )
+    lines = source.splitlines(keepends=True)
+    updated = ("".join(lines[:node.lineno - 1])
+               + "# " + ACTIVATION_MARKER + "\n" + amended + "\n"
+               + "".join(lines[node.end_lineno:]))
+    compile(updated, str(path), "exec")
+    path.write_text(updated, encoding="utf-8")
+    print("SM_PH_GUIDED_ACTIVATION_BOUNDARY_BUILD_PASS exact_guided_only=true "
+          "scored_unchanged=true product_authorization_unchanged=true "
+          "signed_ack_unchanged=true activation=false", flush=True)
+
