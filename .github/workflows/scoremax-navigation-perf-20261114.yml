@@ -1,0 +1,498 @@
+name: ScoreMax student navigation performance candidate
+on:
+  pull_request:
+    branches: [fix/scoremax-streamed-backup-20261022]
+  push:
+    branches: [perf/student-navigation-batch-20261114]
+    paths:
+      - scripts/scoremax_navigation_perf_delta_20261114.py
+      - scripts/scoremax_navigation_grouped_scope_delta_20261114.py
+      - scripts/scoremax_navigation_batch_student_evidence_20261114.py
+      - scripts/scoremax_mastery_card_projection_20261114.py
+      - scripts/scoremax_request_evidence_reuse_20261114.py
+      - scripts/scoremax_catalogue_subject_pushdown_20261114.py
+      - scripts/scoremax_navigation_index_migration_20261114.py
+      - scripts/scoremax_fused_subject_inventory_20261114.py
+      - scripts/scoremax_evidence_scalar_copy_20261115.py
+      - scripts/scoremax_governed_visibility_relational_probe_20261115.py
+      - scripts/scoremax_visibility_epoch_rehearsal_20261115.py
+      - scripts/scoremax_visibility_writer_surface_audit_20261115.py
+      - scripts/scoremax_governed_concurrent_contract_20261115.py
+      - scripts/scoremax_transaction_boundary_inspection_20261115.py
+      - scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py
+      - scripts/scoremax_shared_database_preflight_20261115.py
+      - scripts/scoremax_ephemeral_postgres_contract_20261115.py
+      - scripts/scoremax_native_ack_lease_rehearsal_20261115.py
+      - scripts/scoremax_synthetic_signed_ack_roundtrip_20261115.py
+      - scripts/scoremax_submit_exception_guard_20261115.py
+      - scripts/scoremax_native_pg_snapshot_rehearsal_20261116.py
+      - scripts/scoremax_pg_native_session_seed_20261116.py
+      - scripts/scoremax_pg_native_ph_seed_20261116.py
+      - scripts/scoremax_pg_historical_preservation_seed_20261116.py
+      - scripts/scoremax_sqlite_cutover_schema_adversary_20261116.py
+      - scripts/scoremax_full_schema_escrow_rehearsal_20261116.py
+      - scripts/scoremax_learn_subject_evidence_grouping_20261116.py
+      - scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
+      - scripts/scoremax_shadow_navigation_v1.py
+      - scripts/scoremax_nav_shadow_integration_delta_20261115.py
+      - scripts/scoremax_hidden_template_work_guard_20261115.py
+      - scripts/scoremax_mastery_epoch_prefilter_20261115.py
+      - scripts/scoremax_chapter_mastery_local_bundle_20261115.py
+      - scripts/scoremax_build_shadow_disposable_20261115.py
+      - tests/navigation_perf_20261114/**
+      - .github/workflows/scoremax-navigation-perf-20261114.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check delta syntax
+        run: python -m py_compile scripts/scoremax_navigation_perf_delta_20261114.py scripts/scoremax_navigation_grouped_scope_delta_20261114.py scripts/scoremax_navigation_batch_student_evidence_20261114.py scripts/scoremax_mastery_card_projection_20261114.py scripts/scoremax_request_evidence_reuse_20261114.py scripts/scoremax_catalogue_subject_pushdown_20261114.py scripts/scoremax_navigation_index_migration_20261114.py scripts/scoremax_fused_subject_inventory_20261114.py scripts/scoremax_evidence_scalar_copy_20261115.py scripts/scoremax_governed_visibility_relational_probe_20261115.py scripts/scoremax_visibility_epoch_rehearsal_20261115.py scripts/scoremax_visibility_writer_surface_audit_20261115.py scripts/scoremax_governed_concurrent_contract_20261115.py scripts/scoremax_transaction_boundary_inspection_20261115.py scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py scripts/scoremax_shared_database_preflight_20261115.py scripts/scoremax_submit_exception_guard_20261115.py scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py scripts/scoremax_shadow_navigation_v1.py scripts/scoremax_nav_shadow_integration_delta_20261115.py scripts/scoremax_build_shadow_disposable_20261115.py scripts/scoremax_hidden_template_work_guard_20261115.py scripts/scoremax_chapter_mastery_local_bundle_20261115.py scripts/scoremax_mastery_epoch_prefilter_20261115.py
+      - name: Run focused query equivalence tests
+        run: python -m unittest discover -s tests/navigation_perf_20261114 -v
+      - name: Benchmark baseline and candidate evidence indexing
+        run: python tests/navigation_perf_20261114/benchmark_evidence_index.py
+      - name: Reconstruct exact accepted ScoreMax runtime without production data
+        run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+      - name: Audit real generated-runtime visibility writers and unresolved dynamic SQL
+        run: python -B scripts/scoremax_visibility_writer_surface_audit_20261115.py scoremax_runtime_v669b
+      - name: Inspect actual assessment marking and Power House mutation boundaries
+        run: python -B scripts/scoremax_transaction_boundary_inspection_20261115.py scoremax_runtime_v669b
+      - name: Inventory shared transactional database migration incompatibilities
+        run: python -B scripts/scoremax_shared_database_preflight_20261115.py scoremax_runtime_v669b
+      - name: Qualify durable shadow visibility epoch, bulk invalidation and restart recovery
+        run: python -B scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py scoremax_runtime_v669b
+      - name: Prove candidate release-driven visibility relation matches canonical PH and legacy scopes
+        run: python -B scripts/scoremax_governed_visibility_relational_probe_20261115.py scoremax_runtime_v669b
+      - name: Rehearse atomic visibility invalidation and source fallback on disposable PH fixture
+        run: python -B scripts/scoremax_visibility_epoch_rehearsal_20261115.py scoremax_runtime_v669b
+      - name: Rehearse concurrent governed FSc MDCAT mutation and mastery safety
+        run: python -B scripts/scoremax_governed_concurrent_contract_20261115.py scoremax_runtime_v669b
+      - name: Inspect exact generated student read paths
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          s=Path('scoremax_runtime_v669b/app.py').read_text()
+          tree=ast.parse(s)
+          for name in ('_subject_map','chapter_mastery_opportunity','db','inject_ui_preferences','practice_scope_placements','learner_answer_evidence','mdcat_subject_map','select_mastery_coverage_questions','mastery_coverage_contract','_chapter_snapshots','question_coverage_nodes','mastery_evidence_band_levels'):
+              n=next((x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name==name),None)
+              print('=== SCOREMAX_SOURCE',name,'===')
+              if n:
+                  src=ast.get_source_segment(s,n) or ''
+                  print(src[:14000])
+              else:print('MISSING')
+          PY
+      - name: Inspect exact canonical question-type fields
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          for filename, names in (('question_contract_engine.py',{'runtime_type_from_row','canonical_runtime_type'}),('app.py',{'canonical_question_type','question_coverage_nodes'})):
+              src=Path('scoremax_runtime_v669b',filename).read_text()
+              for n in ast.parse(src).body:
+                  if isinstance(n,ast.FunctionDef) and n.name in names:
+                      print('SCOREMAX_FIELD_DEPENDENCY='+filename+':'+n.name)
+                      print(ast.get_source_segment(src,n))
+          PY
+      - name: Inspect exact runtime chapter-card assembly
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          path=Path('scoremax_runtime_v669b/ux_student_batch.py')
+          source=path.read_text()
+          for node in ast.parse(source).body:
+              if isinstance(node,ast.FunctionDef) and node.name in {'_chapter_snapshots','_subject_snapshot'}:
+                  print('SCOREMAX_CHAPTER_CARD_FN='+node.name)
+                  print(ast.get_source_segment(source,node))
+          PY
+      - name: Inspect residual catalogue and coach hot paths in accepted runtime
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          work={
+            'app.py':{'scoremax_coach','scoremax_coach_candidates','inject_ui_preferences','practice_scope_placements','live_question_clause','_programme_scope_sql'},
+            'ux_catalogue_browser.py':{'_release_scope_counts','catalogue_subject'},
+            'ux_student_batch.py':{'_subject_snapshot','_learn_context'},
+          }
+          for filename,names in work.items():
+              source=Path('scoremax_runtime_v669b',filename).read_text()
+              for node in ast.parse(source).body:
+                  if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name in names:
+                      snippet=ast.get_source_segment(source,node) or ''
+                      print('SCOREMAX_RESIDUAL_SOURCE='+filename+':'+node.name)
+                      print(snippet[:22000])
+          PY
+      - name: Inspect chapter scope, chapter page, and chapter-card availability sources
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          targets={
+            'app.py': {'_programme_chapter_scope_sql','chapter_page','chapter_identity','student_weak_areas'},
+            'ux_student_batch.py': {'_chapter_snapshots','_catalogue_for_student'},
+          }
+          for file,names in targets.items():
+              source=Path('scoremax_runtime_v669b',file).read_text()
+              for node in ast.parse(source).body:
+                  if isinstance(node,ast.FunctionDef) and node.name in names:
+                      print('SCOREMAX_CHAPTER_SOURCE='+file+':'+node.name)
+                      print((ast.get_source_segment(source,node) or '')[:26000])
+          PY
+      - name: Preserve exact baseline runtime for side-by-side route tests
+        run: cp -a scoremax_runtime_v669b /tmp/scoremax-nav-baseline
+      - name: Apply bounded post-hash performance delta
+        run: python -B scripts/scoremax_navigation_perf_delta_20261114.py scoremax_runtime_v669b
+      - name: Batch governed inventory lookup on candidate only
+        run: python -B scripts/scoremax_navigation_grouped_scope_delta_20261114.py scoremax_runtime_v669b
+      - name: Batch immutable eligible chapter evidence on candidate
+        run: python -B scripts/scoremax_navigation_batch_student_evidence_20261114.py scoremax_runtime_v669b
+      - name: Narrow mastery-card query payload without changing academic rules
+        run: python -B scripts/scoremax_mastery_card_projection_20261114.py scoremax_runtime_v669b
+      - name: Reuse checksum-validated evidence only within read-only navigation requests
+        run: python -B scripts/scoremax_request_evidence_reuse_20261114.py scoremax_runtime_v669b
+      - name: Push governed catalogue subject constraint into existing placement SQL
+        run: python -B scripts/scoremax_catalogue_subject_pushdown_20261114.py scoremax_runtime_v669b
+      - name: Optimize request-local validated scalar evidence copying
+        run: python -B scripts/scoremax_evidence_scalar_copy_20261115.py scoremax_runtime_v669b
+      - name: Preserve pre-fusion optimized runtime for paired 100k benchmark
+        run: cp -a scoremax_runtime_v669b /tmp/nav-prefused
+      - name: Fuse exact governed subject discovery with inventory grouping
+        run: python -B scripts/scoremax_fused_subject_inventory_20261114.py scoremax_runtime_v669b
+      - name: Install disabled-by-default indexed shadow reader after fused native query
+        run: python -B scripts/scoremax_nav_shadow_integration_delta_20261115.py scoremax_runtime_v669b
+      - name: Skip hidden template work without changing native visibility rules
+        run: python -B scripts/scoremax_hidden_template_work_guard_20261115.py scoremax_runtime_v669b
+      - name: Prove idempotence and compiled runtime
+        run: |
+          python -B scripts/scoremax_navigation_perf_delta_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_navigation_grouped_scope_delta_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_navigation_batch_student_evidence_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_mastery_card_projection_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_request_evidence_reuse_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_catalogue_subject_pushdown_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_fused_subject_inventory_20261114.py scoremax_runtime_v669b
+          python -B scripts/scoremax_evidence_scalar_copy_20261115.py scoremax_runtime_v669b
+          python -B scripts/scoremax_nav_shadow_integration_delta_20261115.py scoremax_runtime_v669b
+          python -B scripts/scoremax_hidden_template_work_guard_20261115.py scoremax_runtime_v669b
+          python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/ux_student_batch.py scoremax_runtime_v669b/scoremax_shadow_navigation_v1.py
+      - name: Add chapter read bundle after existing installers prove idempotence
+        run: |
+          python -B scripts/scoremax_chapter_mastery_local_bundle_20261115.py scoremax_runtime_v669b
+          python -B scripts/scoremax_chapter_mastery_local_bundle_20261115.py scoremax_runtime_v669b
+          python -m py_compile scoremax_runtime_v669b/app.py scoremax_runtime_v669b/ux_student_batch.py
+      - name: Qualify opted-in mastery prefilter on generated disposable runtime
+        run: |
+          python -B scripts/scoremax_mastery_epoch_prefilter_20261115.py scoremax_runtime_v669b
+          python -B scripts/scoremax_mastery_epoch_prefilter_20261115.py scoremax_runtime_v669b
+          python -m py_compile scoremax_runtime_v669b/app.py
+      - name: Install and replay unexpected assessment failure rollback guard
+        run: |
+          python -B scripts/scoremax_submit_exception_guard_20261115.py scoremax_runtime_v669b
+          python -B scripts/scoremax_submit_exception_guard_20261115.py scoremax_runtime_v669b
+          python -m py_compile scoremax_runtime_v669b/app.py
+      - name: Group validated Learning overview evidence once per student GET
+        run: |
+          python -B scripts/scoremax_learn_subject_evidence_grouping_20261116.py scoremax_runtime_v669b
+          python -B scripts/scoremax_learn_subject_evidence_grouping_20261116.py scoremax_runtime_v669b
+          python -m py_compile scoremax_runtime_v669b/ux_student_batch.py
+      - name: Verify formal mastery and dependent-evidence exclusions against candidate
+        run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py -v
+      - name: Verify actual concurrent assessment POST marking and session idempotency
+        run: |
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          python -B scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py scoremax_runtime_v669b
+      - name: Benchmark actual Flask student routes in separate isolated runtimes
+        run: |
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          python tests/navigation_perf_20261114/benchmark_student_routes.py seed /tmp/scoremax-nav-baseline /tmp/nav-seed/state/scoremax.db --per-chapter 800
+          mkdir -p /tmp/nav-base/state /tmp/nav-app/state /tmp/nav-candidate/state
+          cp /tmp/nav-seed/state/scoremax.db /tmp/nav-base/state/scoremax.db
+          cp /tmp/nav-seed/state/scoremax.db /tmp/nav-app/state/scoremax.db
+          cp /tmp/nav-seed/state/scoremax.db /tmp/nav-candidate/state/scoremax.db
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/scoremax-nav-baseline /tmp/nav-base/state/scoremax.db --label baseline --profile | tee /tmp/nav-baseline.log
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-app/state/scoremax.db --label code-only --profile | tee /tmp/nav-code-only.log
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-candidate/state/scoremax.db --label candidate --candidate-indexes --profile --sql-profile | tee /tmp/nav-candidate.log
+      - name: Compare synthetic route response performance
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def read(path):
+              line=next(line for line in Path(path).read_text().splitlines() if line.startswith('SCOREMAX_ROUTE_BENCH='))
+              return json.loads(line.split('=',1)[1])['routes']
+          base=read('/tmp/nav-baseline.log')
+          code=read('/tmp/nav-code-only.log')
+          candidate=read('/tmp/nav-candidate.log')
+          for route,b in base.items():
+              x=code[route];c=candidate[route]
+              assert b['status']==x['status']==c['status']==200,(route,b,x,c)
+              assert b['body_sha256']==x['body_sha256']==c['body_sha256'],('CONTENT_CHANGED',route)
+              a=b['median_ms'];z=c['median_ms']
+              print('SCOREMAX_ROUTE_COMPARISON='+json.dumps({'route':route,'baseline_ms':a,
+                   'code_only_ms':x['median_ms'],'candidate_ms':z,'delta_ms':round(z-a,2),
+                   'index_additional_ms':round(x['median_ms']-z,2),
+                   'improvement_pct':round((a-z)/a*100,1) if a else None},sort_keys=True))
+          # Verify hidden student templates: no navigational/coach content drift.
+          def hidden(path):
+              line=next(line for line in Path(path).read_text().splitlines()
+                        if line.startswith('SCOREMAX_HIDDEN_ROUTE_PROBE='))
+              return json.loads(line.split('=',1)[1])['routes']
+          hidden_base=hidden('/tmp/nav-baseline.log')
+          hidden_code=hidden('/tmp/nav-code-only.log')
+          hidden_candidate=hidden('/tmp/nav-candidate.log')
+          assert set(hidden_base)=={'community_home','science_genius_home'}
+          for endpoint, original in hidden_base.items():
+              for other in (hidden_code[endpoint],hidden_candidate[endpoint]):
+                  assert other['status']==original['status'],('HIDDEN_ROUTE_STATUS_DRIFT',endpoint)
+                  assert other['body_sha256']==original['body_sha256'],('HIDDEN_ROUTE_CONTENT_DRIFT',endpoint)
+              print('SCOREMAX_HIDDEN_TEMPLATE_PARITY='+json.dumps({
+                  'endpoint':endpoint,'status':original['status'],
+                  'body_sha256_equal':True,'hidden_ui_unchanged':True},sort_keys=True))
+          PY
+      - name: Characterize 100800 questions and 1000 distinct students with 100k frozen answers
+        run: |
+          python tests/navigation_perf_20261114/benchmark_student_routes.py seed /tmp/scoremax-nav-baseline /tmp/nav-100k/state/scoremax.db --per-chapter 2100 --additional-learners 999 --answers-per-learner 100
+          mkdir -p /tmp/nav-100k-prefused/state
+          cp /tmp/nav-100k/state/scoremax.db /tmp/nav-100k-prefused/state/scoremax.db
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/nav-prefused /tmp/nav-100k-prefused/state/scoremax.db --label 100k-pre-fused --candidate-indexes | tee /tmp/nav-100k-prefused.log
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --label 100k-fused --candidate-indexes | tee /tmp/nav-100k.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def read(path):
+              return json.loads(next(line.split('=',1)[1] for line in Path(path).read_text().splitlines()
+                  if line.startswith('SCOREMAX_ROUTE_BENCH=')))['routes']
+          before=read('/tmp/nav-100k-prefused.log')
+          after=read('/tmp/nav-100k.log')
+          for path,old in before.items():
+              new=after[path]
+              assert old['status']==new['status']==200,(path,old,new)
+              assert old['body_sha256']==new['body_sha256'],('FUSED_HTML_DRIFT',path)
+              print('SCOREMAX_PAIRED_FUSION_100K='+json.dumps({
+                  'route':path,'pre_fusion_median_ms':old['median_ms'],
+                  'fused_median_ms':new['median_ms'],
+                  'delta_ms':round(new['median_ms']-old['median_ms'],2),
+                  'improvement_pct':round((old['median_ms']-new['median_ms'])/old['median_ms']*100,1),
+                  'source':'paired_same_run_separate_disposable_db_unprofiled',
+                  'concurrency_qualified':False},sort_keys=True))
+          PY
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          line=next(x for x in Path('/tmp/nav-100k.log').read_text().splitlines()
+                    if x.startswith('SCOREMAX_ROUTE_BENCH='))
+          routes=json.loads(line.split('=',1)[1])['routes']
+          for path,metric in routes.items():
+              assert metric['status']==200,(path,metric)
+              assert metric['max_ms']<15000,('100K_NAVIGATION_UNACCEPTABLE',path,metric)
+              print('SCOREMAX_100K_LEARNER_SCALE_CHARACTERIZATION='+json.dumps({
+                'route':path,'questions':100800,'students':1000,
+                'saved_answers':102300,'median_ms':metric['median_ms'],
+                'max_ms':metric['max_ms'],'single_request_target_met':metric['median_ms']<1500,
+                'concurrency_qualified':False,'governed_release_qualified':False},sort_keys=True))
+          PY
+      - name: Compare native versus opt-in shadow navigation on identical 100k disposable databases
+        run: |
+          mkdir -p /tmp/nav-100k-shadow-native/state /tmp/nav-100k-shadow-optin/state
+          cp /tmp/nav-100k/state/scoremax.db /tmp/nav-100k-shadow-native/state/scoremax.db
+          cp /tmp/nav-100k/state/scoremax.db /tmp/nav-100k-shadow-optin/state/scoremax.db
+          python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k-shadow-native/state/scoremax.db --label shadow-native | tee /tmp/nav-shadow-native.log
+          SCOREMAX_NAV_SHADOW_ENABLED=1 python tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/nav-100k-shadow-optin/state/scoremax.db --label shadow-optin --prepare-shadow-after-startup | tee /tmp/nav-shadow-optin.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def read(path,tag):
+              return [json.loads(line.split('=',1)[1]) for line in Path(path).read_text().splitlines()
+                      if line.startswith(tag)]
+          base=read('/tmp/nav-shadow-native.log','SCOREMAX_ROUTE_BENCH=')[0]['routes']
+          shadow=read('/tmp/nav-shadow-optin.log','SCOREMAX_ROUTE_BENCH=')[0]['routes']
+          states=read('/tmp/nav-shadow-optin.log','SCOREMAX_SHADOW_NAV_ROUTE_STATE=')
+          assert len(states)==4,('SHADOW_ROUTES_NOT_MEASURED',states)
+          assert all(not x['dirty'] and x['epochs_match'] for x in states),('SHADOW_STALE_DURING_GET',states)
+          for route,a in base.items():
+              b=shadow[route]
+              assert a['status']==b['status']==200,(route,a,b)
+              assert a['body_sha256']==b['body_sha256'],('SHADOW_LEARNER_HTML_CHANGED',route)
+              print('SCOREMAX_SHADOW_NAV_100K_AB='+json.dumps({
+                  'route':route,'native_median_ms':a['median_ms'],
+                  'shadow_median_ms':b['median_ms'],
+                  'improvement_pct':round((a['median_ms']-b['median_ms'])/a['median_ms']*100,1),
+                  'native_html_equal':True,'real_ph_fixture':False,
+                  'live_render_qualified':False,'feature_default_off':True
+              },sort_keys=True),flush=True)
+          PY
+      - name: Characterize shadow-enabled Gunicorn 1/10/50 student HTTP latency and cache freshness
+        run: |
+          SCOREMAX_NAV_SHADOW_ENABLED=1 python tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/nav-100k-shadow-optin/state/scoremax.db --workers 1,2 --threads 4 --levels 1,10,50 --port 18821 --require-shadow-fresh | tee /tmp/nav-shadow-gunicorn.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          records=[json.loads(line.split('=',1)[1]) for line in Path('/tmp/nav-shadow-gunicorn.log').read_text().splitlines()
+                   if line.startswith('SCOREMAX_GUNICORN_ISOLATED_HTTP=')]
+          assert {(r['workers'],r['distinct_students']) for r in records}=={(w,n) for w in (1,2) for n in (1,10,50)}
+          for r in records:
+              assert r['shadow_enabled'] and not r['ph_governed_fixture_qualified']
+              print('SCOREMAX_SHADOW_GUNICORN_CAPACITY='+json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - name: Measure Subject chapter cards under real shadow-enabled Gunicorn concurrency
+        run: |
+          SCOREMAX_NAV_SHADOW_ENABLED=1 python tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/nav-100k-shadow-optin/state/scoremax.db --workers 1,2 --threads 4 --levels 1,10,50 --port 18851 --route /student/subject/Biology --require-shadow-fresh | tee /tmp/nav-shadow-subject-http.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(l.split('=',1)[1]) for l in Path('/tmp/nav-shadow-subject-http.log').read_text().splitlines()
+                if l.startswith('SCOREMAX_GUNICORN_ISOLATED_HTTP=')]
+          assert {(r['workers'],r['distinct_students']) for r in rows}=={(w,n) for w in (1,2) for n in (1,10,50)}
+          for r in rows:
+              assert r['shadow_enabled'] and r['route']=='/student/subject/Biology'
+              print('SCOREMAX_CHAPTER_MASTERY_SHADOW_GUNICORN='+json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - name: Characterize 1, 10 and 50 concurrent requests from distinct synthetic students
+        run: python tests/navigation_perf_20261114/benchmark_parallel_requests.py scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --levels 1,10,50 --path /student/learn-vnext
+      - name: Characterize real Gunicorn HTTP 1-worker versus 2-worker concurrency
+        run: |
+          python tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/nav-100k/state/scoremax.db --workers 1,2 --threads 4 --levels 1,10,50 --port 18761 | tee /tmp/nav-gunicorn.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(line.split('=',1)[1])
+                for line in Path('/tmp/nav-gunicorn.log').read_text().splitlines()
+                if line.startswith('SCOREMAX_GUNICORN_ISOLATED_HTTP=')]
+          assert {(x['workers'],x['distinct_students']) for x in rows}=={
+            (worker,n) for worker in (1,2) for n in (1,10,50)}
+          for x in rows:
+              assert x['max_ms']<120000,('LOAD_PROBE_TIMEOUT',x)
+              print('SCOREMAX_GUNICORN_CAPACITY_CHARACTERIZATION='+json.dumps(x,sort_keys=True))
+          PY
+      - name: P0 launch capacity gate — refuse slow concurrent student responses
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/nav-gunicorn.log')
+          rows=[json.loads(line.split('=',1)[1]) for line in p.read_text().splitlines()
+                if line.startswith('SCOREMAX_GUNICORN_ISOLATED_HTTP=')]
+          required={(workers,n) for workers in (1,2) for n in (1,10,50)}
+          observed={(r['workers'],r['distinct_students']) for r in rows}
+          assert observed==required,('CAPACITY_SCENARIO_MISSING',sorted(required-observed))
+          violations=[(r['workers'],r['distinct_students'],r['p95_ms'])
+                      for r in rows if r['p95_ms']>=1500]
+          print('SCOREMAX_P0_CAPACITY_GATE='+json.dumps({
+            'criterion':'p95_lt_1500_ms',
+            'status':'FAILED' if violations else 'PASSED',
+            'violations':violations,
+            'governed_data_qualification':False,
+            'render_live_qualification':False
+          },sort_keys=True),flush=True)
+          assert not violations,'SCOREMAX_P0_CAPACITY_GATE_FAILED'
+          PY
+      - name: Verify canonical runtime entrypoint remains unchanged
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          content=Path('scoremax_runtime_v669b/scoremax_production.py').read_text()
+          assert 'SCOREMAX_STUDENT_NAVIGATION_BATCH_20261114' not in content
+          print('SCOREMAX_PERFORMANCE_ENTRYPOINT_UNCHANGED')
+          PY
+
+  shared_transactional_store:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: scoremax_contract
+          POSTGRES_PASSWORD: synthetic_only_not_for_production
+          POSTGRES_DB: scoremax_contract
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U scoremax_contract -d scoremax_contract"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SCOREMAX_EPHEMERAL_POSTGRES_DSN: postgresql://scoremax_contract:synthetic_only_not_for_production@127.0.0.1:5432/scoremax_contract
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate PostgreSQL compatibility experiment compiles
+        run: python -m py_compile scripts/scoremax_ephemeral_postgres_contract_20261115.py
+      - name: Verify SQLite PostgreSQL shared transactional contract on disposable data
+        run: |
+          python -m pip install "psycopg[binary]>=3.2,<4"
+          python -B scripts/scoremax_ephemeral_postgres_contract_20261115.py
+      - name: Reconstruct exact accepted ScoreMax runtime on disposable CI
+        run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+      - name: Install real accepted runtime and generate synthetic SQLite ledger
+        run: |
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/scoremax-pg-snapshot/state/scoremax.db --per-chapter 4 --answers-per-learner 0
+      - name: Create actual native synthetic assessment session and frozen marked response
+        run: python -B scripts/scoremax_pg_native_session_seed_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db scoremax_runtime_v669b
+      - name: Populate native accepted Power House shared FSc MDCAT synthetic release records
+        run: python -B scripts/scoremax_pg_native_ph_seed_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db scoremax_runtime_v669b
+      - name: Populate inert mastery-history and withdrawal-exclusion preservation sentinels
+        run: python -B scripts/scoremax_pg_historical_preservation_seed_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db
+      - name: Audit uncopied ScoreMax schema and reproduce unsafe concurrent cutover snapshot
+        run: python -B scripts/scoremax_sqlite_cutover_schema_adversary_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db
+      - name: Exercise all-or-nothing PostgreSQL migration and exact protected-row parity
+        env:
+          SCOREMAX_EPHEMERAL_PG_REHEARSAL: "1"
+        run: python -B scripts/scoremax_native_pg_snapshot_rehearsal_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db
+      - name: Prove every native table and data value is covered in temporary PostgreSQL escrow
+        env:
+          SCOREMAX_EPHEMERAL_PG_REHEARSAL: "1"
+        run: python -B scripts/scoremax_full_schema_escrow_rehearsal_20261116.py /tmp/scoremax-pg-snapshot/state/scoremax.db
+
+  transaction_paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reconstruct existing production-matched runtime in disposable CI
+        run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+      - name: Install accepted application requirements
+        run: pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Inspect signed Power House ACK and marking transaction handlers
+        run: python -B scripts/scoremax_transaction_boundary_inspection_20261115.py scoremax_runtime_v669b
+      - name: Install source-locked unexpected submission failure rollback guard
+        run: |
+          python -B scripts/scoremax_submit_exception_guard_20261115.py scoremax_runtime_v669b
+          python -B scripts/scoremax_submit_exception_guard_20261115.py scoremax_runtime_v669b
+      - name: Verify real submission idempotency and injected rollback/retry
+        run: python -B scripts/scoremax_true_submit_concurrency_rehearsal_20261115.py scoremax_runtime_v669b
+      - name: Verify native Power House outbox claim leases under concurrent workers
+        run: python -B scripts/scoremax_native_ack_lease_rehearsal_20261115.py scoremax_runtime_v669b
+      - name: Verify signed Power House withdrawal ACK contract against fake HTTPS peer
+        run: python -B scripts/scoremax_synthetic_signed_ack_roundtrip_20261115.py scoremax_runtime_v669b
+      - name: Verify cross-market withdrawal and release-source concurrency
+        run: python -B scripts/scoremax_governed_concurrent_contract_20261115.py scoremax_runtime_v669b
+
+  cutover_completeness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reconstruct exact accepted ScoreMax generated runtime
+        run: python -B scripts/materialize_scoremax_biology_receiver_20261027.py
+      - name: Create disposable native ScoreMax schema
+        run: |
+          pip install -r scoremax_runtime_v669b/requirements.txt
+          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/scoremax-cutover-fence/state/scoremax.db --per-chapter 4 --answers-per-learner 0
+      - name: Refuse incomplete PostgreSQL schema or unqualified source-write fencing
+        run: python -B scripts/scoremax_sqlite_cutover_schema_adversary_20261116.py /tmp/scoremax-cutover-fence/state/scoremax.db --assert-ready
