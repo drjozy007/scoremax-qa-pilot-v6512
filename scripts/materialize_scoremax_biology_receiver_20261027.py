@@ -88,7 +88,7 @@ def materialize_practice_availability(keep_accepted_source=False):
 RELEASE_DISPATCH_EXPECTED='ce3989897be46c2c01f2d7d726168843165f2d18111b02b48f1c18a3dec5d2e6'
 
 
-def materialize(keep_accepted_source=False):
+def materialize_release_dispatch(keep_accepted_source=False):
  root=REPO/'scoremax_runtime_v669b'
  expected=(263,RELEASE_DISPATCH_EXPECTED)
  if root.exists() and digest(root)==expected:
@@ -113,6 +113,28 @@ def materialize(keep_accepted_source=False):
          'scoped_ack_dispatch':True,'learner_activation':False}
 
 
+PROGRAMME_CACHE_EXPECTED='81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522'
+
+
+def materialize(keep_accepted_source=False):
+ root=REPO/'scoremax_runtime_v669b'
+ expected=(263,PROGRAMME_CACHE_EXPECTED)
+ if root.exists() and digest(root)==expected:
+  return {'replayed':True,'files':263,'runtime_sha256':PROGRAMME_CACHE_EXPECTED,
+          'pure_programme_resolution_cache':True,'learner_activation':False}
+ metadata=materialize_release_dispatch(keep_accepted_source)
+ source=REPO/'ux_vnext_overlay/biology_receiver_20261027/programme_resolution_cache_20261121.py'
+ spec=importlib.util.spec_from_file_location('bounded_programme_resolution_cache',source)
+ module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+ metadata.update(module.apply(root))
+ actual=digest(root)
+ assert actual==expected,f'PROGRAMME_RESOLVER_CACHE_RUNTIME_MISMATCH observed={actual}'
+ return {**metadata,'files':263,'runtime_sha256':PROGRAMME_CACHE_EXPECTED,
+         'accepted_dispatch_runtime_sha256':RELEASE_DISPATCH_EXPECTED,
+         'release_eligibility_cached':False,'learner_activation':False}
+
+
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--keep-accepted-source',action='store_true');args=p.parse_args()
  print('SCOREMAX_BIOLOGY_RUNTIME='+json.dumps(materialize(args.keep_accepted_source),sort_keys=True))
+
