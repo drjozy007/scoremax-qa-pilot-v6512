@@ -88,7 +88,7 @@ def materialize_practice_availability(keep_accepted_source=False):
 RELEASE_DISPATCH_EXPECTED='ce3989897be46c2c01f2d7d726168843165f2d18111b02b48f1c18a3dec5d2e6'
 
 
-def materialize(keep_accepted_source=False):
+def materialize_release_dispatch(keep_accepted_source=False):
  root=REPO/'scoremax_runtime_v669b'
  expected=(263,RELEASE_DISPATCH_EXPECTED)
  if root.exists() and digest(root)==expected:
@@ -113,6 +113,28 @@ def materialize(keep_accepted_source=False):
          'scoped_ack_dispatch':True,'learner_activation':False}
 
 
+GUIDED_ACTIVATION_EXPECTED='030e7116ce13c6cb064a43186c90f0fcd6e553fb26b05fffab5d003d96df00e8'
+
+
+def materialize(keep_accepted_source=False):
+ root=REPO/'scoremax_runtime_v669b'
+ expected=(263,GUIDED_ACTIVATION_EXPECTED)
+ if root.exists() and digest(root)==expected:
+  return {'replayed':True,'files':263,'runtime_sha256':GUIDED_ACTIVATION_EXPECTED,
+          'learner_activation':False}
+ metadata=materialize_release_dispatch(keep_accepted_source)
+ source=REPO/'ux_vnext_overlay/biology_receiver_20261027/shared_ph_guided_admission_20261031.py'
+ spec=importlib.util.spec_from_file_location('source_bound_guided_activation',source)
+ module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+ module.apply_activation_guard(root)
+ assert digest(root)==expected,'GUIDED_ACTIVATION_RUNTIME_MISMATCH'
+ return {**metadata,'files':263,'runtime_sha256':GUIDED_ACTIVATION_EXPECTED,
+         'accepted_dispatch_runtime_sha256':RELEASE_DISPATCH_EXPECTED,
+         'guided_activation_contract_consistent':True,
+         'product_activation_authority_unchanged':True,'learner_activation':False}
+
+
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--keep-accepted-source',action='store_true');args=p.parse_args()
  print('SCOREMAX_BIOLOGY_RUNTIME='+json.dumps(materialize(args.keep_accepted_source),sort_keys=True))
+
