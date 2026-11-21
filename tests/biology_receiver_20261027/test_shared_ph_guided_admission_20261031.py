@@ -84,4 +84,43 @@ def admit_content_envelope(c,envelope,content_sha_header=''):
   self.assertEqual([r["code"] for r in result],
     ["OTHER_DEFECT","UNSUPPORTED_RUBRIC_ONLY_DELIVERY"])
 
+
+class ActivationBoundary(unittest.TestCase):
+ def setUp(self):
+  spec=importlib.util.spec_from_file_location("guided_activation_patch",PATCH)
+  self.patch=importlib.util.module_from_spec(spec);spec.loader.exec_module(self.patch)
+  donor=ast.parse((ROOT/"ux_vnext_overlay/assessment_integration_v2.py").read_text())
+  self.guard=ast.unparse(next(n for n in donor.body if isinstance(n,ast.FunctionDef) and n.name=="_self_marking_release_errors"))
+ def candidate(self):
+  return "# "+self.patch.MARKER+"\n"+self.guard+"\n"+"def authorize_product_activation(*args):\n    return original_authorization(*args)\n"
+ def test_activation_reuses_admission_validator_without_changing_product_authority(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   target=pathlib.Path(tmp)/"scoremax_integration_v1.py";target.write_text(self.candidate())
+   self.patch.apply_activation_guard(target.parent)
+   updated=target.read_text();first=target.read_bytes();self.patch.apply_activation_guard(target.parent)
+   self.assertEqual(target.read_bytes(),first)
+   tree=ast.parse(updated);guard=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=="_self_marking_release_errors")
+   calls=[]
+   def verify(p):
+    calls.append(p)
+    if p.get("invalid"):raise ValueError("SOURCE_BOUND_GUIDED_CONTRACT_INVALID")
+   env={"_eligible_release_question_versions":lambda *args:[{"question_id":"SOFTWARE","question_version_id":"v1","scoremax_projection_json":"{}","content_json":"{}"}],
+        "strict_json_loads":__import__("json").loads,"effective_projection":lambda p,c:p,
+        "_ph_validate_scored_or_guided_assessment":verify}
+   exec(compile(ast.Module(body=[guard],type_ignores=[]),"<native-activation-guard>","exec"),env)
+   self.assertEqual(env["_self_marking_release_errors"](None,"SOFTWARE","1"),[])
+   self.assertEqual(len(calls),1)
+   env["effective_projection"]=lambda p,c:{"invalid":True}
+   self.assertEqual(env["_self_marking_release_errors"](None,"SOFTWARE","1")[0]["code"],"SELF_MARKING_REQUIRED")
+   self.assertIn("return original_authorization(*args)",updated)
+ def test_missing_qualified_admission_boundary_fails_closed(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   target=pathlib.Path(tmp)/"scoremax_integration_v1.py";target.write_text(self.guard)
+   with self.assertRaisesRegex(RuntimeError,"GUIDED_ADMISSION_BOUNDARY_REQUIRED"):self.patch.apply_activation_guard(target.parent)
+ def test_unknown_activation_guard_shape_fails_closed(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   target=pathlib.Path(tmp)/"scoremax_integration_v1.py";target.write_text(self.candidate().replace("question_contracts.validate_assessment_contract(projection)","unrecognised_validator(projection)"))
+   with self.assertRaisesRegex(RuntimeError,"VALIDATOR_DRIFT"):self.patch.apply_activation_guard(target.parent)
+
 if __name__=="__main__":unittest.main()
+
