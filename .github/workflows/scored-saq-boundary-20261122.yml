@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'ux_vnext_overlay/biology_receiver_20261027/scored_saq_*.py'
+      - 'ux_vnext_overlay/biology_receiver_20261027/work_b_receiver*'
+      - 'tests/biology_receiver_20261027/*pending*'
+      - 'tests/biology_receiver_20261027/*work_b*'
+      - 'tests/biology_receiver_20261027/native_delivery_fixture.py'
       - 'scripts/materialize_scoremax_scored_saq_20261122.py'
       - 'tests/biology_receiver_20261027/*scored*.py'
       - '.github/workflows/scored-saq-boundary-20261122.yml'
@@ -39,3 +43,11 @@ jobs:
         run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_scored_saq_v1.py -v
       - name: Native saved submissions and 1 10 50 concurrency
         run: python -B tests/biology_receiver_20261027/qualify_scored_native_submissions_v1.py
+      - name: Exact receiver continuation build and rollback source controls
+        run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_work_b_receiver_build_v2.py -v
+      - name: Native pending responses preserve source marks and weight
+        run: python -B tests/biology_receiver_20261027/qualify_pending_saq_native_v3.py pending_saq_native_ci.json
+      - name: Native signed release withdrawal races and recovery
+        run: python -B tests/biology_receiver_20261027/qualify_work_b_delivery_recovery_v2.py delivery_recovery_native_ci.json
+      - name: Separate signed pending contract adversarial controls
+        run: python -B tests/biology_receiver_20261027/qualify_pending_saq_adversarial_v1.py pending_saq_adversarial_ci.json
