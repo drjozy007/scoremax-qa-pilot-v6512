@@ -29,7 +29,7 @@ def apply(root):
     if tree(root) != BASE_TREE:
         raise ValueError('SCORED_SAQ_ACCEPTED_RUNTIME_REQUIRED')
     changes = {}
-    p = root / 'ux_constructed_auto_marker.py'; text = p.read_text()
+    p = root / 'ux_constructed_auto_marker.py'; text = p.read_text(encoding='utf8')
     text = _once(text, "        rubric = mc.get('rubric')\n", """        rubric = mc.get('rubric')
         if isinstance(rubric,dict) and 'assessment_eligibility' in rubric:
             from scored_saq_runtime_v1 import parts, compile_scored_contract
@@ -43,7 +43,7 @@ def apply(root):
     unsigned = dict(contract); expected_hash = unsigned.pop('contract_sha256', None)
 """)
     changes[p] = text
-    p = root / 'question_contract_engine.py'; text = p.read_text()
+    p = root / 'question_contract_engine.py'; text = p.read_text(encoding='utf8')
     old = "    if qt=='constructed_response':\n        from ux_constructed_auto_marker import compile_contract\n"
     text = _once(text, old, """    if qt=='constructed_response':
         from scored_saq_runtime_v1 import capability
@@ -60,7 +60,7 @@ def apply(root):
         from ux_constructed_auto_marker import compile_contract
 """)
     changes[p] = text
-    p = root / 'ph_mastery_evidence.py'; text = p.read_text()
+    p = root / 'ph_mastery_evidence.py'; text = p.read_text(encoding='utf8')
     old = "    role = str(q.get('ph_evidence_role') or '').strip().upper()\n"
     text = _once(text, old, """    # New scored SAQs must carry exact approval, source, rubric and version
     # binding; the original independent role/weight fence still runs below.
@@ -75,7 +75,7 @@ def apply(root):
     role = str(q.get('ph_evidence_role') or '').strip().upper()
 """)
     changes[p] = text
-    p = root / 'scoremax_integration_v1.py'; text = p.read_text()
+    p = root / 'scoremax_integration_v1.py'; text = p.read_text(encoding='utf8')
     text = _once(text, '    valid_cloze = set()\n', '    valid_cloze = set()\n    valid_scored = set()\n')
     old = '        rubric = marking.get("rubric") or {}\n'
     text = _once(text, old, old + """        if isinstance(rubric,dict) and 'assessment_eligibility' in rubric:

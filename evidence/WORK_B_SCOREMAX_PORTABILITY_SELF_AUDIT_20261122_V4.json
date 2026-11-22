@@ -1,0 +1,63 @@
+{
+  "status": "PASSED",
+  "candidate_version": 4,
+  "portability_changes_only": true,
+  "accepted_runtime_files": 263,
+  "accepted_runtime_tree_sha256": "81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522",
+  "scored_runtime_files": 264,
+  "scored_runtime_tree_sha256": "056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab",
+  "accepted_regressions": 7,
+  "scored_regressions": 16,
+  "native_concurrency": [
+    1,
+    10,
+    50
+  ],
+  "output_runtime_bytes_changed": false,
+  "windows_execution": "PENDING_HOSTED_CI",
+  "production_mutated": false,
+  "commands": [
+    {
+      "stage": "fresh_accepted_assembly",
+      "returncode": 0,
+      "elapsed_seconds": 9.781679,
+      "stdout": "SCOREMAX_PERSISTENT_GUARD_POSTRELEASE_STATE_PASS historical_release_preserved=true current_live_separate=true rejected_requires_audit_event=true retired_requires_audit_event=true release_authority_unchanged=true\nSCOREMAX_PERSISTENT_GUARD_BATCH_RETIREMENT_PASS exact_batch_evidence=true manual_question_events_unchanged=true batch_retirement_precedes_manual_audit=true legacy_withdrawn_compatibility=true canonical_retired_state=true zero_value_safe=true diagnostic_on_mismatch=true historical_attempts_preserved=true release_authority=false\nSM_PH_GUIDED_RELEASE_BOUNDARY_BUILD_PASS exact_guided_only=true native_scored_unchanged=true activation=false\nSCOREMAX_BIOLOGY_RUNTIME={\"AI_candidate_applied\": false, \"accepted_dispatch_runtime_sha256\": \"ce3989897be46c2c01f2d7d726168843165f2d18111b02b48f1c18a3dec5d2e6\", \"accepted_public_commit\": \"9df838d46ad82633904f252108ba434be90f9bb3\", \"accepted_receiver_runtime_sha256\": \"ddb4ee4a1398c0e5ac2300e4711b7a1befadd7e4ef067dfc21bc28de118cdc9c\", \"cache_maxsize\": 128, \"changed_files\": [\"question_contract_engine.py\", \"scoremax_integration_v1.py\", \"guided_self_assessment.py\", \"app.py\", \"templates/_learner_question_surface.html\", \"ux_student_batch.py\"], \"contract\": \"SM-SHARED-PRACTICE-CONTRACTS-1\", \"database_changes\": false, \"effective_practice_official_mock_exclusion\": true, \"files\": 263, \"formal_mastery_evidence_policy\": \"SM-PH-FORMAL-INDEPENDENT-EVIDENCE-1\", \"historical_qualifications_replayed\": 0, \"learner_activation\": false, \"new_files\": [\"ph_practice_contracts.py\", \"ph_mastery_evidence.py\"], \"power_house_changes\": false, \"practice_availability_access_qualified\": true, \"pure_programme_resolution_cache\": true, \"release_eligibility_cached\": false, \"runtime_sha256\": \"81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522\", \"schema_changes\": false, \"scoped_ack_dispatch\": true}\n",
+      "stderr": ""
+    },
+    {
+      "stage": "accepted_seven_regressions",
+      "returncode": 0,
+      "elapsed_seconds": 0.419878,
+      "stdout": "",
+      "stderr": "----------------------------------------------------------------------\nRan 7 tests in 0.345s\n\nOK\n"
+    },
+    {
+      "stage": "fresh_scored_assembly",
+      "returncode": 0,
+      "elapsed_seconds": 0.151938,
+      "stdout": "{\"after_tree_sha256\": \"056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab\", \"before_tree_sha256\": \"81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522\", \"database_tables_added\": 0, \"files\": 263, \"learner_activation\": false, \"official_ai_scoring_enabled\": false, \"policy\": \"SM-SCORED-SAQ-BOUNDARY-1\", \"production_mutated\": false, \"pure_programme_resolution_cache\": true, \"replayed\": true, \"runtime_sha256\": \"81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522\"}\n",
+      "stderr": ""
+    },
+    {
+      "stage": "scored_sixteen_regressions",
+      "returncode": 0,
+      "elapsed_seconds": 0.107802,
+      "stdout": "",
+      "stderr": "----------------------------------------------------------------------\nRan 16 tests in 0.012s\n\nOK\n"
+    },
+    {
+      "stage": "native_1_10_50_submissions",
+      "returncode": 0,
+      "elapsed_seconds": 5.474644,
+      "stdout": "[ScoreMax] One-time bootstrap admin created; credential withheld from logs.\nSCOREMAX_UX_TEACHER_PREVIEW_READY create_only=true admin_seed=false credentials_embedded=false revocations_preserved=true\n{\"database_bytes\": 4767744, \"fixture_authority\": \"SOFTWARE_ONLY_NO_REAL_ACADEMIC_APPROVAL\", \"integrity_check\": \"ok\", \"max_rss_kib\": 178328, \"native_flask_submit_and_sqlite_persistence\": true, \"production_mutated\": false, \"results\": [{\"concurrency\": 1, \"elapsed_seconds\": 0.051869, \"idempotent_repeat\": \"PASSED\", \"latency_p50_seconds\": 0.050035, \"latency_p95_seconds\": 0.050035, \"learners\": 1, \"maximum_seconds\": 0.050035}, {\"concurrency\": 10, \"elapsed_seconds\": 0.463696, \"idempotent_repeat\": \"PASSED\", \"latency_p50_seconds\": 0.449945, \"latency_p95_seconds\": 0.461488, \"learners\": 10, \"maximum_seconds\": 0.461488}, {\"concurrency\": 50, \"elapsed_seconds\": 3.425744, \"idempotent_repeat\": \"PASSED\", \"latency_p50_seconds\": 2.840366, \"latency_p95_seconds\": 3.367532, \"learners\": 50, \"maximum_seconds\": 3.39017}], \"status\": \"PASSED\"}\n",
+      "stderr": ""
+    },
+    {
+      "stage": "candidate_materializer_replay",
+      "returncode": 0,
+      "elapsed_seconds": 0.064121,
+      "stdout": "{\"after_tree_sha256\": \"056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab\", \"database_tables_added\": 0, \"official_ai_scoring_enabled\": false, \"policy\": \"SM-SCORED-SAQ-BOUNDARY-1\", \"production_mutated\": false, \"replayed\": true}\n",
+      "stderr": ""
+    }
+  ]
+}

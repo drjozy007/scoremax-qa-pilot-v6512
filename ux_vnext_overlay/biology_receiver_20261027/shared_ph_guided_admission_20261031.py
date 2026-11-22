@@ -139,6 +139,6 @@ def _ph_semantic_errors_with_governed_guided(questions, stimuli, schema_version)
     updated = ("".join(lines[:node.lineno - 1]) + helper + amended
                + "".join(lines[node.end_lineno:]))
     compile(updated, str(path), "exec")
-    path.write_text(updated, encoding="utf-8")
+    path.write_text(updated, encoding="utf-8", newline="\n")
     print("SM_PH_GUIDED_RELEASE_BOUNDARY_BUILD_PASS exact_guided_only=true "
           "native_scored_unchanged=true activation=false", flush=True)

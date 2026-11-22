@@ -6,15 +6,24 @@ on:
       - 'scripts/materialize_scoremax_scored_saq_20261122.py'
       - 'tests/biology_receiver_20261027/*scored*.py'
       - '.github/workflows/scored-saq-boundary-20261122.yml'
+      - '.gitattributes'
+      - 'ux_vnext_overlay/biology_receiver_20261027/shared_practice_runtime.py'
+      - 'ux_vnext_overlay/biology_receiver_20261027/shared_ph_guided_admission_20261031.py'
   workflow_dispatch:
+env:
+  PYTHONUTF8: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
 jobs:
   qualification:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

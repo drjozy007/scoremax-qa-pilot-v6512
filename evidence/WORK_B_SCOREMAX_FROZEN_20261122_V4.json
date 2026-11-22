@@ -1,0 +1,25 @@
+{
+  "stage": "SELF_AUDIT_FROZEN",
+  "baseline_git_sha": "8d5c0fd44ede20c56d62a42f0515207bb4b94bda",
+  "accepted_runtime_tree_sha256": "81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522",
+  "candidate_runtime_tree_sha256": "056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab",
+  "official_ai_scoring_enabled": false,
+  "production_mutated": false,
+  "files": {
+    "ux_vnext_overlay/biology_receiver_20261027/scored_saq_runtime_v1.py": "3dc6f2bdf9a4a2f98f0da03175d724821768a96279540bacbf9ffa0f8ff17524",
+    "ux_vnext_overlay/biology_receiver_20261027/scored_saq_build_v1.py": "7084af042428352621e9878df0cfdaf2d1c49d8af00f8763d5b1050352828e41",
+    "scripts/materialize_scoremax_scored_saq_20261122.py": "1393ba0fb528fc6d10b3581c39975d695326ec5958bf071d924c054793574eb1",
+    "tests/biology_receiver_20261027/test_scored_saq_v1.py": "f63ca589ecae666dd8c727d24d68035ae8a6e05c925aa036beb300f2b908ad6e",
+    "tests/biology_receiver_20261027/qualify_scored_native_submissions_v1.py": "2075173cb04d767d825144982afd9ba718c1afe3f94f8be004f5a11a4911f077",
+    ".github/workflows/scored-saq-boundary-20261122.yml": "2a872678e171c11222b51812a97bf9cb2ba5b2629125fea30ccdfac587889bb9",
+    "ux_vnext_overlay/biology_receiver_20261027/shared_practice_runtime.py": "031f7c0c2cc021ea22a8828439aee5f5b5c738682bb1ee38c318fa2ba6c0cc9c",
+    "ux_vnext_overlay/biology_receiver_20261027/shared_ph_guided_admission_20261031.py": "be2dd73a17fbce50cad94a1c545b7914dd013aea75684557c137e3b41f4aab2f",
+    ".gitattributes": "81e8fa522c0b64a088c6b2b70b93f085c1564efe20befdfb1940d0834a823a3b"
+  },
+  "supersedes": "scoremax_scored_saq_self_audit_frozen_v3.json",
+  "reason": "Native qualification evidence destination made portable before separate adversarial audit; v1 source bytes retained in frozen/scoremax_v1.",
+  "candidate_version": 4,
+  "rectification": "Explicit UTF-8 build reads, LF output writes, exact Git checkout bytes, and Windows/Linux CI UTF-8 policy. No runtime, marking or approval changes.",
+  "evidence": "scoremax_portability_v4_self_audit.json",
+  "output_runtime_bytes_changed": false
+}
