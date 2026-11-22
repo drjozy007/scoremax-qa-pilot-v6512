@@ -1,0 +1,38 @@
+{
+  "status": "PASSED",
+  "fixture_authority": "SOFTWARE_ONLY_NO_REAL_ACADEMIC_APPROVAL",
+  "native_flask_submit_and_sqlite_persistence": true,
+  "results": [
+    {
+      "concurrency": 1,
+      "learners": 1,
+      "elapsed_seconds": 0.056845,
+      "latency_p50_seconds": 0.054938,
+      "latency_p95_seconds": 0.054938,
+      "maximum_seconds": 0.054938,
+      "idempotent_repeat": "PASSED"
+    },
+    {
+      "concurrency": 10,
+      "learners": 10,
+      "elapsed_seconds": 0.624224,
+      "latency_p50_seconds": 0.602668,
+      "latency_p95_seconds": 0.621318,
+      "maximum_seconds": 0.621318,
+      "idempotent_repeat": "PASSED"
+    },
+    {
+      "concurrency": 50,
+      "learners": 50,
+      "elapsed_seconds": 3.686866,
+      "latency_p50_seconds": 3.083137,
+      "latency_p95_seconds": 3.640037,
+      "maximum_seconds": 3.669547,
+      "idempotent_repeat": "PASSED"
+    }
+  ],
+  "integrity_check": "ok",
+  "max_rss_kib": 178196,
+  "database_bytes": 4767744,
+  "production_mutated": false
+}

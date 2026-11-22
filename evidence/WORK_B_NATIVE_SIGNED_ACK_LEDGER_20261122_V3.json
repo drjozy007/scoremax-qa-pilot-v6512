@@ -1,0 +1,46 @@
+{
+  "status": "PASSED",
+  "actual_ph_binder": true,
+  "actual_scoremax_signed_http_admission": true,
+  "invalid_hmac_rejected": true,
+  "unqualified_real_source_scoring_rejected": true,
+  "scored_sibling_release_admitted_and_activated": true,
+  "native_saved_submit_result_mastery_eligible": true,
+  "native_learner_live_event_count": 1,
+  "native_signed_ack_dispatched": true,
+  "ack_repeat_dispatched": false,
+  "powerhouse_native_ack_ledger_reconciled": true,
+  "peer_receipt": "ACTUAL_NATIVE_POWER_HOUSE_RECEIPT",
+  "authority": "SOFTWARE_FIXTURE_ONLY_NO_REAL_ACADEMIC_APPROVAL",
+  "authentic_source_sha256": "347978067567e2b63f8b53a1b2d5d09388b57c9a4a2c92d77c7c3c85fef1af39",
+  "production_mutated": false,
+  "powerhouse_native_hmac_authentication": true,
+  "powerhouse_native_callback_business_handler": true,
+  "powerhouse_native_ledger_duplicate_rows": 0,
+  "powerhouse_full_application_startup": false,
+  "full_native_ph_qualification_release_compiler_to_ack": "PENDING",
+  "http_server": "THIN_DISPOSABLE_FLASK_ROUTE_CALLING_ACCEPTED_NATIVE_FUNCTIONS",
+  "observed_native_identities": [
+    {
+      "event_id": "SMDEL::d609ad95a0f7e2647bd63bab769619f7",
+      "message_id": "msg::SM_PH_CONTENT_DELIVERY_ACK_V1::7ae1eb9672ae060830dd3a55b140",
+      "release_id": "SOFTWARE-SCORED-scored",
+      "release_version": "1",
+      "package_checksum_sha256": "70b48c0a60b91af42effb3dec47cec8786170426255553ec590db16cbdaef74e",
+      "question_id": "PH-Q-SOFTWARE::real-source-shape",
+      "question_version_id": "PH-QV-SOFTWARE::v1",
+      "question_checksum_sha256": "978a7b3368ff2f59d14be22a2f08c938f19ea8f0c68d21047b4d8d789809e4ef",
+      "native_ledger_id": 1,
+      "receipt_id": "RCPT::POWER_HOUSE::d226e196b3a9d067f540dbc1b6f80709"
+    }
+  ],
+  "native_ph_source_pins": {
+    "db.py": "cf0b6217f600e58a01a9b75f5f00ee19cf26f308cb6d8dc8dcda7eaacaa4b043",
+    "integration_v1.py": "265ae4b02d9713a651a13ce8dcc9bcda760d74d32027abb149107ce0d2742592",
+    "governance.py": "5652d379bb1fdb7b01579b8fcc840b525ad19a94567f1cc01c6388f1edf63341",
+    "migrations/0023_v013_three_system_integration.sql": "052c2d64a04a94fc4c06ec30d826f342444e5563eb1fbec8396309540493cd93",
+    "qualification_runtime_overlay_v015l9q/scoremax_delivery_incident_bridge_v015l9q_hardened.py": "ed9aba857cc0b4dfa31498e4fdd2dd7b9503d707d402578f2baaac995bd84c52",
+    "runtime_support_v015l9g/scoremax_callback_receipts_v1.py": "ed303f11e9ecf33881f74b761dbe9035498ace63bd7254ab804a5d4c2e20769f"
+  },
+  "receipt_schema_sha256": "d25de659141b5b5491a7ddb7515981f2b4ec6710a21e1b2b1f13f2f3f0ccc0e8"
+}

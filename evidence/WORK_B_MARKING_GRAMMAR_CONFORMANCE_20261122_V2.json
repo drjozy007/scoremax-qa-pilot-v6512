@@ -1,0 +1,508 @@
+{
+  "status": "PASSED",
+  "cases": 62,
+  "ph_qualified_cases": 18,
+  "false_positive_cases": [],
+  "results": [
+    {
+      "case": "exact_full_partial",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "scoring_REQUIRED_COMBINATION",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "scoring_CONTRAST_PAIR",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "scoring_LABEL_PLUS_FUNCTION",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "scoring_SEMANTIC_MARK_POINT",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "scoring_UNKNOWN",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_1_int",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_2_int",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_3_int",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_True_bool",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_0_int",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_-1_int",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_2_str",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_n_None_NoneType",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_two_unequal_weights",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "any_three_four_alternatives",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "accepted_[]",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "accepted_None",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "accepted_'not-a-list'",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "accepted_[None]",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "accepted_['']",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "accepted_['   ']",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "accepted_['First source criterion.']",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "clause_length_1999",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "clause_length_2000",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "clause_length_2001",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "clause_length_10000",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "identical_accepted_contradiction",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "case_accepted_contradiction",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "punctuation_accepted_contradiction",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "case_sensitive_distinct",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "shared_clause_for_multiple_points",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "duplicate_opaque_point_id",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "point_id_' '",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "point_id_True",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "point_id_7",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "point_id_[]",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "point_id_None",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "weight_True",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+      "sm_error": null
+    },
+    {
+      "case": "weight_0",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+      "sm_error": null
+    },
+    {
+      "case": "weight_-1",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+      "sm_error": null
+    },
+    {
+      "case": "weight_'1'",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "weight_'NaN'",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+      "sm_error": null
+    },
+    {
+      "case": "weight_'Infinity'",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+      "sm_error": null
+    },
+    {
+      "case": "case_policy_'false'",
+      "ph_qualified": false,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "case_policy_None",
+      "ph_qualified": false,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "case_policy_0",
+      "ph_qualified": false,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "case_policy_False",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "case_policy_True",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "source_declaration_None",
+      "ph_qualified": false,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "source_declaration_'NO - CRITERION_BOUND_REVIEW_REQUIRED'",
+      "ph_qualified": false,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "source_declaration_'YES_DETERMINISTIC'",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "source_declaration_'DETERMINISTICALLY_SCORABLE'",
+      "ph_qualified": true,
+      "sm_compiled": true,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "more_than_fifty_points",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "marks_source_conflict",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "rubric_version_unknown",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "reserved_native_scoring_{}",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "reserved_native_scoring_None",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "reserved_guided_self_assessment_{}",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "reserved_guided_self_assessment_None",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "reserved_assessment_eligibility_{}",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    },
+    {
+      "case": "reserved_assessment_eligibility_None",
+      "ph_qualified": false,
+      "sm_compiled": false,
+      "conformant": true,
+      "ph_error": null,
+      "sm_error": null
+    }
+  ],
+  "ph_module_sha256": "bcfbceb7e6a93843389d53f1ba245e64de8a3a2240094231f25e8df5e9fdfd3b",
+  "scoremax_frozen_helper_sha256": "3dc6f2bdf9a4a2f98f0da03175d724821768a96279540bacbf9ffa0f8ff17524",
+  "production_mutated": false,
+  "academic_approval_conferred": false
+}
