@@ -1,0 +1,66 @@
+name: UK11 explanation exact assembled-runtime qualification
+on:
+  push:
+    branches:
+      - qualification/uk11-native-integration-20261123
+    paths:
+      - .github/workflows/uk11-explanation-native-qualification.yml
+permissions:
+  contents: read
+jobs:
+  uk11-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify exact Render build source and reconstruct assembled ScoreMax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uk11-native-evidence
+          python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py | tee uk11-native-evidence/materialization.json
+          python -B - <<'PY'
+          import hashlib,importlib.util,json,pathlib
+          p=pathlib.Path('ux_vnext_overlay/biology_receiver_20261027/sqlite_navigation_build_20261123_v9.py')
+          s=importlib.util.spec_from_file_location('nav',p);m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
+          root=pathlib.Path('scoremax_runtime_v669b');actual=m.tree(root)
+          assert actual==m.AFTER_TREE,('ASSEMBLY_HASH_DRIFT',actual,m.AFTER_TREE)
+          print('EXACT_ASSEMBLY_VERIFIED '+actual)
+          pathlib.Path('uk11-native-evidence/pre_overlay_tree_sha256.txt').write_text(actual+'\n')
+          PY
+      - name: Run isolated UK11 unit and adversarial tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B -m unittest discover -s qualification/uk11 -p 'test_*.py' -v > uk11-native-evidence/local_tests.log 2>&1 || { tail -n 70 uk11-native-evidence/local_tests.log; exit 1; }
+          tail -n 7 uk11-native-evidence/local_tests.log
+      - name: Apply UK11 overlay only to disposable assembled checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          touch scoremax_runtime_v669b/.uk11_disposable_qualification_runtime
+          python -B - <<'PY'
+          import sys,json
+          from pathlib import Path
+          sys.path.insert(0,'qualification/uk11')
+          from ux_uk11_explain_overlay import apply
+          root=Path('scoremax_runtime_v669b')
+          print('UK11_DISPOSABLE_OVERLAY '+json.dumps(apply(root),sort_keys=True))
+          PY
+      - name: Build native test image using actual assembled runtime
+        run: timeout 240 docker build --pull=false -f qualification/uk11/Dockerfile.native_uk11 -t scoremax-uk11-native .
+      - name: Run native Flask, authentication, result and immutable-source tests offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 160 docker run --rm --network none --memory=2g --memory-swap=2g --cpus=1 --tmpfs /data:rw,size=1g -v "$PWD/uk11-native-evidence:/evidence" scoremax-uk11-native | tee uk11-native-evidence/native_runtime.log
+      - name: Store qualification evidence without student data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uk11-native-explain-${{ github.sha }}
+          path: uk11-native-evidence/
+          if-no-files-found: warn
+          retention-days: 7
