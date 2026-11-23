@@ -1,8 +1,66 @@
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
-**Status:** P0 CAPACITY BLOCKER · EXISTING PR #55 DRAFT · NOT DEPLOYED  
-**Updated:** 16 November 2026, UTC — full schema/object escrow plus native integrity/FK check PASS; bounded Learn page read grouping candidate undergoing route equivalence; P0 cutover NO-GO  
-**Living document:** Edit this file in place after each meaningful completed work checkpoint. Do not create replacement handoffs, parallel issue trackers or separate systems.
+**Updated: 23 November 2026 UTC.** Continue existing PRs #55/#56. No deployment,
+production migration or PostgreSQL cutover has occurred. Preserve all historical
+negative evidence and the strict50-learner p95<1500ms target.
+
+Current accepted ScoreMax baseline is `8d5c0fd44ede20c56d62a42f0515207bb4b94bda`.
+Current scored/pending recovery receiver is companion PR #59 `bcd9834c4e956f70561b41f786e0c3a2e568aacf`.
+The continuing SQLite performance implementation is existing [PR #56](https://github.com/drjozy007/scoremax-qa-pilot-v6512/pull/56),
+head `92400159e9835b1d85c9ec3ef617efc62b1aef1b`, now based on PR #59. Its merge
+ancestry preserves both original PR56 and current receiver history; no force push.
+Current generated runtime tree: `d02a710a307788e68ee5b7be19f01b39e6be7ec4c8e7bc84d09e352e327810f2`.
+
+The shared causes were repeated programme/chapter scans, policy/card metadata,
+unchanged plan-label UPDATEs on GET, journal negotiation, immutable context work
+and excess SQLite handle setup. Existing navigation/bundle mechanisms were
+extended; no new database/service/cache architecture or assessment bypass.
+Display aggregates have bounded commit/restore fences. Catalogue labels are read
+in bounded page-local batches; a failed global per-label experiment was rejected
+because its cache cardinality displaced expensive shared aggregates. Current PH
+formal-evidence masks, action admission, marking and mastery authority stay fresh.
+
+PASSED locally:30 build/isolation/connection/commit controls;9 retained scope
+unit cases;16 scored marker cases; native pending responses preserving authored
+marks/weight; six signed delivery/recovery cases; eight signed adverse mutations;
+48 academic marking,67 programme/mastery,29 PH compatibility cases. Native signed
+programme/subject/chapter/label parity passes across opaque identities, Unicode,
+whitespace, checksums, authorisation revocation, family hold and withdrawal.
+These are software-authority fixtures, not real academic approvals.
+
+Local native Gunicorn HTTP:100800 synthetic questions,1001 learners,102300 FINAL
+frozen answers, seven explicitly guarded disposable expression indexes; one CPU,
+one worker/ONE thread,200 scheduled requests per route at50 distinct learners.
+P95 Learn1004.826ms,Subject1217.720ms,Chapter1396.234ms,Catalogue1084.975ms;
+800 successes, no censored timeouts/errors;16 protected tables unchanged.
+The original FOUR-thread setting still FAILED Subject1542.612ms/Chapter1598.731ms.
+One thread is a tested candidate setting; production settings remain unchanged.
+
+PENDING: exact-head hosted Linux/Windows and1/10/50 results; repeat and genuinely
+mixed signed release/ACK/withdrawal plus submitted marking under load;100/300/1000
+pressure characterisation, actual Render CPU/memory/WAL/disk, real source/current
+snapshot, heterogeneous governed bank and low-bandwidth/mobile acceptance. Do not
+call isolated read-only HTTP evidence production capacity or release readiness.
+Current secure fixture transfer is unavailable; the encrypted existing handoff or
+retained snapshot location remains requested. Future AI API activation is not a
+blanket ingestion hold: original marks/positive weight remain preserved and
+pending responses remain unscored until marking is available.
+
+Optional SQLite indexes are never applied by build/start. Before any actual DDL
+qualify verified WAL-consistent backup, explicit writer fence, correct DB version,
+free persistent AND temporary storage, query plan, import/write/ACK cost and exact
+rollback. Do not infer Render /tmp quota from host statvfs. The Power House /tmp
+quota incident was recovered and original admission/2272 learner-live population
+proved unchanged; no new production test copies are permitted there.
+
+PostgreSQL remains an OPTIONAL separate prototype in this existing PR. Its
+intentionally red full-schema/SQL/zero-loss cutover veto is preserved. It is not
+part of the selected SQLite release and no PostgreSQL readiness is claimed.
+Continue the SQLite lane to applicable gates; do not restart old audits, deploy a
+partial SQL adapter, provision services, relax academic evidence or drop speed.
+
+Historical entries below describe their stated older versions, not current live
+state. Reuse valid evidence with its original limits.
 
 ## Adversarial source review — 15 Nov 2026 (independent read-only audit)
 
