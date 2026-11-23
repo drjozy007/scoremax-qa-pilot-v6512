@@ -111,21 +111,14 @@ jobs:
           python -c "from pathlib import Path; import sqlite3; p=Path('qualification/mixed/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/indexed/state/seed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
           python -B tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py scoremax_runtime_v669b qualification/mixed/state/measure.db qualification/http/mixed_native.json --variant current_v2 --fixture DERIVED_100800_GUARDED_7_INDEXES --levels 50 --operations 400 --workers 1 --threads 1 --server-one-cpu --route '/student/subject/Biology' --port 18861
           python -B tests/navigation_current_20261123/qualify_source_image_mixed_report_v2.py qualification/http/mixed_native.json
-      - name: Retained four-thread comparison without experimental navigation indexes
-        continue-on-error: true
+      - name: Required existing production topology without experimental navigation indexes
         if: ${{ !cancelled() && steps.isolated_seed.outcome == 'success' }}
         run: |
+          python -B tests/navigation_current_20261123/run_paired_native_http_v6.py qualification/seed/state/unindexed.db qualification/production_http --fixture DERIVED_100800_ZERO_NAV_INDEXES --order B --routes learn,subject,chapter,catalogue --levels 1,10,50 --operations 200 --workers 1 --threads 4 --server-one-cpu --reference-runtime scoremax_runtime_v669b --candidate-runtime scoremax_runtime_v669b
+          python -B tests/navigation_current_20261123/qualify_capacity_report_v1.py qualification/production_http
           python -c "from pathlib import Path;import sqlite3;p=Path('qualification/noindex/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/seed/state/unindexed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
           python -B tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py scoremax_runtime_v669b qualification/noindex/state/measure.db qualification/http/noindex_mixed_native.json --variant current_v9_no_extra_indexes --fixture DERIVED_100800_ZERO_NAV_INDEXES --levels 50 --operations 400 --workers 1 --threads 4 --server-one-cpu --route '/student/subject/Biology' --port 18861
           python -B tests/navigation_current_20261123/qualify_source_image_mixed_report_v2.py qualification/http/noindex_mixed_native.json
-      - name: Qualify proposed single-CPU one-thread topology without added indexes
-        if: ${{ !cancelled() && steps.isolated_seed.outcome == 'success' }}
-        run: |
-          python -B tests/navigation_current_20261123/run_paired_native_http_v6.py qualification/seed/state/unindexed.db qualification/single_cpu_http --fixture DERIVED_100800_ZERO_NAV_INDEXES --order B --routes learn,subject,chapter,catalogue --levels 1,10,50 --operations 200 --workers 1 --threads 1 --server-one-cpu --reference-runtime scoremax_runtime_v669b --candidate-runtime scoremax_runtime_v669b
-          python -B tests/navigation_current_20261123/qualify_capacity_report_v1.py qualification/single_cpu_http
-          python -c "from pathlib import Path;import sqlite3;p=Path('qualification/single_cpu_mixed/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/seed/state/unindexed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
-          python -B tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py scoremax_runtime_v669b qualification/single_cpu_mixed/state/measure.db qualification/single_cpu_http/mixed_native.json --variant current_v13_single_cpu_one_thread --fixture DERIVED_100800_ZERO_NAV_INDEXES --levels 50 --operations 400 --workers 1 --threads 1 --server-one-cpu --route '/student/subject/Biology' --port 18861
-          python -B tests/navigation_current_20261123/qualify_source_image_mixed_report_v2.py qualification/single_cpu_http/mixed_native.json
       - name: Install pinned mobile browser test API on existing runner
         if: ${{ !cancelled() && steps.isolated_seed.outcome == 'success' }}
         run: python -m pip install playwright==1.62.0 cryptography==50.0.0
@@ -139,6 +132,6 @@ jobs:
           path: |
             qualification/http/*.json
             qualification/http/*.log
-            qualification/single_cpu_http/*.json
-            qualification/single_cpu_http/*.log
+            qualification/production_http/*.json
+            qualification/production_http/*.log
             qualification/http/mobile-browser/*.png

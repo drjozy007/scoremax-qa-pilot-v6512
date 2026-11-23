@@ -1,0 +1,40 @@
+{
+  "V14_hosted_exact_runtime": {
+    "errors": 0,
+    "four_thread_zero_index_mixed_p95_ms": 1041.19869,
+    "mobile": "PASSED",
+    "native_windows_ubuntu": "PASSED",
+    "one_thread_zero_index_mixed_p95_ms": 1036.62662,
+    "zero_index_one_thread_max_p95_ms": 717.543128,
+    "zero_index_one_thread_read_conditions": 12
+  },
+  "current_head_required_topology_gate": "PENDING",
+  "decision": "RETAIN_ACCEPTED_ONE_WORKER_FOUR_HTTP_THREADS",
+  "parent_head": "2c6c87592fc31aded89736a77ba0ac3f9ceea2e6",
+  "production_actions": false,
+  "reason": "Same-run four-thread and one-thread comparisons both passed with no meaningful navigation latency difference; preserve accepted ingestion concurrency. No production topology change.",
+  "required_target": {
+    "GETs_per_read_condition": 200,
+    "cpu": 1,
+    "extra_indexes": 0,
+    "four_routes_distinct_learners": [
+      1,
+      10,
+      50
+    ],
+    "mixed_GETs": 400,
+    "mixed_concurrency": 50,
+    "p95_ms_strictly_below": 1500,
+    "signed_writes_original_images_and_consistent_backup": true,
+    "threads": 4,
+    "workers": 1
+  },
+  "retained_previous_failures_ms": [
+    1780.255294,
+    1653.629557,
+    1511.834613
+  ],
+  "runtime_unchanged_from_v13": "b9c5a6c3e718668e0c0d1a2c924b25f66cb75b4cc97a6d5f50a48f50191af5a8",
+  "version": "SM-EXISTING-PRODUCTION-TOPOLOGY-QUALIFICATION-20261123-15",
+  "workflow_sha256": "cd415339a32fa730f0c20d1086904d9ce30c7cf5034cf114671fc536df68005d"
+}

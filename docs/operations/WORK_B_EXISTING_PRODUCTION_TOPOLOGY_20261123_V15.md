@@ -1,0 +1,5 @@
+# Retain the accepted production execution topology
+
+The exact V13 runtime is retained. V14 qualified both four-thread and one-thread zero-index mixed conditions on the same existing one-CPU runner. Both passed the unchanged1500ms gate:1041.198690ms and1036.626620ms, respectively, with zero errors. This does not justify a production topology change. Keep the accepted one-worker/four-thread configuration, which also preserves concurrent content ingestion and learner requests. The one-thread proposal is retained as an unapplied experiment. Earlier failed measurements remain evidence; they are not erased or described as passing.
+
+V15 makes the actual production topology mandatory in CI and adds all four zero-index routes at1/10/50 distinct learners. The unchanged400GET/50-concurrent native mixed signed-write/image/withdrawal/backup test remains mandatory at four threads. No continue-on-error applies to this gate. There is no runtime, schema, resource, index, secret-loader or production configuration change. Actual Render capacity and release acceptance remain separate.
