@@ -33,7 +33,7 @@ const additions=[
 const candidates=[...(window.UK11_ENGLAND_SCHOOLS||[]),...(window.UK11_NI_SCHOOLS||[]),...additions];
 let inserted=0,merged=0;
 for(const c of candidates){
- const same=SCHOOLS.find(x=>x.school_id&&!String(x.school_id).endsWith('-route')&&canonical(x.school_name)===canonical(c.school_name));
+ const same=SCHOOLS.find(x=>x.school_id&&!String(x.school_id).endsWith('-route')&&canonical(x.school_name)===canonical(c.school_name)&&((x.area&&x.area===c.area&&(!x.town||x.town===c.town))||(!x.area&&x.route_id==='CSSE'&&(c.area==='Essex'||c.area==='Southend-on-Sea'))));
  if(same){same.area=c.area;same.town=c.town;same.nation=c.nation;same.school_type=c.school_type;same.identity_source=c.identity_source||'Directory candidate; confirm official school identity';merged++;continue}
  const id='catalogue-'+slug(c.nation+'-'+c.area+'-'+c.town+'-'+c.school_name);
  SCHOOLS.push({...c,school_id:id,route_id:null,route_ids:[],identity_status:c.identity_status||'DIRECTORY_CANDIDATE_CONFIRM_OFFICIAL',routing_status:'SCHOOL_ROUTE_UNVERIFIED',admissions_cycle:entryYear});
@@ -74,6 +74,7 @@ for(const s of SCHOOLS){
  if(!s.routing_status)s.routing_status='SCHOOL_ROUTE_UNVERIFIED';
  if(!s.admissions_cycle)s.admissions_cycle=entryYear;
 }
+for(const s of SCHOOLS){if(s.route_id==='CSSE'&&!s.nation&&!String(s.school_id).endsWith('-route')){s.nation='England';s.area='Southend-on-Sea';s.town='Southend-on-Sea';s.identity_source=official.CSSE;s.identity_status='CSSE_2027_MEMBER';}}
 const evidenceLabel=s=>{
  const x=s.routing_status||'SCHOOL_ROUTE_UNVERIFIED';
  if(x==='CURRENT_CYCLE_OFFICIAL')return '2028 route evidenced';
