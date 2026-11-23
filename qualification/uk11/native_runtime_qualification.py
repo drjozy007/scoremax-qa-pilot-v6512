@@ -140,10 +140,31 @@ try:
                 review_status='Approved',active=1,country='UK',programme='UK 11+',subject='Mathematics'))
             assert c.execute('SELECT 1 FROM questions q WHERE q.id=? AND '+sm.live_question_clause('q'),
                              (q_id,)).fetchone(), 'SYNTHETIC_FAMILY_PUBLICATION_GATE_UNSATISFIED'
+            # Build the submitted snapshot with the REAL Power House receiver
+            # projection compiler; an arbitrary two-field pin must fail native
+            # PIN_PROJECTION_INCOMPLETE validation and is not representative.
+            curriculum={'market_id':'UK','qualification_id':'UK11','programme_id':'UK11',
+                        'subject_id':'MATHEMATICS','chapter_id':'NUMBER',
+                        'display':{'programme':'UK 11+','subject':'Mathematics','chapter':'Number',
+                                   'topic':'Division'}}
+            content={'stem':'What is 12 divided by 3?',
+                     'marking':{'key_type':'NUMERIC','key':4,'marks':1,
+                                'explanation':'Three groups of 4 give 12; divide 12 by 3 to get 4.'}}
+            architecture={'claim_family_id':'UK11-SYN-FAMILY','evidence_role':'INDEPENDENT',
+                          'independent_mastery_eligible':True,'independent_mastery_weight':1,
+                          'mastery_level':'FOUNDATION'}
+            governance={'academic_review_state':'APPROVED','hold_status':'CLEAR',
+                        'release_readiness':'READY','source_check_status':'CLEAR',
+                        'r2_status':'NOT_REQUIRED','rights_status':'OWNED'}
+            qcanon={'question_id':'UK11-SYN-QUESTION','question_version_id':'UK11-SYN-V1',
+                    'question_version_number':1,'curriculum':curriculum,'content':content,
+                    'architecture':architecture,'governance':governance,'provenance':{}}
+            native_projection=sm.integration_v1._projection(qcanon,{})
+            assert native_projection.get('question')=='What is 12 divided by 3?'
             pin={'question_db_id':q_id,'question_id':'UK11-SYN-QUESTION','question_version_id':'UK11-SYN-V1',
                  'question_checksum_sha256':'SYNTHETIC-CHECKSUM-1','release_id':'UK11-SYN-RELEASE',
                  'release_version':'1','release_checksum_sha256':'SYNTHETIC-RELEASE-CHECKSUM-1','market_id':'UK',
-                 'projection':{'ph_market_id':'UK','ph_is_auto_markable':1}}
+                 'projection':native_projection}
             sid=add(c,'assessment_sessions',dict(student_id=uid,mode='practice',status='submitted',
                   question_ids=str(q_id),saved_answers=json.dumps({str(q_id):'6'}),meta_json='{}',
                   ph_question_pins_json=json.dumps({str(q_id):pin}),ph_release_pins_json='{}'))
@@ -158,13 +179,9 @@ try:
                 ph_question_snapshot_json=json.dumps(pin['projection'])))
             add(c,'integration_ph_question_version_store',dict(question_id=pin['question_id'],question_version_id=pin['question_version_id'],
                 question_version_number=1,question_checksum_sha256=pin['question_checksum_sha256'],
-                curriculum_json=json.dumps({'market_id':'UK'}),
-                content_json=json.dumps({'stem':'What is 12 divided by 3?',
-                   'marking':{'key_type':'NUMERIC','key':'4','explanation':'Three groups of 4 give 12; divide 12 by 3 to get 4.'}}),
-                architecture_json=json.dumps({'evidence_role':'INDEPENDENT','independent_mastery_eligible':True,'independent_mastery_weight':1}),
-                governance_json=json.dumps({'academic_review_state':'APPROVED','hold_status':'CLEAR','release_readiness':'READY',
-                    'source_check_status':'CLEAR','r2_status':'NOT_REQUIRED','rights_status':'OWNED'}),
-                provenance_json='{}',scoremax_projection_json='{}',first_admitted_at='2026-11-23T18:00:00Z'))
+                curriculum_json=json.dumps(curriculum),content_json=json.dumps(content),
+                architecture_json=json.dumps(architecture),governance_json=json.dumps(governance),
+                provenance_json='{}',scoremax_projection_json=json.dumps(native_projection),first_admitted_at='2026-11-23T18:00:00Z'))
             add(c,'integration_ph_release_question_membership',dict(release_id=pin['release_id'],release_version='1',
                 question_id=pin['question_id'],question_version_id=pin['question_version_id'],ordinal=1,
                 admitted_at='2026-11-23T18:00:00Z'))
