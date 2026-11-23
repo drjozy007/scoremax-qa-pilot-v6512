@@ -1,0 +1,54 @@
+{
+  "PH_membership_withdrawal_and_approval_gate_unchanged": true,
+  "after_runtime_sha256": "5746e20cbf82bf01655289c6f97f82863a8ff72cb1bc011d90e2fa39cc12083d",
+  "base_runtime_sha256": "b9c5a6c3e718668e0c0d1a2c924b25f66cb75b4cc97a6d5f50a48f50191af5a8",
+  "capacity_target_ms": 1500,
+  "changed_runtime_files": [
+    "ph_mastery_evidence.py"
+  ],
+  "cross_request_authority_cache": false,
+  "database_or_indexes_added": false,
+  "fresh_current_SQL": true,
+  "official_ai_scoring_enabled": false,
+  "production_actions": false,
+  "production_threads": 4,
+  "self_audit": {
+    "current_hosted_and_production": "PENDING",
+    "current_seed_answers": 102400,
+    "current_seed_questions": 100800,
+    "distinct_seed_learners": 1001,
+    "exact_build_and_differential_tests": 15,
+    "full_signed_evidence_row_cases": 12,
+    "logs": {
+      "/tmp/work_b_sm_v16_build_differential_self.log": "832bb4b842808abce5cb9616cff3259b21ff01cc9549adc1325e8028ff4a00d2",
+      "/tmp/work_b_sm_v16_current_mixed_self.log": "213c6b6556b33c661015a783e06e31afde301bb1ff27cc86de2fedcc4d15754e",
+      "/tmp/work_b_sm_v16_rebuilt_native_fidelity.log": "e6809ad13467c6e5efae2a6d03fcad61a48af5139b2ecf51f9236655dfe55672",
+      "/tmp/work_b_sm_v16_rebuilt_successor_self.log": "85465f825bb5a0d435f99246a96f72d43f013df2dc11c5501dd805d674c3da79"
+    },
+    "mixed_HTTP": {
+      "concurrency": 50,
+      "cpu": 1,
+      "cpu_seconds": 7.42,
+      "errors": 0,
+      "extra_indexes": 0,
+      "native_backup_and_history_integrity": true,
+      "original_image_GETs": 3,
+      "p95_ms": 1092.264278,
+      "requests": 400,
+      "rss_sum_bytes": 187121664,
+      "signed_POSTs": 6,
+      "threads": 4,
+      "workers": 1
+    },
+    "native_successor_authorization_tests": 7,
+    "previous_hosted_failures_retained": {
+      "V10": 1780.255294,
+      "V11": 1653.629557,
+      "V13": 1511.834613,
+      "V15": 1500.147063
+    },
+    "status": "PASSED"
+  },
+  "stage": "FROZEN_FOR_SEPARATE_ADVERSARIAL",
+  "version": "SM-FRESH-LEGACY-FORMAL-AGGREGATE-20261123-16"
+}

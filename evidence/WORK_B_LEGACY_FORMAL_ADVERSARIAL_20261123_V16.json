@@ -1,0 +1,15 @@
+{
+  "build_and_authority_differential_tests": 15,
+  "frozen_manifest_sha256": "3aaa7b7b37bd6626d4bb400648e460456efb7ed2fa4b5d62202e3f4baf858880",
+  "frozen_pins_unchanged": 562,
+  "full_native_signed_answer_and_withdrawal_cases": 12,
+  "logs": {
+    "/tmp/work_b_sm_v16_frozen_adversarial.log": "402c70bd165110973e5c2f855130d69433b898aa0ec0c39de99703b3361eeba2",
+    "/tmp/work_b_sm_v16_frozen_native_adversarial.log": "e6809ad13467c6e5efae2a6d03fcad61a48af5139b2ecf51f9236655dfe55672"
+  },
+  "no_new_academic_or_activation_authority": true,
+  "production_actions": false,
+  "runtime_sha256": "5746e20cbf82bf01655289c6f97f82863a8ff72cb1bc011d90e2fa39cc12083d",
+  "stage": "SEPARATE_FROZEN_ADVERSARIAL",
+  "status": "PASSED"
+}

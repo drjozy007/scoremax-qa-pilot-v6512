@@ -1,0 +1,18 @@
+{
+  "after_tree_sha256": "5746e20cbf82bf01655289c6f97f82863a8ff72cb1bc011d90e2fa39cc12083d",
+  "before_tree_sha256": "b9c5a6c3e718668e0c0d1a2c924b25f66cb75b4cc97a6d5f50a48f50191af5a8",
+  "files": [
+    {
+      "after_sha256": "34a495d0f248248e394c7f3e1d8f7312078fe4211884709f6c07d8a53345b622",
+      "before_sha256": "7842e90f15e6e756d5f421525afe390ad682623ab79e1c2d4576c02f75390add",
+      "hunks": [
+        {
+          "new": "        unique=sorted(set(ids))\n        # Current native legacy existence/ownership is one fresh aggregate per\n        # bounded key group. PH identities and ambiguous/missing keys retain\n        # the unchanged full native membership/approval path below.\n        if not any(record.get('ph_question_id') for record in records):\n            all_legacy=True\n            for start in range(0,len(unique),500):\n                batch=unique[start:start+500];marks=','.join('?' for _ in batch)\n                proof=conn.execute('SELECT COUNT(*),COALESCE(SUM(CASE WHEN '\n                    \"ph_projection_owner COLLATE BINARY='POWER_HOUSE' THEN 1 ELSE 0 END),0) \"\n                    'FROM questions WHERE id IN ('+marks+')',batch).fetchone()\n                if proof[0]!=len(batch) or proof[1]:\n                    all_legacy=False\n                    break\n            if all_legacy:\n                return [True]*len(records)\n",
+          "old": "        unique=sorted(set(ids))\n"
+        }
+      ],
+      "path": "ph_mastery_evidence.py"
+    }
+  ],
+  "policy": "SM-FRESH-LEGACY-FORMAL-AGGREGATE-20261123-16"
+}
