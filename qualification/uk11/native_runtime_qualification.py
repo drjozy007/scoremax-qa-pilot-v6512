@@ -127,14 +127,19 @@ try:
             assert response.status_code==404,('missing attempt',response.status_code)
             record('unknown_question_fails_closed',status_code=response.status_code)
 
-            q_id=add(c,'questions',dict(question_id='UK11-SYN-QUESTION',family_id='UK11-SYN-FAMILY',
+            q_id=add(c,'questions',dict(question_id='UK11-SYN-QUESTION',family_id='UK11-SYN-FAMILY',family_key='UK11-SYN-FAMILY-KEY',
                 question='What is 12 divided by 3?',answer='4',explanation='12 split into three equal groups gives 4 in each group.',
                 level='Foundation',country='UK',programme='UK 11+',subject='Mathematics',chapter='Number',topic='Division',
                 qtype='Numerical',status='Approved',review_status='Approved',active=1,scoremax_ready=1,
-                guided=0,content_environment='PRODUCTION',rights_status='OWNED',
+                guided=0,is_demo=0,content_environment='PRODUCTION',rights_status='OWNED',
                 ph_question_id='UK11-SYN-QUESTION',ph_question_version_id='UK11-SYN-V1',
                 ph_question_checksum_sha256='SYNTHETIC-CHECKSUM-1',ph_market_id='UK',ph_is_auto_markable=1,
                 ph_release_id='UK11-SYN-RELEASE',ph_release_version='1',ph_release_checksum_sha256='SYNTHETIC-RELEASE-CHECKSUM-1'))
+            # Reuse native publication's family gate: question approval alone is insufficient.
+            add(c,'question_families',dict(family_key='UK11-SYN-FAMILY-KEY',family_id='UK11-SYN-FAMILY',
+                review_status='Approved',active=1,country='UK',programme='UK 11+',subject='Mathematics'))
+            assert c.execute('SELECT 1 FROM questions q WHERE q.id=? AND '+sm.live_question_clause('q'),
+                             (q_id,)).fetchone(), 'SYNTHETIC_FAMILY_PUBLICATION_GATE_UNSATISFIED'
             pin={'question_db_id':q_id,'question_id':'UK11-SYN-QUESTION','question_version_id':'UK11-SYN-V1',
                  'question_checksum_sha256':'SYNTHETIC-CHECKSUM-1','release_id':'UK11-SYN-RELEASE',
                  'release_version':'1','release_checksum_sha256':'SYNTHETIC-RELEASE-CHECKSUM-1','market_id':'UK',
