@@ -1,0 +1,76 @@
+{
+  "stage": "SEPARATE_ADVERSARIAL_PORTABILITY_AUDIT",
+  "candidate": "ScoreMax V4",
+  "status": "PASSED",
+  "manifest": "/workspace/scratch/050e298489f1/work_b/evidence/scoremax_scored_saq_self_audit_frozen_v4.json",
+  "manifest_sha256": "7ba9ce69079c84d38dbfbb264436dadc86fe610d0bdd3fd2d4e7f7ae68b88a31",
+  "verified_frozen_files": 9,
+  "frozen_files_unchanged": true,
+  "builder_AST_changes_only_explicit_utf8_and_LF": true,
+  "accepted_runtime": [
+    263,
+    "81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522"
+  ],
+  "candidate_runtime": [
+    264,
+    "056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab"
+  ],
+  "runtime_output_bytes_changed": false,
+  "windows_io_emulation": [
+    {
+      "stage": "fresh_accepted_windows_default_newlines_utf8_mode",
+      "status": "PASSED",
+      "runtime": [
+        263,
+        "81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522"
+      ],
+      "io": {
+        "implicit_reads": 2,
+        "implicit_writes": 2,
+        "explicit_lf_writes": 32
+      }
+    },
+    {
+      "stage": "fresh_scored_windows_default_newlines_utf8_mode_and_replay",
+      "status": "PASSED",
+      "runtime": [
+        264,
+        "056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab"
+      ],
+      "io": {
+        "implicit_reads": 0,
+        "implicit_writes": 0,
+        "explicit_lf_writes": 4
+      }
+    },
+    {
+      "stage": "scored_builder_default_cp1252_explicit_utf8_reads",
+      "status": "PASSED",
+      "runtime": [
+        264,
+        "056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab"
+      ],
+      "io": {
+        "implicit_reads": 0,
+        "implicit_writes": 0,
+        "explicit_lf_writes": 4
+      }
+    },
+    {
+      "stage": "v3_default_cp1252_negative_control",
+      "status": "FAILED_AS_EXPECTED",
+      "error": "SCORED_SAQ_DERIVED_RUNTIME_MISMATCH"
+    },
+    {
+      "stage": "v3_default_newline_negative_static_control",
+      "status": "MISSING_EXPLICIT_LF_CONFIRMED"
+    }
+  ],
+  "retained_adversarial_methods": 15,
+  "retained_adversarial_stderr": "test_any_two_contradiction_and_excess_evidence_do_not_inflate_score (__main__.FrozenScoremaxAttacks.test_any_two_contradiction_and_excess_evidence_do_not_inflate_score) ... ok\ntest_bad_response_or_contract_is_unscored (__main__.FrozenScoremaxAttacks.test_bad_response_or_contract_is_unscored) ... ok\ntest_blank_source_identity_and_profile_cannot_supply_scope (__main__.FrozenScoremaxAttacks.test_blank_source_identity_and_profile_cannot_supply_scope) ... ok\ntest_case_or_padding_does_not_manufacture_assessor_independence (__main__.FrozenScoremaxAttacks.test_case_or_padding_does_not_manufacture_assessor_independence) ... ok\ntest_drawn_manual_modes_never_use_text_ai_or_deterministic (__main__.FrozenScoremaxAttacks.test_drawn_manual_modes_never_use_text_ai_or_deterministic) ... ok\ntest_guided_practice_metadata_cannot_be_erased_by_scored_compiler (__main__.FrozenScoremaxAttacks.test_guided_practice_metadata_cannot_be_erased_by_scored_compiler) ... ok\ntest_nested_native_identity_is_an_integer_not_numeric_lookalike (__main__.FrozenScoremaxAttacks.test_nested_native_identity_is_an_integer_not_numeric_lookalike) ... ok\ntest_provider_errors_and_provisional_results_never_create_official_credit (__main__.FrozenScoremaxAttacks.test_provider_errors_and_provisional_results_never_create_official_credit) ... ok\ntest_provider_must_bind_exact_rubric_response_and_point_allocations (__main__.FrozenScoremaxAttacks.test_provider_must_bind_exact_rubric_response_and_point_allocations) ... ok\ntest_reference_is_markable (__main__.FrozenScoremaxAttacks.test_reference_is_markable) ... ok\ntest_rehashed_human_approval_borrowing (__main__.FrozenScoremaxAttacks.test_rehashed_human_approval_borrowing) ... ok\ntest_rehashed_unknown_ceiling_invalid_mastery_weight (__main__.FrozenScoremaxAttacks.test_rehashed_unknown_ceiling_invalid_mastery_weight) ... ok\ntest_semantic_source_cannot_borrow_deterministic_contract (__main__.FrozenScoremaxAttacks.test_semantic_source_cannot_borrow_deterministic_contract) ... ok\ntest_unknown_mixed_response_and_prompt_injection_are_unscored (__main__.FrozenScoremaxAttacks.test_unknown_mixed_response_and_prompt_injection_are_unscored) ... ok\ntest_whitespace_only_assessor_attribution_cannot_approve_scored_assessment (__main__.FrozenScoremaxAttacks.test_whitespace_only_assessor_attribution_cannot_approve_scored_assessment) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 0.015s\n\nOK\n",
+  "prior_coordinated_v1_zip_unchanged": "5c70bfca548aac508f1178f2da4973ee0be8c17fc4faf0cdc5c2487858f2d093",
+  "hosted_windows_CI": "PENDING_TRUE_HOSTED_EXECUTION",
+  "production_mutated": false,
+  "candidate_source_edits_by_auditor": false,
+  "wall_seconds": 10.568185844000254
+}

@@ -1,0 +1,29 @@
+{
+  "version": "SM-WORK-B-RECEIVER-CONTINUATION-20261122-2",
+  "stage": "FROZEN_AFTER_SELF_AUDIT",
+  "base_commit": "bb4425fe5f9a69b1a9f76dd6679053efed5bd5bf",
+  "accepted_live_commit": "8d5c0fd44ede20c56d62a42f0515207bb4b94bda",
+  "after_runtime_tree_sha256": "b8d3f04720891a65db3a45e9594f5a9f0d39b7c76a0223c3bf7c685064eb6737",
+  "positive_marks_and_weight_preserved": true,
+  "missing_api_is_release_hold": false,
+  "pending_grants_assessed_credit": false,
+  "official_ai_scoring_enabled": false,
+  "production_mutated": false,
+  "source_files": {
+    "scripts/materialize_scoremax_scored_saq_20261122.py": "3563d85f2f621ef5550a20f502d04f0de5e062931046070af9f2f236df8687eb",
+    "ux_vnext_overlay/biology_receiver_20261027/scored_saq_build_v1.py": "7084af042428352621e9878df0cfdaf2d1c49d8af00f8763d5b1050352828e41",
+    "ux_vnext_overlay/biology_receiver_20261027/scored_saq_runtime_v1.py": "3dc6f2bdf9a4a2f98f0da03175d724821768a96279540bacbf9ffa0f8ff17524",
+    "ux_vnext_overlay/biology_receiver_20261027/work_b_receiver_build_20261122_v2.py": "011110f88b033d32729a86904b3542d65b9534bb35b2d2f1743b0cd17b5b4f64",
+    "ux_vnext_overlay/biology_receiver_20261027/work_b_receiver_delta_20261122_v2.json": "380fc45264f715ee7297a0dbe114b00ffd318308543e01c1b153b6d003687319",
+    ".github/workflows/scored-saq-boundary-20261122.yml": "db2e30840a558d42933bee9d81ddfcc17358c0dae4d77149c7f0244f00d07a2b",
+    "docs/WORK_B_RECOVERY_CONTINUATION_20261122_V2.md": "a864ad702228b94f712938b2fa658b57dd34089842d12d661da992f4b0fe875e",
+    "tests/biology_receiver_20261027/test_scored_saq_v1.py": "f63ca589ecae666dd8c727d24d68035ae8a6e05c925aa036beb300f2b908ad6e",
+    "tests/biology_receiver_20261027/qualify_scored_native_submissions_v1.py": "2075173cb04d767d825144982afd9ba718c1afe3f94f8be004f5a11a4911f077",
+    "tests/biology_receiver_20261027/native_delivery_fixture.py": "64128d9f0462146da44c11630f95df29f90e208e4984347d50c855f2dcc84484",
+    "tests/biology_receiver_20261027/qualify_work_b_delivery_recovery_v2.py": "16247468c3bc86947bb76fdac7e07301d4f3fe9602ffcfc6e590f0e01b95226f",
+    "tests/biology_receiver_20261027/qualify_pending_saq_native_v3.py": "d06b68a235965113d82cf1c4cea76250005a5489d81f4cfa48a96d46d8dead79",
+    "tests/biology_receiver_20261027/pending_saq_software_fixture_20261122.py": "9c1bfe18423c61dc4b867cac3915a81b62d900f58f1e5137d0d39ac839a90fcc",
+    "tests/biology_receiver_20261027/test_work_b_receiver_build_v2.py": "8e1b658e8ff44c3d4e10811975e035c10044e1ed57435836a992239b21423859",
+    "tests/biology_receiver_20261027/qualify_pending_saq_adversarial_v1.py": "4da4154e3557c9a8fa07f5f0360777e52ac28451f21532f19c6bbe66a090a713"
+  }
+}

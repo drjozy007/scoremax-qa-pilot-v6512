@@ -21,7 +21,7 @@ def apply(root):
     module.apply(root)
     changes = {}
 
-    p = root/'question_contract_engine.py'; text = p.read_text()
+    p = root/'question_contract_engine.py'; text = p.read_text(encoding='utf8')
     text = replace(text, '    "cloze": "cloze",', '    "cloze": "cloze",\n    "cloze_constructed_response": "cloze_constructed_response",')
     text = replace(text, '    "cloze": "fill_blank",', '    "cloze": "fill_blank",\n    "multi_gap_cloze": "multi_gap_cloze",', count=2)
     text = replace(text, '    "matching", "ordering", "constructed_response",', '    "matching", "ordering", "constructed_response", "multi_gap_cloze",')
@@ -81,7 +81,7 @@ def apply(root):
     text = replace(text, "prefix={'matching':'match::','ordering':'order::'}.get(qtype)", "prefix={'matching':'match::','ordering':'order::','multi_gap_cloze':'gap::'}.get(qtype)")
     changes[p] = text
 
-    p = root/'scoremax_integration_v1.py'; text = p.read_text()
+    p = root/'scoremax_integration_v1.py'; text = p.read_text(encoding='utf8')
     text = replace(text, "      'ordering':'Ordering','constructed_response':'Constructed Response'", "      'ordering':'Ordering','constructed_response':'Constructed Response','multi_gap_cloze':'Multi Gap Cloze'")
     text = replace(text, "    kind=mc.get('key_type')\n", """    cloze=(marking.get('rubric') or {}).get('cloze_gap_contract')
     if cloze is not None:
@@ -114,7 +114,7 @@ def apply(root):
     text = replace(text, 'def dispatch_due(c,limit=100,timeout=8):\n    rows=_claim_due(c,limit=int(limit),lease_seconds=max(30,int(timeout)*4))', 'def dispatch_due(c,limit=100,timeout=8,*,outbox_ids=None):\n    rows=_claim_due(c,limit=int(limit),lease_seconds=max(30,int(timeout)*4),outbox_ids=outbox_ids)')
     changes[p] = text
 
-    p = root/'guided_self_assessment.py'; text = p.read_text()
+    p = root/'guided_self_assessment.py'; text = p.read_text(encoding='utf8')
     text = replace(text, 'learner_payload=None, amendment_evidence=()):', 'learner_payload=None, amendment_evidence=(), source_workbook_sha256=None):')
     text = replace(text, "source.get('Learner_Output_Type') != 'TEXT_SHORT_RESPONSE'", "source.get('Learner_Output_Type') not in ('TEXT_SHORT_RESPONSE','TEXT')")
     text = replace(text, "evidence = str(source.get('Canonical_Accepted_Evidence') or '').split(' | ')\n    weights = str(source.get('Mark_Point_Values') or '').split(';')", "evidence_text = str(source.get('Canonical_Accepted_Evidence') or '')\n    evidence = evidence_text.split(' || ') if ' || ' in evidence_text else evidence_text.split(' | ')\n    import re\n    weights = re.split(r'[;|]',str(source.get('Mark_Point_Values') or ''))")
@@ -122,7 +122,7 @@ def apply(root):
     text = replace(text, "('Partial_Credit_Rule', 'Contradiction_Rule', 'Unacceptable_Near_Misses')", "('Marking_Rubric', 'Acceptable_Alternatives', 'Partial_Credit_Rule', 'Contradiction_Rule', 'Unacceptable_Near_Misses')")
     changes[p] = text
 
-    p = root/'app.py'; text = p.read_text()
+    p = root/'app.py'; text = p.read_text(encoding='utf8')
     text = replace(text, "    if qt=='constructed_response':\n        from ux_constructed_auto_marker import mark\n", """    if qt=='multi_gap_cloze':
         from ph_practice_contracts import score_gaps
         try:
@@ -144,7 +144,7 @@ def apply(root):
     text = replace(text, "'fill_blank':'Fill in the blank','numerical':'Numerical','matching':'Matching',", "'fill_blank':'Fill in the blank','multi_gap_cloze':'Multiple blanks','numerical':'Numerical','matching':'Matching',")
     changes[p] = text
 
-    p = root/'templates/_learner_question_surface.html'; text = p.read_text()
+    p = root/'templates/_learner_question_surface.html'; text = p.read_text(encoding='utf8')
     text = replace(text, "{% elif qtype=='fill_blank' %}", """{% elif qtype=='multi_gap_cloze' %}
   <p class="muted">Answer each blank in its order in the question.</p>
   {% for gap in answer_cfg.get('cloze_contract',{}).get('gaps',[]) %}
@@ -155,11 +155,11 @@ def apply(root):
     for p,text in changes.items():
         if p.suffix=='.py': compile(text,str(p),'exec')
     # Write only after every exact source anchor and Python compilation passed.
-    for p,text in changes.items(): p.write_text(text,encoding='utf8')
+    for p,text in changes.items(): p.write_text(text,encoding='utf8',newline='\n')
     (root/'ph_practice_contracts.py').write_bytes(Path(__file__).with_name('ph_practice_contracts.py').read_bytes())
     # All native destinations use their governed membership identity for routing.
     # Different source display labels must not split one chapter's formats.
-    p=root/'app.py'; text=p.read_text()
+    p=root/'app.py'; text=p.read_text(encoding='utf8')
     text=replace(text,"CASE WHEN q.ph_projection_owner='POWER_HOUSE' AND lower(scoremax_release_programme(r.programme_id,v.curriculum_json))='mdcat'\n        THEN r.chapter_id ELSE q.chapter END chapter",
                        "CASE WHEN q.ph_projection_owner='POWER_HOUSE' THEN r.chapter_id ELSE q.chapter END chapter")
     anchor="    # The existing MDCAT catalogue supplies presentation labels only.\n"
@@ -237,7 +237,7 @@ def _scoremax_human_chapter_key(chapter):
     # The learner chapter card has its own legacy exact-label count. Use the same
     # activated governed chapter scope as practice selection; never count staged or
     # withdrawn questions, and never replace the underlying release identity.
-    p=root/'ux_student_batch.py';card=p.read_text()
+    p=root/'ux_student_batch.py';card=p.read_text(encoding='utf8')
     old_card="""        live_row=conn.execute(
             f"SELECT COUNT(*) n FROM questions q WHERE {runtime.live_question_clause('q')} "
             f"AND lower(COALESCE(q.subject,''))=lower(?) "
@@ -251,9 +251,9 @@ def _scoremax_human_chapter_key(chapter):
             [subject]+chapter_params,
         ).fetchone()"""
     card=replace(card,old_card,new_card)
-    compile(card,str(p),'exec');p.write_text(card,encoding='utf8');changes[p]=True
+    compile(card,str(p),'exec');p.write_text(card,encoding='utf8',newline='\n');changes[p]=True
     p=root/'app.py'
-    compile(text,str(p),'exec');p.write_text(text,encoding='utf8');changes[p]=True
+    compile(text,str(p),'exec');p.write_text(text,encoding='utf8',newline='\n');changes[p]=True
     spec=importlib.util.spec_from_file_location('formal_mastery_boundary',Path(__file__).with_name('mastery_evidence_boundary_runtime.py'))
     boundary=importlib.util.module_from_spec(spec);spec.loader.exec_module(boundary)
     formal=boundary.apply(root)

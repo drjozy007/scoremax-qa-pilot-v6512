@@ -1,0 +1,20 @@
+{
+  "stage": "SELF_AUDIT_FROZEN",
+  "baseline_git_sha": "8d5c0fd44ede20c56d62a42f0515207bb4b94bda",
+  "accepted_runtime_tree_sha256": "81bc459edce19b54b701e6be2d1068b08336ceb63933ea5b40eda7e6c2e6d522",
+  "candidate_runtime_tree_sha256": "056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab",
+  "official_ai_scoring_enabled": false,
+  "production_mutated": false,
+  "files": {
+    "ux_vnext_overlay/biology_receiver_20261027/scored_saq_runtime_v1.py": "3dc6f2bdf9a4a2f98f0da03175d724821768a96279540bacbf9ffa0f8ff17524",
+    "ux_vnext_overlay/biology_receiver_20261027/scored_saq_build_v1.py": "b2103621318bbbc4ec40736a683ad3bbfc3044621f766ee58bc186d78aa11634",
+    "scripts/materialize_scoremax_scored_saq_20261122.py": "1393ba0fb528fc6d10b3581c39975d695326ec5958bf071d924c054793574eb1",
+    "tests/biology_receiver_20261027/test_scored_saq_v1.py": "f63ca589ecae666dd8c727d24d68035ae8a6e05c925aa036beb300f2b908ad6e",
+    "tests/biology_receiver_20261027/qualify_scored_native_submissions_v1.py": "2075173cb04d767d825144982afd9ba718c1afe3f94f8be004f5a11a4911f077",
+    ".github/workflows/scored-saq-boundary-20261122.yml": "7a3cb6789bb73fe8af8bfd0a57287e69e16a6ce3873364ebcb70c7500ae954e4"
+  },
+  "supersedes": "scoremax_scored_saq_self_audit_frozen_v2.json",
+  "reason": "Native qualification evidence destination made portable before separate adversarial audit; v1 source bytes retained in frozen/scoremax_v1.",
+  "candidate_version": 3,
+  "rectification": "Reject blank assessor/human/opaque identities, canonicalize assessor labels for independence, strict academic native integer identity. Frozenv2 preserved."
+}

@@ -1,3 +1,59 @@
+# Current Work B SQLite navigation candidate — 23 November 2026 UTC
+
+This is the continuation of existing PR #56, composed after current ScoreMax PR #59
+`bcd9834c4e956f70561b41f786e0c3a2e568aacf`, not the historical18c8c runtime.
+Accepted live baseline is `8d5c0fd44ede20c56d62a42f0515207bb4b94bda`.
+The current exact generated source tree is
+`d02a710a307788e68ee5b7be19f01b39e6be7ec4c8e7bc84d09e352e327810f2`.
+The existing materializer now composes the accepted+scored+pending receiver and
+an exact12-file code delta. Build opens no DB and creates no index. Preserve the
+existing API-OFF, original-source-marks/positive-weight pending-answer contract.
+
+The selected code batches native programme/chapter display reads, uses bounded
+commit/restore-invalidated display aggregates, pure immutable context/normalizer
+transforms and clean connection leases within one GET only. Every formal PH
+answer read still checks current exact authority; assessment admission, marking,
+withdrawal and mastery awards remain native. No PostgreSQL or shadow is enabled.
+
+Local100800-question/1001-learner/102300-FINAL-answer HTTP evidence,200 scheduled
+requests per route with50 distinct learners, one CPU/one worker/ONE thread:
+Learn p951004.826ms, Subject1217.720ms, Chapter1396.234ms, Catalogue1084.975ms.
+All800 requests succeeded, no timeout censoring;16 protected tables unchanged.
+These are local derived-fixture results, not Render or mixed-writer acceptance.
+Four-thread trials still FAILED (Subject1542.612ms,Chapter1598.731ms). ONE thread
+is a tested candidate configuration, NOT a production configuration change.
+All1/10/50 hosted gates, repeat trials, actual mixed writer load, resource limits,
+real bank and low-bandwidth/mobile checks remain independently required.
+
+Self-audit:30 exact-build, drift, pure-context, commit/fork/restore/concurrency,
+lease-lifecycle and writer-reservation controls PASS. Native signed parity across
+28 programme/subject pairs,42 opaque/Unicode/whitespace chapter inputs, five
+version/revocation/family/withdrawal states PASS, including native presentation
+fallbacks. Current pending, scored and signed-recovery regression results are
+recorded separately; no real academic approval is conferred by software fixtures.
+
+The failed per-label global-cache experiment is rejected. It displaced aggregate
+entries under the existing64-query bound. Its replacement reads chapter catalogue
+labels in bounded page-local SQL batches and adds zero global label entries.
+Do not increase cache bounds or treat a failed trial as passed evidence.
+
+Seven additive optional expression indexes are still a SEPARATE explicit guarded
+migration with verified backup, write fence, disk budget, plan/write/rollback
+qualification. The synthetic load fixture explicitly applies them; default build
+and startup do not. Production rollout requires coordinated code, build command,
+index migration and any worker-setting decision with pre/post checks and rollback.
+No merge, deployment, secret rotation, public activation or production DDL occurred.
+The current real source/DB fixture is unavailable through the existing secure
+transfer route; this is independent of future AI API activation.
+
+Existing PR #55 remains the programme handoff and contains the optional PostgreSQL
+prototype. Preserve its intentionally failing full-schema cutover veto. PostgreSQL
+cutover is not part of this SQLite candidate; no migration completeness is claimed.
+
+Historical evidence below retains its original versions and limits.
+
+---
+
 # ScoreMax SQLite-only speed release — acceptance and rollback
 
 **Status:** Draft, production deployment **NOT authorised or performed**  

@@ -1,331 +1,96 @@
-name: ScoreMax SQLite-only navigation release candidate
+name: Current ScoreMax SQLite navigation and recovery qualification
 on:
   pull_request:
-    branches: [fix/scoremax-streamed-backup-20261022]
+    branches: [fix/scoremax-streamed-backup-20261022, workb/scored-saq-contract-20261122-v1]
   workflow_dispatch:
-concurrency:
-  group: scoremax-sqlite-nav-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 permissions:
   contents: read
+concurrency:
+  group: current-sqlite-nav-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+env:
+  PYTHONUTF8: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
 jobs:
-  sqlite_navigation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 18
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Unit tests for native scope and source indents
-        run: python -m unittest discover -s tests/navigation_perf_20261114 -p 'test_*.py' -v
-      - name: Materialize sealed ScoreMax then bounded SQLite-only performance changes
-        run: python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
-      - name: Verify no scripts can enable shadow, PostgreSQL, or student marking changes
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import ast
-          p=Path('scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py').read_text()
-          module=ast.parse(p)
-          funcs={n.name for n in module.body if isinstance(n,ast.FunctionDef)}
-          assert {'main','digest','checksums','execute'}<=funcs
-          from scripts.materialize_scoremax_sqlite_nav_candidate_20261116 import STEPS,ALLOWED_CHANGED
-          assert len(STEPS)==11 and ALLOWED_CHANGED=={'app.py','ux_student_batch.py','ux_catalogue_browser.py'}
-          assert not any(any(word in s for word in ('postgres','shadow','migration','ack_lease','worker_state')) for s in STEPS)
-          PY
-      - name: Install accepted pinned requirements
-        run: pip install -r scoremax_runtime_v669b/requirements.txt
-      - name: Seed identical bounded synthetic learner DB
-        run: python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/sm-sqlite-prep/state/scoremax.db --per-chapter 20 --additional-learners 2 --answers-per-learner 10
-      - name: Adversarial three-student cache isolation, programme safety and next-request freshness
-        run: |
-          python -B scripts/scoremax_sqlite_request_isolation_20261116.py scoremax_runtime_v669b /tmp/sm-sqlite-prep/state/scoremax.db
-          echo SQLITE_NAV_STUDENT_ISOLATION_PASS
-      - name: Reconstruct accepted-only runtime separately from same sealed source
-        run: |
-          mkdir -p /tmp/sm-sqlite-baseline
-          cp -a scoremax_runtime_v669b /tmp/sm-sqlite-candidate
-          rm -rf scoremax_runtime_v669b
-          python -B scripts/materialize_scoremax_biology_receiver_20261027.py
-          cp -a scoremax_runtime_v669b /tmp/sm-sqlite-baseline/scoremax_runtime_v669b
-          rm -rf scoremax_runtime_v669b
-          mv /tmp/sm-sqlite-candidate scoremax_runtime_v669b
-          mkdir -p /tmp/sm-sqlite-reference/state /tmp/sm-sqlite-candidate/state
-          cp /tmp/sm-sqlite-prep/state/scoremax.db /tmp/sm-sqlite-reference/state/scoremax.db
-          cp /tmp/sm-sqlite-prep/state/scoremax.db /tmp/sm-sqlite-candidate/state/scoremax.db
-      - name: Compare four synthetic learner profiles and real practice submissions on native and draft
-        run: |
-          python -B scripts/scoremax_synthetic_persona_journeys_20261116.py /tmp/sm-sqlite-baseline/scoremax_runtime_v669b /tmp/sm-sqlite-reference/state/scoremax.db native > /tmp/persona-native.log
-          python -B scripts/scoremax_synthetic_persona_journeys_20261116.py scoremax_runtime_v669b /tmp/sm-sqlite-candidate/state/scoremax.db draft > /tmp/persona-draft.log
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          def load(file):
-            for line in Path(file).read_text().splitlines():
-              if line.startswith("SCOREMAX_SYNTHETIC_PERSONA_JOURNEYS="):
-                return json.loads(line.split("=",1)[1])
-            raise RuntimeError("SYNTHETIC_LEARNER_PROBE_MISSING:"+file)
-          a=load("/tmp/persona-native.log")
-          b=load("/tmp/persona-draft.log")
-          assert a["personas"]==b["personas"],("SYNTHETIC_PERSONA_NAVIGATION_DRIFT",a["personas"],b["personas"])
-          assert a["assessment_journeys"]==b["assessment_journeys"],(
-            "SYNTHETIC_ASSESSMENT_JOURNEY_DRIFT",a["assessment_journeys"],b["assessment_journeys"])
-          print("SCOREMAX_SYNTHETIC_PERSONA_NATIVE_DRAFT_PARITY_PASS="+json.dumps({
-            "identical_persona_navigation":True,
-            "identical_real_assessment_marking_and_submission":True,
-            "scenarios":list(a["personas"]),
-            "submitted_practice_scenarios":list(a["assessment_journeys"]),
-            "actual_PH_signatures_not_used":True,
-            "production_modified":False,
-          },sort_keys=True))
-          PY
-      - name: Compare exact synthetic page HTML, status and speed
-        run: |
-          python -B tests/navigation_perf_20261114/benchmark_student_routes.py measure /tmp/sm-sqlite-baseline/scoremax_runtime_v669b /tmp/sm-sqlite-reference/state/scoremax.db --label native > /tmp/native-route.log
-          python -B tests/navigation_perf_20261114/benchmark_student_routes.py measure scoremax_runtime_v669b /tmp/sm-sqlite-candidate/state/scoremax.db --label sqlite-candidate > /tmp/candidate-route.log
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          def read(path):
-            for line in Path(path).read_text().splitlines():
-              if line.startswith("SCOREMAX_ROUTE_BENCH="):
-                return json.loads(line.split("=",1)[1])
-            raise AssertionError(path+" missing report")
-          base=read("/tmp/native-route.log")["routes"]
-          new=read("/tmp/candidate-route.log")["routes"]
-          assert base.keys()==new.keys(),(base.keys(),new.keys())
-          result={}
-          for name in base:
-            before,after=base[name],new[name]
-            for prop in ("status","body_sha256","html_bytes"):
-              assert before[prop]==after[prop],(name,prop,before[prop],after[prop])
-            ratio=after["median_ms"]/max(1,before["median_ms"])
-            result[name]={"native_ms":before["median_ms"],"candidate_ms":after["median_ms"],"ratio":round(ratio,3)}
-          print("SCOREMAX_SQLITE_HTML_PARITY_PASS="+json.dumps(result,sort_keys=True))
-          # Validate the entire anonymous authentication boundary against
-          # the same accepted native runtime, not just HTML for logged-in users.
-          def anon(path):
-            for line in Path(path).read_text().splitlines():
-              if line.startswith("SCOREMAX_ANONYMOUS_NAVIGATION_PARITY="):
-                return json.loads(line.split("=",1)[1])["routes"]
-            raise AssertionError("MISSING_ANONYMOUS_PARITY:"+path)
-          anonymous_base=anon("/tmp/native-route.log")
-          anonymous_candidate=anon("/tmp/candidate-route.log")
-          assert anonymous_base==anonymous_candidate,(
-            "ANONYMOUS_ACCESS_OR_REDIRECT_BEHAVIOR_CHANGED",
-            anonymous_base,anonymous_candidate)
-          for route,entry in anonymous_candidate.items():
-            assert entry["status"]!=200 and entry["status"]<500,route
-            assert "public" not in entry["cache_control"].lower(),route
-          for route,info in new.items():
-            c=info["response_cache_control"].lower()
-            assert "public" not in c and "s-maxage" not in c,(
-              "AUTHENTICATED_STUDENT_PAGE_PUBLICLY_CACHEABLE",route,c)
-          print("SCOREMAX_ANONYMOUS_ACCESS_PARITY_PASS="+json.dumps({
-            "routes":sorted(anonymous_candidate),
-            "student_navigation_protected":True,
-            "public_http_caching_forbidden":True},sort_keys=True))
-          PY
-      - name: Test accepted academic marking, frozen answers and mastery evidence under SQLite candidate
-        run: |
-          python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_formal_mastery_evidence.py -v
-          python -B scripts/qualify_assessment_contract_repair.py --report /tmp/sqlite-nav-assessment-contract.json
-          python -B scripts/qualify_programme_mastery_repair.py --report /tmp/sqlite-nav-programme-mastery.json
-          python -B scripts/qualify_existing_ph_compatibility.py --report /tmp/sqlite-nav-ph-compatibility.json
-          # The 2026-10-07 AST-extraction fixture predates the current governed
-          # Biology receiver contract and is intentionally not replayed here.
-          # The 29 native PH compatibility cases above are current and enforced.
-      - name: Compare native/candidate enforced-paywall FSc/MDCAT access and redirects
-        run: |
-          python -B scripts/scoremax_sqlite_enforced_access_parity_20261116.py /tmp/sm-sqlite-baseline/scoremax_runtime_v669b /tmp/sm-sqlite-reference/state/scoremax.db > /tmp/native-access.log
-          python -B scripts/scoremax_sqlite_enforced_access_parity_20261116.py scoremax_runtime_v669b /tmp/sm-sqlite-candidate/state/scoremax.db > /tmp/candidate-access.log
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          def report(path):
-            for line in Path(path).read_text().splitlines():
-              if line.startswith("SCOREMAX_SQLITE_ENFORCED_ACCESS_PARITY="):
-                return json.loads(line.split("=",1)[1])["programme_scopes"]
-            raise RuntimeError("ENFORCED_ACCESS_REPORT_MISSING:"+path)
-          a=report("/tmp/native-access.log")
-          b=report("/tmp/candidate-access.log")
-          assert a==b,("ENFORCED_FSC_MDCAT_ACCESS_PARITY_FAILED",a,b)
-          print("SCOREMAX_SQLITE_PAYWALL_AND_PROGRAMME_SWITCH_PARITY_PASS="+json.dumps({
-            "native_candidate_exact_status_and_body_and_redirect":True,
-            "programmes":list(b),"routes_per_programme":len(b["FSc Part 1"]),
-            "production_touched":False},sort_keys=True))
-          PY
-      - name: Verify identical preserved academic and PH rows after native/candidate route visits
-        run: |
-          python - <<'PY'
-          import hashlib,sqlite3,json
-          from pathlib import Path
-          databases={
-            "native":Path("/tmp/sm-sqlite-reference/state/scoremax.db"),
-            "candidate":Path("/tmp/sm-sqlite-candidate/state/scoremax.db")}
-          protected=("users","questions","question_families",
-            "assessment_sessions","attempts","attempt_answers",
-            "mastery_records","mastery_form_results","mastery_history",
-            "integration_ph_question_version_store",
-            "integration_ph_release_question_membership",
-            "integration_ph_content_releases",
-            "integration_ph_product_activation_authorizations",
-            "ph_bridge_staged_withdrawal_exclusions_v6611e",
-            "integration_outbox","integration_receipts")
-          records={}
-          for label,path in databases.items():
-            with sqlite3.connect(path.as_uri()+"?mode=ro",uri=True) as c:
-              per={}
-              for table in protected:
-                rows=c.execute('SELECT * FROM "'+table+'"').fetchall()
-                digest=hashlib.sha256()
-                for serialized in sorted(repr(tuple(x)) for x in rows):
-                  digest.update(serialized.encode())
-                  digest.update(b'\0')
-                per[table]={"count":len(rows),"sha256":digest.hexdigest()}
-              records[label]=per
-          mismatches={table:{"native":records["native"][table],
-              "candidate":records["candidate"][table]}
-              for table in protected
-              if records["native"][table]!=records["candidate"][table]}
-          if mismatches:
-            raise RuntimeError("SQLITE_NAV_PROTECTED_DATA_DIVERGENCE:"+repr(mismatches))
-          print("SCOREMAX_SQLITE_PROTECTED_DATA_PARITY_PASS="+json.dumps({
-            "protected_tables":len(protected),
-            "rows_compared":sum(x["count"] for x in records["native"].values()),
-            "all_stored_values_identical":True,
-            "candidate_wrote_no_different_academic_or_PH_rows":True,
-            "production_data_accessed":False},sort_keys=True))
-          PY
-      - name: No deployment or DB migration performed
-        run: |
-          test ! -e scoremax_runtime_v669b/scripts/scoremax_persistent_shadow_visibility_candidate_20261115.py
-          echo SQLITE_NAV_BUILD_ONLY_NO_PRODUCTION_CHANGE
-
-  sqlite_scaled_http:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Build exact SQLite-only candidate; no migration
-        run: |
-          python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
-          cp -a scoremax_runtime_v669b /tmp/scoremax-scaled-candidate
-          rm -rf scoremax_runtime_v669b
-          python -B scripts/materialize_scoremax_biology_receiver_20261027.py
-          cp -a scoremax_runtime_v669b /tmp/scoremax-scaled-native
-          pip install -r scoremax_runtime_v669b/requirements.txt
-          pip install gunicorn
-      - name: Seed 6000 synthetic questions and 1000 distinct users with 100k frozen answers
-        run: |
-          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed /tmp/scoremax-scaled-native /tmp/scoremax-scaled-seed/state/scoremax.db --per-chapter 125 --additional-learners 1000 --answers-per-learner 100
-          mkdir -p /tmp/scoremax-scaled-baseline/state /tmp/scoremax-scaled-changed/state
-          cp /tmp/scoremax-scaled-seed/state/scoremax.db /tmp/scoremax-scaled-baseline/state/scoremax.db
-          cp /tmp/scoremax-scaled-seed/state/scoremax.db /tmp/scoremax-scaled-changed/state/scoremax.db
-      - name: Run native 1-worker 1-10-50 student HTTP Learning and Subject baselines
-        run: |
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-native /tmp/scoremax-scaled-baseline/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/learn-vnext --port 18971 | tee /tmp/native-learning.log
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-native /tmp/scoremax-scaled-baseline/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/subject/Biology --port 18972 | tee /tmp/native-subject.log
-      - name: Run same candidate load with all shadow and PostgreSQL features disabled
-        run: |
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-candidate /tmp/scoremax-scaled-changed/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/learn-vnext --port 18973 | tee /tmp/new-learning.log
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py /tmp/scoremax-scaled-candidate /tmp/scoremax-scaled-changed/state/scoremax.db --workers 1 --levels 1,10,50 --route /student/subject/Biology --port 18974 | tee /tmp/new-subject.log
-      - name: Refuse performance regression and report broad launch SLA separately
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          pairs=[("/tmp/native-learning.log","/tmp/new-learning.log","Learning"),
-                 ("/tmp/native-subject.log","/tmp/new-subject.log","Subject")]
-          output={}
-          for old,new,tag in pairs:
-              def read(path):
-                  result={}
-                  for line in Path(path).read_text().splitlines():
-                      if line.startswith("SCOREMAX_GUNICORN_ISOLATED_HTTP="):
-                          item=json.loads(line.split("=",1)[1])
-                          assert item["workers"]==1
-                          result[item["distinct_students"]]=item
-                  assert set(result)=={1,10,50},(path,result.keys())
-                  return result
-              native,candidate=read(old),read(new)
-              report={}
-              for n in (1,10,50):
-                  before,after=native[n]["p95_ms"],candidate[n]["p95_ms"]
-                  report[str(n)]={"native_p95_ms":before,"candidate_p95_ms":after,
-                     "ratio":round(after/max(1,before),3),
-                     "broad_launch_sla_pass":after<1500}
-                  if after>before*1.10:
-                      raise RuntimeError(f"SQLITE_NAV_10PCT_REGRESSION:{tag}:{n}:{before}:{after}")
-              output[tag]=report
-          total=sum(output[tag]["50"]["ratio"] for tag in output)
-          if total>=1.90:
-              raise RuntimeError("SQLITE_NAV_COMBINED_SPEED_GAIN_BELOW_5PCT")
-          print("SCOREMAX_SQLITE_PAIRED_6000_HTTP_PASS="+json.dumps(output,sort_keys=True))
-          print("SCOREMAX_RELEASE_SCOPE=6000_QUESTIONS_1000_STUDENTS_100K_FROZEN_ANSWERS")
-          print("SCOREMAX_BROAD_LAUNCH_CAPACITY_NOT_CERTIFIED_BY_INCREMENTAL_RELEASE")
-          PY
-
-  sqlite_index_research:
-    runs-on: ubuntu-latest
+  native_parity:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Rebuild sealed runtime with SQLite-only speed candidate
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble exact current scored and pending receiver reference
+        run: python -B scripts/materialize_scoremax_scored_saq_20261122.py
+      - name: Keep code-only current reference
+        run: python -c "from pathlib import Path; import shutil; shutil.copytree('scoremax_runtime_v669b','qualification/reference_runtime',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))"
+      - name: Compose exact navigation source delta without touching databases
+        run: python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
+      - name: Install accepted runtime dependencies
+        run: python -m pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Exact build, drift, immutable context, commit freshness and request isolation
+        run: python -B -m unittest discover -s tests/navigation_current_20261123 -p 'test_*.py' -v
+      - name: Preserve prior native scope and source-indentation controls
+        run: python -B -m unittest discover -s tests/navigation_perf_20261114 -p 'test_*.py' -v
+      - name: Native signed and opaque Unicode programme chapter label count parity
+        run: python -B tests/navigation_current_20261123/qualify_native_scope_parity_v1.py scoremax_runtime_v669b qualification/reference_runtime qualification/native_scope_state qualification/native_scope.json
+      - name: Retain scored marker contracts
+        run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_scored_saq_v1.py -v
+      - name: Preserve actual pending response result withdrawal and mastery boundaries
+        run: python -B tests/biology_receiver_20261027/qualify_pending_saq_native_v3.py qualification/pending_native.json
+      - name: Actual signed duplicate withdrawal and crash recovery
+        run: python -B tests/biology_receiver_20261027/qualify_work_b_delivery_recovery_v2.py qualification/delivery_recovery.json
+      - name: Separate signed contract attacks on composed runtime
+        run: python -B tests/biology_receiver_20261027/qualify_pending_saq_adversarial_v1.py qualification/adversarial.json
+      - name: Academic marking and programme mastery regressions
         run: |
-          python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
-          pip install -r scoremax_runtime_v669b/requirements.txt
-          pip install gunicorn
-      - name: Seed 100800 synthetic questions with frozen learner evidence
+          python -B scripts/qualify_assessment_contract_repair.py --report qualification/assessment.json
+          python -B scripts/qualify_programme_mastery_repair.py --report qualification/programme_mastery.json
+          python -B scripts/qualify_existing_ph_compatibility.py --report qualification/ph_compatibility.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-navigation-native-${{ matrix.os }}
+          path: qualification/*.json
+
+  bounded_http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build current runtime
+        run: python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
+      - name: Install accepted dependencies and native HTTP measurement tools
         run: |
-          python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b /tmp/sm-index-seed/state/scoremax.db --per-chapter 2100 --additional-learners 100 --answers-per-learner 100
-          mkdir -p /tmp/sm-index-a/state /tmp/sm-index-b/state /tmp/sm-index-b/backup
-          cp /tmp/sm-index-seed/state/scoremax.db /tmp/sm-index-a/state/scoremax.db
-          cp /tmp/sm-index-seed/state/scoremax.db /tmp/sm-index-b/state/scoremax.db
-      - name: Create additive SQLite indexes only on throwaway copy after verified backup
+          python -m pip install -r scoremax_runtime_v669b/requirements.txt
+          python -m pip install gunicorn psutil
+      - name: Seed 100800 questions 1001 learners 102300 frozen answers
+        run: python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b qualification/seed/state/unindexed.db --per-chapter 2100 --additional-learners 1000 --answers-per-learner 100
+      - name: Guarded additive indexes on disposable copy with verified backup
         run: |
-          python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db
-          python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db --backup /tmp/sm-index-b/backup/preindex.db --apply
-          python -B scripts/scoremax_navigation_index_migration_20261114.py --db /tmp/sm-index-b/state/scoremax.db --apply
-      - name: Measure additive SQLite index disk footprint and rollback-only bulk write cost
-        run: python -B scripts/scoremax_sqlite_index_write_cost_20261116.py /tmp/sm-index-a/state/scoremax.db /tmp/sm-index-b/state/scoremax.db
-      - name: Counterbalance cache warmup with indexed-native-native-indexed 1/10-user runs
-        run: |
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-b/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19071 | tee /tmp/sqlite-index-1.log
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-a/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19072 | tee /tmp/sqlite-native-1.log
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-a/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19073 | tee /tmp/sqlite-native-2.log
-          python -B tests/navigation_perf_20261114/benchmark_gunicorn_http.py scoremax_runtime_v669b /tmp/sm-index-b/state/scoremax.db --workers 1 --levels 1,10 --route /student/subject/Biology --port 19074 | tee /tmp/sqlite-index-2.log
-          python - <<'PY'
-          import json,statistics
-          from pathlib import Path
-          def read(path):
-              rows=[]
-              for line in Path(path).read_text().splitlines():
-                  if line.startswith("SCOREMAX_GUNICORN_ISOLATED_HTTP="):
-                      rows.append(json.loads(line.split("=",1)[1]))
-              assert [x["distinct_students"] for x in rows]==[1,10],path
-              return {x["distinct_students"]:x["p95_ms"] for x in rows}
-          indexed=[read("/tmp/sqlite-index-1.log"),read("/tmp/sqlite-index-2.log")]
-          native=[read("/tmp/sqlite-native-1.log"),read("/tmp/sqlite-native-2.log")]
-          out={}
-          for n in (1,10):
-              a=[x[n] for x in native]
-              b=[x[n] for x in indexed]
-              mid_native=statistics.median(a)
-              mid_indexed=statistics.median(b)
-              out[str(n)]={"native_runs_ms":a,"indexed_runs_ms":b,
-                  "native_median_ms":mid_native,"indexed_median_ms":mid_indexed,
-                  "indexed_to_native_ratio":round(mid_indexed/max(1,mid_native),3)}
-          print("SCOREMAX_SQLITE_INDEX_COUNTERBALANCED_RESEARCH="+json.dumps({
-              "run_order":"indexed-native-native-indexed",
-              "subject_http":out,
-              "disposable_100800_questions":True,
-              "index_ddl_production":False,
-              "causality_not_proven_without_plan_and_write_load":True,
-              "production_migration_authorized":False
-          },sort_keys=True))
-          PY
+          python -c "from pathlib import Path; import sqlite3; p=Path('qualification/indexed/state/seed.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/seed/state/unindexed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close();Path('qualification/backup').mkdir()"
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db qualification/indexed/state/seed.db
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db qualification/indexed/state/seed.db --backup qualification/backup/preindex.db --apply
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db qualification/indexed/state/seed.db --apply
+      - name: Uncensored native HTTP on one CPU with 1 10 50 distinct learners
+        run: python -B tests/navigation_current_20261123/run_paired_native_http_v6.py qualification/indexed/state/seed.db qualification/http --fixture DERIVED_100800_GUARDED_7_INDEXES --order B --routes learn,subject,chapter,catalogue --levels 1,10,50 --operations 200 --workers 1 --threads 1 --server-one-cpu --reference-runtime scoremax_runtime_v669b --candidate-runtime scoremax_runtime_v669b
+      - name: Enforce existing capacity target separately from software CI
+        run: python -B tests/navigation_current_20261123/qualify_capacity_report_v1.py qualification/http
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-navigation-uncensored-http
+          path: |
+            qualification/http/*.json
+            qualification/http/*.log

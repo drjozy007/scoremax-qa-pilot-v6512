@@ -16,6 +16,8 @@ from pathlib import Path
 import shutil
 import sqlite3
 
+MIGRATION_REVISION='SCOREMAX-NAV-INDEXES-20261122-2'
+
 INDEXES={
  "idx_sm_nav_subject_programme_20261114":
    "CREATE INDEX idx_sm_nav_subject_programme_20261114 ON questions(lower(subject),lower(COALESCE(programme,'')),chapter)",
@@ -29,6 +31,11 @@ INDEXES={
  # Does not change programme, family, release or mastery gates.
  "idx_sm_nav_coalesced_subject_chapter_20261114":
    "CREATE INDEX idx_sm_nav_coalesced_subject_chapter_20261114 ON questions(lower(COALESCE(subject,'')),chapter,id)",
+ # Exact expressions of the accepted chapter/mastery and plain-subject routes.
+ "idx_sm_nav_exact_subject_chapter_v1":
+   "CREATE INDEX idx_sm_nav_exact_subject_chapter_v1 ON questions(lower(COALESCE(subject,'')),COALESCE(chapter,''),id)",
+ "idx_sm_nav_plain_subject_v1":
+   "CREATE INDEX idx_sm_nav_plain_subject_v1 ON questions(lower(subject),id)",
 }
 
 def quickcheck(connection):

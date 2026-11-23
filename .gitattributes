@@ -1,0 +1,2 @@
+# Runtime integrity manifests require exact Git blob bytes on every platform.
+* -text

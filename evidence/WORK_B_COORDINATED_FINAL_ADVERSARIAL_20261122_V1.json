@@ -1,0 +1,781 @@
+{
+  "stage": "SEPARATE_AGGREGATE_ADVERSARIAL_AUDIT",
+  "candidate": "PH-SCOREMAX-SYSTEMIC-SAQ-CANDIDATE-20261122-1",
+  "status": "PASSED_LOCAL_SOFTWARE_QUALIFICATION",
+  "archive": "/workspace/scratch/050e298489f1/work_b/PowerHouse_ScoreMax_WorkB_Coordinated_Candidate_20261122_v1.zip",
+  "archive_sha256": "5c70bfca548aac508f1178f2da4973ee0be8c17fc4faf0cdc5c2487858f2d093",
+  "aggregate_manifest": "/workspace/scratch/050e298489f1/work_b/frozen/coordinated_v1/powerhouse/evidence/PH_SCOREMAX_SYSTEMIC_SAQ_CANDIDATE_20261122_V1.json",
+  "aggregate_manifest_sha256": "ffaa41f3b53a31f6ccdeea74cd19c79762772b606f6ca0052790ed8132ca3a6a",
+  "archive_inventory_verified": 164,
+  "archive_entries": 165,
+  "all_archive_inventory_hashes_and_sizes_matched": true,
+  "all_snapshot_entries_matched_archive": true,
+  "all_extracted_entries_matched_archive": true,
+  "all_current_candidate_source_files_verified": 48,
+  "all_current_candidate_source_hashes_unchanged_before_after": true,
+  "all_frozen_snapshot_entries_unchanged_before_after": true,
+  "all_selected_current_qualification_inputs_unchanged_before_after": true,
+  "runtime_tree_sha256": "056c8707eb48abccf12f66ddba799678c490e617c194f42910f44283e1d390ab",
+  "runtime_tree_unchanged_before_after": true,
+  "zip_unchanged": true,
+  "zip_crc_paths_duplicates_symlinks_database_cache_hygiene": "PASSED",
+  "nested_frozen_archives": [
+    {
+      "archive": "qualification/powerhouse/evidence/WORK_B_NATIVE_LIFECYCLE_CANDIDATE_1_FROZEN.tar.gz",
+      "members": 13,
+      "safe_paths_no_links_databases_caches": true
+    },
+    {
+      "archive": "qualification/powerhouse/evidence/WORK_B_NATIVE_LIFECYCLE_CANDIDATE_2_FROZEN.tar.gz",
+      "members": 15,
+      "safe_paths_no_links_databases_caches": true
+    },
+    {
+      "archive": "qualification/powerhouse/evidence/WORK_B_NATIVE_LIFECYCLE_CANDIDATE_3_FROZEN.tar.gz",
+      "members": 20,
+      "safe_paths_no_links_databases_caches": true
+    },
+    {
+      "archive": "qualification/powerhouse/evidence/WORK_B_PROFILE_ASSESSMENT_ROUTING_20261122_V1_FROZEN.tar.gz",
+      "members": 5,
+      "safe_paths_no_links_databases_caches": true
+    },
+    {
+      "archive": "qualification/powerhouse/evidence/WORK_B_PROFILE_ASSESSMENT_ROUTING_20261122_V2_FROZEN.tar.gz",
+      "members": 6,
+      "safe_paths_no_links_databases_caches": true
+    }
+  ],
+  "independent_code_patch_roundtrip": {
+    "powerhouse": {
+      "status": "PASSED",
+      "candidate_files": 42,
+      "accepted_originals_git_blob_verified": 17,
+      "new_files_removed_on_reverse": 25
+    },
+    "scoremax": {
+      "status": "PASSED",
+      "candidate_files": 6,
+      "accepted_originals_git_blob_verified": 0,
+      "new_files_removed_on_reverse": 6
+    }
+  },
+  "external_adversarial_methods": 72,
+  "bounded_scope_controls": [
+    300,
+    1500
+  ],
+  "actual_binder_projection_methods": 8,
+  "actual_installed_profile_lifecycle_composition_methods": 3,
+  "test_runs": [
+    {
+      "script": "test_frozen_work_b_boundaries.py",
+      "script_sha256": "c18599200fa54a75408bc2b8406caad11e1b467f71c1ce66e60597281e4f7cb6",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_corrupted_signed_lineage_or_learner_material_holds (__main__.AcademicBoundaryAttacks.test_corrupted_signed_lineage_or_learner_material_holds) ... ok\ntest_destination_and_mastery_ceiling_cannot_be_borrowed (__main__.AcademicBoundaryAttacks.test_destination_and_mastery_ceiling_cannot_be_borrowed) ... ok\ntest_fixture_uses_both_repository_contract_schemas (__main__.AcademicBoundaryAttacks.test_fixture_uses_both_repository_contract_schemas) ... ok\ntest_opaque_source_id_not_reinterpreted (__main__.AcademicBoundaryAttacks.test_opaque_source_id_not_reinterpreted) ... ok\ntest_rehashed_source_approval_mismatch_fails_both_sides (__main__.AcademicBoundaryAttacks.test_rehashed_source_approval_mismatch_fails_both_sides) ... ok\ntest_rehashed_unattributed_or_colluding_reviews_fail (__main__.AcademicBoundaryAttacks.test_rehashed_unattributed_or_colluding_reviews_fail) ... ok\ntest_rehashed_wrong_native_approval_cannot_be_borrowed (__main__.AcademicBoundaryAttacks.test_rehashed_wrong_native_approval_cannot_be_borrowed) ... ok\ntest_source_intent_and_marks_never_alias (__main__.AcademicBoundaryAttacks.test_source_intent_and_marks_never_alias) ... ok\ntest_ph_cannot_qualify_a_clause_too_large_for_scoremax (__main__.CrossCompilerAttacks.test_ph_cannot_qualify_a_clause_too_large_for_scoremax) ... ok\ntest_ph_cannot_qualify_a_self_contradicting_finite_contract (__main__.CrossCompilerAttacks.test_ph_cannot_qualify_a_self_contradicting_finite_contract) ... ok\ntest_scored_transport_never_borrows_native_practice_or_guided_contract (__main__.CrossCompilerAttacks.test_scored_transport_never_borrows_native_practice_or_guided_contract) ... ok\ntest_source_bound_positive_reference_and_normalized_collision_conformance (__main__.CrossCompilerAttacks.test_source_bound_positive_reference_and_normalized_collision_conformance) ... ok\ntest_api_configuration_never_authorizes_official_scoring (__main__.MarkerAttacks.test_api_configuration_never_authorizes_official_scoring) ... ok\ntest_partial_credit_repetition_and_unknown_paraphrase (__main__.MarkerAttacks.test_partial_credit_repetition_and_unknown_paraphrase) ... ok\ntest_prompt_injection_and_unknown_mixed_response_are_unscored (__main__.MarkerAttacks.test_prompt_injection_and_unknown_mixed_response_are_unscored) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 0.019s\n\nOK\n"
+    },
+    {
+      "script": "test_frozen_common_academic_v3.py",
+      "script_sha256": "f6c5ebb15dbe6cf77ce5e05dd310452d9684cb8e4bf35ed38528cd6b1b43ccc9",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_current_source_or_certificate_hold_cannot_be_overridden_by_valid_approval (__main__.CommonAcademicProofAttacks.test_current_source_or_certificate_hold_cannot_be_overridden_by_valid_approval) ... ok\ntest_latest_same_question_hold_cannot_reuse_older_current_pass (__main__.CommonAcademicProofAttacks.test_latest_same_question_hold_cannot_reuse_older_current_pass) ... ok\ntest_newer_other_question_cannot_hide_current_own_hold_or_supply_missing_proof (__main__.CommonAcademicProofAttacks.test_newer_other_question_cannot_hide_current_own_hold_or_supply_missing_proof) ... ok\ntest_resealed_academic_approval_for_wrong_native_snapshot_is_rejected (__main__.CommonAcademicProofAttacks.test_resealed_academic_approval_for_wrong_native_snapshot_is_rejected) ... ok\ntest_qualified_marker_never_promotes_existing_native_hold (__main__.NativeReadinessPrecedenceAttacks.test_qualified_marker_never_promotes_existing_native_hold) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.005s\n\nOK\n"
+    },
+    {
+      "script": "test_frozen_scoremax_v2.py",
+      "script_sha256": "ad2402e5db2e169ff0b505163847b398b6301d972284bd9d23dcccb58eb5a591",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_any_two_contradiction_and_excess_evidence_do_not_inflate_score (__main__.FrozenScoremaxAttacks.test_any_two_contradiction_and_excess_evidence_do_not_inflate_score) ... ok\ntest_bad_response_or_contract_is_unscored (__main__.FrozenScoremaxAttacks.test_bad_response_or_contract_is_unscored) ... ok\ntest_blank_source_identity_and_profile_cannot_supply_scope (__main__.FrozenScoremaxAttacks.test_blank_source_identity_and_profile_cannot_supply_scope) ... ok\ntest_case_or_padding_does_not_manufacture_assessor_independence (__main__.FrozenScoremaxAttacks.test_case_or_padding_does_not_manufacture_assessor_independence) ... ok\ntest_drawn_manual_modes_never_use_text_ai_or_deterministic (__main__.FrozenScoremaxAttacks.test_drawn_manual_modes_never_use_text_ai_or_deterministic) ... ok\ntest_guided_practice_metadata_cannot_be_erased_by_scored_compiler (__main__.FrozenScoremaxAttacks.test_guided_practice_metadata_cannot_be_erased_by_scored_compiler) ... ok\ntest_nested_native_identity_is_an_integer_not_numeric_lookalike (__main__.FrozenScoremaxAttacks.test_nested_native_identity_is_an_integer_not_numeric_lookalike) ... ok\ntest_provider_errors_and_provisional_results_never_create_official_credit (__main__.FrozenScoremaxAttacks.test_provider_errors_and_provisional_results_never_create_official_credit) ... ok\ntest_provider_must_bind_exact_rubric_response_and_point_allocations (__main__.FrozenScoremaxAttacks.test_provider_must_bind_exact_rubric_response_and_point_allocations) ... ok\ntest_reference_is_markable (__main__.FrozenScoremaxAttacks.test_reference_is_markable) ... ok\ntest_rehashed_human_approval_borrowing (__main__.FrozenScoremaxAttacks.test_rehashed_human_approval_borrowing) ... ok\ntest_rehashed_unknown_ceiling_invalid_mastery_weight (__main__.FrozenScoremaxAttacks.test_rehashed_unknown_ceiling_invalid_mastery_weight) ... ok\ntest_semantic_source_cannot_borrow_deterministic_contract (__main__.FrozenScoremaxAttacks.test_semantic_source_cannot_borrow_deterministic_contract) ... ok\ntest_unknown_mixed_response_and_prompt_injection_are_unscored (__main__.FrozenScoremaxAttacks.test_unknown_mixed_response_and_prompt_injection_are_unscored) ... ok\ntest_whitespace_only_assessor_attribution_cannot_approve_scored_assessment (__main__.FrozenScoremaxAttacks.test_whitespace_only_assessor_attribution_cannot_approve_scored_assessment) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 0.014s\n\nOK\n"
+    },
+    {
+      "script": "test_frozen_lifecycle_v1.py",
+      "script_sha256": "93d09c69dd77b29e46c32d96366870a6c219d44496f5c752a6951fedef042b4e",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_300_1500_shuffled_keys_preserve_admitted_order_and_bounded_qa (__main__.FrozenLifecycleAttacks.test_300_1500_shuffled_keys_preserve_admitted_order_and_bounded_qa) ... ok\ntest_crash_after_native_commit_does_not_repeat_qa_or_firewall (__main__.FrozenLifecycleAttacks.test_crash_after_native_commit_does_not_repeat_qa_or_firewall) ... ok\ntest_exact_registered_whole_chapter_scope_required (__main__.FrozenLifecycleAttacks.test_exact_registered_whole_chapter_scope_required) ... ok\ntest_numeric_looking_audit_identity_does_not_select_native_key (__main__.FrozenLifecycleAttacks.test_numeric_looking_audit_identity_does_not_select_native_key) ... ok\ntest_same_academic_holds_are_individual_and_do_not_stop_cleared_sibling (__main__.FrozenLifecycleAttacks.test_same_academic_holds_are_individual_and_do_not_stop_cleared_sibling) ... ok\ntest_scope_does_not_leak_to_sibling_chapter (__main__.FrozenLifecycleAttacks.test_scope_does_not_leak_to_sibling_chapter) ... ok\ntest_shared_hash_failure_stops_repeated_source_work_after_two (__main__.FrozenLifecycleAttacks.test_shared_hash_failure_stops_repeated_source_work_after_two) ... ok\ntest_uppercase_delta_reopens_only_exact_public_identity (__main__.FrozenLifecycleAttacks.test_uppercase_delta_reopens_only_exact_public_identity) ... ok\ntest_current_withdrawal_ack_or_successor_blocks_send (__main__.FrozenSendFenceAttacks.test_current_withdrawal_ack_or_successor_blocks_send) ... ok\ntest_cutover_and_exact_profile_apply_at_actual_send_guard (__main__.FrozenSendFenceAttacks.test_cutover_and_exact_profile_apply_at_actual_send_guard) ... ok\ntest_reference_additive_snapshot_is_sendable (__main__.FrozenSendFenceAttacks.test_reference_additive_snapshot_is_sendable) ... ok\ntest_same_count_version_substitution_is_held (__main__.FrozenSendFenceAttacks.test_same_count_version_substitution_is_held) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 0.656s\n\nOK\n"
+    },
+    {
+      "script": "test_frozen_source_events_v2.py",
+      "script_sha256": "ecfc6bcec42baed915c1f281f602c639fc7343e5fb102bd4f392e59cb317e992",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_1500_source_members_are_not_lost_at_event_boundary (__main__.SourceEventAttacks.test_1500_source_members_are_not_lost_at_event_boundary) ... ok\ntest_crash_after_source_journal_commit_does_not_mint_qa_or_duplicate_rows (__main__.SourceEventAttacks.test_crash_after_source_journal_commit_does_not_mint_qa_or_duplicate_rows) ... ok\ntest_native_id_string_with_public_id_collision_fails_closed (__main__.SourceEventAttacks.test_native_id_string_with_public_id_collision_fails_closed) ... ok\ntest_source_truth_change_during_pagination_restarts_exact_bounded_scope (__main__.SourceEventAttacks.test_source_truth_change_during_pagination_restarts_exact_bounded_scope) ... ok\ntest_unknown_numeric_looking_identity_is_only_exact_public_id (__main__.SourceEventAttacks.test_unknown_numeric_looking_identity_is_only_exact_public_id) ... ok\ntest_withdraw_source_keeps_unrelated_current_certificate_ready (__main__.SourceEventAttacks.test_withdraw_source_keeps_unrelated_current_certificate_ready) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 2.108s\n\nOK\n"
+    },
+    {
+      "script": "test_frozen_lifecycle_v3.py",
+      "script_sha256": "6df73a086fd79868be700677be2d931ebcb172dbd53be742020bab0725515a1e",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_failed_candidate_audit_rolls_back_readiness_and_its_native_event (__main__.NativeReadinessProducerAttacks.test_failed_candidate_audit_rolls_back_readiness_and_its_native_event) ... ok\ntest_same_state_new_snapshot_emits_exact_opaque_delta_while_exact_retry_is_idempotent (__main__.NativeReadinessProducerAttacks.test_same_state_new_snapshot_emits_exact_opaque_delta_while_exact_retry_is_idempotent) ... ok\ntest_actual_native_completed_readiness_delta_schedules_fresh_qa_once_for_lower_id (__main__.PrerequisiteR2Attacks.test_actual_native_completed_readiness_delta_schedules_fresh_qa_once_for_lower_id) ... ok\ntest_completed_human_r2_cannot_borrow_another_response_or_review_snapshot (__main__.PrerequisiteR2Attacks.test_completed_human_r2_cannot_borrow_another_response_or_review_snapshot) ... ok\ntest_missing_approval_allocated_review_and_changed_source_snapshot_are_held_read_only (__main__.PrerequisiteR2Attacks.test_missing_approval_allocated_review_and_changed_source_snapshot_are_held_read_only) ... ok\ntest_unknown_or_science_reason_combined_with_machine_prerequisite_is_not_retired (__main__.PrerequisiteR2Attacks.test_unknown_or_science_reason_combined_with_machine_prerequisite_is_not_retired) ... ok\ntest_current_native_material_certificate_and_profile_binding_cannot_be_borrowed (__main__.SuccessorAttacks.test_current_native_material_certificate_and_profile_binding_cannot_be_borrowed) ... ok\ntest_one_and_multi_hop_are_sendable_without_rewriting_old_release_or_versions (__main__.SuccessorAttacks.test_one_and_multi_hop_are_sendable_without_rewriting_old_release_or_versions) ... ok\ntest_rehashed_chain_cannot_skip_a_native_version_or_mutate_intermediate_history (__main__.SuccessorAttacks.test_rehashed_chain_cannot_skip_a_native_version_or_mutate_intermediate_history) ... ok\ntest_rehashed_version_identity_fields_never_alias_native_or_opaque_identity (__main__.SuccessorAttacks.test_rehashed_version_identity_fields_never_alias_native_or_opaque_identity) ... ok\ntest_restricted_source_or_rights_flags_are_not_waived_by_valid_chain (__main__.SuccessorAttacks.test_restricted_source_or_rights_flags_are_not_waived_by_valid_chain) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.066s\n\nOK\n"
+    },
+    {
+      "script": "test_frozen_profile_routes_v1.py",
+      "script_sha256": "ac60ec49a2b02455d5b0dfdc59916bc74f88f5c29284015512c930ef7f1a2770",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_identical_guided_labels_do_not_borrow_other_profile_approval (__main__.FrozenProfileRouteAttacks.test_identical_guided_labels_do_not_borrow_other_profile_approval) ... ok\ntest_malformed_source_json_is_held_individually (__main__.FrozenProfileRouteAttacks.test_malformed_source_json_is_held_individually) ... ok\ntest_mixed_pending_routes_keep_native_ready_siblings_and_no_mutation (__main__.FrozenProfileRouteAttacks.test_mixed_pending_routes_keep_native_ready_siblings_and_no_mutation) ... ok\ntest_multiple_pending_previous_members_block_replacement_without_deletion (__main__.FrozenProfileRouteAttacks.test_multiple_pending_previous_members_block_replacement_without_deletion) ... ok\ntest_same_source_can_publish_distinct_exact_existing_routes (__main__.FrozenProfileRouteAttacks.test_same_source_can_publish_distinct_exact_existing_routes) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.039s\n\nOK\n"
+    },
+    {
+      "script": "test_frozen_exam_routes_v2.py",
+      "script_sha256": "b5b37b756691abc0af82dca4eca92865c589cd82e3a57c4d51424f0a3b8d01f5",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_all_positive_markers_pending_preserve_native_zero_and_nonwritten_siblings (__main__.FrozenExamRouteAttacks.test_all_positive_markers_pending_preserve_native_zero_and_nonwritten_siblings) ... ok\ntest_final_validation_rechecks_marker_and_approval_after_plan (__main__.FrozenExamRouteAttacks.test_final_validation_rechecks_marker_and_approval_after_plan) ... ok\ntest_malformed_fidelity_holds_one_item_without_practice_approval_borrowing (__main__.FrozenExamRouteAttacks.test_malformed_fidelity_holds_one_item_without_practice_approval_borrowing) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.038s\n\nOK\n"
+    },
+    {
+      "script": "audit_profile_bounded_scope_v1.py",
+      "script_sha256": "4affd184274758a970ee855ea24d1fd57ff607c9a84ddb9ee3cf56245db4a0df",
+      "exit_code": 0,
+      "stdout": "{\"finding\": \"Current academic proof calls must share the existing bounded immutable-source-index read scope.\", \"limit\": \"Disposable native-shaped rows; no actual heavy import-index I/O or production throughput measured.\", \"observations\": [{\"depth\": 0, \"entries\": 1, \"kept\": 300, \"outside_scope\": 0, \"proof_calls\": 300, \"questions\": 300, \"withheld\": 0}, {\"depth\": 0, \"entries\": 1, \"kept\": 1500, \"outside_scope\": 0, \"proof_calls\": 1500, \"questions\": 1500, \"withheld\": 0}], \"production_mutated\": false, \"stage\": \"SEPARATE_ADVERSARIAL_SCALE_SCOPE\", \"status\": \"PASSED\"}\n",
+      "stderr": ""
+    },
+    {
+      "module": "test_cross_repo_scored_binding_v1",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_actual_binder_preserves_positive_intent_and_source_bytes (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_actual_binder_preserves_positive_intent_and_source_bytes) ... ok\ntest_borrowed_question_scope_and_changed_learner_bytes_fail (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_borrowed_question_scope_and_changed_learner_bytes_fail) ... ok\ntest_explicit_native_finite_contract_uses_actual_binder_and_marker (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_explicit_native_finite_contract_uses_actual_binder_and_marker) ... ok\ntest_immutable_content_rehydration_retains_contract_and_provenance (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_immutable_content_rehydration_retains_contract_and_provenance) ... ok\ntest_material_approval_cannot_be_borrowed_even_after_outer_rehash (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_material_approval_cannot_be_borrowed_even_after_outer_rehash) ... ok\ntest_native_pin_rejects_borrowed_opaque_version (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_native_pin_rejects_borrowed_opaque_version) ... ok\ntest_real_drawn_output_fails_before_text_binding (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_real_drawn_output_fails_before_text_binding) ... ok\ntest_real_semantic_rubric_is_eligible_but_not_falsely_auto_markable (test_cross_repo_scored_binding_v1.CrossRepositoryBinding.test_real_semantic_rubric_is_eligible_but_not_falsely_auto_markable) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.348s\n\nOK\n"
+    },
+    {
+      "module": "test_profile_routing_lifecycle_v3_composition",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_current_approved_same_logical_question_version_is_retained (test_profile_routing_lifecycle_v3_composition.LogicalQuestionComposition.test_current_approved_same_logical_question_version_is_retained) ... ok\ntest_updated_logical_question_cannot_borrow_guided_permission (test_profile_routing_lifecycle_v3_composition.LogicalQuestionComposition.test_updated_logical_question_cannot_borrow_guided_permission) ... ok\ntest_updated_logical_question_still_requires_current_marking (test_profile_routing_lifecycle_v3_composition.LogicalQuestionComposition.test_updated_logical_question_still_requires_current_marking) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.042s\n\nOK\n"
+    }
+  ],
+  "marking_grammar": {
+    "status": "PASSED",
+    "cases": 62,
+    "ph_qualified_cases": 18,
+    "false_positive_cases": [],
+    "results": [
+      {
+        "case": "exact_full_partial",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "scoring_REQUIRED_COMBINATION",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "scoring_CONTRAST_PAIR",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "scoring_LABEL_PLUS_FUNCTION",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "scoring_SEMANTIC_MARK_POINT",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "scoring_UNKNOWN",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_1_int",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_2_int",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_3_int",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_True_bool",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_0_int",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_-1_int",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_2_str",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_n_None_NoneType",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_two_unequal_weights",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "any_three_four_alternatives",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "accepted_[]",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "accepted_None",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "accepted_'not-a-list'",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "accepted_[None]",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "accepted_['']",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "accepted_['   ']",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "accepted_['First source criterion.']",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "clause_length_1999",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "clause_length_2000",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "clause_length_2001",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "clause_length_10000",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "identical_accepted_contradiction",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "case_accepted_contradiction",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "punctuation_accepted_contradiction",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "case_sensitive_distinct",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "shared_clause_for_multiple_points",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "duplicate_opaque_point_id",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "point_id_' '",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "point_id_True",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "point_id_7",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "point_id_[]",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "point_id_None",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "weight_True",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+        "sm_error": null
+      },
+      {
+        "case": "weight_0",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+        "sm_error": null
+      },
+      {
+        "case": "weight_-1",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+        "sm_error": null
+      },
+      {
+        "case": "weight_'1'",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "weight_'NaN'",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+        "sm_error": null
+      },
+      {
+        "case": "weight_'Infinity'",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": "ValueError:ASSESSMENT_MARKS_INVALID",
+        "sm_error": null
+      },
+      {
+        "case": "case_policy_'false'",
+        "ph_qualified": false,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "case_policy_None",
+        "ph_qualified": false,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "case_policy_0",
+        "ph_qualified": false,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "case_policy_False",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "case_policy_True",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "source_declaration_None",
+        "ph_qualified": false,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "source_declaration_'NO - CRITERION_BOUND_REVIEW_REQUIRED'",
+        "ph_qualified": false,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "source_declaration_'YES_DETERMINISTIC'",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "source_declaration_'DETERMINISTICALLY_SCORABLE'",
+        "ph_qualified": true,
+        "sm_compiled": true,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "more_than_fifty_points",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "marks_source_conflict",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "rubric_version_unknown",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "reserved_native_scoring_{}",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "reserved_native_scoring_None",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "reserved_guided_self_assessment_{}",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "reserved_guided_self_assessment_None",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "reserved_assessment_eligibility_{}",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      },
+      {
+        "case": "reserved_assessment_eligibility_None",
+        "ph_qualified": false,
+        "sm_compiled": false,
+        "conformant": true,
+        "ph_error": null,
+        "sm_error": null
+      }
+    ],
+    "ph_module_sha256": "bcfbceb7e6a93843389d53f1ba245e64de8a3a2240094231f25e8df5e9fdfd3b",
+    "scoremax_frozen_helper_sha256": "3dc6f2bdf9a4a2f98f0da03175d724821768a96279540bacbf9ffa0f8ff17524",
+    "production_mutated": false,
+    "academic_approval_conferred": false
+  },
+  "native_ack_and_learner_hygiene": {
+    "status": "PASSED",
+    "actual_native_signed_hop": {
+      "status": "PASSED",
+      "actual_ph_binder": true,
+      "actual_scoremax_signed_http_admission": true,
+      "invalid_hmac_rejected": true,
+      "unqualified_real_source_scoring_rejected": true,
+      "scored_sibling_release_admitted_and_activated": true,
+      "native_saved_submit_result_mastery_eligible": true,
+      "native_learner_live_event_count": 1,
+      "native_signed_ack_dispatched": true,
+      "ack_repeat_dispatched": false,
+      "powerhouse_native_ack_ledger_reconciled": true,
+      "peer_receipt": "ACTUAL_NATIVE_POWER_HOUSE_RECEIPT",
+      "authority": "SOFTWARE_FIXTURE_ONLY_NO_REAL_ACADEMIC_APPROVAL",
+      "authentic_source_sha256": "347978067567e2b63f8b53a1b2d5d09388b57c9a4a2c92d77c7c3c85fef1af39",
+      "production_mutated": false,
+      "powerhouse_native_hmac_authentication": true,
+      "powerhouse_native_callback_business_handler": true,
+      "powerhouse_native_ledger_duplicate_rows": 0,
+      "powerhouse_full_application_startup": false,
+      "full_native_ph_qualification_release_compiler_to_ack": "PENDING",
+      "http_server": "THIN_DISPOSABLE_FLASK_ROUTE_CALLING_ACCEPTED_NATIVE_FUNCTIONS",
+      "observed_native_identities": [
+        {
+          "event_id": "SMDEL::d609ad95a0f7e2647bd63bab769619f7",
+          "message_id": "msg::SM_PH_CONTENT_DELIVERY_ACK_V1::7ae1eb9672ae060830dd3a55b140",
+          "release_id": "SOFTWARE-SCORED-scored",
+          "release_version": "1",
+          "package_checksum_sha256": "70b48c0a60b91af42effb3dec47cec8786170426255553ec590db16cbdaef74e",
+          "question_id": "PH-Q-SOFTWARE::real-source-shape",
+          "question_version_id": "PH-QV-SOFTWARE::v1",
+          "question_checksum_sha256": "aad371af352f95f875d7b186bd29f14f6735826c658ee89bf63550ea5e00a1c3",
+          "native_ledger_id": 1,
+          "receipt_id": "RCPT::POWER_HOUSE::d226e196b3a9d067f540dbc1b6f80709"
+        }
+      ],
+      "native_ph_source_pins": {
+        "db.py": "cf0b6217f600e58a01a9b75f5f00ee19cf26f308cb6d8dc8dcda7eaacaa4b043",
+        "integration_v1.py": "265ae4b02d9713a651a13ce8dcc9bcda760d74d32027abb149107ce0d2742592",
+        "governance.py": "5652d379bb1fdb7b01579b8fcc840b525ad19a94567f1cc01c6388f1edf63341",
+        "migrations/0023_v013_three_system_integration.sql": "052c2d64a04a94fc4c06ec30d826f342444e5563eb1fbec8396309540493cd93",
+        "qualification_runtime_overlay_v015l9q/scoremax_delivery_incident_bridge_v015l9q_hardened.py": "ed9aba857cc0b4dfa31498e4fdd2dd7b9503d707d402578f2baaac995bd84c52",
+        "runtime_support_v015l9g/scoremax_callback_receipts_v1.py": "ed303f11e9ecf33881f74b761dbe9035498ace63bd7254ab804a5d4c2e20769f"
+      },
+      "receipt_schema_sha256": "d25de659141b5b5491a7ddb7515981f2b4ec6710a21e1b2b1f13f2f3f0ccc0e8"
+    },
+    "learner_surfaces": [
+      {
+        "stage": "LEARNER_BEFORE_ANSWER",
+        "http_status": 200,
+        "mime_type": "text/html",
+        "bytes": 60985,
+        "response_sha256": "5d102bccb60f69af31b270d261a60011cadfee349688094b030b4ed1ac297c07",
+        "internal_metadata_hits": []
+      },
+      {
+        "stage": "LEARNER_SCORED_RESULT",
+        "http_status": 200,
+        "mime_type": "text/html",
+        "bytes": 65895,
+        "response_sha256": "21ad217ce2a1a7c420194e102dcefe52577467f2f73868fa3c66762713b02de6",
+        "internal_metadata_hits": []
+      }
+    ],
+    "before_answer_empty_native_session": true,
+    "network_or_api_scope": "Actual rendered native learner take/result responses and embedded payload text",
+    "production_mutated": false
+  },
+  "component_audit_refs": [
+    {
+      "path": "/workspace/scratch/050e298489f1/work_b/adversarial/ph_assessment_v3_adversarial_result.json",
+      "sha256": "fb84e87f9b04f6b47fec2f70f494129b4623a589807d46b9ea5061d73bfefbf1"
+    },
+    {
+      "path": "/workspace/scratch/050e298489f1/work_b/adversarial/ph_assessment_v3_common_qa_adversarial_result.json",
+      "sha256": "b22634870059341934e3fb3c9f0db3ea893d53cc04794d11331f0ab25f95cdff"
+    },
+    {
+      "path": "/workspace/scratch/050e298489f1/work_b/adversarial/scoremax_v3_adversarial_result.json",
+      "sha256": "eed7ab51b7b67fafc86877a9d55707b4cab84f88fc3bda1e1619e05ed2a3d254"
+    },
+    {
+      "path": "/workspace/scratch/050e298489f1/work_b/adversarial/scoremax_v3_adversarial_extended_result.json",
+      "sha256": "036910fbcf78e9f25567f327ddef50666e3e76f9aa7d975ae6f2e3d586b00984"
+    },
+    {
+      "path": "/workspace/scratch/050e298489f1/work_b/adversarial/lifecycle_v3_adversarial_result.json",
+      "sha256": "784fd4d087b641722dffb22ba1ab12ace35501ec0e721b69d2b57635a27c20ea"
+    },
+    {
+      "path": "/workspace/scratch/050e298489f1/work_b/adversarial/lifecycle_v3_completion_adversarial_result.json",
+      "sha256": "586352b4b13be231c2156f5350b6ef05d6306c5927a2ecb163377dfa70c859df"
+    },
+    {
+      "path": "/workspace/scratch/050e298489f1/work_b/adversarial/profile_routing_v2_adversarial_result.json",
+      "sha256": "f4b4ae4cedfed5fbad4b5126eb7773faf5b833b8df9b90d709788e2add9ea2e0"
+    }
+  ],
+  "authentic_parser_evidence": "/workspace/scratch/050e298489f1/work_b/evidence/authentic_adaptive_parser_qualification_v2.json",
+  "pending_gates": [
+    "Full current production-shaped PH source/academic QA/Firewall/release compiler to learner-live ACK on disposable accepted runtime",
+    "Current deployed cf29f105 launcher exact-byte assembly acceptance; known sealed launcher fixture assembly is software evidence",
+    "Windows hosted execution and current Render deployment/live acceptance",
+    "Receiver freshness/withdrawal race after final send guard; no network-duration writer lock is held",
+    "Actual deployed source-event producer coverage on production-shaped disposable state",
+    "Work A final accepted baseline reconciliation and explicit current live profile/question/audit/outbox cutovers",
+    "Real native academic approval/source-revision reconciliation for the 1446 source-positive SAQs; the read-only census observed native READY 0, and this audit performed no production writes",
+    "Official AI human benchmark and explicit acceptance; official AI remains disabled",
+    "Repository upload approval; no remote candidate commit/PR/CI/deployment was created"
+  ],
+  "limits": [
+    "Software authority oracles in lifecycle/profile controls confer no real academic approval.",
+    "Native ACK uses a thin disposable Flask route around actual accepted native PH auth/handler/ledger functions; full PH startup is not attested.",
+    "Source parsing diversity is separate from full native QA throughput and delivery capability; direct rubric holds are not scientific judgements.",
+    "Substantive scientific corrections still require governed source-revision reconciliation, not R2 labels alone.",
+    "This verdict is external to the unchanged sealed ZIP; its SHA identifies the exact audited artifact."
+  ],
+  "production_mutated": false,
+  "source_workbooks_modified": false,
+  "official_ai_scoring_enabled": false,
+  "candidate_files_edited_by_auditor": false,
+  "wall_seconds": 6.526423801999954,
+  "authentic_source_workbooks_hash_verified": 9,
+  "authentic_source_inventory_sha256": "41a73f1aa888b8b165d0ef19de431d6f4061f480ff62675a095c80e8d570a49d"
+}
