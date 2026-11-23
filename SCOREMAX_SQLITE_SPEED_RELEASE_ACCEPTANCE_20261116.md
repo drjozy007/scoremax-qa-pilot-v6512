@@ -1,3 +1,80 @@
+# Current coordinated Work B SQLite candidate — 23 November 2026 UTC
+
+Current receiver rollback base is PR59 `cd05d34338dc623a68440b9c501bb1e71d6bbc55`,
+generated tree `51a17d3c7ee32031f1555dcfb98564bf9ebbaa877462af2a4954029121ce0869`.
+Current performance generated tree is `a229bf87cf7ff252b457fdd1394854ad47e7f92a5693b15de606d43fd278849e`.
+The exact13-file delta is `sqlite_navigation_delta_20261123_v2.json`, SHA
+`b2afa0d5248943472d2b00334e4ac1f945330fbf16c576d9da9e38364513b1f2`.
+Build opens no DB, changes no rows and creates no indexes. Original PR56 ancestry
+and every valid prior negative result remain preserved.
+
+The existing request connection helper now retains at most ONE clean native
+handle per server thread. Every logical lease is request-bound, every SQL query
+still runs, and no row/permission/marking result is retained. Writes, changed
+connection configuration, leaked transactions, owner/factory/DB path/inode/size/
+mtime/PID changes retire the handle. Cursor and lease use after close is rejected.
+Explicit shutdown/disposable-fixture cleanup closes idle handles. Eleven native
+SQLite isolation/restore/ownership controls PASS; together with retained controls,
+41 exact build/connection/display/immutable-context self tests PASS.
+
+The auxiliary reviewer permission query shares that existing native lease only
+on the four navigation GET route families and only for the identical DB path.
+POST and other routes retain their prior connection behavior. Fresh permission
+changes and a changed environment DB path have been tested. Ordinary and guided
+chapter counts now use their exact existing predicates in ONE SQLite snapshot.
+Twelve empty/ordinary/eight-format/guided/mixed/hold/restored chapter HTML cases
+match native output. Global navbar summaries omit only unused chapter metadata;
+default full maps and summary caches stay distinct. Wide SQLite evidence rows
+copy all values positionally only for unambiguous ASCII names; duplicate/future/
+non-ASCII fields use the original path. Twelve complete native record comparisons
+PASS, including current signed withdrawal.
+
+Normal learner browser journey: source marks1/2/3/4, original weight1, actual
+chapter browse, setup, test start, answer save, repeated submit, unscored result
+and withdrawal PASS. Existing Foundation/Exam Ready access remains enforced.
+PR59 owns the neutral active-question label so rollback does not falsely call
+pending responses scored. No API activation, zero-grade invention or mastery
+credit is introduced. Do not revert a published pending cohort to old8d runtime.
+
+Local native MIXED HTTP result on unchanged executing V18 code (V19 adds truthful
+label and exit cleanup):100800 questions/1001 learners/102300 FINAL answers,
+7 explicitly guarded disposable indexes,1CPU/1worker/1thread,400 navigation GETs
+at50 distinct learners alongside actual signed admission+duplicate, native
+activation, saved-answer submit+duplicate, exact signed withdrawal+duplicate,
+and a140083200-byte consistent SQLite backup. P95 navigation1268.567ms,0 errors;
+all six POSTs succeeded, exactly1 attempt/1 answer, no formal mastery, history and
+all16 pre-existing protected tables preserved. Two native delivery ACKs and one
+withdrawal ACK were queued. Full PH peer ACK under load is a separate pending gate.
+
+Current functional regressions:9 retained scope tests,16 scored marker tests,
+native pending1–4 mark cases,6 signed recovery cases,8 signed adverse mutations,
+48 assessment,67 programme/mastery and29 PH compatibility cases PASS. This is
+software-authority fixture evidence, NOT real-bank academic approval.
+
+Historical failures are retained: V12 four-thread Subject/Chapter fail; first
+hosted one-thread Subject1620.586/Chapter1961.996ms fail, then same-code exact-head
+f394b13 hosted45089555197 passes all1/10/50 read cases (50 p95Learn851.386,
+Subject989.891,Chapter1203.162,Catalogue840.819ms). Runner variation remains material.
+V14/V15 mixed trials fail1965.892/2029.923ms; V17 mixed improves1703.439ms but still
+fails. Two workers on one CPU fail2240.432ms and are REJECTED. Pure SQL type reuse
+experiment V15 has no demonstrated gain and is NOT selected. Current code extends
+existing connection/read work; no PostgreSQL/shadow/store replacement is enabled.
+
+Before production: qualify current exact-head hosted/read+write/pressure/resource
+and real governed fixture gates; source QA/firewall, staged release/ACK, device and
+recovery checks. Current secure native snapshot/source fixture is unavailable;
+future AI API activation is NOT the availability hold. Protect2272 verified live
+SAQs and defer209 zero-weight residuals. No merge/deploy/config/production DDL
+has occurred. ScoreMax live remains8d5c0fd,1worker/4threads,1CPU/2GiB,5GB/data,
+AutoDeployOFF as read-only verified23Nov. Proposed1thread and seven indexes need
+coordinated preflight, WAL-consistent backup/write fence, disk/write/ACK acceptance
+and owner cutover decision. Performance rollback target is qualified PR59; preserve
+later DB/learner/outbox writes and additive indexes rather than restoring whole DB.
+
+Historical records below retain their original versions and limits.
+
+---
+
 # Current Work B SQLite navigation candidate — 23 November 2026 UTC
 
 This is the continuation of existing PR #56, composed after current ScoreMax PR #59

@@ -4,7 +4,7 @@ import hashlib,json,os,socket,sys
 from pathlib import Path
 
 class NativeDeliveryFixture:
-    def __init__(self,runtime_path,state_directory):
+    def __init__(self,runtime_path,state_directory,*,retain_idle_between_requests=False):
         self.runtime_path=Path(runtime_path).resolve()
         self.state_directory=Path(state_directory).resolve()
         self.state_directory.mkdir(parents=True,exist_ok=True)
@@ -24,6 +24,12 @@ class NativeDeliveryFixture:
         import app as native
         self.native=native;self.integration=native.integration_v1
         native.app.config['TESTING']=True
+        if not retain_idle_between_requests:
+            @native.app.teardown_appcontext
+            def close_owned_qualification_idle(error=None):
+                helper=sys.modules.get('navigation_request_connections_v1')
+                if helper is not None and hasattr(helper,'clear_idle'):
+                    helper.clear_idle()
 
     def seal(self, envelope):
         native = self.native

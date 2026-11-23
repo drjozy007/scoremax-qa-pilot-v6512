@@ -45,8 +45,12 @@ jobs:
         run: python -B tests/biology_receiver_20261027/qualify_scored_native_submissions_v1.py
       - name: Exact receiver continuation build and rollback source controls
         run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_work_b_receiver_build_v2.py -v
+      - name: Pending learner label exact build and source rollback
+        run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_work_b_receiver_header_v3.py -v
       - name: Native pending responses preserve source marks and weight
         run: python -B tests/biology_receiver_20261027/qualify_pending_saq_native_v3.py pending_saq_native_ci.json
+      - name: Actual learner browse setup start and unscored submit
+        run: python -B tests/biology_receiver_20261027/qualify_pending_browser_journey_v3.py scoremax_runtime_v669b qualification/pending_browser_state pending_browser_native_ci.json
       - name: Native signed release withdrawal races and recovery
         run: python -B tests/biology_receiver_20261027/qualify_work_b_delivery_recovery_v2.py delivery_recovery_native_ci.json
       - name: Separate signed pending contract adversarial controls

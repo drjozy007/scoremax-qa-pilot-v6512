@@ -40,6 +40,12 @@ jobs:
         run: python -B -m unittest discover -s tests/navigation_perf_20261114 -p 'test_*.py' -v
       - name: Native signed and opaque Unicode programme chapter label count parity
         run: python -B tests/navigation_current_20261123/qualify_native_scope_parity_v1.py scoremax_runtime_v669b qualification/reference_runtime qualification/native_scope_state qualification/native_scope.json
+      - name: Complete native evidence dicts preserve future and ambiguous columns
+        run: python -B tests/navigation_current_20261123/qualify_native_evidence_row_fidelity_v1.py scoremax_runtime_v669b qualification/reference_runtime qualification/evidence_row_state qualification/evidence_rows.json
+      - name: Native ordinary guided and mixed chapter HTML and reviewer permission parity
+        run: python -B tests/navigation_current_20261123/qualify_native_chapter_display_and_permission_v3.py scoremax_runtime_v669b qualification/reference_runtime qualification/chapter_state qualification/chapter.json
+      - name: Normal learner browse start save submit remains unscored with access fences
+        run: python -B tests/navigation_current_20261123/qualify_pending_browser_journey_v3.py scoremax_runtime_v669b qualification/browser_state qualification/browser.json
       - name: Retain scored marker contracts
         run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_scored_saq_v1.py -v
       - name: Preserve actual pending response result withdrawal and mastery boundaries
@@ -87,6 +93,11 @@ jobs:
         run: python -B tests/navigation_current_20261123/run_paired_native_http_v6.py qualification/indexed/state/seed.db qualification/http --fixture DERIVED_100800_GUARDED_7_INDEXES --order B --routes learn,subject,chapter,catalogue --levels 1,10,50 --operations 200 --workers 1 --threads 1 --server-one-cpu --reference-runtime scoremax_runtime_v669b --candidate-runtime scoremax_runtime_v669b
       - name: Enforce existing capacity target separately from software CI
         run: python -B tests/navigation_current_20261123/qualify_capacity_report_v1.py qualification/http
+      - name: Native mixed read write duplicate withdrawal and consistent backup on fresh seed
+        run: |
+          python -c "from pathlib import Path; import sqlite3; p=Path('qualification/mixed/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/indexed/state/seed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
+          python -B tests/navigation_current_20261123/qualify_mixed_native_http_v5.py scoremax_runtime_v669b qualification/mixed/state/measure.db qualification/http/mixed_native.json --variant current_v2 --fixture DERIVED_100800_GUARDED_7_INDEXES --levels 50 --operations 400 --workers 1 --threads 1 --server-one-cpu --route '/student/chapter?subject=Biology&chapter=Synthetic%20Chapter%201' --port 18861
+          python -B tests/navigation_current_20261123/qualify_mixed_report_v1.py qualification/http/mixed_native.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -102,6 +102,12 @@ def run(runtime,reference,state):
         with sm.app.test_request_context('/student/learn-vnext',method='GET'):
             cached_map=sm._subject_map(c,uid)
         assert original_map==cached_map,(stage,'subject map changed')
+        with sm.app.test_request_context('/student/learn-vnext',method='GET'):
+            full=sm._subject_map(c,uid)
+            summary=sm._subject_map(c,uid,_summary_only=True)
+            assert [{k:v for k,v in row.items() if k!='chapters'} for row in full]==[{k:v for k,v in row.items() if k!='chapters'} for row in summary],stage
+            assert all(not row['chapters'] for row in summary),stage
+            assert sm._subject_map(c,uid)==full,'SUMMARY_CACHE_CONTAMINATED_FULL_MAP'
         checks.append({'stage':stage,'programme_subject_pairs':28,'chapter_inputs':len(chapters)})
     parity('active_native_signed_version_and_legacy_shapes')
     c.execute('UPDATE questions SET ph_question_checksum_sha256=? WHERE id=?',('0'*64,question['id']));c.commit()
@@ -121,7 +127,7 @@ def run(runtime,reference,state):
     formal=c.execute('SELECT COUNT(*) FROM mastery_records WHERE student_id=?',(uid,)).fetchone()[0]
     assert formal==0
     c.close()
-    return {'version':'SCOREMAX-DISPLAY-INVENTORY-NATIVE-SELF-AUDIT-5','status':'PASSED',
+    return {'version':'SCOREMAX-DISPLAY-INVENTORY-NATIVE-SELF-AUDIT-6','status':'PASSED',
         'runtime':str(runtime),'reference':str(reference),'checks':checks,
         'native_signed_http_used':True,'academic_approval_conferred':False,
         'native_opaque_unicode_whitespace_null_scope_parity':True,

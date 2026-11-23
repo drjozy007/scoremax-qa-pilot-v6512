@@ -9,10 +9,10 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-SCRIPT=ROOT/'ux_vnext_overlay/biology_receiver_20261027/sqlite_navigation_build_20261123_v1.py'
+SCRIPT=ROOT/'ux_vnext_overlay/biology_receiver_20261027/sqlite_navigation_build_20261123_v2.py'
 spec=importlib.util.spec_from_file_location('work_b_receiver_build',SCRIPT)
 build=importlib.util.module_from_spec(spec);spec.loader.exec_module(build)
-DATA=json.loads(SCRIPT.with_name('sqlite_navigation_delta_20261123_v1.json').read_bytes())
+DATA=json.loads(SCRIPT.with_name('sqlite_navigation_delta_20261123_v2.json').read_bytes())
 
 class NavigationBuild(unittest.TestCase):
     def setUp(self):
@@ -51,7 +51,7 @@ class NavigationBuild(unittest.TestCase):
 
     def test_source_delta_has_only_the_declared_existing_receiver_seams(self):
         self.assertEqual({r['path'] for r in DATA['files']},build.ALLOWED)
-        self.assertEqual(build.digest(SCRIPT.with_name('sqlite_navigation_delta_20261123_v1.json').read_bytes()),build.DELTA_SHA)
+        self.assertEqual(build.digest(SCRIPT.with_name('sqlite_navigation_delta_20261123_v2.json').read_bytes()),build.DELTA_SHA)
         self.assertFalse(DATA['production_mutated']);self.assertFalse(DATA['official_ai_scoring_enabled'])
 
 if __name__=='__main__':unittest.main()
