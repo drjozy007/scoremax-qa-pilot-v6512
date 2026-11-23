@@ -57,7 +57,7 @@ jobs:
           PY
       - name: Build native test image using actual assembled runtime
         run: timeout 240 docker build --pull=false -f qualification/uk11/Dockerfile.native_uk11 -t scoremax-uk11-native .
-      - name: Run native Flask, authentication, result and immutable-source tests offline
+      - name: Run signed Power House intake, activation, native marking and explanation offline
         shell: bash
         run: |
           set -euo pipefail
