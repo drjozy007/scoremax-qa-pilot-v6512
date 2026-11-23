@@ -119,6 +119,7 @@ def evaluate():
        'runtime':'EXACT_ASSEMBLED_SCOREMAX_CI',
        'case_register':'ScoreMax_11Plus_Maths_20Q_Native_Scoring_and_WCA_PreAdmission_v0_4.xlsx / SCORING_FIXTURES',
        'total':len(results), 'baseline':55,'adversarial':30,'state_counts':dict(states),'per_question':by_q,
+       'native_exception_codes':dict(Counter(str(x.get('error_type'))+':'+str(x.get('error_code')) for x in results if x['state']=='NATIVE_EXCEPTION')),
        'source_policy':'No approved UK response contracts/mark demands; do not count provisional comparison as academic clearance',
        'real_marks_or_mastery_updated':False,'paid_provider_calls':0,'status':'CHARACTERIZED_NOT_CLEARED',
        'cases':results,
