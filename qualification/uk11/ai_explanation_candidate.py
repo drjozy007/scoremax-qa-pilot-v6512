@@ -46,7 +46,7 @@ def clean_text(value, *, max_length=SAFE_TEXT_MAX, allow_empty=False):
     value = value.strip()
     if (not value and not allow_empty) or len(value) > max_length:
         raise ExplanationHold('TEXT_EMPTY_OR_TOO_LONG')
-    if BLOCKED.search(value) or any(ord(char) < 32 and char not in '\n\t' for char in value):
+    if BLOCKED.search(value) or PHONE.search(value) or any(ord(char) < 32 and char not in '\n\t' for char in value):
         raise ExplanationHold('LEARNER_PRIVACY_OR_GOVERNANCE_FIREWALL')
     return value
 
