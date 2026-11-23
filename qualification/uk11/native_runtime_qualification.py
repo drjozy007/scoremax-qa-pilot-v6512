@@ -171,6 +171,13 @@ try:
             c.commit()
             pre=snapshot(c)
 
+            try:
+                explanation.read_explanation(c,sm,attempt_id=aid,question_id=q_id,student_id=uid,
+                    owned=app.extensions['scoremax_written_ai_owned_material'])
+                record('native_authority_diagnostic',status='APPROVED')
+            except Exception as err:
+                record('native_authority_diagnostic',status='REJECTED',code=str(getattr(err,'code',type(err).__name__)))
+                raise
             response=client.get(f'/uk11/result/{aid}/question/{q_id}/explain',base_url='https://scoremax.pk')
             assert response.status_code==200,('explained',response.status_code,response.data[:900])
             page=response.get_data(as_text=True)
