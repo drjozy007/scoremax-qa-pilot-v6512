@@ -1,0 +1,38 @@
+{
+  "exact_build_replay_and_drift_tests": 3,
+  "hosted_and_Render_capacity": "PENDING",
+  "logs": {
+    "/tmp/work_b_sm_v13_build_tests_v2.log": "d6662df5fc36ec6d58495d470a09d3510e86f5e9e8a758e7cbf335bfd09a13fb",
+    "/tmp/work_b_sm_v13_clean_build_v2.log": "830ab73f254d68f2b7621c934979fffb24e22797c5e390170bc27cfa3293ee30",
+    "/tmp/work_b_sm_v13_html_parity.log": "429c2ba05d9b4036a87b8d945515f0991ad431073f54c667f54681ec649b88e8",
+    "/tmp/work_b_sm_v13_menu_parity.log": "081a48e17845f3f97620ee360532633f71f1f1712bd6c77757531c2a2df0f2c6",
+    "/tmp/work_b_sm_v13_mixed.log": "b1417702b232d1bdc98eed46911ca093887c6386726f5bf273d5d1308a467ea1",
+    "/tmp/work_b_sm_v13_presence_commit_native.log": "2dd5d55adb51e0203db1e9e397e724ec2c6e64d791d9ec2873f1ad010e3a09e9"
+  },
+  "mixed_native_HTTP": {
+    "authenticated_original_image_GETs": 3,
+    "backup_integrity_and_original_history_preserved": true,
+    "concurrency": 50,
+    "cpu": 1,
+    "errors": 0,
+    "extra_indexes": 0,
+    "p95_ms": 1119.129258,
+    "requests": 400,
+    "signed_POSTs": 6,
+    "target_ms": 1500,
+    "threads": 4,
+    "workers": 1
+  },
+  "native_HTML_cases": 28,
+  "native_menu_checks": 480,
+  "prior_hosted_failures_preserved": {
+    "V10_p95_ms": 1780.255294,
+    "V11_mobile_harness": "V4_PINS_OLDER_APPLICATION_NEW_EXACT_V5_USED",
+    "V11_p95_ms": 1653.629557
+  },
+  "production_actions": false,
+  "programme_scope_and_external_commit_stages": 7,
+  "retained_version_qualification": "REUSED_EXACT_UNCHANGED_ENGINE_V11",
+  "stage": "SELF_AUDIT_COMPLETE_BEFORE_FREEZE",
+  "status": "PASSED"
+}

@@ -1,0 +1,101 @@
+{
+  "academic_approval_created": false,
+  "candidate_manifest_sha256": "a84ecd3445fefc1753fe99ab67e14ce4504e1e860e4b3ecf4b09a97cbb411740",
+  "controls": [
+    {
+      "control": "duplicate_membership",
+      "result": "REJECTED"
+    },
+    {
+      "control": "stage_only_activation_forgery",
+      "result": "REJECTED"
+    },
+    {
+      "control": "authorization_whitespace",
+      "result": "REJECTED"
+    },
+    {
+      "control": "stage_status_as_predecessor",
+      "result": "REJECTED"
+    },
+    {
+      "control": "stored_checksum_corruption",
+      "result": "REJECTED"
+    },
+    {
+      "control": "cross_question_local_alias",
+      "result": "REJECTED"
+    },
+    {
+      "control": "missing_store_identity",
+      "result": "REJECTED"
+    },
+    {
+      "control": "wrong_snapshot_count",
+      "result": "REJECTED"
+    },
+    {
+      "control": "current_projection_pin_tampered",
+      "result": "REJECTED"
+    },
+    {
+      "control": "admission_version_mismatch",
+      "result": "REJECTED"
+    },
+    {
+      "control": "withdrawal_exact_membership",
+      "result": "REJECTED"
+    },
+    {
+      "control": "native_superseded_authorized_member",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "unrelated_withdrawal_version",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "duplicate_completed_authorization_no_overcount",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "distinct_programme_scope_unchanged",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "inactive_prior_projection_is_not_a_staged_leak",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "nonproduction_projection_is_not_production_leak",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    }
+  ],
+  "frozen_pins_unchanged": 287,
+  "marking_approval_created": false,
+  "policy": "SM-PROGRAMME-DISPLAY-SEPARATE-FROZEN-ADVERSARIAL-20261123-13",
+  "product_activation_bypassed": false,
+  "production_actions": false,
+  "rejected_attacks": 11,
+  "safe_reuse_controls": 6,
+  "separate_native_programme_stages": {
+    "academic_or_marking_authority_created": false,
+    "bounded_16_and_large_fallback": true,
+    "full_counts_unchanged": true,
+    "production_actions": false,
+    "raw_programme_or_qualification_semantics_preserved": true,
+    "read_only_and_commit_fresh": true,
+    "stages": [
+      "native_active_and_legacy_raw_scope",
+      "current_question_commit",
+      "current_family_hold",
+      "revoked_activation",
+      "exact_signed_withdrawal",
+      "older_sqlite_exact_fallback",
+      "warm_GET_display_cache_external_commit"
+    ],
+    "status": "PASSED",
+    "unicode_null_whitespace_and_opaque_labels_preserved": true
+  },
+  "status": "PASSED"
+}
