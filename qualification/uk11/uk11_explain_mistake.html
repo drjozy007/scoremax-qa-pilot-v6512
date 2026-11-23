@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block content %}
+<main class="uk11-explanation card narrow">
+  <p class="eyebrow">YOUR NEXT LEARNING STEP</p>
+  <h1>{{ explanation.title }}</h1>
+  <p class="muted">Your submitted result stays the same. This is help to learn the method.</p>
+  <section class="card">
+    <h2>Explain it simply</h2>
+    <p>{{ explanation.simple_explanation }}</p>
+  </section>
+  {% if explanation.learning_capsule %}
+  {% set cap = explanation.learning_capsule %}
+  {% if cap.remember_this %}<section class="card"><h2>Remember this</h2><p>{{ cap.remember_this }}</p></section>{% endif %}
+  {% if cap.worked_example %}<section class="card"><h2>See a worked example</h2><p>{{ cap.worked_example }}</p></section>{% endif %}
+  {% if cap.common_mistake %}<section class="card"><h2>A common mistake</h2><p>{{ cap.common_mistake }}</p></section>{% endif %}
+  {% if cap.memory_tip %}<section class="card"><h2>Quick tip</h2><p>{{ cap.memory_tip }}</p></section>{% endif %}
+  {% endif %}
+  <p>{{ explanation.next_action }}</p>
+  <p><a class="btn" href="{{ result_url }}">Back to my results</a></p>
+</main>
+{% endblock %}
