@@ -197,7 +197,7 @@
       heading('Your selected examination routes','Demonstration relationships—not a school eligibility decision.',btn('Manage school choices','view:schools','secondary small')) +
       '<div class="card">' + selectedHtml + '</div>' +
       heading('Combined subjects','One subject area is shown once even if several chosen routes share it.') +
-      '<div class="grid2">' + subjects + '</div>' + evidenceNote();
+      '<div class="grid2">' + (subjects || '<div class="empty">No school-specific subject mapping has been confirmed for this selection yet. Check the school/test register before preparing an admissions-specific plan.</div>') + '</div>' + evidenceNote();
   }
   function recoveryPage() {
     return intro('Weak-area recovery','A future recovery journey will connect verified mistakes to short explanations and fresh independent evidence. There are no diagnosed weak areas in this preview.','Workflow preview') +
