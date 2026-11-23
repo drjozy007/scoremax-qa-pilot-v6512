@@ -5,6 +5,7 @@ on:
       - qualification/uk11-native-integration-20261123
     paths:
       - .github/workflows/uk11-explanation-native-qualification.yml
+      - qualification/uk11/**
 permissions:
   contents: read
 jobs:
