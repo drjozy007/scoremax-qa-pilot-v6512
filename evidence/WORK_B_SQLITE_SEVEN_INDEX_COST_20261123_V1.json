@@ -1,0 +1,46 @@
+{
+  "additive_index_storage_not_free": true,
+  "changes_per_trial": 2500,
+  "disk_file_growth_bytes": 29216768,
+  "index_release_approved": false,
+  "no_production_db_access": true,
+  "power_house_import_throughput_qualified": false,
+  "trials": 4,
+  "with_indexes": {
+    "approx_pages_allocated_bytes": 139988992,
+    "db_file_bytes": 139988992,
+    "free_pages": 0,
+    "indexed": true,
+    "median_ms": 37.606,
+    "page_count": 34177,
+    "page_size": 4096,
+    "questions": 100800,
+    "questions_count_and_subject_lengths_unchanged": true,
+    "rollback_update_2500_questions_ms": [
+      39.438,
+      36.875,
+      32.115,
+      38.338
+    ],
+    "source_index_count": 7
+  },
+  "without_indexes": {
+    "approx_pages_allocated_bytes": 110772224,
+    "db_file_bytes": 110772224,
+    "free_pages": 0,
+    "indexed": false,
+    "median_ms": 10.084,
+    "page_count": 27044,
+    "page_size": 4096,
+    "questions": 100800,
+    "questions_count_and_subject_lengths_unchanged": true,
+    "rollback_update_2500_questions_ms": [
+      14.951,
+      10.051,
+      9.675,
+      10.117
+    ],
+    "source_index_count": 0
+  },
+  "write_update_cost_ratio": 3.729
+}

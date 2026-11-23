@@ -1,0 +1,48 @@
+{
+  "version": "SM-PRESSURE-100-300-1000-20261123-3",
+  "runtime_tree": "da7922d02fafc6e4ac8beda654b2935cc330d2e4af9a101ace178634662c99a5",
+  "fixture": {
+    "questions": 100800,
+    "learners": 1001,
+    "FINAL_answers": 102300,
+    "indexes": 7
+  },
+  "one_CPU_one_worker_one_thread": true,
+  "route": "/student/chapter?subject=Biology&chapter=Synthetic%20Chapter%201",
+  "conditions": [
+    {
+      "distinct_actors": 100,
+      "requests": 1000,
+      "p95_ms": 1222.483426,
+      "p99_ms": 1229.523657,
+      "errors": 0,
+      "peak_server_rss_sum_bytes": 116736000,
+      "peak_open_fds": 22,
+      "peak_wal_bytes": 8961032
+    },
+    {
+      "distinct_actors": 300,
+      "requests": 1000,
+      "p95_ms": 3071.042411,
+      "p99_ms": 3083.767081,
+      "errors": 0,
+      "peak_server_rss_sum_bytes": 116752384,
+      "peak_open_fds": 22,
+      "peak_wal_bytes": 8961032
+    },
+    {
+      "distinct_actors": 1000,
+      "requests": 1000,
+      "p95_ms": 9623.537157,
+      "p99_ms": 10022.825269,
+      "errors": 0,
+      "peak_server_rss_sum_bytes": 116752384,
+      "peak_open_fds": 22,
+      "peak_wal_bytes": 8961032
+    }
+  ],
+  "all_16_tables_preserved": true,
+  "production_capacity_qualified": false,
+  "interpretation": "Pressure characterization, not a 1000-user latency acceptance. Latency grows with the one-CPU queue. Existing 50-user p95 target remains strict.",
+  "production_actions": false
+}

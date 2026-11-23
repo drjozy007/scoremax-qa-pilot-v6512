@@ -1,3 +1,25 @@
+# Current Work B performance and recovery evidence — 23 November 2026 UTC
+
+Continue existing PR55 and PR56. Receiver PR59 cd05d343 is hosted Windows/Linux PASSED. Current SQLite implementation PR56 9e8ec7b1a29b40d8cbaa439bb4b4f83dd249ed0c preserves both original PR56 and current receiver ancestry. Generated tree da7922d02fafc6e4ac8beda654b2935cc330d2e4af9a101ace178634662c99a5; exact13-file delta V3 SHA968d9cb4bf1852ea1289f0a6ac4a7f8590eb5329be967789584c7722fe547abc. No database opens or DDL in build. Production remains8d5c0fd,1worker/FOUR threads, unchanged.
+
+PASSED hosted exact9e8ec7b: workflow45099176825, Windows/Linux native and boundedHTTP all3jobs; separate scored-boundary workflow45099176811 alsoPASSED.100800questions/1001learners/102300FINAL answers,7explicitly guarded disposable indexes,1CPU/1worker/1thread.1/10/50read gates:2400scheduled successes,0errors;50p95 Learn737.135490,Subject984.540112,Chapter831.546630,Catalogue676.650039ms. Native mixed CHAPTER400GET/50actors plus6signed release/submit/withdrawal POSTs and consistent backup: p951474.225150ms,0errors/no timeouts,16pre-existing table rows/history preserved,1newattempt/answer,noformal mastery. This is a NARROW pass with25.775ms headroom; real Render configuration/traffic is not accepted. Artifact14785195337 SHA85d734a7857e62a7dc5a9bf930f53141092a014a6c37a45f9dc8e9c5727485d1.
+
+Prior6688db3 hosted native/read gates passed but mixed CHAPTER FAILED2024.633972ms. The trace exposed full-bank chapter display scans after ordinary commit invalidation. A necessary source candidate superset now narrows exact SQL legacy subject/chapter plus subject-matching PH memberships, then every existing native current-version/programme/authorization/alias/family/withdrawal/marking predicate runs unchanged. UI source-shape aggregates reuse the existing bounded commit/restore-invalidated display helper; policy, learner mastery, formal-answer masks and actual action/assessment gates remain fresh native operations.41build/connection tests,28native byte-exact chapter cases, direct original opportunity comparisons and8separate signed resealed attacks PASS. Opaque IDs, different local PH labels, aliases, revoked access and withdrawals are covered. Original failures remain retained, no retry-only erasure.
+
+Actual targeted native PH HTTPS return path under local mixed CHAPTER load PASSED:400GET/50actors,p951239.202526ms,0errors;6POSTs,2native staged/live deliveryACKs,1exact native hold/export/withdrawalACK,PH exportCOMPLETED,140095488-byte consistent backup,16old tables/history preserved,1attempt/answer/0formal mastery. PH peer uses current assembled730a67f native code plus the exact qualified withdrawal overlay, loopback test TLS and explicit SOFTWARE authority, not real-bank academic approval/full production application qualification.
+
+Pressure characterization:100/300/1000actors,1000requests each,0errors/all16tables unchanged. P951222.483426/3071.042411/9623.537157ms; peak server RSSsum116752384bytes,22FDs,WAL8961032bytes. OneCPU queue latency grows; this is not1000-user latency acceptance. Seven-index cost:+29216768bytes;2500-row rollback update median37.606ms vs10.084ms,3.729x,4trials/no persisted question edits.
+
+Code-only rollback to qualified PR59 and rollforward to V3 PASSED on4native saved pending attempts,original marks1–4/nullgrades. All existing answers/attempts/mastery/releases/withdrawal/outbox values preserved; no DB restore. Initial native startup legitimately fills synthetic blank referral/parent codes and synchronizes already-withdrawn review labels:14exactly unchanged tables+2explicitly verified native backfills. Next forward restart preservesall16exactly. Initial over-strict comparison failed; actual changes were diagnosed against accepted initializer, not suppressed. Exact replay driver/receipts are included in this existing programme.
+
+Power House PR22613997edd/V12 passesall7hosted workflows; exact schema-loader path and missing withdrawal source asset corrected with all13shared-installer-assets-to-manifest closure.
+
+PENDING: existing secure current PH snapshot/exact source assets for real1446native qualification/release; actual Render resource/configuration and device evidence; real governed heterogeneous bank; approved assessed marking onceAPIactivated; coordinated production cutover. Future API activation is NOT a blanket question availability hold. Original positive marks/weight1 remain; pending responses unscored/noformal credit. Protect2272verified learner-live SAQs;209zero-weight residuals deferred. No production deployment/DDL/config/data mutation/cutover. Software CI is not production readiness.
+
+Optional PostgreSQL/shadow prototype and intentional full-schema/zero-loss cutover veto in this PR remain unchanged/OFF, outside the selected SQLite release. Do not provision/migrate or claim a PostgreSQL backend from synthetic parity. Historical sections below retain their own versions/limits.
+
+---
+
 # SCOREMAX PERFORMANCE — CANONICAL LIVE PROJECT HANDOFF
 
 **Updated: 23 November 2026 UTC.** Continue existing PRs #55/#56. No deployment,

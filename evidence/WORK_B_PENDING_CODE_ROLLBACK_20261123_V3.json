@@ -1,0 +1,21 @@
+{
+  "status": "PASSED",
+  "runtime": "pending_receiver_v3",
+  "existing_unscored_attempts": 4,
+  "original_marks": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "protected_tables_exactly_unchanged": 14,
+  "native_existing_startup_backfills_verified": {
+    "users": 21,
+    "questions": 4
+  },
+  "all_existing_answer_attempt_mastery_release_outbox_values_preserved": true,
+  "formal_mastery_rows": 0,
+  "restored_database": false,
+  "production_actions": false,
+  "academic_authority": "SOFTWARE_FIXTURES_ONLY"
+}
