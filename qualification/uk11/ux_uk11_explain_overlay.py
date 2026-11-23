@@ -15,7 +15,7 @@ RESULT_ANCHOR='<a class="question-report-link"'
 QUERY_ANCHOR="details=c.execute('''SELECT aa.*,q.question,q.answer,q.explanation,q.level,q.subtopic,q.family_id,q.variant,"
 RESULT_MARKER='<!-- UK11 APPROVED EXPLANATION: candidate, default off -->'
 RESULT_BLOCK='''<!-- UK11 APPROVED EXPLANATION: candidate, default off -->
-{% if uk11_explanation_available() and not d.is_correct and d.selected_answer and d.explanation and d.ph_question_id and d.ph_market_id == 'UK' and d.ph_is_auto_markable == 1 and d.marks_awarded is not none and d.marking_status|default('') not in ['AUTO_UNSCORED', 'UNSCORED', 'PENDING'] %}
+{% if uk11_explanation_available() and not d.is_correct and d.selected_answer and (d.explanation or d.capsule_id) and d.ph_question_id and d.ph_market_id == 'UK' and d.ph_is_auto_markable == 1 and d.marks_awarded is not none and d.marking_status|default('') not in ['AUTO_UNSCORED', 'UNSCORED', 'PENDING'] %}
 <a class="btn alt" href="{{ url_for('uk11_explain_mistake',attempt_id=a.id,question_id=d.question_db_id) }}">Explain my mistake</a>
 {% endif %}
 '''
