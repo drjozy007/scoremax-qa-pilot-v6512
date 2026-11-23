@@ -1,0 +1,86 @@
+index,Case_ID,Suite,Question,Scenario,Learner submission (JSON-encoded),Expected marks,Offline v0.3 observed,Offline reference verdict,Native marks,Native status,Rationale / acceptance constraint
+0,Q004-01,BASE_V0_3,Q004,equivalent_value,"""3.25""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Equal to 13/4 flatbreads
+1,Q004-02,BASE_V0_3,Q004,equivalent_value,"""3.250""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Equal to 13/4 flatbreads
+2,Q004-03,BASE_V0_3,Q004,equivalent_value,"""13/4""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Equal to 13/4 flatbreads
+3,Q004-04,BASE_V0_3,Q004,equivalent_value,"""3 1/4""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Equal to 13/4 flatbreads
+4,Q004-05,BASE_V0_3,Q004,equivalent_value,"""3.25 flatbreads""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Equal to 13/4 flatbreads
+5,Q004-06,BASE_V0_3,Q004,equivalent_value,""" 13/4 """,1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Equal to 13/4 flatbreads
+6,Q004-07,BASE_V0_3,Q004,near_miss_or_blank,"""3.24""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the required amount
+7,Q004-08,BASE_V0_3,Q004,near_miss_or_blank,"""13/3""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the required amount
+8,Q004-09,BASE_V0_3,Q004,near_miss_or_blank,"""0""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the required amount
+9,Q004-10,BASE_V0_3,Q004,near_miss_or_blank,"""""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the required amount
+10,Q008-01,BASE_V0_3,Q008,accepted_label_alias,"""Village B""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Village B is larger fraction
+11,Q008-02,BASE_V0_3,Q008,accepted_label_alias,"""B""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Village B is larger fraction
+12,Q008-03,BASE_V0_3,Q008,accepted_label_alias,""" b """,1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Village B is larger fraction
+13,Q008-04,BASE_V0_3,Q008,accepted_label_alias,"""VILLAGE B""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Village B is larger fraction
+14,Q008-05,BASE_V0_3,Q008,wrong_or_blank,"""Village A""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not Village B
+15,Q008-06,BASE_V0_3,Q008,wrong_or_blank,"""a""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not Village B
+16,Q008-07,BASE_V0_3,Q008,wrong_or_blank,"""""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not Village B
+17,Q011-01,BASE_V0_3,Q011,independent_partial_credit,"{""a"": ""55"", ""b"": ""5.5""}",2.0,2,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Both parts correct
+18,Q011-02,BASE_V0_3,Q011,independent_partial_credit,"{""a"": ""55 g"", ""b"": ""11/2 g""}",2.0,2,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Units and equivalent values
+19,Q011-03,BASE_V0_3,Q011,independent_partial_credit,"{""a"": ""54"", ""b"": ""5.5""}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Part b independently correct
+20,Q011-04,BASE_V0_3,Q011,independent_partial_credit,"{""a"": ""55"", ""b"": ""5.4""}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Only part a correct
+21,Q011-05,BASE_V0_3,Q011,independent_partial_credit,"{""a"": """", ""b"": ""5.50""}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Only part b correct
+22,Q011-06,BASE_V0_3,Q011,independent_partial_credit,"{""a"": ""55"", ""b"": """"}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Only part a correct
+23,Q011-07,BASE_V0_3,Q011,independent_partial_credit,"{""a"": """", ""b"": """"}",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Both blank
+24,Q011-08,BASE_V0_3,Q011,follow_through_policy,"{""a"": ""54"", ""b"": ""5.4""}",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Requires explicit follow-through policy; cannot infer marks
+25,Q014-01,BASE_V0_3,Q014,independent_partial_credit,"{""a"": ""2100"", ""b"": ""12600""}",2.0,2,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Both correct
+26,Q014-02,BASE_V0_3,Q014,independent_partial_credit,"{""a"": ""2,100 m"", ""b"": ""£12,600""}",2.0,2,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Units and thousands separators
+27,Q014-03,BASE_V0_3,Q014,independent_partial_credit,"{""a"": ""2099"", ""b"": ""12600""}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Only b correct
+28,Q014-04,BASE_V0_3,Q014,independent_partial_credit,"{""a"": ""2100"", ""b"": ""12599""}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Only a correct
+29,Q014-05,BASE_V0_3,Q014,independent_partial_credit,"{""a"": """", ""b"": ""12600""}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Only b correct
+30,Q014-06,BASE_V0_3,Q014,independent_partial_credit,"{""a"": ""2100"", ""b"": """"}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Only a correct
+31,Q014-07,BASE_V0_3,Q014,independent_partial_credit,"{""a"": """", ""b"": """"}",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Both blank
+32,Q014-08,BASE_V0_3,Q014,follow_through_policy,"{""a"": ""2000"", ""b"": ""12000""}",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Requires explicit follow-through policy; cannot infer marks
+33,Q016-01,BASE_V0_3,Q016,boolean_label_mapping,"""No""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+34,Q016-02,BASE_V0_3,Q016,boolean_label_mapping,"""no""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+35,Q016-03,BASE_V0_3,Q016,boolean_label_mapping,"""FALSE""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+36,Q016-04,BASE_V0_3,Q016,boolean_label_mapping,false,1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+37,Q016-05,BASE_V0_3,Q016,boolean_label_mapping,"""Yes""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+38,Q016-06,BASE_V0_3,Q016,boolean_label_mapping,"""yes""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+39,Q016-07,BASE_V0_3,Q016,boolean_label_mapping,true,0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+40,Q016-08,BASE_V0_3,Q016,boolean_label_mapping,"""""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,False stored key maps to visible No
+41,Q018-01,BASE_V0_3,Q018,accepted_label_alias,"""Art""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Art increases by 15
+42,Q018-02,BASE_V0_3,Q018,accepted_label_alias,"""art""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Art increases by 15
+43,Q018-03,BASE_V0_3,Q018,accepted_label_alias,""" ART club """,1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Art increases by 15
+44,Q018-04,BASE_V0_3,Q018,accepted_label_alias,"""Art Club""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Art increases by 15
+45,Q018-05,BASE_V0_3,Q018,wrong_or_blank,"""Coding club""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the club with greatest increase
+46,Q018-06,BASE_V0_3,Q018,wrong_or_blank,"""Drama""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the club with greatest increase
+47,Q018-07,BASE_V0_3,Q018,wrong_or_blank,"""""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the club with greatest increase
+48,Q020-01,BASE_V0_3,Q020,accepted_label_alias,"""A""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,3/4 is greater than 5/8
+49,Q020-02,BASE_V0_3,Q020,accepted_label_alias,"""a""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,3/4 is greater than 5/8
+50,Q020-03,BASE_V0_3,Q020,accepted_label_alias,"""Strip A""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,3/4 is greater than 5/8
+51,Q020-04,BASE_V0_3,Q020,accepted_label_alias,""" STRIP A """,1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,3/4 is greater than 5/8
+52,Q020-05,BASE_V0_3,Q020,wrong_or_blank,"""Strip B""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the larger fraction
+53,Q020-06,BASE_V0_3,Q020,wrong_or_blank,"""B""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the larger fraction
+54,Q020-07,BASE_V0_3,Q020,wrong_or_blank,"""""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Not the larger fraction
+55,H001,ADVERSARIAL_V0_4,Q004,wrong_unit,"""3.25 g""",0.0,1,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Wrong unit: gram is not flatbread
+56,H002,ADVERSARIAL_V0_4,Q004,wrong_unit,"""13/4 metres""",0.0,1,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Wrong unit: metres not flatbread
+57,H003,ADVERSARIAL_V0_4,Q004,unicode_equivalence,"""3¼""",1.0,0,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Unicode fraction is equivalent to 13/4; must accept or refer for review
+58,H004,ADVERSARIAL_V0_4,Q004,unicode_equivalence,"""3 ¼""",1.0,0,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Whitespace Unicode fraction equivalence
+59,H005,ADVERSARIAL_V0_4,Q004,natural_language_fraction,"""3 and 1/4""",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Natural-language input acceptance requires a defined format policy
+60,H006,ADVERSARIAL_V0_4,Q004,wrong_unit,"""3.25 litres""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Wrong unit: litres not flatbread
+61,H007,ADVERSARIAL_V0_4,Q004,equivalent_value,"""3.2500 flatbreads""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Decimal trailing zero equivalent
+62,H008,ADVERSARIAL_V0_4,Q004,equivalent_value,"""13 / 4 flatbreads""",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Whitespace fraction equivalent
+63,H009,ADVERSARIAL_V0_4,Q011,wrong_unit_part_a,"{""a"": ""55 metres"", ""b"": ""5.5 g""}",1.0,2,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Correct numeric value in a wrong unit does not earn part-a mark
+64,H010,ADVERSARIAL_V0_4,Q011,wrong_unit_part_b,"{""a"": ""55 g"", ""b"": ""5.5 m""}",1.0,2,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Wrong unit in part b invalidates only part b
+65,H011,ADVERSARIAL_V0_4,Q011,wrong_unit_both,"{""a"": ""55 m"", ""b"": ""5.5 m""}",0.0,2,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Both values use wrong units
+66,H012,ADVERSARIAL_V0_4,Q011,correct_units,"{""a"": ""55 g"", ""b"": ""5.5 g""}",2.0,2,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Both unit-bearing values correct
+67,H013,ADVERSARIAL_V0_4,Q014,wrong_unit_part_a,"{""a"": ""2100 g"", ""b"": ""£12600""}",1.0,2,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Gram units cannot be accepted for perimeter
+68,H014,ADVERSARIAL_V0_4,Q014,wrong_unit_part_b,"{""a"": ""2100 m"", ""b"": ""12600 metres""}",1.0,2,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Metre units cannot be accepted for currency cost
+69,H015,ADVERSARIAL_V0_4,Q014,correct_units,"{""a"": ""2100 m"", ""b"": ""£12600""}",2.0,2,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Perimeter and currency units correct
+70,H016,ADVERSARIAL_V0_4,Q014,conversion_policy,"{""a"": ""2.1 km"", ""b"": ""£12600""}",,1,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Need proof of kilometre to metre conversion and UI allowance
+71,H017,ADVERSARIAL_V0_4,Q014,unit_spacing,"{""a"": ""2100m"", ""b"": ""£12600""}",2.0,1,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,No-space SI unit notation is standard
+72,H018,ADVERSARIAL_V0_4,Q018,natural_alias,"""The art club""",1.0,0,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Article does not change intended club
+73,H019,ADVERSARIAL_V0_4,Q020,punctuation_alias,"""Strip A.""",1.0,0,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Harmless terminal punctuation
+74,H020,ADVERSARIAL_V0_4,Q008,punctuation_alias,"""Village B.""",1.0,0,FAIL_V0_3_REFERENCE,,NOT_EXECUTED,Harmless terminal punctuation
+75,H021,ADVERSARIAL_V0_4,Q008,explanation_policy,"""Village B, as 14/42 is greater than 18/72""",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Prose recognition unqualified; must not mark a correct explanation zero without policy
+76,H022,ADVERSARIAL_V0_4,Q004,decimal_locale,"""3,25""",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Decimal comma policy needs explicit UK input rule and UI evidence
+77,H023,ADVERSARIAL_V0_4,Q016,free_text_vs_controls,"""No, because the sides differ""",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Boolean control must be bounded or a prose policy must be specified
+78,H024,ADVERSARIAL_V0_4,Q014,carry_forward_policy,"{""a"": ""2099"", ""b"": ""12594""}",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Follow-through credit requires formally authorised mark scheme
+79,H025,ADVERSARIAL_V0_4,Q011,carry_forward_policy,"{""a"": ""54"", ""b"": ""5.4""}",,0,POLICY_DECISION_REQUIRED,,NOT_EXECUTED,Follow-through credit requires formally authorised mark scheme
+80,H026,ADVERSARIAL_V0_4,Q004,wrong_percent,"""3.25%""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Percent is not number of flatbreads
+81,H027,ADVERSARIAL_V0_4,Q004,wrong_unit,"""3 1/4 litres""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Correct numeric amount with wrong unit
+82,H028,ADVERSARIAL_V0_4,Q014,currency_precision,"{""a"": ""2100 m"", ""b"": ""£12,600.00""}",2.0,2,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Equivalent GBP monetary notation
+83,H029,ADVERSARIAL_V0_4,Q016,invalid_label,"""Maybe no""",0.0,0,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Neither Yes nor No; UI must not produce an unsupported status silently
+84,H030,ADVERSARIAL_V0_4,Q011,wrong_unit_part_a,"{""a"": ""55 kg"", ""b"": ""5.5 grams""}",1.0,1,PASS_V0_3_REFERENCE,,NOT_EXECUTED,Kilograms not equivalent to grams in stated magnitude
