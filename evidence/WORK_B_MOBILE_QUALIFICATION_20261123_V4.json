@@ -1,0 +1,16 @@
+{
+  "version": "SM-MOBILE-QUALIFICATION-ANNEX-4",
+  "runtime_tree_sha256": "c32c7227b99fe38ee33ba612cb1a8b2f6154e0c0f6358fe67efa730fc1bb9c78",
+  "frozen_candidate_manifest_sha256": "cb1ab971dfd0b83ae61f655207524feac1220fb9a36380539bd05855c90b4156",
+  "runtime_changed": false,
+  "existing_bounded_http_runner_reused": true,
+  "prior_browser_fixture_failure": {
+    "run": 45178549707,
+    "artifact": 14819554884,
+    "verified_zip_sha256": "264148a83397463247519ca89fd2b4c74e578e35cc8a476e42c0724d33b5cdd4",
+    "stage": "RAW_CHAPTER_NOT_NATIVE_UI_VALUE"
+  },
+  "native_UI_authority": "unchanged _programme_chapter_scope_sql plus live_question_clause on exact signed question; exactly one actual option",
+  "hosted_mobile": "PENDING",
+  "production_actions": false
+}
