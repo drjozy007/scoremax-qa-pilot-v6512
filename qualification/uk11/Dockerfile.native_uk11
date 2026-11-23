@@ -6,4 +6,4 @@ COPY scoremax_runtime_v669b /app
 COPY qualification/uk11 /qualifier
 COPY scripts/scoremax_persistent_storage_guard.py /checks/native_guard/scoremax_persistent_storage_guard.py
 WORKDIR /app
-CMD ["python","-B","/qualifier/native_runtime_qualification.py"]
+CMD ["python","-B","/qualifier/native_intake_explanation_qualification.py"]
