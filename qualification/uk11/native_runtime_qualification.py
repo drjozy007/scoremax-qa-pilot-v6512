@@ -162,7 +162,18 @@ try:
             qcanon={'question_id':'UK11-SYN-QUESTION','question_version_id':'UK11-SYN-V1',
                     'question_version_number':1,'curriculum':curriculum,'content':content,
                     'architecture':architecture,'governance':governance,'provenance':{}}
-            native_projection=sm.integration_v1._projection(qcanon,{})
+            try:
+                native_projection=sm.integration_v1._projection(qcanon,{})
+            except Exception as exc:
+                # Source-only synthetic diagnostic: inspect current native accepted
+                # families rather than guessing new family aliases or relaxing QA.
+                contracts=RUNTIME/'question_contract_engine.py'
+                body=contracts.read_text(encoding='utf8') if contracts.exists() else ''
+                at=body.find('UNKNOWN_QUESTION_FAMILY')
+                section=body[max(0,at-1600):at+750] if at>=0 else body[:650]
+                record('native_question_family_policy',error_type=type(exc).__name__,
+                       error=str(exc),accepted_native_source_excerpt=section)
+                raise
             assert native_projection.get('question')=='What is 12 divided by 3?'
             pin={'question_db_id':q_id,'question_id':'UK11-SYN-QUESTION','question_version_id':'UK11-SYN-V1',
                  'question_checksum_sha256':'SYNTHETIC-CHECKSUM-1','release_id':'UK11-SYN-RELEASE',
