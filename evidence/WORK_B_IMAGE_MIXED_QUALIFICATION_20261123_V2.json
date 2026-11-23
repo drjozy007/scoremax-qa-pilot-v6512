@@ -1,0 +1,16 @@
+{
+  "version": "SM-IMAGE-MIXED-QUALIFICATION-ANNEX-2",
+  "runtime_tree_sha256": "c32c7227b99fe38ee33ba612cb1a8b2f6154e0c0f6358fe67efa730fc1bb9c78",
+  "frozen_candidate_manifest_sha256": "cb1ab971dfd0b83ae61f655207524feac1220fb9a36380539bd05855c90b4156",
+  "frozen_files_unchanged": 283,
+  "runtime_modified": false,
+  "local_test_groups": 3,
+  "missing_event_or_drift_attacks_rejected": 20,
+  "retained_hosted_mixed_p95_ms": 1032.917017,
+  "retained_hosted_artifact_id": 14817033417,
+  "retained_hosted_artifact_zip_sha256": "dfa5790cbe62d6572ad3a13afffb19812d47db08cbf82a56a18f8e003abb315c",
+  "local_one_thread_p95_ms": 1198.159002,
+  "local_current_four_threads_p95_ms": 1237.749221,
+  "current_four_threads_report_sha256": "906991207203f9c0ada805ee4acb4f18b9edeb5099ca37c19ba98b0b7d630961",
+  "production_actions": false
+}

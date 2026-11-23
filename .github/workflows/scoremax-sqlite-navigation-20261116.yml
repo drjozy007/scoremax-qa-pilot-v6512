@@ -103,7 +103,7 @@ jobs:
         run: |
           python -c "from pathlib import Path; import sqlite3; p=Path('qualification/mixed/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/indexed/state/seed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
           python -B tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py scoremax_runtime_v669b qualification/mixed/state/measure.db qualification/http/mixed_native.json --variant current_v2 --fixture DERIVED_100800_GUARDED_7_INDEXES --levels 50 --operations 400 --workers 1 --threads 1 --server-one-cpu --route '/student/subject/Biology' --port 18861
-          python -B tests/navigation_current_20261123/qualify_mixed_report_v1.py qualification/http/mixed_native.json
+          python -B tests/navigation_current_20261123/qualify_source_image_mixed_report_v2.py qualification/http/mixed_native.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
