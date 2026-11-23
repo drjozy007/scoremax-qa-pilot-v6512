@@ -129,7 +129,7 @@ def read_explanation(c, native, *, attempt_id, question_id, student_id, owned):
        'DIAGRAM','IMAGE','IMAGE_REFERENCE','DIAGRAM_REFERENCE','MIXED','VISUAL','NONVERBAL'):
         raise ExplanationHold('STIMULUS_EXPLANATION_NEEDS_QUALIFICATION')
     cap = _capsule_for(c, q, q.get('subject'))
-    question = {'question':stem, 'answer':str(q.get('answer') or ''),
+    question = {'question':stem, 'answer':str((content.get('marking') or {}).get('key') or ''),
                 'explanation':approved_solution if approved_solution is not None else '',
                 'topic':q.get('topic') or '', 'qtype':q.get('qtype') or ''}
     output=prepare(attempt_status='submitted', is_correct=False, academic_approved=True,
