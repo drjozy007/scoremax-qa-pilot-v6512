@@ -50,9 +50,19 @@ def evaluate():
 
     # Only the exact pre-built ScoreMax runtime, never local reference scorer.
     os.environ.update({
-        'SCOREMAX_ENV':'local','SCOREMAX_DB':'/data/uk11-math85-characterization.db',
+        'SCOREMAX_ENV':'production','SCOREMAX_PERSISTENT_ROOT':'/data/scoremax',
+        'SCOREMAX_DB':'/data/scoremax/state/scoremax.db',
+        'SCOREMAX_BACKUP_DIR':'/data/scoremax/backup',
+        'SCOREMAX_CONTENT_INTAKE_DIR':'/data/scoremax/intake',
+        'SCOREMAX_EXPECTED_PERSISTENT_MOUNT':'/data',
+        'SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD':'Synthetic-UK11-Maths85-Only-2026',
+        'SCOREMAX_BOOTSTRAP_ADMIN_EMAIL':'math85-only@example.test',
+        'SCOREMAX_INSTANCE_COUNT':'1','WEB_CONCURRENCY':'1',
         'SCOREMAX_SECRET':'synthetic-math85-runtime-only-secret-long-enough',
         'SCOREMAX_STAGING_SESSION_SECRET':'synthetic-math85-stage-only',
+        'SCOREMAX_SMTP_FROM':'noreply@example.test',
+        'SCOREMAX_REQUIRE_EMAIL_VERIFICATION':'1',
+        'SCOREMAX_PUBLIC_BASE_URL':'https://localhost',
         'SCOREMAX_SEND_EMAIL_VERIFICATION':'0',
         'SCOREMAX_SMTP_HOST':'smtp.invalid',
         'SCOREMAX_PAID_AI_FEEDBACK':'0',
@@ -61,6 +71,9 @@ def evaluate():
     })
     os.environ.pop('DEEPSEEK_API_KEY',None)
     sys.path.insert(0,'/app')
+    sys.path.insert(0,'/checks/native_guard')
+    import scoremax_persistent_storage_guard as persistent_guard
+    persistent_guard.main()
     import scoremax_production as hosted
     scorer=hosted.scoremax.mark_question_response
     results=[]
