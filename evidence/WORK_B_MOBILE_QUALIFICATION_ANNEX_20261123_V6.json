@@ -1,0 +1,9 @@
+{
+  "files": {
+    ".github/workflows/scoremax-sqlite-navigation-20261116.yml": "9bedff8d1bb56358a62bd9b9b4c76936f78c2429bfeabff5da16005bef1161b5",
+    "docs/operations/WORK_B_MOBILE_BROWSER_QUALIFICATION_20261123_V6.md": "6f9a9ba8beec4c16451b3491fec8ad99592f85068e109706d042841e735a4554",
+    "evidence/WORK_B_NO_EXTRA_NAV_INDEX_TOPOLOGY_V8_20261123.json": "6db53d4fbcd2de9ea3aeb655c05d2c8d2f0cf966b827e29420eb8a526ce44b1d"
+  },
+  "runtime_changed": false,
+  "runtime_tree_sha256": "c32c7227b99fe38ee33ba612cb1a8b2f6154e0c0f6358fe67efa730fc1bb9c78"
+}
