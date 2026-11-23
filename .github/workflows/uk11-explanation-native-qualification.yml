@@ -55,8 +55,6 @@ jobs:
           root=Path('scoremax_runtime_v669b')
           print('UK11_DISPOSABLE_OVERLAY '+json.dumps(apply(root),sort_keys=True))
           PY
-      - name: Apply disposable-only native retry diagnostic
-        run: python -B qualification/uk11/test_only_retry_diagnostic.py
       - name: Build native test image using actual assembled runtime
         run: timeout 240 docker build --pull=false -f qualification/uk11/Dockerfile.native_uk11 -t scoremax-uk11-native .
       - name: Run signed Power House intake, activation, native marking and explanation offline
