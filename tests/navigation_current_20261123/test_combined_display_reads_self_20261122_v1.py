@@ -1,3 +1,4 @@
+from contextlib import closing
 """Commit, concurrency and isolation controls on a disposable real SQLite DB."""
 import importlib.util
 from pathlib import Path
@@ -32,9 +33,9 @@ class DisplayInventory(unittest.TestCase):
     def test_commit_invalidation_and_row_copy_are_current(self):
         first=self.read();first[0]['question_count']=99
         self.assertEqual(self.read()[0]['question_count'],1)
-        with sqlite3.connect(self.path) as writer:writer.execute('UPDATE q SET active=0 WHERE id=1')
+        with closing(sqlite3.connect(self.path)) as writer,writer:writer.execute('UPDATE q SET active=0 WHERE id=1')
         self.assertEqual(self.read(),[])
-        with sqlite3.connect(self.path) as writer:writer.execute('UPDATE q SET active=1 WHERE id=1')
+        with closing(sqlite3.connect(self.path)) as writer,writer:writer.execute('UPDATE q SET active=1 WHERE id=1')
         self.assertEqual(self.read()[0]['question_count'],1)
         self.assertEqual(self.read('MDCAT')[0]['chapter'],'opaque/0001 ')
 
@@ -55,7 +56,7 @@ class DisplayInventory(unittest.TestCase):
         real=m._rows;done=[]
         def racing(c,sql,values,columns):
             rows=real(c,sql,values,columns)
-            with sqlite3.connect(self.path) as writer:writer.execute('UPDATE q SET active=0 WHERE id=1')
+            with closing(sqlite3.connect(self.path)) as writer,writer:writer.execute('UPDATE q SET active=0 WHERE id=1')
             done.append(True);return rows
         with patch.object(m,'_rows',side_effect=racing):self.assertEqual(self.read()[0]['question_count'],1)
         self.assertEqual(done,[True]);self.assertEqual(self.read(),[])

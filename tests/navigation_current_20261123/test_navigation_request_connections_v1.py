@@ -1,3 +1,4 @@
+import os
 from contextlib import closing
 import importlib.util
 from pathlib import Path
@@ -82,10 +83,22 @@ class RequestConnections(unittest.TestCase):
             a=m.borrow(plain);old=a._physical['connection'];a.close()
             other=self.path.with_name('replacement.db')
             with closing(sqlite3.connect(other)) as c,c:c.executescript('CREATE TABLE q(id PRIMARY KEY,value); INSERT INTO q VALUES(1,77);')
+            if os.name=='nt':
+                # Windows disallows deleting/replacing an open SQLite file.
+                # Prove that fence; release the inactive owned handle before
+                # replacing, while retaining the same retirement/new-read test.
+                with self.assertRaises(PermissionError):other.replace(self.path)
+                m._retire(a._state,a._physical)
             other.replace(self.path)
             b=m.borrow(plain);self.assertEqual(self.read(b),77);self.assertIsNot(b._physical['connection'],old);b.close()
             with closing(sqlite3.connect(self.path)) as c,c:c.execute('UPDATE q SET value=88')
             c=m.borrow(plain);self.assertEqual(self.read(c),88);c.close()
+            # Both OSes must retire a cached handle on same-inode restore metadata.
+            retired=c._physical['connection'];stamp=self.path.stat().st_mtime_ns
+            os.utime(self.path,ns=(self.path.stat().st_atime_ns,stamp+1000000000))
+            d=m.borrow(plain);self.assertIsNot(d._physical['connection'],retired)
+            self.assertEqual(self.read(d),88);d.close()
+            with self.assertRaises(sqlite3.ProgrammingError):retired.execute('SELECT 1')
     def test_distinct_requests_and_threads_do_not_share_handles(self):
         barrier=threading.Barrier(8)
         def request(index):

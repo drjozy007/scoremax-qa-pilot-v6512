@@ -1,0 +1,14 @@
+{
+  "changes": "Explicitly close owned fixture connections; assert Windows replacement denial, retire inactive handle, and exercise same-inode metadata retirement on both OSes.",
+  "exceptions_ignored": 0,
+  "failed_windows_job": 137413824554,
+  "hosted_qualification": "PENDING",
+  "linux_native_job": 137413824813,
+  "local_qualification_tests_passed": 30,
+  "previous_head": "92400159e9835b1d85c9ec3ef617efc62b1aef1b",
+  "production_actions": false,
+  "root_cause": "SQLite connection context managers commit/rollback but do not close; Windows denies replacing open database files.",
+  "runtime_tree_before_and_after": "d02a710a307788e68ee5b7be19f01b39e6be7ec4c8e7bc84d09e352e327810f2",
+  "tests_skipped": 0,
+  "version": "SM-NAV-WINDOWS-FIXTURE-RECTIFICATION-20261123-1"
+}

@@ -1,3 +1,4 @@
+from contextlib import closing
 """The ordinary profile GET must not acquire a SQLite writer reservation."""
 import ast
 from pathlib import Path
@@ -29,22 +30,22 @@ class PlanLabels(unittest.TestCase):
             self.assertEqual(self.normalise(),('FSc Part 1',['Biology']))
         writer.rollback()
     def test_needed_repairs_and_missing_subject_defaults_retain_native_result(self):
-        with self.connect() as c:
+        with closing(self.connect()) as c,c:
             c.execute("UPDATE plans SET name=NULL");c.execute("UPDATE users SET subjects='' WHERE id=1")
         with self.app.test_request_context('/'):
             session.update(role='student',user_id=1)
             self.assertEqual(self.normalise(),('FSc Part 1',['Biology','Chemistry','Physics']))
-        with self.connect() as c:
+        with closing(self.connect()) as c,c:
             self.assertEqual(dict(c.execute('SELECT code,name FROM plans')),{'level_1_access':'Silver Access','level_2_access':'Gold Access','full_access':'Platinum Access'})
     def test_second_request_sees_profile_changes_and_repairs_new_label_change(self):
         with self.app.test_request_context('/'):
             session.update(role='student',user_id=1);self.normalise()
-        with self.connect() as c:
+        with closing(self.connect()) as c,c:
             c.execute("UPDATE users SET subjects='Physics' WHERE id=1")
             c.execute("UPDATE plans SET name='Old label' WHERE code='full_access'")
         with self.app.test_request_context('/'):
             session.update(role='student',user_id=1)
             self.assertEqual(self.normalise(),('FSc Part 1',['Physics']))
-        with self.connect() as c:self.assertEqual(c.execute("SELECT name FROM plans WHERE code='full_access'").fetchone()[0],'Platinum Access')
+        with closing(self.connect()) as c,c:self.assertEqual(c.execute("SELECT name FROM plans WHERE code='full_access'").fetchone()[0],'Platinum Access')
 
 if __name__=='__main__':unittest.main(verbosity=2)

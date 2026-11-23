@@ -7,7 +7,7 @@ permissions:
   contents: read
 concurrency:
   group: current-sqlite-nav-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 env:
   PYTHONUTF8: '1'
   PYTHONDONTWRITEBYTECODE: '1'
