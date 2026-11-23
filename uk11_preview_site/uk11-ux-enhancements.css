@@ -1,0 +1,68 @@
+/* ScoreMax UK 11+ — isolated presentation enhancement (23 Nov 2026).
+   Static preview only; no account, marking, mastery award or production writes. */
+.skip-link{position:absolute;top:-90px;left:12px;background:#20355e;color:#fff;z-index:30;padding:12px 18px;border-radius:10px}
+.skip-link:focus{top:12px}
+.programme-rail{margin-bottom:12px}
+.programme-link:first-of-type{background:#fff;color:#314671;border-color:#d9e2f2}
+.programme-link.active,.programme-link.active:first-of-type{background:#274cdb;color:#fff;border-color:#274cdb}
+.programme-link.active:hover{background:#193ab9;color:#fff}
+.mastery-dock{background:linear-gradient(115deg,#f8faff,#edf2ff 70%,#f8f3ff);border:1px solid #d8e2fb;box-shadow:0 8px 22px #263d6809;border-radius:19px;padding:17px 19px 15px;margin-bottom:14px}
+.mastery-dock-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.mastery-dock-head h2{font-size:21px;letter-spacing:-.5px;margin:4px 0 5px}
+.mastery-dock-head p{font-size:12px;color:#566781;line-height:1.55;margin:0}
+.mastery-state{border:1px solid #c7d6f6;background:#fff;color:#253a65;padding:9px 12px;border-radius:11px;font-size:12px;line-height:1.5}
+.mastery-state strong{display:block;font-size:14px;color:#1c3a8f}
+.mastery-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:14px}
+.mastery-step{display:flex;flex-direction:column;gap:5px;align-items:flex-start;text-align:left;border:1px solid #d5e0f2;border-radius:12px;background:#fff;color:#263951;min-height:81px;padding:10px 9px;position:relative}
+.mastery-step:before{content:'';height:4px;position:absolute;top:0;left:0;right:0;border-radius:12px 12px 0 0;background:var(--tier)}
+.mastery-step:hover,.mastery-step:focus-visible{border-color:var(--tier);background:#f9fbff}
+.mastery-step.active{box-shadow:inset 0 0 0 1px var(--tier);background:#f7f9ff}
+.mastery-step small{font-size:10px;font-weight:800;color:#6d7790}
+.mastery-step strong{font-size:13px;line-height:1.3}
+.mastery-step span{font-size:10px;line-height:1.35;color:#576988}
+.mastery-next{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px;border-top:1px solid #dce5f7;padding-top:11px;font-size:12px;color:#485b7c;line-height:1.5}
+.mastery-next strong{color:#1f397a}
+.mastery-info{margin-top:10px;background:#223b70;color:#fff;border-radius:11px;padding:12px 15px}
+.mastery-info strong{font-size:13px}
+.mastery-info p{font-size:12px;color:#e1eaff;line-height:1.6;margin:4px 0 0}
+.mastery-caption{font-size:11px;color:#5b6881;line-height:1.5;margin-top:9px}
+.mastery-status-card{background:#fff;border:1px solid #dce4f2;border-radius:15px;padding:18px;margin:0 0 20px;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.mastery-status-card h2{font-size:17px;margin:4px 0 6px}
+.mastery-status-card p{max-width:700px;font-size:13px;line-height:1.5;color:#536381;margin:0}
+.mastery-status-card .actions{align-items:center}
+.demo-status{display:inline-flex;align-items:center;gap:5px;border:1px solid #dce4ee;background:#f7f9fd;border-radius:999px;padding:5px 9px;color:#42546e;font-size:11px;font-weight:700;line-height:1.3}
+.demo-status.concept{background:#fff8ea;border-color:#f1e2c4;color:#775b24}
+.tool-header{display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.tool-header h1{font-size:clamp(23px,3vw,29px);letter-spacing:-.7px;margin:3px 0 7px}
+.tool-header p{font-size:13px;line-height:1.6;color:#5c6981;max-width:780px;margin:0}
+.journey-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.journey-card{border:1px solid #e2e8f1;border-radius:15px;background:#fff;padding:16px;min-height:150px}
+.journey-card .step-number{font-size:11px;font-weight:850;color:#3b58b2;letter-spacing:.08em}
+.journey-card h3{font-size:15px;margin:9px 0}
+.journey-card p{font-size:12px;color:#61718a;line-height:1.6;margin:0}
+.panel-block{margin:17px 0}
+.panel-block h2{font-size:18px;margin:0 0 9px}
+.route-source{font-size:12px;color:#607087;line-height:1.55}
+.feature-card .demo-status{margin-top:auto}
+.feature-detail .actions{margin-top:13px}
+.feature-catalogue{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.feature-catalogue .card{display:flex;flex-direction:column;gap:8px}
+.feature-catalogue .card h3{font-size:16px;margin:0}
+.feature-catalogue .card p{font-size:12px;line-height:1.5;color:#607087;flex:1}
+.feature-catalogue .card .secondary{align-self:start}
+.action-card{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:13px}
+.action-card h3{margin:0 0 5px;font-size:16px}
+.action-card p{margin:0;color:#5d6c83;font-size:12px;line-height:1.55}
+.writing-field{width:100%;min-height:180px;border:1px solid #bfcbde;border-radius:12px;padding:15px;resize:vertical;font:inherit;line-height:1.6;color:var(--ink);background:#fff}
+.writing-field:focus-visible{outline:3px solid #7ca7ff;outline-offset:2px}
+.checkpoint{display:flex;gap:10px;align-items:center;padding:13px 0;border-top:1px solid #e8edf5}
+.checkpoint:first-child{border-top:0}
+.checkpoint button{min-width:95px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.rail{overflow-y:auto}
+#page:focus{outline:none}
+#page:focus-visible{outline:3px solid #7ca7ff;outline-offset:4px}
+@media(max-width:1200px){.mastery-steps{grid-template-columns:repeat(3,minmax(0,1fr))}.journey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-catalogue{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.mastery-dock{padding:14px}.mastery-dock-head h2{font-size:19px}.mastery-steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.mastery-step{padding:9px 7px;min-height:79px}.mastery-step strong{font-size:12px}.mastery-step span{font-size:9px}.journey-grid,.feature-catalogue{grid-template-columns:1fr}.mastery-status-card{padding:15px}}
+@media(max-width:420px){.mastery-state{width:100%}.mastery-step strong{font-size:11px;overflow-wrap:anywhere}.mastery-step small{font-size:9px}.mastery-next .mini{width:100%}.programme-rail{gap:5px}.programme-link{padding:8px 10px}.action-card .actions{width:100%}}
+@media(prefers-reduced-motion:reduce){.mastery-step,.feature-card,.nav-btn,.tile{transition:none!important;transform:none!important}}
