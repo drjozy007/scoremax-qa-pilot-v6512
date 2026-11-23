@@ -1,0 +1,31 @@
+{
+  "version": "SM-NATIVE-MENU-CARD-SEPARATE-FROZEN-ADVERSARIAL-9",
+  "status": "PASSED",
+  "frozen_manifest_sha256": "37e339db52e593f7b86f5796f9bc0ef202c8e43e3f245b7e41a919bdb35e58b9",
+  "frozen_pins": 283,
+  "all_pins_unchanged": true,
+  "reports": {
+    "NATIVE_MENU": {
+      "sha256": "5797570be75394d9e9e058daf1e2dc97c4e73ee5b73e90c236f6bc8826e57a3b",
+      "status": "PASSED"
+    },
+    "IMAGE_ATTACKS": {
+      "sha256": "f2678eb14845dd0408bf280ebf6bcd0787753457cfbb4be8b58dd70413351e6a",
+      "status": "PASSED_NATIVE_SIGNED_IMAGE_DURABLE_REJECTION"
+    },
+    "IMAGE_HISTORY": {
+      "sha256": "e496edc960b42ba1866e19bfa7d136142217931245e73101c9aa8c0ecbbf6545",
+      "status": "PASSED_NATIVE_SIGNED_IMAGE_LEARNER_HTTP_JOURNEY"
+    },
+    "CHAPTER_PARITY": {
+      "sha256": "679a27b7a7737ba09e6bdc8be22c86d52434116e7e0a3b81ee3ec57cd3027ffb",
+      "status": "PASSED"
+    },
+    "COMPLETE_EVIDENCE": {
+      "sha256": "b3568a85c6bf07e7856b19d9dcdd75ea01e80ad71b6d3f57f16284af4d438232",
+      "status": "PASSED"
+    }
+  },
+  "code_or_academic_authority_changed_during_adversarial_stage": false,
+  "production_actions": false
+}

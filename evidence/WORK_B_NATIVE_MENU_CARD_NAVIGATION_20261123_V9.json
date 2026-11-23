@@ -1,0 +1,22 @@
+{
+  "policy": "SM-NATIVE-MENU-CARD-NAVIGATION-9",
+  "runtime_tree_sha256": "7c45b375d86c85b90e60467a98121a7d3d4ab15164228f5ac3a42c1e5e1df7f9",
+  "direct_receiver_delta_sha256": "f9638530f1df6913643f2d4ee549574d2ecd98e538c21a69c53fdd1a4c0ef1fc",
+  "self_audit": "PASSED",
+  "unit_controls": 48,
+  "native_scope_stages": 5,
+  "native_menu_context_parity_cases": 480,
+  "no_extra_indexes_4threads_mixed_p95_ms": 1354.533362,
+  "indexed_1thread_mixed_p95_ms": 906.634413,
+  "mixed_gets_each": 400,
+  "errors": 0,
+  "pending_null_and_no_formal_credit": true,
+  "protected_tables": 16,
+  "runtime_changed_from_frozen_V8": [
+    "app.py",
+    "ux_student_batch.py"
+  ],
+  "actual_Render_capacity": "PENDING",
+  "official_ai_scoring_enabled": false,
+  "production_actions": false
+}
