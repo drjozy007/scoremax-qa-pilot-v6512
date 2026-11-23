@@ -61,6 +61,13 @@ class Tests(unittest.TestCase):
         out = good(question=dict(QUESTION, explanation=''))
         self.assertEqual(out['student_view']['simple_explanation'], CAP['simple_explanation'])
 
+    def test_approved_explanations_and_capsules_reject_contact_details(self):
+        with self.assertRaisesRegex(ExplanationHold, 'LEARNER_PRIVACY_OR_GOVERNANCE_FIREWALL'):
+            good(question=dict(QUESTION, explanation='Text +44 7700 900123 for the answer'))
+        cap=dict(CAP, worked_example='Contact +44 7700 900123 for steps')
+        with self.assertRaisesRegex(ExplanationHold, 'LEARNER_PRIVACY_OR_GOVERNANCE_FIREWALL'):
+            good(capsule=cap)
+
     def test_visual_ai_stays_held_without_verified_asset_meaning(self):
         q = dict(QUESTION, qtype='non-verbal diagram')
         a = good(question=q)
