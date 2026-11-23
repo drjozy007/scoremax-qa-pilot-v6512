@@ -10,5 +10,6 @@ new="""        record('replay_submission_response',status_code=replay_submit.sta
         # Idempotency is defined by one persisted attempt, not a redirect code.
 """
 s=p.read_text()
+print("UK11_RETRY_DIAG",repr([line for line in s.splitlines() if "replay_submit.status_code" in line]),"anchor_count",s.count(old),flush=True)
 assert s.count(old)==1,"RETRY_ASSERTION_ANCHOR_DRIFT"
 p.write_text(s.replace(old,new))
