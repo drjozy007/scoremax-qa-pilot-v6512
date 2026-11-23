@@ -48,6 +48,8 @@ jobs:
         run: python -B tests/biology_receiver_20261027/qualify_signed_source_image_adversarial_v2.py scoremax_runtime_v669b qualification/source_image_attacks.json
       - name: Composed native source images persist through saved historical results
         run: python -B tests/biology_receiver_20261027/qualify_native_source_image_journey_v1.py scoremax_runtime_v669b qualification/source_image_journey_state qualification/source_image_journey.json
+      - name: Exact native coach selection parity across home levels and preferences
+        run: python -B tests/navigation_current_20261123/qualify_native_coach_selection_v8.py scoremax_runtime_v669b qualification/reference_runtime qualification/coach_selection_state qualification/coach_selection.json
       - name: Normal learner browse start save submit remains unscored with access fences
         run: python -B tests/navigation_current_20261123/qualify_pending_browser_journey_v3.py scoremax_runtime_v669b qualification/browser_state qualification/browser.json
       - name: Retain scored marker contracts

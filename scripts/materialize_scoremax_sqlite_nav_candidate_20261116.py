@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def load(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 def main():
- build=load('current_navigation',ROOT/'ux_vnext_overlay/biology_receiver_20261027/sqlite_navigation_build_20261123_v7.py')
+ build=load('current_navigation',ROOT/'ux_vnext_overlay/biology_receiver_20261027/sqlite_navigation_build_20261123_v8.py')
  runtime=ROOT/'scoremax_runtime_v669b'
  if runtime.exists() and build.tree(runtime)==build.AFTER_TREE:return build.apply(runtime)
  prior=load('current_receiver',ROOT/'scripts/materialize_scoremax_scored_saq_20261122.py')

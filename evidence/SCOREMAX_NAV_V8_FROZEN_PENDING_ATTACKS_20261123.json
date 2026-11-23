@@ -1,0 +1,48 @@
+{
+  "status": "PASSED",
+  "cases": [
+    {
+      "mutation": "weight_zero",
+      "native_http_status": 422,
+      "learner_active": false
+    },
+    {
+      "mutation": "wrong_marks",
+      "native_http_status": 422,
+      "learner_active": false
+    },
+    {
+      "mutation": "different_stem",
+      "native_http_status": 422,
+      "learner_active": false
+    },
+    {
+      "mutation": "borrowed_question_id",
+      "native_http_status": 422,
+      "learner_active": false
+    },
+    {
+      "mutation": "borrowed_source",
+      "native_http_status": 422,
+      "learner_active": false
+    },
+    {
+      "mutation": "wrong_destination",
+      "native_http_status": 422,
+      "learner_active": false
+    },
+    {
+      "mutation": "official_ai_on",
+      "native_http_status": 422,
+      "learner_active": false
+    },
+    {
+      "mutation": "false_assessor_claim",
+      "native_http_status": 422,
+      "learner_active": false
+    }
+  ],
+  "authority": "SOFTWARE_FIXTURES_ONLY",
+  "native_signature_and_question_checksums_resealed": true,
+  "production_mutated": false
+}

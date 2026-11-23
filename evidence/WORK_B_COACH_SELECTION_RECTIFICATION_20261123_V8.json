@@ -1,0 +1,25 @@
+{
+  "policy": "SM-SQLITE-NAV-COACH-SELECTION-20261123-8",
+  "base_receiver_tree_sha256": "723ebb01fec680db2e88c9159deeac74b941cf4be8e5ab7d95b6691a3afb5bff",
+  "runtime_tree_sha256": "c32c7227b99fe38ee33ba612cb1a8b2f6154e0c0f6358fe67efa730fc1bb9c78",
+  "delta_sha256": "04fa00dd4b9a0910fb912cba8d631d605f1357a4c5f20e2d43d39c44cb8d453a",
+  "runtime_files_changed_from_V7": [
+    "app.py"
+  ],
+  "cold_display_read_profile_after_native_activation_ms": 479.324,
+  "cold_display_read_profile_after_native_withdrawal_ms": 494.596,
+  "discarded_coach_pathway_enumeration_cost_ms": 126,
+  "prior_hosted_v7_mixed_p95_ms": 1591.936105,
+  "prior_failed_artifact_id": 14817110137,
+  "prior_failed_artifact_zip_sha256": "8d7ff831919ede83491e430bc5d32634ae0a7ca2f6946cfee7c2059945e2d11e",
+  "new_schema_indexes_or_authority_cache": false,
+  "production_actions": false,
+  "qualification": "PASSED_SELF_AUDIT_PENDING_SEPARATE_FROZEN_AND_HOSTED",
+  "local_unit_build_checks": 48,
+  "native_coach_parity_cases": 42,
+  "local_mixed_p95_ms": 1198.159002,
+  "local_mixed_successes": 400,
+  "local_mixed_errors": 0,
+  "protected_tables_preserved": 16,
+  "official_ai_scoring_enabled": false
+}

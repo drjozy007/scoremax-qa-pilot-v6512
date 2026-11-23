@@ -1,0 +1,82 @@
+{
+  "status": "PASSED",
+  "checks": [
+    {
+      "stage": "native_final_signed_question_answer",
+      "method": "POST",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "native_final_signed_question_answer",
+      "method": "GET",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_future_opaque_metadata",
+      "method": "POST",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_future_opaque_metadata",
+      "method": "GET",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_student_id",
+      "method": "POST",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_student_id",
+      "method": "GET",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_\u03a9",
+      "method": "POST",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_\u03a9",
+      "method": "GET",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_\u03c9",
+      "method": "POST",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "future_column_\u03c9",
+      "method": "GET",
+      "complete_records_equal": true,
+      "records": 1
+    },
+    {
+      "stage": "exact_signed_withdrawal_excludes_formal_evidence",
+      "method": "POST",
+      "complete_records_equal": true,
+      "records": 0
+    },
+    {
+      "stage": "exact_signed_withdrawal_excludes_formal_evidence",
+      "method": "GET",
+      "complete_records_equal": true,
+      "records": 0
+    }
+  ],
+  "actual_native_signed_and_final_submission_used": true,
+  "every_unknown_source_record_field_preserved": true,
+  "ambiguous_or_nonascii_columns_use_original_native_path": true,
+  "academic_authority": "SOFTWARE_FIXTURES_ONLY",
+  "production_actions": false
+}
