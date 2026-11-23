@@ -1,3 +1,23 @@
+Current V3 local native PH HTTPS mixed CHAPTER result:400 GETs/50 actors, p951239.202526ms,0errors; all6 POSTs,2delivery ACKs,1exact native withdrawal ACK and completed PH export, consistent140095488-byte backup,16pre-existing tables/history preserved. Exactly1new attempt/answer,0formal mastery.41self tests PASS. Current exact-head hosted capacity PENDING.
+
+# Chapter mixed-load rectification — 23 November 2026 UTC
+
+Current generated runtime tree: `da7922d02fafc6e4ac8beda654b2935cc330d2e4af9a101ace178634662c99a5`. Exact 13-file V3 source delta SHA: `968d9cb4bf1852ea1289f0a6ac4a7f8590eb5329be967789584c7722fe547abc`, after qualified PR59 receiver `cd05d343`.
+
+Head 6688db3 hosted run 45096985013 passed native Windows/Linux, separate scored-boundary workflow and all 1/10/50 read gates. Its chapter mixed-load test FAILED p95 2024.633972ms with 400 successes/zero errors. This is retained negative evidence; no retry-only acceptance.
+
+The trace showed a full-bank chapter-display scan, including after ordinary writer commits invalidated display aggregates. A display-only candidate set now selects exact native legacy subject/chapter comparisons plus every subject-matching PH membership/version. The original current-version, programme, authorization, chapter-alias, family, marking and withdrawal predicates still run. No PH chapter ID is interpreted or guessed. The existing bounded commit/restore-invalidated display aggregate helper also reuses only the source-shape count for a UI chapter opportunity; learner mastery, policies, current formal-answer masks and actual assessment selection stay native and fresh. The function is used only by two display routes.
+
+Native source/control proof: 28 ordinary/guided/mixed/empty and actual signed PH HTML cases match bytes, covering opaque release IDs, differently labelled local question subjects, source chapter aliases, revocation, restoration and exact withdrawal. Direct native chapter-opportunity comparisons preserve counts and mastery values. Current hosted capacity is required separately.
+
+The preceding source-prefilter-only candidate passed actual native PH HTTPS ACK under mixed chapter load at p95 1417.715542ms/400 successes; later bounded aggregate reuse is the current V3 candidate and requires its own capacity evidence. Native PH staged/live ACKs and exact native hold/export/withdrawal ACK completed once, preserving original rows/history. These are software-authority fixtures on the current assembled PH code plus the exact qualified withdrawal overlay, not real-bank academic approvals or full installed production qualification.
+
+Seven-index write/storage trial: +29216768 bytes; 2500-row rollback update median 37.606ms indexed vs10.084ms unindexed (3.729x), four trials; no persisted question changes. No production migration/configuration/cutover.
+
+Historical records below retain their own versions and limits.
+
+---
+
 # Current coordinated Work B SQLite candidate — 23 November 2026 UTC
 
 Current receiver rollback base is PR59 `cd05d34338dc623a68440b9c501bb1e71d6bbc55`,

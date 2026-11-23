@@ -43,7 +43,7 @@ jobs:
       - name: Complete native evidence dicts preserve future and ambiguous columns
         run: python -B tests/navigation_current_20261123/qualify_native_evidence_row_fidelity_v1.py scoremax_runtime_v669b qualification/reference_runtime qualification/evidence_row_state qualification/evidence_rows.json
       - name: Native ordinary guided and mixed chapter HTML and reviewer permission parity
-        run: python -B tests/navigation_current_20261123/qualify_native_chapter_display_and_permission_v3.py scoremax_runtime_v669b qualification/reference_runtime qualification/chapter_state qualification/chapter.json
+        run: python -B tests/navigation_current_20261123/qualify_native_chapter_pushdown_v5.py scoremax_runtime_v669b qualification/reference_runtime qualification/chapter_state qualification/chapter.json
       - name: Normal learner browse start save submit remains unscored with access fences
         run: python -B tests/navigation_current_20261123/qualify_pending_browser_journey_v3.py scoremax_runtime_v669b qualification/browser_state qualification/browser.json
       - name: Retain scored marker contracts
