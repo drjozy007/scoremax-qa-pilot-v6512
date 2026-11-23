@@ -226,6 +226,19 @@ try:
                 record('native_authority_diagnostic',status='APPROVED')
             except Exception as err:
                 record('native_authority_diagnostic',status='REJECTED',code=str(getattr(err,'code',type(err).__name__)))
+                # Last source-contract diagnostic. Repeated synthetic fixture
+                # failures need a contract-level analysis, not more guessed IDs.
+                if 'PIN_SOURCE_IDENTITY_MISMATCH' in str(err):
+                    for source_file in ('question_contract_engine.py','scoremax_integration_v1.py'):
+                        p=RUNTIME/source_file
+                        if p.exists():
+                            code=p.read_text(encoding='utf8')
+                            position=code.find('PIN_SOURCE_IDENTITY_MISMATCH')
+                            if position>=0:
+                                record('native_pin_source_contract',file=source_file,
+                                       excerpt=code[max(0,position-2100):position+950],
+                                       stored_source_pins=sorted(k for k in pin if k!='projection'),
+                                       native_projection_keys=sorted(pin.get('projection',{})))
                 raise
             response=client.get(f'/uk11/result/{aid}/question/{q_id}/explain',base_url='https://scoremax.pk')
             assert response.status_code==200,('explained',response.status_code,response.data[:900])
