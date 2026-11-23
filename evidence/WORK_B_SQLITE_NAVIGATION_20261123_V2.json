@@ -1,0 +1,40 @@
+{
+  "delta_sha256": "f65984577b4adeeff553ff6afa4781787a153a657e80e309ddfbe4977fcd90dc",
+  "errors": 0,
+  "evidence_revision": 2,
+  "fixture": "DERIVED_100800_1001_LEARNERS_102300_FINAL_ANSWERS_7_GUARDED_INDEXES",
+  "four_thread_capacity": "FAILED",
+  "generated_runtime_tree_sha256": "d02a710a307788e68ee5b7be19f01b39e6be7ec4c8e7bc84d09e352e327810f2",
+  "hosted_qualification": "PENDING",
+  "http_requests": 800,
+  "mixed_writer_capacity": "PENDING",
+  "native_regressions": {
+    "assessment_contract_tests": 48,
+    "legacy_scope_unit_tests": 9,
+    "native_ph_compatibility_tests": 29,
+    "pending_native": "PASSED",
+    "programme_mastery_tests": 67,
+    "scored_marker_tests": 16,
+    "signed_adversarial_cases": 8,
+    "signed_delivery_recovery_cases": 6
+  },
+  "native_scope_and_labels_parity": "PASSED",
+  "official_ai_scoring_enabled": false,
+  "p95_ms_50": {
+    "catalogue": 1084.975422,
+    "chapter": 1396.233707,
+    "learn": 1004.825685,
+    "subject": 1217.719674
+  },
+  "prior_frozen_receipt_erratum": "V1 miscounted legacy scope unit tests as28; actual log proves9. Runtime code unchanged; all reported tests passed.",
+  "production_actions": false,
+  "protected_tables_unchanged": 16,
+  "real_bank": "PENDING_SECURE_CURRENT_FIXTURE",
+  "reference_pending_runtime_tree_sha256": "b8d3f04720891a65db3a45e9594f5a9f0d39b7c76a0223c3bf7c685064eb6737",
+  "render_mobile_and_cutover": "PENDING",
+  "self_audit_tests_passed": 30,
+  "server_affinity_cpus": 1,
+  "status": "LOCAL_COMPONENT_AND_READ_HTTP_PASSED",
+  "threads_per_worker": 1,
+  "workers": 1
+}
