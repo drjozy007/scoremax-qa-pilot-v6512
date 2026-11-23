@@ -19,6 +19,17 @@ class ReceiverBuild(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name)/'runtime'
         shutil.copytree(ROOT/'scoremax_runtime_v669b',self.root,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+        header_path=SCRIPT.with_name('work_b_receiver_build_20261123_v3.py')
+        header_spec=importlib.util.spec_from_file_location('header_before_receiver_test',header_path)
+        header=importlib.util.module_from_spec(header_spec);header_spec.loader.exec_module(header)
+        if header.tree(self.root)==header.AFTER_TREE:
+            delta=json.loads(header_path.with_name('work_b_receiver_delta_20261123_v3.json').read_bytes())
+            for row in delta['files']:
+                p=self.root/row['path'];text=p.read_text()
+                for h in reversed(row['hunks']):
+                    self.assertEqual(text.count(h['new']),1);text=text.replace(h['new'],h['old'],1)
+                p.write_bytes(text.encode())
+            self.assertEqual(header.tree(self.root),header.BASE_TREE)
         # A qualified candidate supplies its exact original source rollback.
         # An unmaterialised local checkout can also supply the prior component.
         if build.tree(self.root)==build.AFTER_TREE:

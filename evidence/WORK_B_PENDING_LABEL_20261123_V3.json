@@ -1,0 +1,18 @@
+{
+  "policy": "SM-PENDING-LEARNER-LABEL-20261123-3",
+  "before_tree_sha256": "b8d3f04720891a65db3a45e9594f5a9f0d39b7c76a0223c3bf7c685064eb6737",
+  "after_tree_sha256": "51a17d3c7ee32031f1555dcfb98564bf9ebbaa877462af2a4954029121ce0869",
+  "delta_sha256": "691532847f906ecc232e81b7102766fd82a57cb4506939bfb72d6f057e4715fe",
+  "change": "Neutral active-question label keeps pending responses honest; grading and original marks/weights unchanged.",
+  "production_actions": false,
+  "local_build_and_reversal_controls_passed": 8,
+  "native_actual_browser_marks": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "foundation_access_preserved": true,
+  "source_weight_preserved": 1,
+  "official_ai_scoring_enabled": false
+}
