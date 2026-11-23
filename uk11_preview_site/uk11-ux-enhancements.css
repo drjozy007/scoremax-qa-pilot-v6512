@@ -66,3 +66,10 @@
 @media(max-width:760px){.mastery-dock{padding:14px}.mastery-dock-head h2{font-size:19px}.mastery-steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.mastery-step{padding:9px 7px;min-height:79px}.mastery-step strong{font-size:12px}.mastery-step span{font-size:9px}.journey-grid,.feature-catalogue{grid-template-columns:1fr}.mastery-status-card{padding:15px}}
 @media(max-width:420px){.mastery-state{width:100%}.mastery-step strong{font-size:11px;overflow-wrap:anywhere}.mastery-step small{font-size:9px}.mastery-next .mini{width:100%}.programme-rail{gap:5px}.programme-link{padding:8px 10px}.action-card .actions{width:100%}}
 @media(prefers-reduced-motion:reduce){.mastery-step,.feature-card,.nav-btn,.tile{transition:none!important;transform:none!important}}
+
+/* Searchable school catalogue: readable filter controls and review column on phones. */
+#catalogueNation,#catalogueArea{min-height:44px;max-width:100%;flex:1 1 170px}
+#schoolSearch{flex:2 1 260px;min-height:44px;min-width:0}
+#schoolSearch:focus-visible,#catalogueNation:focus-visible,#catalogueArea:focus-visible{outline:3px solid #7ca7ff;outline-offset:2px}
+@media(max-width:760px){#page .toolbar:has(#schoolSearch){display:grid;grid-template-columns:1fr 1fr;gap:9px}#schoolSearch{grid-column:1 / -1;width:100%}#catalogueNation,#catalogueArea{width:100%;max-width:100%!important}#page .grid2:has(#catalogueNation){grid-template-columns:1fr}#page .grid2:has(.route-row){grid-template-columns:1fr}}
+@media(max-width:420px){#page .route-row{align-items:flex-start;gap:7px}#page .route-row .mini{font-size:11px;padding:8px 9px}#page .route-row .chip{overflow-wrap:anywhere}}
