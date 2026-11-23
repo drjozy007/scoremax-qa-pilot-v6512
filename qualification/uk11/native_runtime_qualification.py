@@ -147,8 +147,11 @@ try:
                         'subject_id':'MATHEMATICS','chapter_id':'NUMBER',
                         'display':{'programme':'UK 11+','subject':'Mathematics','chapter':'Number',
                                    'topic':'Division'}}
-            content={'stem':'What is 12 divided by 3?',
+            content={'language':'en','question_family_type':'NUMERIC_RESPONSE',
+                     'pedagogical_type':'NUMERIC','exam_question_type':'NUMERIC_RESPONSE',
+                     'stem':'What is 12 divided by 3?','options':[],'statements':[],
                      'marking':{'key_type':'NUMERIC','key':4,'marks':1,
+                                'negative_marks':0,'numeric_tolerance':0,'rubric':None,
                                 'explanation':'Three groups of 4 give 12; divide 12 by 3 to get 4.'}}
             architecture={'claim_family_id':'UK11-SYN-FAMILY','evidence_role':'INDEPENDENT',
                           'independent_mastery_eligible':True,'independent_mastery_weight':1,
