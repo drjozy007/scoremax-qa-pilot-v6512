@@ -1,0 +1,9 @@
+{
+  "files": {
+    ".github/workflows/scoremax-sqlite-navigation-20261116.yml": "c9e9c8f3ccec7dc153f18576c5637f7f636d3d85536929b20080026a0e50c9b3",
+    "docs/operations/WORK_B_MOBILE_BROWSER_QUALIFICATION_20261123_V3.md": "00aafabfa78454188357a4b453b09422750a3f0622775820dd3635b2fbe4c097",
+    "evidence/WORK_B_MOBILE_QUALIFICATION_20261123_V3.json": "010367319379b811cc4e9373438202d12e1d35afed9949d9f493886c5b1119cd",
+    "tests/navigation_current_20261123/qualify_mobile_source_image_browser_v1.py": "d544c7f98a061ee7c72443ca1e1ea45b8f593d57126aabce0a68940ca82cd3d5"
+  },
+  "frozen_candidate_manifest_sha256": "cb1ab971dfd0b83ae61f655207524feac1220fb9a36380539bd05855c90b4156"
+}
