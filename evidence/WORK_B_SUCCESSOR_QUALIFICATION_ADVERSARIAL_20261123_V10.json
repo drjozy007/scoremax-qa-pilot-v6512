@@ -1,0 +1,82 @@
+{
+  "academic_approval_created": false,
+  "candidate_manifest_sha256": "852b3ee7d375bbd19c74f8ad49af13f2ab85f3689e009c65536f440db827e9d3",
+  "controls": [
+    {
+      "control": "duplicate_membership",
+      "result": "REJECTED"
+    },
+    {
+      "control": "stage_only_activation_forgery",
+      "result": "REJECTED"
+    },
+    {
+      "control": "authorization_whitespace",
+      "result": "REJECTED"
+    },
+    {
+      "control": "stage_status_as_predecessor",
+      "result": "REJECTED"
+    },
+    {
+      "control": "stored_checksum_corruption",
+      "result": "REJECTED"
+    },
+    {
+      "control": "cross_question_local_alias",
+      "result": "REJECTED"
+    },
+    {
+      "control": "missing_store_identity",
+      "result": "REJECTED"
+    },
+    {
+      "control": "wrong_snapshot_count",
+      "result": "REJECTED"
+    },
+    {
+      "control": "current_projection_pin_tampered",
+      "result": "REJECTED"
+    },
+    {
+      "control": "admission_version_mismatch",
+      "result": "REJECTED"
+    },
+    {
+      "control": "withdrawal_exact_membership",
+      "result": "REJECTED"
+    },
+    {
+      "control": "native_superseded_authorized_member",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "unrelated_withdrawal_version",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "duplicate_completed_authorization_no_overcount",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "distinct_programme_scope_unchanged",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "inactive_prior_projection_is_not_a_staged_leak",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    },
+    {
+      "control": "nonproduction_projection_is_not_production_leak",
+      "result": "SAFE_REUSE_NO_ACTIVATION"
+    }
+  ],
+  "frozen_pins_unchanged": 283,
+  "marking_approval_created": false,
+  "policy": "SM-SUCCESSOR-SEPARATE-FROZEN-ADVERSARIAL-20261123-10",
+  "product_activation_bypassed": false,
+  "production_actions": false,
+  "rejected_attacks": 11,
+  "safe_reuse_controls": 6,
+  "status": "PASSED"
+}

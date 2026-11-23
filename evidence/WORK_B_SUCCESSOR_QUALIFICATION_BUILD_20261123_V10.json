@@ -1,0 +1,14 @@
+{
+  "AI_activation": false,
+  "after_tree": "d0fc1c5d46d793e3a86161a9f2b6fe6e5991160f1e38a54324cb95c60f3c64c8",
+  "base_tree": "7c45b375d86c85b90e60467a98121a7d3d4ab15164228f5ac3a42c1e5e1df7f9",
+  "changed_runtime_files": [
+    "production_qualification_engine.py"
+  ],
+  "delta_sha256": "f41f024c6b4aa3a16b86e3aa80673810cedeccb6be19ebb80fbfa50bb177df34",
+  "extra_indexes": 0,
+  "policy": "SM-EXACT-SUCCESSOR-QUALIFICATION-20261123-10",
+  "production_actions": false,
+  "source_marks_weight_and_mastery_unchanged": true,
+  "unchanged_runtime_files": 273
+}
