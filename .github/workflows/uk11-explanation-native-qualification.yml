@@ -36,11 +36,16 @@ jobs:
           set -euo pipefail
           python -B -m unittest discover -s qualification/uk11 -p 'test_*.py' -v > uk11-native-evidence/local_tests.log 2>&1 || { tail -n 70 uk11-native-evidence/local_tests.log; exit 1; }
           tail -n 7 uk11-native-evidence/local_tests.log
-      - name: Apply UK11 overlay only to disposable assembled checkout
+      - name: Reuse the existing native written-AI ownership guard, provider disabled
         shell: bash
         run: |
           set -euo pipefail
           touch scoremax_runtime_v669b/.uk11_disposable_qualification_runtime
+          python -B qualification/uk11/prepare_native_owner_test.py scoremax_runtime_v669b ux_vnext_overlay/paid_ai_marking_20261026 | tee uk11-native-evidence/native_owner_preparation.json
+      - name: Apply UK11 overlay only to disposable assembled checkout
+        shell: bash
+        run: |
+          set -euo pipefail
           python -B - <<'PY'
           import sys,json
           from pathlib import Path
