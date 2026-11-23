@@ -5,10 +5,23 @@
 (function(){
 'use strict';
 if(typeof schools!=='function'||typeof SCHOOLS==='undefined'||typeof state==='undefined')return;
+const verifiedSites={
+ 'aylesbury grammar school':'https://www.ags.bucks.sch.uk/',
+ 'aylesbury high school':'https://www.ahs.bucks.sch.uk/',
+ 'sutton grammar school':'https://www.suttongrammar.sutton.sch.uk/',
+ "queen elizabeth's school":'https://www.qebarnet.co.uk/'
+};
+for(const s of SCHOOLS){
+ const name=String(s.school_name||'').trim().toLowerCase();
+ if(verifiedSites[name] && (name!=="queen elizabeth's school" || s.area==='Barnet')){
+  s.school_website=verifiedSites[name];s.school_website_verified=true;
+  s.school_website_verified_on='2026-11-23';
+ }
+}
 const previousSchools=schools;
 const centres=window.UK11_LOCALITY_CENTRES||{};
 const esc=typeof escapeHtml==='function'?escapeHtml:(x=>String(x));
-const postcode=/^(GIR 0AA|[A-Z]{1,2}[0-9][0-9A-Z]?)$/i;
+const postcode=/^[A-Z]{1,2}[0-9][0-9A-Z]?$/i;
 let requested='',result=null,error='';
 function radians(n){return n*Math.PI/180}
 function miles(a,b){
@@ -66,7 +79,7 @@ async function lookup(){
  const input=document.getElementById('uk11Outcode');
  const typed=(input?.value||'').trim().toUpperCase().replace(/\\s+/g,'');
  requested=typed;
- if(!postcode.test(typed)||typed==='GIR0AA'){
+ if(!postcode.test(typed)){
    result=null;error='Use an outward postcode only, such as ST4. Full postcodes and addresses are not accepted.';render();return;
  }
  error='Checking district location…';result=null;render();
