@@ -1,0 +1,9 @@
+FROM python:3.13.5-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+COPY scoremax_runtime_v669b/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+COPY scoremax_runtime_v669b /app
+COPY qualification/uk11 /qualifier
+COPY scripts/scoremax_persistent_storage_guard.py /checks/native_guard/scoremax_persistent_storage_guard.py
+WORKDIR /app
+CMD ["python","-B","/qualifier/native_runtime_qualification.py"]
