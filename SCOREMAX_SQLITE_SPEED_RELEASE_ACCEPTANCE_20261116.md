@@ -1,3 +1,21 @@
+# Work B source-image navigation V7
+
+Extends existing PR55/56 and composes receiver V5 through the current exact source-delta materializer. SQLite remains selected; optional PostgreSQL remains OFF. No production configuration, new resource, schema or indexes are changed by the code materializer.
+
+Two initial source-image mixed-load candidates failed the existing 1.5-second p95 navigation gate (1555.433 and 1630.087 ms). Shared request-path investigation identified repeated pure alias construction, redundant private evidence copies and cold compilation of existing learner templates. V7 preserves exact current native aliases and complete returned records, copies mutable returned evidence, and compiles bounded static learner-template dependencies during worker startup without rendering, opening databases or caching learner authority. Formal eligibility/withdrawal SQL stays fresh.
+
+Final exact runtime: 9d507e3bcf87de2b6207bc365ed436df7d6f2a053000c70e444095eee772a446. Receiver base: 723ebb01fec680db2e88c9159deeac74b941cf4be8e5ab7d95b6691a3afb5bff. Delta SHA256: 8920c2f44a9eee6e0b63c5b160a87629a5863c9890207bf22dc6b88ef69f6b20.
+
+Local acceptance: 45 unit/build checks; all 12 native Learn/Subject/Chapter/Catalogue conditions at 1/10/50 concurrency, 2400 GETs, no errors; final mixed 400 GETs at 50 plus six signed POSTs, three authenticated original-image GETs and consistent backup, p95 1478.038488 ms, no errors/timeouts. Test image 504960 bytes exceeds the real largest 497968-byte source image. Protected tables and seed fingerprint retained. One CPU/one worker/one thread. This gives only 21.961512 ms headroom: monitored production Render capacity remains PENDING.
+
+Existing 100/300/1000 pressure evidence, seven-index write/storage measurements, exact signed PH HTTPS callback delivery/withdrawal evidence and rollback evidence remain attributable to their prior frozen versions; unchanged mechanisms are reused, not relabelled as current production evidence. Source marks and positive weight remain intact; pending responses are null/unscored and excluded from assessed mastery/exams/mocks. After image publication the code rollback floor is the image-capable V5 receiver. Historical submitted image attempts must remain readable after withdrawal.
+
+Hosted exact-head Linux/Windows checks currently cannot start because of account billing/spending restrictions. Existing resources only: no billing, runner, capacity or production cutover changes. Local Linux evidence is not Windows, hosted Docker or production acceptance. Protect 2272 live SAQs; defer 209 zero-weight questions. Real 1446 native qualification, release/ACK and assessed AI marking acceptance remain distinct PENDING gates.
+
+---
+
+Historical accepted evidence follows under its original versions.
+
 Current V3 local native PH HTTPS mixed CHAPTER result:400 GETs/50 actors, p951239.202526ms,0errors; all6 POSTs,2delivery ACKs,1exact native withdrawal ACK and completed PH export, consistent140095488-byte backup,16pre-existing tables/history preserved. Exactly1new attempt/answer,0formal mastery.41self tests PASS. Current exact-head hosted capacity PENDING.
 
 # Chapter mixed-load rectification — 23 November 2026 UTC

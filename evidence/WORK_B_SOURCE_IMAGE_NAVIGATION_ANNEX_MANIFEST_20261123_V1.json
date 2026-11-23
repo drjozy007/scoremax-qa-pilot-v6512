@@ -1,0 +1,10 @@
+{
+  "candidate_manifest_sha256": "a9ca134700587eb28fad006650dd5d32b3ff7ca03ca612b8fdf0d79bcf5502bd",
+  "files": {
+    ".github/workflows/scoremax-sqlite-navigation-20261116.yml": "11d30c1d7062324753ac7c46b278782fd9bdae25f904cc014a9ab46c826e952d",
+    "SCOREMAX_SQLITE_SPEED_RELEASE_ACCEPTANCE_20261116.md": "cfd431aaaf8d2dc67a582d16431aeb571d8d745cb0cb0c12282d71cca9d06cc7",
+    "evidence/WORK_B_SOURCE_IMAGE_NAVIGATION_QUALIFICATION_ANNEX_20261123_V1.json": "e705000a105b444669b976d4b70003534ff385846e09cacf96530be9496355a4",
+    "evidence/WORK_B_SOURCE_IMAGE_NAVIGATION_RAW_20261123_V7.json": "066fdd79c15508bca7739e2c10060f37f680b0a20340a10d7e434ba79edad0c5",
+    "tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py": "34159cc9f2b3b5646c0e6dca9179236a1258a5675014d998ab95f70d701bae96"
+  }
+}

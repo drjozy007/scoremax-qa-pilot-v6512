@@ -44,6 +44,10 @@ jobs:
         run: python -B tests/navigation_current_20261123/qualify_native_evidence_row_fidelity_v1.py scoremax_runtime_v669b qualification/reference_runtime qualification/evidence_row_state qualification/evidence_rows.json
       - name: Native ordinary guided and mixed chapter HTML and reviewer permission parity
         run: python -B tests/navigation_current_20261123/qualify_native_chapter_pushdown_v5.py scoremax_runtime_v669b qualification/reference_runtime qualification/chapter_state qualification/chapter.json
+      - name: Composed runtime rejects signed malformed image contracts durably
+        run: python -B tests/biology_receiver_20261027/qualify_signed_source_image_adversarial_v2.py scoremax_runtime_v669b qualification/source_image_attacks.json
+      - name: Composed native source images persist through saved historical results
+        run: python -B tests/biology_receiver_20261027/qualify_native_source_image_journey_v1.py scoremax_runtime_v669b qualification/source_image_journey_state qualification/source_image_journey.json
       - name: Normal learner browse start save submit remains unscored with access fences
         run: python -B tests/navigation_current_20261123/qualify_pending_browser_journey_v3.py scoremax_runtime_v669b qualification/browser_state qualification/browser.json
       - name: Retain scored marker contracts
@@ -96,7 +100,7 @@ jobs:
       - name: Native mixed read write duplicate withdrawal and consistent backup on fresh seed
         run: |
           python -c "from pathlib import Path; import sqlite3; p=Path('qualification/mixed/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/indexed/state/seed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
-          python -B tests/navigation_current_20261123/qualify_mixed_native_http_v5.py scoremax_runtime_v669b qualification/mixed/state/measure.db qualification/http/mixed_native.json --variant current_v2 --fixture DERIVED_100800_GUARDED_7_INDEXES --levels 50 --operations 400 --workers 1 --threads 1 --server-one-cpu --route '/student/chapter?subject=Biology&chapter=Synthetic%20Chapter%201' --port 18861
+          python -B tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py scoremax_runtime_v669b qualification/mixed/state/measure.db qualification/http/mixed_native.json --variant current_v2 --fixture DERIVED_100800_GUARDED_7_INDEXES --levels 50 --operations 400 --workers 1 --threads 1 --server-one-cpu --route '/student/subject/Biology' --port 18861
           python -B tests/navigation_current_20261123/qualify_mixed_report_v1.py qualification/http/mixed_native.json
       - uses: actions/upload-artifact@v4
         if: always()

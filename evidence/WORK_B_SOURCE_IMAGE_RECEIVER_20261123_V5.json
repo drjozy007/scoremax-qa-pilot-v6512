@@ -1,0 +1,18 @@
+{
+  "policy": "SM-NATIVE-LEARNER-STIMULUS-IMAGE-20261123-5",
+  "before_tree_sha256": "51a17d3c7ee32031f1555dcfb98564bf9ebbaa877462af2a4954029121ce0869",
+  "after_tree_sha256": "723ebb01fec680db2e88c9159deeac74b941cf4be8e5ab7d95b6691a3afb5bff",
+  "delta_sha256": "c47757e67f3ce3f26df21802a02a20f84972eb76c6768610677d96c6d905bd13",
+  "rectified": "Image validation errors use native durable QUESTION_RESPONSE_CONTRACT rejection rather than unhandled HTTP500.",
+  "changed_runtime_files": [
+    "app.py",
+    "ph_learner_media_v1.py",
+    "scoremax_integration_v1.py",
+    "templates/_learner_question_surface.html",
+    "templates/_ph_learner_stimulus_image.html",
+    "templates/result.html"
+  ],
+  "rollback_floor_after_image_publication": "IMAGE_CAPABLE_RECEIVER_V5",
+  "production_actions": false,
+  "official_ai_scoring_enabled": false
+}
