@@ -175,35 +175,48 @@ try:
                        error=str(exc),accepted_native_source_excerpt=section)
                 raise
             assert native_projection.get('question')=='What is 12 divided by 3?'
-            pin={'question_db_id':q_id,'question_id':'UK11-SYN-QUESTION','question_version_id':'UK11-SYN-V1',
-                 'question_checksum_sha256':'SYNTHETIC-CHECKSUM-1','release_id':'UK11-SYN-RELEASE',
-                 'release_version':'1','release_checksum_sha256':'SYNTHETIC-RELEASE-CHECKSUM-1','market_id':'UK',
-                 'projection':native_projection}
+            # Persist canonical source before constructing any attempt/session pin.
+            # Let ScoreMax's native builder create the exact immutable source
+            # identity and projection instead of handcrafting an approximation.
+            qidentity='UK11-SYN-QUESTION'; version='UK11-SYN-V1'
+            releaseid='UK11-SYN-RELEASE'; releasehash='SYNTHETIC-RELEASE-CHECKSUM-1'
+            add(c,'integration_ph_question_version_store',dict(question_id=qidentity,
+                question_version_id=version,question_version_number=1,
+                question_checksum_sha256='SYNTHETIC-CHECKSUM-1',
+                curriculum_json=json.dumps(curriculum),content_json=json.dumps(content),
+                architecture_json=json.dumps(architecture),governance_json=json.dumps(governance),
+                provenance_json='{}',scoremax_projection_json=json.dumps(native_projection),
+                local_question_db_id=q_id,first_admitted_at='2026-11-23T18:00:00Z'))
+            add(c,'integration_ph_release_question_membership',dict(release_id=releaseid,
+                release_version='1',question_id=qidentity,question_version_id=version,
+                ordinal=1,admitted_at='2026-11-23T18:00:00Z'))
+            add(c,'integration_ph_content_releases',dict(release_id=releaseid,release_version='1',
+                package_checksum_sha256=releasehash,local_status='ACTIVE',
+                market_id='UK',programme_id='UK11',subject_id='MATHEMATICS',chapter_id='NUMBER'))
+            add(c,'integration_ph_product_activation_authorizations',dict(release_id=releaseid,
+                release_version='1',package_checksum_sha256=releasehash,activation_status='ACTIVATED'))
+            c.commit()
+            releasepins,questionpins=sm.integration_v1.build_session_content_pins(c,[q_id])
+            assert str(q_id) in questionpins,'NATIVE_SUBMIT_PIN_BUILDER_DID_NOT_RETURN_QUESTION'
+            pin=questionpins[str(q_id)]
+            assert pin['question_id']==qidentity and pin['question_version_id']==version
+            assert pin.get('market_id')=='UK' and pin.get('projection'), 'PIN_BUILDER_SCOPE_OR_PROJECTION_MISSING'
             sid=add(c,'assessment_sessions',dict(student_id=uid,mode='practice',status='submitted',
-                  question_ids=str(q_id),saved_answers=json.dumps({str(q_id):'6'}),meta_json='{}',
-                  ph_question_pins_json=json.dumps({str(q_id):pin}),ph_release_pins_json='{}'))
-            aid=add(c,'attempts',dict(student_id=uid,assessment_session_id=sid,scope='subject',
-                  programme='UK 11+',subject='Mathematics',chapters='Number',topic='Division',
-                  score=0.0,correct_count=0,total_count=1,assessment_kind='standard'))
-            answer_id=add(c,'attempt_answers',dict(attempt_id=aid,question_db_id=q_id,selected_answer='6',
-                is_correct=0,marks_awarded=0.0,question_version=1,ph_question_id=pin['question_id'],
-                ph_question_version_id=pin['question_version_id'],ph_question_checksum_sha256=pin['question_checksum_sha256'],
+                question_ids=str(q_id),saved_answers=json.dumps({str(q_id):'6'}),meta_json='{}',
+                ph_question_pins_json=json.dumps(questionpins),
+                ph_release_pins_json=json.dumps(releasepins)))
+            aid=add(c,'attempts',dict(student_id=uid,assessment_session_id=sid,
+                scope='subject',programme='UK 11+',subject='Mathematics',chapters='Number',
+                topic='Division',score=0.0,correct_count=0,total_count=1,
+                assessment_kind='standard',ph_question_pins_json=json.dumps(questionpins),
+                ph_release_pins_json=json.dumps(releasepins)))
+            add(c,'attempt_answers',dict(attempt_id=aid,question_db_id=q_id,
+                selected_answer='6',is_correct=0,marks_awarded=0.0,question_version=1,
+                ph_question_id=pin['question_id'],ph_question_version_id=pin['question_version_id'],
+                ph_question_checksum_sha256=pin['question_checksum_sha256'],
                 ph_release_id=pin['release_id'],ph_release_version=pin['release_version'],
                 ph_release_checksum_sha256=pin['release_checksum_sha256'],
                 ph_question_snapshot_json=json.dumps(pin['projection'])))
-            add(c,'integration_ph_question_version_store',dict(question_id=pin['question_id'],question_version_id=pin['question_version_id'],
-                question_version_number=1,question_checksum_sha256=pin['question_checksum_sha256'],
-                curriculum_json=json.dumps(curriculum),content_json=json.dumps(content),
-                architecture_json=json.dumps(architecture),governance_json=json.dumps(governance),
-                provenance_json='{}',scoremax_projection_json=json.dumps(native_projection),first_admitted_at='2026-11-23T18:00:00Z'))
-            add(c,'integration_ph_release_question_membership',dict(release_id=pin['release_id'],release_version='1',
-                question_id=pin['question_id'],question_version_id=pin['question_version_id'],ordinal=1,
-                admitted_at='2026-11-23T18:00:00Z'))
-            add(c,'integration_ph_content_releases',dict(release_id=pin['release_id'],release_version='1',
-                package_checksum_sha256=pin['release_checksum_sha256'],local_status='ACTIVE',
-                market_id='UK',programme_id='UK11',subject_id='MATHEMATICS',chapter_id='SYNTHETIC'))
-            add(c,'integration_ph_product_activation_authorizations',dict(release_id=pin['release_id'],release_version='1',
-                package_checksum_sha256=pin['release_checksum_sha256'],activation_status='ACTIVATED'))
             c.commit()
             pre=snapshot(c)
 
