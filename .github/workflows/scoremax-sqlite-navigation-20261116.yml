@@ -107,7 +107,7 @@ jobs:
       - name: Install pinned mobile browser test API on existing runner
         run: python -m pip install playwright==1.62.0 cryptography==50.0.0
       - name: Native Chromium mobile and constrained 3G learner journey on frozen runtime
-        run: python -B tests/navigation_current_20261123/qualify_mobile_source_image_browser_v2.py scoremax_runtime_v669b qualification/indexed/state/seed.db qualification/http/mobile-browser qualification/http/mobile_browser.json
+        run: python -B tests/navigation_current_20261123/qualify_mobile_source_image_browser_v3.py scoremax_runtime_v669b qualification/indexed/state/seed.db qualification/http/mobile-browser qualification/http/mobile_browser.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
