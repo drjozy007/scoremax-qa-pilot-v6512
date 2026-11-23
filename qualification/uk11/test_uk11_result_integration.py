@@ -156,6 +156,11 @@ class Fixture(unittest.TestCase):
     def test_unqualified_native_marking_denied(self):
         self.c.execute('UPDATE questions SET ph_is_auto_markable=0')
         self.hold('NATIVE_SCORING_MODE_UNQUALIFIED')
+    def test_legacy_answer_cannot_override_approved_canonical_answer(self):
+        self.c.execute("UPDATE questions SET answer='999'")
+        out=self.explanation()
+        self.assertIn('Divide 12 by 3',out['simple_explanation'])
+        self.assertNotIn('999',json.dumps(out))
     def test_governance_hold_denied(self):
         self.c.execute('UPDATE integration_ph_question_version_store SET governance_json=?',
                        (json.dumps(dict(GOV,academic_review_state='PENDING')),));self.hold('ACADEMIC_GOVERNANCE_NOT_READY')
@@ -212,6 +217,7 @@ class Overlay(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.p=Path(self.temp.name)
         (self.p/'templates').mkdir()
         (self.p/'.uk11_disposable_qualification_runtime').write_text('synthetic only')
+        (self.p/'app.py').write_text("def result(aid):\n    details=c.execute('''SELECT aa.*,q.question,q.answer,q.explanation,q.level,q.subtopic,q.family_id,q.variant,\n    q.learning_outcome FROM attempt_answers aa JOIN questions q ON q.id=aa.question_db_id WHERE aa.attempt_id=?''',(aid,)).fetchall()\n")
         (self.p/'scoremax_production.py').write_text('from written_ai_adapter import install as install_written_ai\ninstall_written_ai(scoremax)\napplication=scoremax.app\napp=application\n')
         (self.p/'templates/result.html').write_text('''{% extends "base.html" %}{% block content %}\n<div class="answer-review">\n  <strong>{{d.question}}</strong><p>{{d.explanation}}</p>\n<a class="question-report-link" href="/report">Report</a>\n</div>\n{% endblock %}\n''')
     def tearDown(self):self.temp.cleanup()
@@ -236,18 +242,19 @@ class Overlay(unittest.TestCase):
         self.assertIn('install_uk11_explanation(scoremax)',(self.p/'scoremax_production.py').read_text())
         text=(self.p/'templates/result.html').read_text()
         self.assertIn(RESULT_MARKER,text)
+        self.assertIn('SELECT aa.*,q.ph_market_id,q.ph_is_auto_markable,q.question',(self.p/'app.py').read_text())
         self.assertIn('question-report-link',text)
         from jinja2 import Environment, DictLoader, select_autoescape
         env=Environment(loader=DictLoader({'base.html':'{% block content %}{% endblock %}'}),autoescape=select_autoescape(['html']))
         env.globals.update(url_for=lambda endpoint,**values:'/uk11-safe-route',uk11_explanation_available=lambda:True)
         tpl=env.from_string(text)
         html=tpl.render(d=dict(is_correct=0,selected_answer='B',explanation='<script>bad()</script>',ph_question_id='Q11-SYN',
-                               ph_market_id='UK',question_db_id=1,question='Question',marking_status='AUTO_INCORRECT'),a=dict(id=1))
+                               ph_market_id='UK',ph_is_auto_markable=1,marks_awarded=0,question_db_id=1,question='Question',marking_status='AUTO_INCORRECT'),a=dict(id=1))
         self.assertIn('Explain my mistake',html)
         self.assertNotIn('<script>bad()',html)
-        for replacement in (dict(is_correct=1),dict(selected_answer=''),dict(ph_market_id='PK'),dict(marking_status='AUTO_UNSCORED')):
+        for replacement in (dict(is_correct=1),dict(selected_answer=''),dict(ph_market_id='PK'),dict(marking_status='AUTO_UNSCORED'),dict(ph_is_auto_markable=0),dict(marks_awarded=None)):
             d=dict(is_correct=0,selected_answer='B',explanation='Approved',ph_question_id='Q11',ph_market_id='UK',
-                   question_db_id=1,question='Question',marking_status='AUTO_INCORRECT',**{})
+                   question_db_id=1,question='Question',ph_is_auto_markable=1,marks_awarded=0,marking_status='AUTO_INCORRECT',**{})
             d.update(replacement)
             h=tpl.render(d=d,a={'id':1})
             self.assertNotIn('Explain my mistake',h)
