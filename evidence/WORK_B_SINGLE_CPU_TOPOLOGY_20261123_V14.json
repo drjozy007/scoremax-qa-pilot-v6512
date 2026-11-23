@@ -1,0 +1,35 @@
+{
+  "actual_Render_capacity_and_config_cutover": "PENDING",
+  "additional_indexes": 0,
+  "authority_and_cache_policy_changes": false,
+  "cpu_allocation": 1,
+  "four_thread_comparison_is_not_required_for_proposed_one_thread_topology": true,
+  "hosted_unindexed_12_conditions_and_mixed": "PENDING",
+  "local_single_thread_unindexed": {
+    "GETs": 400,
+    "concurrency": 50,
+    "consistent_backup_and_history": "PASSED",
+    "cpu_seconds": 6.85,
+    "errors": 0,
+    "original_image_GETs": 3,
+    "p95_ms": 1190.966567,
+    "signed_POSTs": 6,
+    "target_ms": 1500
+  },
+  "new_resources": false,
+  "production_actions": false,
+  "proposed_http_threads": 1,
+  "proposed_http_workers": 1,
+  "retained_current_four_thread_gate": {
+    "cpu_seconds": 10.19,
+    "errors": 0,
+    "p95_ms": 1511.834613,
+    "status": "FAILED",
+    "target_ms": 1500
+  },
+  "runtime_unchanged_from_v13": "b9c5a6c3e718668e0c0d1a2c924b25f66cb75b4cc97a6d5f50a48f50191af5a8",
+  "source_commit_parent": "6737a5ca3fb8baf2e3f94cce8a9642d1c1ed04f3",
+  "stage": "FROZEN_FOR_HOSTED_TOPOLOGY_ACCEPTANCE",
+  "version": "SM-SINGLE-CPU-TOPOLOGY-QUALIFICATION-20261123-14",
+  "workflow_sha256": "6292d7a30fec58e9b9d39792ea8b27150e4831f945c9dec7b33e0f9cba6801f9"
+}
