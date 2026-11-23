@@ -20,11 +20,11 @@ This is a static demonstration of the school selector and evidence statuses, not
 
 | Mapping state | Candidate school count | How preview behaves |
 |---|---:|---|
-| CURRENT_CYCLE_OFFICIAL | 4 | 2028 route populated from school/consortium publication |
-| PRIOR_CYCLE_OFFICIAL | 48 | Historical shared route populated with explicit 2028 confirmation warning |
+| CURRENT_CYCLE_OFFICIAL | 11 | 2028 route populated from school/consortium publication |
+| PRIOR_CYCLE_OFFICIAL | 64 | Historical shared route populated with explicit 2028 confirmation warning |
 | REGIONAL_CANDIDATE | 27 | Regional route suggested with individual-school confirmation required |
-| MULTI_OR_ALTERNATIVE_TEST_REVIEW | 5 | No forced one-test mapping |
-| SCHOOL_ROUTE_UNVERIFIED | 84 | No automatic exam assignment |
+| MULTI_OR_ALTERNATIVE_TEST_REVIEW | 7 | No forced one-test mapping |
+| SCHOOL_ROUTE_UNVERIFIED | 59 | No automatic exam assignment |
 | SEAG_MEMBERSHIP_UNVERIFIED | 63 | School searchable, but SEAG membership not inferred |
 | **Total** | **231** | Not all authoritative or complete |
 
@@ -39,6 +39,12 @@ These values are generated from the static catalogue and route logic, not offici
 5. **West Midlands Grammar Schools (2027 entry reference) — 19 candidate school matches in the preview.** Exact memberships, all pathways and 2028 provider/format require current-policy review. **Official source:** https://www.birmingham.gov.uk/info/20119/school_admissions/584/grammar_schools_in_birmingham/
 6. **Kent Test — 27 regional school-route candidates, not school-level verified 2028 memberships.** Five flagged for possible alternatives including Dover/Folkestone/Cranbrook. **Official source:** https://www.kent.gov.uk/education-and-children/schools/school-places/kent-test
 7. **SEAG Northern Ireland — 63 candidate school names.** Individual SEAG 2028 participation was not verified; no automatic assignment. **Official directory start:** https://seagni.co.uk/
+
+8. **Gloucestershire Grammar Schools (2028 entry) — 7 schools — FSCE.** County council confirms the provider change for 2028; includes cross-curricular Compass content outside the four currently supported ScoreMax subjects. **Official source:** https://www.gloucestershire.gov.uk/schooladmissions/grammar-schools/
+9. **Bexley Selection Test (2027 entry) — 4 schools — Quest Assessments.** Distinct from Kent/Medway. **Official source:** https://www.bexley.gov.uk/services/schools-and-education/selection-tests/about-test
+10. **Medway Test (2027 entry) — 6 schools — GL Assessment.** Chatham Grammar also accepts the **Kent Test OR Medway Test**. The alternate is not a requirement to sit both. **Official source:** https://www.medway.gov.uk/medwaytest
+11. **Wirral non-Catholic grammar assessment (2027 entry) — 4 schools — Quest Assessments.** St Anselm's College and Upton Hall School FCJ use separate assessments and are not assigned this route. **Official source:** https://www.wirral.gov.uk/schools-and-learning/school-admissions/secondary-education-information-parents
+12. **Redbridge 11+ (2027 entry) — 2 schools — GL Assessment.** Ilford County High and Woodford County High; check catchment. **Official source:** https://www.redbridge.gov.uk/11plus
 
 ## Architectural test
 
@@ -56,7 +62,7 @@ Three selected schools:
 ## Known limitations / source integrity
 
 - Directory names initially assembled from public historical lists and must be checked against official school identifiers and admissions policies. Exact national coverage is **not** established.
-- The 2028 Slough route has strong official evidence. Most other mapped schools use 2027-entry references or regional candidate associations; they are **not certified 2028 mappings**.
+- The 2028 Slough and Gloucestershire routes have official evidence. Most other mapped schools use 2027-entry references or regional candidate associations; they are **not certified 2028 mappings**.
 - Some schools require more than one exam or allow alternatives. The eventual canonical model must represent **AND, OR, sequential and conditional** route dependencies, not just an array of exam IDs.
 - School year-of-entry and test year differ. The UI must distinguish September **2028 entry** from testing in **2027**.
 - The static interface stores no selections between page loads, has no child account or live learning data, and does not submit exam registrations.
