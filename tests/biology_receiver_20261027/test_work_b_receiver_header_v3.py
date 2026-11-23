@@ -19,6 +19,14 @@ class ReceiverHeaderBuild(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name)/'runtime'
         shutil.copytree(ROOT/'scoremax_runtime_v669b',self.root,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+        image5_path=SCRIPT.with_name('work_b_receiver_build_20261123_v5.py')
+        image5_spec=importlib.util.spec_from_file_location('image5_before_prior_build_test',image5_path)
+        image5=importlib.util.module_from_spec(image5_spec);image5_spec.loader.exec_module(image5)
+        if image5.tree(self.root)==image5.AFTER_TREE:image5.rollback_build_only(self.root)
+        image_path=SCRIPT.with_name('work_b_receiver_build_20261123_v4.py')
+        image_spec=importlib.util.spec_from_file_location('image_before_prior_build_test',image_path)
+        image=importlib.util.module_from_spec(image_spec);image_spec.loader.exec_module(image)
+        if image.tree(self.root)==image.AFTER_TREE:image.rollback_build_only(self.root)
         # A qualified candidate supplies its exact original source rollback.
         # An unmaterialised local checkout can also supply the prior component.
         if build.tree(self.root)==build.AFTER_TREE:

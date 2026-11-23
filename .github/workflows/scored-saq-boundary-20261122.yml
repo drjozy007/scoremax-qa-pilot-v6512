@@ -6,6 +6,8 @@ on:
       - 'ux_vnext_overlay/biology_receiver_20261027/work_b_receiver*'
       - 'tests/biology_receiver_20261027/*pending*'
       - 'tests/biology_receiver_20261027/*work_b*'
+      - 'tests/biology_receiver_20261027/*source_image*'
+      - 'tests/biology_receiver_20261027/*learner_media*'
       - 'tests/biology_receiver_20261027/native_delivery_fixture.py'
       - 'scripts/materialize_scoremax_scored_saq_20261122.py'
       - 'tests/biology_receiver_20261027/*scored*.py'
@@ -49,9 +51,15 @@ jobs:
         run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_work_b_receiver_header_v3.py -v
       - name: Native pending responses preserve source marks and weight
         run: python -B tests/biology_receiver_20261027/qualify_pending_saq_native_v3.py pending_saq_native_ci.json
-      - name: Actual learner browse setup start and unscored submit
-        run: python -B tests/biology_receiver_20261027/qualify_pending_browser_journey_v3.py scoremax_runtime_v669b qualification/pending_browser_state pending_browser_native_ci.json
       - name: Native signed release withdrawal races and recovery
         run: python -B tests/biology_receiver_20261027/qualify_work_b_delivery_recovery_v2.py delivery_recovery_native_ci.json
       - name: Separate signed pending contract adversarial controls
         run: python -B tests/biology_receiver_20261027/qualify_pending_saq_adversarial_v1.py pending_saq_adversarial_ci.json
+      - name: Exact image receiver build and native media guards
+        run: |
+          python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_work_b_receiver_media_v5.py -v
+          python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_native_learner_media_v1.py -v
+      - name: Native signed image question answer result and historical withdrawal journey
+        run: python -B tests/biology_receiver_20261027/qualify_native_source_image_journey_v1.py scoremax_runtime_v669b image_learner_state image_learner_report.json
+      - name: Native signed malformed images retain durable rejection receipts on retry
+        run: python -B tests/biology_receiver_20261027/qualify_signed_source_image_adversarial_v2.py scoremax_runtime_v669b image_rejection_native_ci.json

@@ -1,0 +1,17 @@
+{
+  "policy": "SM-NATIVE-LEARNER-STIMULUS-IMAGE-20261123-4",
+  "before_tree_sha256": "51a17d3c7ee32031f1555dcfb98564bf9ebbaa877462af2a4954029121ce0869",
+  "after_tree_sha256": "6752a39993549833d59bf055601304cc4b69a06d37c509a5d36b11f31d21bcb3",
+  "delta_sha256": "f3fe89b35e401282bea68b356139c2909ce12742eae41109b304e499960fb773",
+  "changed_runtime_files": [
+    "app.py",
+    "ph_learner_media_v1.py",
+    "scoremax_integration_v1.py",
+    "templates/_learner_question_surface.html",
+    "templates/_ph_learner_stimulus_image.html",
+    "templates/result.html"
+  ],
+  "production_actions": false,
+  "official_ai_scoring_enabled": false,
+  "rollback_floor_after_image_publication": "IMAGE_CAPABLE_RECEIVER_V4"
+}
