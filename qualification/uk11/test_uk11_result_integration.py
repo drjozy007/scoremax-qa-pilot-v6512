@@ -252,6 +252,10 @@ class Overlay(unittest.TestCase):
                                ph_market_id='UK',ph_is_auto_markable=1,marks_awarded=0,question_db_id=1,question='Question',marking_status='AUTO_INCORRECT'),a=dict(id=1))
         self.assertIn('Explain my mistake',html)
         self.assertNotIn('<script>bad()',html)
+        capsule_only=tpl.render(d=dict(is_correct=0,selected_answer='6',explanation='',capsule_id='reviewed-cap',
+          ph_question_id='Q11-SYN',ph_market_id='UK',ph_is_auto_markable=1,
+          marks_awarded=0,question_db_id=1,question='Question',marking_status='AUTO_INCORRECT'),a={'id':1})
+        self.assertIn('Explain my mistake',capsule_only)
         for replacement in (dict(is_correct=1),dict(selected_answer=''),dict(ph_market_id='PK'),dict(marking_status='AUTO_UNSCORED'),dict(ph_is_auto_markable=0),dict(marks_awarded=None)):
             d=dict(is_correct=0,selected_answer='B',explanation='Approved',ph_question_id='Q11',ph_market_id='UK',
                    question_db_id=1,question='Question',ph_is_auto_markable=1,marks_awarded=0,marking_status='AUTO_INCORRECT',**{})
