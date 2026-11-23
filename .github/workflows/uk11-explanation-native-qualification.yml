@@ -64,6 +64,11 @@ jobs:
         run: |
           set -euo pipefail
           timeout 160 docker run --rm --network none --memory=2g --memory-swap=2g --cpus=1 --tmpfs /data:rw,size=1g -v "$PWD/uk11-native-evidence:/evidence" scoremax-uk11-native | tee uk11-native-evidence/native_runtime.log
+      - name: Characterize all 85 held UK11 Maths cases with exact native scorer
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 160 docker run --rm --network none --memory=2g --memory-swap=2g --cpus=1 --tmpfs /data:rw,size=1g -v "$PWD/uk11-native-evidence:/evidence" --entrypoint python scoremax-uk11-native -B /qualifier/math85_native_characterization.py | tee uk11-native-evidence/math85_native.log
       - name: Store qualification evidence without student data
         if: always()
         uses: actions/upload-artifact@v4
