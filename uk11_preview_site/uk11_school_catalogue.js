@@ -81,7 +81,7 @@ for(const s of SCHOOLS){
  }else if(area==='Redbridge'){
    setRoute(s,'REDBRIDGE27','PRIOR_CYCLE_OFFICIAL','https://www.redbridge.gov.uk/11plus',2027,'Redbridge GL Assessment 2027-entry reference. Catchment restrictions and 2028 rules need verification.');
  }else if(area==='Kent'&&!excludedKent.has(name)){
-   setRoute(s,'KENT','REGIONAL_CANDIDATE',official.KENT,2027,'Kent Test is a regional preparation candidate; verify exact school 2028 membership and any alternative route.');
+   s.suggested_route_id='KENT';s.routing_status='REGIONAL_CANDIDATE';s.membership_evidence=official.KENT;s.evidence_cycle=2027;s.routing_notes='Kent Test is a regional suggestion only; no exam is auto-assigned until the school’s 2028 route is confirmed.';
  }else if(area==='Kent'&&excludedKent.has(name)){
    s.routing_status='MULTI_OR_ALTERNATIVE_TEST_REVIEW';
    s.routing_notes='Potential Kent Test plus alternative/school-specific assessment. Do not auto-assign until individual 2028 policy reviewed.';
@@ -135,7 +135,7 @@ schools=function(){
  '<div class="grid2"><div class="card"><h3>School catalogue <span class="hint">· candidate directory</span></h3>'+
  '<p class="hint">Some school identities, names and test mappings still require official confirmation. Use the source link where available.</p>'+
  (shown.length?shown.map(s=>{
-   const active=state.selected.has(s.school_id),r=route(s.route_id),link=s.membership_evidence;
+   const active=state.selected.has(s.school_id),r=route(s.route_id)||route(s.suggested_route_id),link=s.membership_evidence;
    const b=active?'✓ Selected':'+ Select';
    return '<div class="route-row"><div class="info"><strong>'+e(s.school_name)+'</strong><p>'+e([s.town,s.area,s.nation].filter(Boolean).join(' · '))+'</p>'+
    '<div class="chips"><span class="chip'+(s.routing_status==='CURRENT_CYCLE_OFFICIAL'?'':' warn')+'">'+e(evidenceLabel(s))+'</span>'+
