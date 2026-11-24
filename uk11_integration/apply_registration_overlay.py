@@ -11,11 +11,9 @@ import os
 import sys
 from pathlib import Path
 
-SOURCE_ANCHOR = "            selected_programme=request.form.get('academic_level','').strip()"
-SOURCE_REPLACEMENT = """            selected_programme=('UK11' if os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1'
-                                else request.form.get('academic_level','').strip())"""
 DATABASE_ANCHOR = "        if role=='teacher': ensure_referral_code(c,uid)"
 DATABASE_REPLACEMENT = """        if role=='student' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':
+            c.execute("UPDATE users SET active_programme='UK11',academic_level='UK11' WHERE id=?",(uid,))
             c.execute("INSERT INTO uk11_learner_markets(student_user_id,market_id,programme_id) VALUES(?,?,?)",
                       (uid,'UK','UK11'))
 """ + DATABASE_ANCHOR
@@ -51,11 +49,9 @@ def apply(root: Path):
     if not appfile.is_file():
         raise RuntimeError("UK11_NATIVE_APP_NOT_FOUND")
     original = appfile.read_text(encoding="utf-8")
-    if original.count(SOURCE_ANCHOR)!=1 or original.count(DATABASE_ANCHOR)!=1:
-        raise RuntimeError("UK11_NATIVE_REGISTRATION_ANCHOR_DRIFT source=%d database=%d register_sections=%d" % (original.count(SOURCE_ANCHOR), original.count(DATABASE_ANCHOR), original.count("def register(")))
-    revised = original.replace(SOURCE_ANCHOR, SOURCE_REPLACEMENT, 1).replace(
-        DATABASE_ANCHOR, DATABASE_REPLACEMENT, 1
-    )
+    if original.count(DATABASE_ANCHOR)!=1 or original.count("def register(")!=1:
+        raise RuntimeError("UK11_NATIVE_REGISTRATION_ANCHOR_DRIFT database=%d register_sections=%d" % (original.count(DATABASE_ANCHOR), original.count("def register(")))
+    revised = original.replace(DATABASE_ANCHOR, DATABASE_REPLACEMENT, 1)
     # Display-only template is specific to student registration. The source
     # patch redirects rendering to this separate student template in test mode.
     template_anchor = "    return render_template('register.html',role=role,institutions=institutions,referral_source=request.args.get('source',''),referral_code=request.args.get('ref',''),selected_programme=request.args.get('programme',''))"
