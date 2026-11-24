@@ -34,6 +34,10 @@ jobs:
         run: python -B tests/navigation_current_20261123/qualify_native_evidence_row_fidelity_v1.py scoremax_runtime_v669b qualification/reference_v13 qualification/legacy_native_state qualification/legacy_native_fidelity.json
       - name: Retain exact successor authorizations on composed V16
         run: python -B -m unittest discover -s tests/successor_qualification_20261123 -p test_successor_qualification_v10.py -v
+      - name: Compose sealed neutral practice label V17
+        run: python -B scripts/materialize_scoremax_practice_label_20261124_v17.py
+      - name: Verify current template syntax and unchanged response-mode controls
+        run: python -c "from pathlib import Path;from jinja2 import Environment;p=Path('scoremax_runtime_v669b/templates/test_setup.html');text=p.read_text(encoding='utf8');Environment().parse(text);old=Path('qualification/reference_v13/templates/test_setup.html').read_text(encoding='utf8');assert text==old.replace('Scored practice','Practice');assert '<option value=\"SCORED\">Practice</option>' in text;print('SM_V17_TEMPLATE_AND_UNCHANGED_RESPONSE_MODES_PASSED')"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
