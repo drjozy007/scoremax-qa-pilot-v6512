@@ -66,7 +66,9 @@ def apply(root: Path):
     revised = revised.replace(register_anchor,
         register_anchor +
         "    if role=='student' and request.method=='GET' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\n" +
-        "        return render_template('uk11_register_student.html')\n", 1)
+        "        from flask import g as uk11_g\n" +
+        "        uk11_g.uk11_registration_base_html = render_template('uk11_register_student.html')\n" +
+        "        return uk11_g.uk11_registration_base_html\n", 1)
     dest = root / "templates" / "uk11_register_student.html"
     if dest.exists():
         raise RuntimeError("UK11_REGISTRATION_TEMPLATE_ALREADY_EXISTS")
