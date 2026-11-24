@@ -120,6 +120,9 @@ def create_uk11_blueprint(db_factory, school_catalogue, route_resolver):
         expected_revision = body.get("revision")
         if type(expected_revision) is not int or expected_revision < 0:
             abort(400, description="Missing preference revision")
+        # Resolve and validate the requested learner context before writing.
+        # Invalid route mapping must never commit preferences and then fail.
+        candidate = projection({"entry_year": entry_year, "school_keys": keys, "revision": expected_revision + 1})
         with closing(db_factory()) as c:
             ensure_storage(c)
             current_user(c, uid)
@@ -146,6 +149,6 @@ def create_uk11_blueprint(db_factory, school_catalogue, route_resolver):
                 (uid, entry_year, json.dumps(keys, separators=(",", ":")), latest["revision"] + 1, timestamp),
             )
             c.commit()
-            return jsonify(projection({"entry_year": entry_year, "school_keys": keys, "revision": latest["revision"] + 1}))
+            return jsonify(candidate)
 
     return bp
