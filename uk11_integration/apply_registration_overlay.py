@@ -52,7 +52,7 @@ def apply(root: Path):
         raise RuntimeError("UK11_NATIVE_APP_NOT_FOUND")
     original = appfile.read_text(encoding="utf-8")
     if original.count(SOURCE_ANCHOR)!=1 or original.count(DATABASE_ANCHOR)!=1:
-        raise RuntimeError("UK11_NATIVE_REGISTRATION_ANCHOR_DRIFT")
+        raise RuntimeError("UK11_NATIVE_REGISTRATION_ANCHOR_DRIFT source=%d database=%d register_sections=%d" % (original.count(SOURCE_ANCHOR), original.count(DATABASE_ANCHOR), original.count("def register(")))
     revised = original.replace(SOURCE_ANCHOR, SOURCE_REPLACEMENT, 1).replace(
         DATABASE_ANCHOR, DATABASE_REPLACEMENT, 1
     )
