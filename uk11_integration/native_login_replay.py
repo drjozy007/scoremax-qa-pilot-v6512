@@ -38,7 +38,7 @@ os.environ.update({
  'SCOREMAX_UK11_DISPOSABLE_TEST_MODE':'1'
 })
 os.environ.pop('DEEPSEEK_API_KEY',None)
-sys.path[:0]=['/app','/qualifier']
+sys.path[:0]=['/app','/qualifier','/checks/native_guard']
 from uk11_preferences_migration import DDL
 from uk11_native_mount import mount_into_disposable_scoremax
 import scoremax_persistent_storage_guard as guard
