@@ -34,6 +34,7 @@ jobs:
           cp uk-preview/uk11_integration/uk11_native_mount.py native/qualification/uk11/
           cp uk-preview/uk11_integration/uk11_school_dashboard.py native/qualification/uk11/
           cp uk-preview/uk11_integration/uk11_native_student_home.py native/qualification/uk11/
+          cp uk-preview/uk11_integration/uk11_native_market_boundary.py native/qualification/uk11/
           cp uk-preview/uk11_integration/native_login_replay.py native/qualification/uk11/
           mkdir -p native/uk11-native-evidence
       - name: Reassemble and verify native ScoreMax accepted base tree
