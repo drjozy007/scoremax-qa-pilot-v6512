@@ -5,18 +5,23 @@
 (function(){
 'use strict';
 if(typeof schools!=='function'||typeof SCHOOLS==='undefined'||typeof state==='undefined')return;
-const verifiedSites={
- 'aylesbury grammar school':'https://www.ags.bucks.sch.uk/',
- 'aylesbury high school':'https://www.ahs.bucks.sch.uk/',
- 'sutton grammar school':'https://www.suttongrammar.sutton.sch.uk/',
- "queen elizabeth's school":'https://www.qebarnet.co.uk/'
-};
+const verifiedSchools=[
+ {name:'aylesbury grammar school',area:'Buckinghamshire',urn:'136884',site:'https://www.ags.bucks.sch.uk/'},
+ {name:'aylesbury high school',area:'Buckinghamshire',urn:'136846',site:'https://www.ahs.bucks.sch.uk/'},
+ {name:'sutton grammar school',area:'Sutton',urn:'136787',site:'https://www.suttongrammar.sutton.sch.uk/'},
+ {name:"queen elizabeth's school",area:'Barnet',urn:'136290',site:'https://www.qebarnet.co.uk/'}
+];
+const normalizeName=v=>String(v||'').toLowerCase().replace(/[’‘]/g,"'").replace(/\s+/g,' ').trim();
 for(const s of SCHOOLS){
- const name=String(s.school_name||'').trim().toLowerCase();
- if(verifiedSites[name] && (name!=="queen elizabeth's school" || s.area==='Barnet')){
-  s.school_website=verifiedSites[name];s.school_website_verified=true;
-  s.school_website_verified_on='2026-11-23';
- }
+ const m=verifiedSchools.find(x=>normalizeName(s.school_name)===x.name&&s.area===x.area);
+ if(!m)continue;
+ s.official_urn=m.urn;
+ s.identity_status='GIAS_IDENTITY_VERIFIED';
+ s.identity_source='https://get-information-schools.service.gov.uk/Establishments/Establishment/Details/'+m.urn;
+ s.school_website=m.site;
+ s.school_website_verified=true;
+ s.school_website_verified_on='2026-11-24';
+ s.school_website_source=s.identity_source;
 }
 const previousSchools=schools;
 const centres=window.UK11_LOCALITY_CENTRES||{};
@@ -77,7 +82,7 @@ schools=function(){
 };
 async function lookup(){
  const input=document.getElementById('uk11Outcode');
- const typed=(input?.value||'').trim().toUpperCase().replace(/\\s+/g,'');
+ const typed=(input?.value||'').trim().toUpperCase().replace(/\s+/g,'');
  requested=typed;
  if(!postcode.test(typed)){
    result=null;error='Use an outward postcode only, such as ST4. Full postcodes and addresses are not accepted.';render();return;
