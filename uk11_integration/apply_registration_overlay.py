@@ -60,6 +60,12 @@ def apply(root: Path):
        "{i}              (uid,'UK','UK11'))\n"
        "{i}if role=='teacher': ensure_referral_code(c,uid)").format(i=indent)
     revised = original.replace(anchor_line, replacement, 1)
+    choice_anchor = "    {'code':'grade10','label':'Grade 10','value':'Grade 10'},\n]"
+    if revised.count(choice_anchor)!=1:
+        raise RuntimeError("UK11_STUDENT_PROGRAMME_CHOICES_ANCHOR_DRIFT")
+    revised = revised.replace(choice_anchor,
+        "    {'code':'grade10','label':'Grade 10','value':'Grade 10'},\n"
+        "    {'code':'uk11','label':'UK 11+','value':'UK11'},\n]",1)
     # Display-only template is specific to student registration. The source
     # patch redirects rendering to this separate student template in test mode.
     # Intercept only UK test student registration GET; POST remains the native
