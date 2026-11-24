@@ -61,7 +61,8 @@ def install_disposable_student_home(root, app):
     if source.count(root_anchor) != 1 or source.count(mastery_anchor) != 1:
         raise RuntimeError("UK11_STUDENT_HOME_ANCHOR_DRIFT")
     if any(source.count(begin) != 1 or source.count(end) != 1 for begin, end in sections):
-        raise RuntimeError("UK11_STUDENT_HOME_SECTION_ANCHOR_DRIFT")
+        matches = [(begin, source.count(begin), end, source.count(end)) for begin, end in sections]
+        raise RuntimeError("UK11_STUDENT_HOME_SECTION_ANCHOR_DRIFT " + repr(matches))
 
     # Preserve native greeting, navigation and all other baseline structures.
     revised = source.replace(
