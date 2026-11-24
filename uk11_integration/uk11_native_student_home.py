@@ -54,9 +54,11 @@ def install_disposable_student_home(root, app):
     root_anchor = '<section class="student-home-v2">'
     mastery_anchor = '<article class="mastery-hero-card '
     sections = (
-        ('<section class="home-priority-grid', '<section class="home-section">'),
-        ('<section class="home-section">', '<section class="home-two-column">'),
-        ('<section class="home-two-column">', '{% if daily_spark and daily_spark.available %}')
+        # The accepted assembled template has no separate home-section anchor;
+        # its priority area includes the subject and plan cards.
+        ('<section class="home-priority-grid', '<section class="home-two-column">'),
+        ('<section class="home-two-column">', '{% if daily_spark and daily_spark.available %}'),
+        ('{% if daily_spark and daily_spark.available %}', '{% if attempts %}')
     )
     if source.count(root_anchor) != 1 or source.count(mastery_anchor) != 1:
         raise RuntimeError("UK11_STUDENT_HOME_ANCHOR_DRIFT")
@@ -78,6 +80,15 @@ def install_disposable_student_home(root, app):
         start = revised.index(begin)
         finish = revised.index(after, start)
         revised = revised[:start] + "{% if not uk11_context %}\n" + revised[start:finish] + "{% endif %}\n" + revised[finish:]
+    # Keep Pakistan test history out of UK discovery until an actual UK-market
+    # result ownership projection has been qualified.
+    history_start = revised.index('{% if attempts %}')
+    root_close = revised.find('</section>\n<script', history_start)
+    if root_close < 0:
+        raise RuntimeError("UK11_STUDENT_HOME_HISTORY_BOUNDARY_DRIFT")
+    revised = (revised[:history_start] + '{% if not uk11_context %}\n' +
+               revised[history_start:root_close] + '{% endif %}\n' +
+               revised[root_close:])
     try:
         app.jinja_env.from_string(revised)
     except Exception as exc:
