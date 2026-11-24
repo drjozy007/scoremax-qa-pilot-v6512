@@ -1,0 +1,19 @@
+{
+  "code_pins": {
+    "scripts/scoremax_lossless_rollback_headroom_20261123_v1.py": "37d8cd82cec897442d874c150b3cbb3f26459c938c3e38b28ab9a986e1189cde",
+    "tests/navigation_current_20261123/test_lossless_headroom_recovery_v1.py": "83713695227902a392678e4941b71fc8934d1539d98c20e8ca0e7b4363a25bf0"
+  },
+  "native_capacity_lock_fixture": "PASSED",
+  "native_startup_guard_required_after_recovery": true,
+  "production_cutover_not_yet_passed": true,
+  "reserve_bytes_unchanged": 536870912,
+  "runtime_changes": false,
+  "runtime_tree_sha256_unchanged": "5746e20cbf82bf01655289c6f97f82863a8ff72cb1bc011d90e2fa39cc12083d",
+  "self_tests": 10,
+  "separate_binding_attacks_rejected": 8,
+  "separate_frozen_tests": 10,
+  "source_snapshot_bytes": 740851712,
+  "source_snapshot_sha256": "8c6fb8c9d14413763db24424e1c5a93743b309a31d9c1987a2dee4da678dc5ff",
+  "status": "FROZEN_LOCAL_PASSED_PRODUCTION_PENDING",
+  "unique_snapshot_bytes_discarded": false
+}
