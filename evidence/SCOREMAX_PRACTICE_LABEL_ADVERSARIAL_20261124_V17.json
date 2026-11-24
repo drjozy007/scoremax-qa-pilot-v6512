@@ -1,0 +1,26 @@
+{
+  "assessment_or_scoring_authority_conferred": false,
+  "checks": [
+    {
+      "case": "exact_build_and_replay",
+      "status": "PASSED"
+    },
+    {
+      "case": "drift_before_write",
+      "status": "PASSED"
+    },
+    {
+      "case": "delta_tamper_before_write",
+      "status": "PASSED"
+    },
+    {
+      "case": "target_symlink_before_write",
+      "status": "PASSED"
+    }
+  ],
+  "frozen_manifest_sha256": "76bec88d914c5c9db0a1d44ce81499df29f3b183b776f2ebea972c6e80d21ee8",
+  "frozen_source_unchanged": true,
+  "policy": "SM-PRACTICE-LABEL-SEPARATE-FROZEN-VERIFICATION-20261124-17",
+  "production_mutated": false,
+  "status": "PASSED"
+}
