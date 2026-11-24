@@ -1,0 +1,171 @@
+"""Eligibility of signed Power House projections for formal independent mastery.
+
+This gate does not grant academic authority or alter ordinary practice, coverage,
+accuracy thresholds, question tiers, or native ScoreMax inventory.
+"""
+import math
+
+POLICY = 'SM-PH-FORMAL-INDEPENDENT-EVIDENCE-1'
+DEPENDENT_TYPES = frozenset({
+    'VARIANT', 'TRUE_VARIANT', 'SCAFFOLD', 'RECOVERY', 'RECONFIRMATION',
+    'DEPENDENT', 'SHARED_STIMULUS_DEPENDENT',
+})
+
+
+def eligible_for_formal_mastery(row):
+    """Keep native eligibility; PH evidence needs an independent role and weight."""
+    try:
+        q = dict(row)
+    except (TypeError, ValueError):
+        return False
+    markers = ('ph_question_id', 'ph_question_version_id',
+               'ph_question_checksum_sha256', 'ph_release_id',
+               'ph_evidence_role', 'ph_dependency_type')
+    ph_owned = (any(str(q.get(k) or '').strip() for k in markers)
+                or str(q.get('ph_projection_owner') or '').strip().upper() == 'POWER_HOUSE'
+                or str(q.get('source_type') or '').strip().casefold().startswith('power house'))
+    if not ph_owned:
+        return True
+    # New scored SAQs must carry exact approval, source, rubric and version
+    # binding; the original independent role/weight fence still runs below.
+    try:
+        from scored_saq_runtime_v1 import capability, parts
+        if parts(q.get('marking_config') or {}) is not None:
+            decision = capability(q)
+            if not decision or not decision['marking_qualified']:
+                return False
+    except (ValueError,TypeError,KeyError):
+        return False
+    role = str(q.get('ph_evidence_role') or '').strip().upper()
+    dependency = str(q.get('ph_dependency_type') or '').strip().upper()
+    if role != 'INDEPENDENT' or dependency in DEPENDENT_TYPES:
+        return False
+    weight = q.get('ph_independent_mastery_weight')
+    if isinstance(weight, bool):
+        return False
+    try:
+        weight = float(weight)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return math.isfinite(weight) and weight > 0
+
+
+def question_ids_have_formal_evidence(conn, question_ids):
+    """One bounded lookup of internal question keys for a completed formal form."""
+    if (not isinstance(question_ids, (list, tuple)) or not question_ids
+            or any(isinstance(x, bool) or not isinstance(x, (int, str)) for x in question_ids)):
+        return False
+    marks = ','.join('?' for _ in question_ids)
+    rows = conn.execute('SELECT * FROM questions WHERE id IN (' + marks + ')',
+                        tuple(question_ids)).fetchall()
+    return len(rows) == len(question_ids) and all(eligible_for_formal_mastery(q) for q in rows)
+
+
+def current_formal_evidence_mask(conn, records, programme):
+    """Read current exact PH authority while retaining immutable learner history.
+
+    One operation-local read snapshot; no cross-request authority cache. Legacy
+    native evidence keeps its existing content gate. PH records require their
+    exact current version, pinned release and current scoped active membership.
+    """
+    import json
+    import scoremax_integration_v1 as integration
+    records=[record if type(record) is dict else dict(record) for record in records]
+    if not records:return []
+    selected=integration.question_contracts.canonical_programme(programme)
+    ids=[]
+    for record in records:
+        qid=record.get('question_db_id',record.get('id'))
+        if type(qid) is not int or qid<=0:return [False]*len(records)
+        ids.append(qid)
+    current={};memberships={};authorities={}
+    conn.execute('SAVEPOINT ph_current_formal_evidence')
+    try:
+        unique=sorted(set(ids))
+        for start in range(0,len(unique),500):
+            batch=unique[start:start+500];marks=','.join('?' for _ in batch)
+            for row in conn.execute('SELECT id,ph_projection_owner FROM questions WHERE id IN ('+marks+')',batch).fetchall():
+                current[row['id']]=dict(row)
+            # Legacy rows still recheck current existence/ownership on every call.
+            # PH membership joins are needed only for current PH-owned keys.
+            ph_batch=[qid for qid in batch if current.get(qid,{}).get('ph_projection_owner')=='POWER_HOUSE']
+            if not ph_batch:continue
+            marks=','.join('?' for _ in ph_batch)
+            sql='''SELECT q.id AS local_id,v.question_id,v.question_version_id,v.question_checksum_sha256,
+              v.scoremax_projection_json,v.content_json,v.curriculum_json,r.release_id,r.release_version,
+              r.package_checksum_sha256,r.local_status,r.market_id,r.programme_id,r.subject_id,r.chapter_id
+              FROM questions q JOIN integration_ph_question_version_store v
+                ON v.local_question_db_id=q.id AND v.question_id=q.ph_question_id
+                AND v.question_version_id=q.ph_question_version_id
+                AND v.question_checksum_sha256=q.ph_question_checksum_sha256
+              JOIN integration_ph_release_question_membership m
+                ON m.question_id=v.question_id AND m.question_version_id=v.question_version_id
+              JOIN integration_ph_content_releases r
+                ON r.release_id=m.release_id AND r.release_version=m.release_version
+              WHERE q.id IN ('''+marks+''') AND q.ph_projection_owner='POWER_HOUSE'
+                AND q.active=1 AND q.status='Approved' AND r.local_status IN ('ACTIVE','SUPERSEDED')
+                AND EXISTS(SELECT 1 FROM integration_ph_product_activation_authorizations a
+                  WHERE a.release_id=r.release_id AND a.release_version=r.release_version
+                    AND a.package_checksum_sha256=r.package_checksum_sha256
+                    AND a.activation_status IN ('AUTHORIZED','ACTIVATED'))
+                AND NOT EXISTS(SELECT 1 FROM ph_bridge_staged_withdrawal_exclusions_v6611e e
+                  WHERE e.release_id=m.release_id AND e.release_version=m.release_version
+                    AND e.question_id=m.question_id AND e.question_version_id=m.question_version_id)'''
+            for raw in conn.execute(sql,ph_batch):
+                row=dict(raw);key=(row['local_id'],row['question_id'],row['question_version_id'],row['question_checksum_sha256'])
+                memberships.setdefault(key,[]).append(row)
+                if key not in authorities:
+                    try:
+                        projection=integration.effective_projection(json.loads(row['scoremax_projection_json']),json.loads(row['content_json']))
+                        identity=(projection.get('ph_question_id'),projection.get('ph_question_version_id'),projection.get('ph_question_checksum_sha256'))
+                        authorities[key]=identity==key[1:] and eligible_for_formal_mastery(projection)
+                    except (ValueError,TypeError,KeyError):authorities[key]=False
+        result=[]
+        for record,qid in zip(records,ids):
+            question=current.get(qid)
+            if not question:
+                result.append(False);continue
+            ph_owned=question.get('ph_projection_owner')=='POWER_HOUSE' or bool(record.get('ph_question_id'))
+            if not ph_owned:
+                result.append(True);continue
+            identity=(qid,record.get('ph_question_id'),record.get('ph_question_version_id'),record.get('ph_question_checksum_sha256'))
+            rows=memberships.get(identity,[])
+            pinned=[row for row in rows if (row['release_id'],row['release_version'],row['package_checksum_sha256'])==
+                (record.get('ph_release_id'),record.get('ph_release_version'),record.get('ph_release_checksum_sha256'))]
+            if not selected or not authorities.get(identity) or len(pinned)!=1:
+                result.append(False);continue
+            old=pinned[0]
+            def scope(row):
+                return (row['market_id'],integration.question_contracts.programme_for_release(row['programme_id'],row['curriculum_json']),
+                        row['subject_id'],row['chapter_id'])
+            wanted=scope(old)
+            result.append(wanted[1]==selected and any(row['local_status']=='ACTIVE' and scope(row)==wanted for row in rows))
+        return result
+    finally:
+        conn.execute('RELEASE SAVEPOINT ph_current_formal_evidence')
+
+
+def session_has_current_formal_evidence(conn, session_row, question_ids, programme):
+    """Check frozen session identities in the submission's native writer claim."""
+    import scoremax_integration_v1 as integration
+    records=[]
+    if (not isinstance(question_ids,(list,tuple)) or not question_ids
+            or any(type(qid) is not int or qid<=0 for qid in question_ids)):
+        return False
+    current_rows={}
+    for start in range(0,len(question_ids),500):
+        batch=question_ids[start:start+500];marks=','.join('?' for _ in batch)
+        current_rows.update({row['id']:row for row in conn.execute(
+            'SELECT id,ph_projection_owner FROM questions WHERE id IN ('+marks+')',batch)})
+    for qid in question_ids:
+        current=current_rows.get(qid)
+        if not current:return False
+        if current['ph_projection_owner']!='POWER_HOUSE':
+            records.append({'question_db_id':qid});continue
+        try:pin=integration.answer_pin(session_row,qid)
+        except (ValueError,TypeError,KeyError):return False
+        records.append({'question_db_id':qid,**{field:pin.get(key) for field,key in (
+            ('ph_question_id','question_id'),('ph_question_version_id','question_version_id'),
+            ('ph_question_checksum_sha256','question_checksum_sha256'),('ph_release_id','release_id'),
+            ('ph_release_version','release_version'),('ph_release_checksum_sha256','release_checksum_sha256'))}})
+    return all(current_formal_evidence_mask(conn,records,programme))

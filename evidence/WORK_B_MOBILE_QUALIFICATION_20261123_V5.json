@@ -1,0 +1,35 @@
+{
+  "version": "SM-MOBILE-QUALIFICATION-ANNEX-5",
+  "runtime_tree_sha256": "c32c7227b99fe38ee33ba612cb1a8b2f6154e0c0f6358fe67efa730fc1bb9c78",
+  "runtime_changed": false,
+  "existing_runner_reused": true,
+  "previous_failure": {
+    "run": 45181288692,
+    "artifact": 14821672566,
+    "sha256": "3b7c3cb41cfb2a2f8e34779072a2ef4b451ee97f10970432091734d2673f39d0",
+    "stage": "STORED_TYPE_NOT_CANONICAL_MENU_VALUE"
+  },
+  "native_all_forms_preflight": {
+    "status": "PASSED_NATIVE_ALL_FORM_CONTRACT_PREFLIGHT",
+    "fixture_only": true,
+    "actual_static_menu_and_authoritative_JS_inputs_checked": true,
+    "helper_v3_used": true,
+    "choice": {
+      "chapter": {
+        "value": "CHAPTER::CHEMISTRY::11::03",
+        "label": "Chapter 3 \u2014 Chemical Bonding"
+      },
+      "question_type": {
+        "value": "constructed_response",
+        "label": "Written response"
+      }
+    },
+    "source_qtype": "Constructed Response",
+    "native_start_answer_review_submit_result": true,
+    "null_grade_no_formal_credit": true,
+    "browser_acceptance": false,
+    "production_actions": false
+  },
+  "hosted_browser": "PENDING",
+  "production_actions": false
+}

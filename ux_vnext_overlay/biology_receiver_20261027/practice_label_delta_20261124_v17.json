@@ -1,0 +1,22 @@
+{
+  "after_tree_sha256": "daf1071772cca3a5f23f5df7c89707e08a1b9399b3ad1d100ac23ec7b5e2deba",
+  "before_tree_sha256": "5746e20cbf82bf01655289c6f97f82863a8ff72cb1bc011d90e2fa39cc12083d",
+  "files": [
+    {
+      "after_sha256": "1e5b912c3329ee56183445d3edf210bd50f815034690d916486f89b774bea97f",
+      "before_sha256": "0d6682f142775e06ef8824f2b21a941330fba793f7f224ff28856516c5d417b6",
+      "hunks": [
+        {
+          "new": ">Practice</a>",
+          "old": ">Scored practice</a>"
+        },
+        {
+          "new": "<option value=\"SCORED\">Practice</option>",
+          "old": "<option value=\"SCORED\">Scored practice</option>"
+        }
+      ],
+      "path": "templates/test_setup.html"
+    }
+  ],
+  "policy": "SM-NEUTRAL-PRACTICE-LABEL-20261124-17"
+}

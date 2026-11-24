@@ -1,0 +1,19 @@
+{
+  "after_tree_sha256": "493fa68f06d4075ffdd92be504dc269e0e26c004c857ac4b77315403458fd0b6",
+  "before_tree_sha256": "d0fc1c5d46d793e3a86161a9f2b6fe6e5991160f1e38a54324cb95c60f3c64c8",
+  "changed_from_v10": [
+    "ux_student_batch.py"
+  ],
+  "changed_from_v9": [
+    "production_qualification_engine.py",
+    "ux_student_batch.py"
+  ],
+  "commit_invalidation_unchanged": true,
+  "extra_indexes": 0,
+  "native_emitter_sha256": "028133366831f52c6f6566bf19dfc858f33b959c0f559979c9ccd58fa741a641",
+  "native_predicates_unchanged": true,
+  "official_ai_scoring_enabled": false,
+  "policy": "SM-WEIGHTED-NATIVE-CHAPTER-COUNTS-20261123-11",
+  "production_mutated": false,
+  "runtime_files": 274
+}

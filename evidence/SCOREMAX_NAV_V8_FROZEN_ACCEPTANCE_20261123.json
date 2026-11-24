@@ -1,0 +1,29 @@
+{
+  "status": "PASSED_FROZEN_COACH_SELECTION_NAVIGATION_V8",
+  "manifest_sha256": "cb1ab971dfd0b83ae61f655207524feac1220fb9a36380539bd05855c90b4156",
+  "files_unchanged": 283,
+  "runtime_tree_sha256": "c32c7227b99fe38ee33ba612cb1a8b2f6154e0c0f6358fe67efa730fc1bb9c78",
+  "checks": [
+    {
+      "check": "signed_image_attacks",
+      "status": "PASSED"
+    },
+    {
+      "check": "pending_contract_attacks",
+      "status": "PASSED"
+    },
+    {
+      "check": "native_image_journey",
+      "status": "PASSED"
+    },
+    {
+      "check": "native_evidence_parity",
+      "status": "PASSED"
+    },
+    {
+      "check": "native_coach_selection",
+      "status": "PASSED"
+    }
+  ],
+  "production_actions": false
+}

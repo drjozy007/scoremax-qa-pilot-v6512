@@ -1,0 +1,35 @@
+{
+  "exact_build_replay_and_drift_tests": 3,
+  "hosted_and_Render_capacity": "PENDING",
+  "logs": {
+    "/tmp/work_b_sm_v11_build_tests_v2.log": "b97740226c11cf9a9689600d7e82201dc41f103d935848de08dd73dee0c65574",
+    "/tmp/work_b_sm_v11_html_parity.log": "429c2ba05d9b4036a87b8d945515f0991ad431073f54c667f54681ec649b88e8",
+    "/tmp/work_b_sm_v11_menu_parity.log": "025d22cb83ad0dff480aee7b0d5fc0d6bbcba8e9605e33ea3e648e69fd674716",
+    "/tmp/work_b_sm_v11_mixed.log": "9cc375d6b003a37de0aa6f7999cee4b53dbc61f575cfc2e78c6ac26cb3f71e38",
+    "/tmp/work_b_sm_v11_retained_semantic.log": "5d034580b7a71bb3456b424d1c58e8e07f1b37b8234287cb7bf54dc56b9a3b6c",
+    "/tmp/work_b_sm_v11_weighted_native.log": "6017080218f25fa09ab92ce3fae7c8dc729430d1b761be86e39221f76fd0bf7b"
+  },
+  "mixed_native_HTTP": {
+    "authenticated_original_image_GETs": 3,
+    "backup_integrity_and_original_history_preserved": true,
+    "concurrency": 50,
+    "cpu": 1,
+    "errors": 0,
+    "extra_indexes": 0,
+    "p95_ms": 1296.890553,
+    "requests": 400,
+    "signed_POSTs": 6,
+    "target_ms": 1500,
+    "threads": 4,
+    "workers": 1
+  },
+  "native_HTML_cases": 28,
+  "native_menu_context_parity_checks": 480,
+  "native_menu_scope_stages": 5,
+  "native_null_unicode_whitespace_keys": true,
+  "native_weighted_and_unknown_emitter_stages": 4,
+  "production_actions": false,
+  "retained_version_qualification_tests": 7,
+  "stage": "SELF_AUDIT_COMPLETE_BEFORE_FREEZE",
+  "status": "PASSED"
+}

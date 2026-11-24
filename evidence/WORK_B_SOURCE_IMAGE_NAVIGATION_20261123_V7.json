@@ -1,0 +1,27 @@
+{
+  "version": "SM-WORK-B-SOURCE-IMAGE-NAVIGATION-20261123-7",
+  "runtime_tree_sha256": "9d507e3bcf87de2b6207bc365ed436df7d6f2a053000c70e444095eee772a446",
+  "receiver_base_tree_sha256": "723ebb01fec680db2e88c9159deeac74b941cf4be8e5ab7d95b6691a3afb5bff",
+  "delta_sha256": "8920c2f44a9eee6e0b63c5b160a87629a5863c9890207bf22dc6b88ef69f6b20",
+  "local_unit_build_checks": 45,
+  "read_conditions": 12,
+  "read_GETs": 2400,
+  "mixed_GETs": 400,
+  "mixed_signed_POSTs": 6,
+  "mixed_image_GETs": 3,
+  "mixed_p95_ms": 1478.038488,
+  "mixed_errors": 0,
+  "mixed_timeout_censoring": false,
+  "mixed_headroom_ms": 21.961512,
+  "local_CPU_workers_threads": [
+    1,
+    1,
+    1
+  ],
+  "official_ai_scoring_enabled": false,
+  "production_actions": false,
+  "hosted_current_head": "PENDING_EXTERNAL_ACCOUNT_RESTRICTION",
+  "production_Render_capacity": "PENDING",
+  "real_1446_release_ACK": "PENDING",
+  "assessed_marking": "PENDING_FUTURE_API"
+}

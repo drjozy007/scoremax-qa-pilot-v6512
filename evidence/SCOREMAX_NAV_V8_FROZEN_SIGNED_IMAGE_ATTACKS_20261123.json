@@ -1,0 +1,63 @@
+{
+  "status": "PASSED_NATIVE_SIGNED_IMAGE_DURABLE_REJECTION",
+  "cases": [
+    {
+      "case": "HTTP_URI",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    },
+    {
+      "case": "SVG_URI",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    },
+    {
+      "case": "JS_URI",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    },
+    {
+      "case": "LOCAL_FILE_URI",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    },
+    {
+      "case": "WRONG_IMAGE_HASH",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    },
+    {
+      "case": "WRONG_MIME",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    },
+    {
+      "case": "CORRUPT_IMAGE",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    },
+    {
+      "case": "OVERSIZE_URI",
+      "status": 422,
+      "learner_active": false,
+      "same_durable_rejection_after_retry": true,
+      "immutable_question_version_written": false
+    }
+  ],
+  "payload_question_stimulus_and_HMAC_resealed": true,
+  "production_mutated": false
+}

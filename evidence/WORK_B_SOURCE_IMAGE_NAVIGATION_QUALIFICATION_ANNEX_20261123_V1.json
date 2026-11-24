@@ -1,0 +1,18 @@
+{
+  "version": "SM-NAV-V7-QUALIFICATION-ANNEX-1",
+  "frozen_candidate_manifest_sha256": "a9ca134700587eb28fad006650dd5d32b3ff7ca03ca612b8fdf0d79bcf5502bd",
+  "candidate_runtime_unchanged": true,
+  "portable_mixed_driver_function_AST_matches_measured_driver": true,
+  "functions_compared": [
+    "image_get",
+    "original_rows",
+    "post",
+    "preserved",
+    "source_image_content",
+    "workload"
+  ],
+  "raw_reports": 7,
+  "workflow_uses_existing_ubuntu_windows_jobs": true,
+  "new_resources": false,
+  "production_actions": false
+}

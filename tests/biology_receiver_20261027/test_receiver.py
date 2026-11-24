@@ -397,7 +397,7 @@ class BiologyReceiverTests(unittest.TestCase):
    self.assertIn('1 active · 0 accessible',page.text)
    chapter_page=self.client.get('/student/chapter',query_string={'subject':'Biology','chapter':chapter},base_url='https://localhost')
    self.assertEqual(chapter_page.status_code,200,chapter_page.text[:200])
-   self.assertIn('Governed section A',chapter_page.text);self.assertIn('1 active scored questions · 0 accessible',chapter_page.text)
+   self.assertIn('Governed section A',chapter_page.text);self.assertIn('1 active questions · 0 accessible',chapter_page.text)
    setup=self.client.get('/test/setup',query_string={'subject':'Biology','chapter':chapter,'scope':'chapter'},base_url='https://localhost')
    self.assertEqual(setup.status_code,200);self.assertIn('name="question_type"',setup.text);self.assertIn('name="section"',setup.text)
   self.assertIn('@media(max-width:600px)',page.text)

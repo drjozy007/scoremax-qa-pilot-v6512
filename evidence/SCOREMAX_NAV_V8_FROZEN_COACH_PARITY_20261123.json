@@ -1,0 +1,261 @@
+{
+  "status": "PASSED_NATIVE_COACH_SELECTION_PROJECTION",
+  "native_cases": 42,
+  "checks": [
+    {
+      "home_level": "Grade 9",
+      "preference_kind": "absent",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 9",
+      "preference_kind": "absent",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 9",
+      "preference_kind": "explicit_empty",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 9",
+      "preference_kind": "explicit_empty",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 9",
+      "preference_kind": "selected",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 9",
+      "preference_kind": "selected",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 10",
+      "preference_kind": "absent",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 10",
+      "preference_kind": "absent",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 10",
+      "preference_kind": "explicit_empty",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 10",
+      "preference_kind": "explicit_empty",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 10",
+      "preference_kind": "selected",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "Grade 10",
+      "preference_kind": "selected",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 1",
+      "preference_kind": "absent",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 1",
+      "preference_kind": "absent",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 1",
+      "preference_kind": "explicit_empty",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 1",
+      "preference_kind": "explicit_empty",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 1",
+      "preference_kind": "selected",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 1",
+      "preference_kind": "selected",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 2",
+      "preference_kind": "absent",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 2",
+      "preference_kind": "absent",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 2",
+      "preference_kind": "explicit_empty",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 2",
+      "preference_kind": "explicit_empty",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 2",
+      "preference_kind": "selected",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "FSc Part 2",
+      "preference_kind": "selected",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "MDCAT",
+      "preference_kind": "absent",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "MDCAT",
+      "preference_kind": "absent",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "MDCAT",
+      "preference_kind": "explicit_empty",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "MDCAT",
+      "preference_kind": "explicit_empty",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "MDCAT",
+      "preference_kind": "selected",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "MDCAT",
+      "preference_kind": "selected",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "opaque::unknown",
+      "preference_kind": "absent",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "opaque::unknown",
+      "preference_kind": "absent",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "opaque::unknown",
+      "preference_kind": "explicit_empty",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "opaque::unknown",
+      "preference_kind": "explicit_empty",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "opaque::unknown",
+      "preference_kind": "selected",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "opaque::unknown",
+      "preference_kind": "selected",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "",
+      "preference_kind": "absent",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "",
+      "preference_kind": "absent",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "",
+      "preference_kind": "explicit_empty",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "",
+      "preference_kind": "explicit_empty",
+      "enabled": true,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "",
+      "preference_kind": "selected",
+      "enabled": false,
+      "native_candidates_equal": true
+    },
+    {
+      "home_level": "",
+      "preference_kind": "selected",
+      "enabled": true,
+      "native_candidates_equal": true
+    }
+  ],
+  "question_answer_mastery_outbox_rows_unchanged": true,
+  "academic_authority": "SOFTWARE_FIXTURES_ONLY",
+  "production_actions": false
+}

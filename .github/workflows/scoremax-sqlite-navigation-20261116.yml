@@ -1,0 +1,137 @@
+name: Current ScoreMax SQLite navigation and recovery qualification
+on:
+  pull_request:
+    branches: [fix/scoremax-streamed-backup-20261022, workb/scored-saq-contract-20261122-v1]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: current-sqlite-nav-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+env:
+  PYTHONUTF8: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  native_parity:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble exact current scored and pending receiver reference
+        run: python -B scripts/materialize_scoremax_scored_saq_20261122.py
+      - name: Keep code-only current reference
+        run: python -c "from pathlib import Path; import shutil; shutil.copytree('scoremax_runtime_v669b','qualification/reference_runtime',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))"
+      - name: Preserve exact frozen V8 menu oracle without rebuilding accepted decisions
+        run: python -c "import shutil,importlib.util;shutil.copytree('qualification/reference_runtime','qualification/navigation_v8_reference');s=importlib.util.spec_from_file_location('v8','ux_vnext_overlay/biology_receiver_20261027/sqlite_navigation_build_20261123_v8.py');m=importlib.util.module_from_spec(s);s.loader.exec_module(m);m.apply('qualification/navigation_v8_reference')"
+      - name: Compose exact navigation source delta without touching databases
+        run: python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
+      - name: Install accepted runtime dependencies
+        run: python -m pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Exact build, drift, immutable context, commit freshness and request isolation
+        run: python -B scripts/qualify_scoremax_current_navigation_20261124_v2.py
+      - name: Preserve prior native scope and source-indentation controls
+        run: python -B -m unittest discover -s tests/navigation_perf_20261114 -p 'test_*.py' -v
+      - name: Compose exact V16 fresh formal evidence with unchanged native PH authority
+        run: python -B scripts/materialize_scoremax_legacy_formal_20261123_v16.py
+      - name: Native signed and opaque Unicode programme chapter label count parity
+        run: python -B tests/navigation_current_20261123/qualify_native_scope_parity_v1.py scoremax_runtime_v669b qualification/reference_runtime qualification/native_scope_state qualification/native_scope.json
+      - name: Exact menu context and batched native chapter mastery count parity
+        run: python -B tests/navigation_current_20261123/qualify_native_menu_projection_v9.py scoremax_runtime_v669b qualification/navigation_v8_reference qualification/menu_v9_state qualification/menu_v9.json
+      - name: Complete native evidence dicts preserve future and ambiguous columns
+        run: python -B tests/navigation_current_20261123/qualify_native_evidence_row_fidelity_v1.py scoremax_runtime_v669b qualification/reference_runtime qualification/evidence_row_state qualification/evidence_rows.json
+      - name: Native ordinary guided and mixed chapter HTML and reviewer permission parity
+        run: python -B tests/navigation_current_20261123/qualify_native_chapter_pushdown_v5.py scoremax_runtime_v669b qualification/reference_runtime qualification/chapter_state qualification/chapter.json
+      - name: Composed runtime rejects signed malformed image contracts durably
+        run: python -B tests/biology_receiver_20261027/qualify_signed_source_image_adversarial_v2.py scoremax_runtime_v669b qualification/source_image_attacks.json
+      - name: Composed native source images persist through saved historical results
+        run: python -B tests/biology_receiver_20261027/qualify_native_source_image_journey_v1.py scoremax_runtime_v669b qualification/source_image_journey_state qualification/source_image_journey.json
+      - name: Exact native coach selection parity across home levels and preferences
+        run: python -B tests/navigation_current_20261123/qualify_native_coach_selection_v8.py scoremax_runtime_v669b qualification/reference_runtime qualification/coach_selection_state qualification/coach_selection.json
+      - name: Normal learner browse start save submit remains unscored with access fences
+        run: python -B tests/navigation_current_20261123/qualify_pending_browser_journey_v3.py scoremax_runtime_v669b qualification/browser_state qualification/browser.json
+      - name: Retain scored marker contracts
+        run: python -B -m unittest discover -s tests/biology_receiver_20261027 -p test_scored_saq_v1.py -v
+      - name: Preserve actual pending response result withdrawal and mastery boundaries
+        run: python -B tests/biology_receiver_20261027/qualify_pending_saq_native_v3.py qualification/pending_native.json
+      - name: Actual signed duplicate withdrawal and crash recovery
+        run: python -B tests/biology_receiver_20261027/qualify_work_b_delivery_recovery_v2.py qualification/delivery_recovery.json
+      - name: Separate signed contract attacks on composed runtime
+        run: python -B tests/biology_receiver_20261027/qualify_pending_saq_adversarial_v1.py qualification/adversarial.json
+      - name: Academic marking and programme mastery regressions
+        run: |
+          python -B scripts/qualify_assessment_contract_repair.py --report qualification/assessment.json
+          python -B scripts/qualify_programme_mastery_repair.py --report qualification/programme_mastery.json
+          python -B scripts/qualify_existing_ph_compatibility.py --report qualification/ph_compatibility.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-navigation-native-${{ matrix.os }}
+          path: qualification/*.json
+
+  bounded_http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build current runtime
+        run: python -B scripts/materialize_scoremax_legacy_formal_20261123_v16.py
+      - name: Install accepted dependencies and native HTTP measurement tools
+        run: |
+          python -m pip install -r scoremax_runtime_v669b/requirements.txt
+          python -m pip install gunicorn psutil
+      - name: Seed 100800 questions 1001 learners 102300 frozen answers
+        id: isolated_seed
+        run: python -B tests/navigation_perf_20261114/benchmark_student_routes.py seed scoremax_runtime_v669b qualification/seed/state/unindexed.db --per-chapter 2100 --additional-learners 1000 --answers-per-learner 100
+      - name: Guarded additive indexes on disposable copy with verified backup
+        run: |
+          python -c "from pathlib import Path; import sqlite3; p=Path('qualification/indexed/state/seed.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/seed/state/unindexed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close();Path('qualification/backup').mkdir()"
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db qualification/indexed/state/seed.db
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db qualification/indexed/state/seed.db --backup qualification/backup/preindex.db --apply
+          python -B scripts/scoremax_navigation_index_migration_20261114.py --db qualification/indexed/state/seed.db --apply
+      - name: Uncensored native HTTP on one CPU with 1 10 50 distinct learners
+        run: python -B tests/navigation_current_20261123/run_paired_native_http_v6.py qualification/indexed/state/seed.db qualification/http --fixture DERIVED_100800_GUARDED_7_INDEXES --order B --routes learn,subject,chapter,catalogue --levels 1,10,50 --operations 200 --workers 1 --threads 1 --server-one-cpu --reference-runtime scoremax_runtime_v669b --candidate-runtime scoremax_runtime_v669b
+      - name: Enforce existing capacity target separately from software CI
+        run: python -B tests/navigation_current_20261123/qualify_capacity_report_v1.py qualification/http
+      - name: Native mixed read write duplicate withdrawal and consistent backup on fresh seed
+        run: |
+          python -c "from pathlib import Path; import sqlite3; p=Path('qualification/mixed/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/indexed/state/seed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
+          python -B tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py scoremax_runtime_v669b qualification/mixed/state/measure.db qualification/http/mixed_native.json --variant current_v2 --fixture DERIVED_100800_GUARDED_7_INDEXES --levels 50 --operations 400 --workers 1 --threads 1 --server-one-cpu --route '/student/subject/Biology' --port 18861
+          python -B tests/navigation_current_20261123/qualify_source_image_mixed_report_v2.py qualification/http/mixed_native.json
+      - name: Required existing production topology without experimental navigation indexes
+        if: ${{ !cancelled() && steps.isolated_seed.outcome == 'success' }}
+        run: |
+          python -B tests/navigation_current_20261123/run_paired_native_http_v6.py qualification/seed/state/unindexed.db qualification/production_http --fixture DERIVED_100800_ZERO_NAV_INDEXES --order B --routes learn,subject,chapter,catalogue --levels 1,10,50 --operations 200 --workers 1 --threads 4 --server-one-cpu --reference-runtime scoremax_runtime_v669b --candidate-runtime scoremax_runtime_v669b
+          python -B tests/navigation_current_20261123/qualify_capacity_report_v1.py qualification/production_http
+          python -c "from pathlib import Path;import sqlite3;p=Path('qualification/noindex/state/measure.db');p.parent.mkdir(parents=True);a=sqlite3.connect('qualification/seed/state/unindexed.db');b=sqlite3.connect(p);a.backup(b);b.close();a.close()"
+          python -B tests/navigation_current_20261123/qualify_mixed_native_source_image_http_v1.py scoremax_runtime_v669b qualification/noindex/state/measure.db qualification/http/noindex_mixed_native.json --variant current_v9_no_extra_indexes --fixture DERIVED_100800_ZERO_NAV_INDEXES --levels 50 --operations 400 --workers 1 --threads 4 --server-one-cpu --route '/student/subject/Biology' --port 18861
+          python -B tests/navigation_current_20261123/qualify_source_image_mixed_report_v2.py qualification/http/noindex_mixed_native.json
+      - name: Install pinned mobile browser test API on existing runner
+        if: ${{ !cancelled() && steps.isolated_seed.outcome == 'success' }}
+        run: python -m pip install playwright==1.62.0 cryptography==50.0.0
+      - name: Native Chromium mobile and constrained 3G learner journey on frozen runtime
+        if: ${{ !cancelled() && steps.isolated_seed.outcome == 'success' }}
+        run: python -B tests/navigation_current_20261123/qualify_mobile_source_image_browser_v6.py scoremax_runtime_v669b qualification/indexed/state/seed.db qualification/http/mobile-browser qualification/http/mobile_browser.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-navigation-uncensored-http
+          path: |
+            qualification/http/*.json
+            qualification/http/*.log
+            qualification/production_http/*.json
+            qualification/production_http/*.log
+            qualification/http/mobile-browser/*.png

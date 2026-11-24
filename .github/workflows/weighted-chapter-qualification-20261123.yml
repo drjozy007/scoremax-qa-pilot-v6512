@@ -1,0 +1,41 @@
+name: Exact weighted native chapter count qualification V11
+on:
+  pull_request:
+  push:
+    branches: [perf/sqlite-navigation-release-20261116]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble exact V10 reference
+        run: python -B scripts/materialize_scoremax_successor_qualification_20261123_v10.py
+      - name: Preserve code-only V10 reference
+        run: python -c "import shutil;shutil.copytree('scoremax_runtime_v669b','qualification/reference_v10',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))"
+      - name: Compose exact V11 runtime
+        run: python -B scripts/materialize_scoremax_weighted_chapter_20261123_v11.py
+      - name: Install accepted dependencies
+        run: python -m pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Exact build replay and drift controls
+        run: python -B -m unittest discover -s tests/weighted_chapter_20261123 -p 'test_*.py' -v
+      - name: Native weighted count fallback and commit authority controls
+        run: python -B tests/weighted_chapter_20261123/qualify_native_weighted_scope_v11.py scoremax_runtime_v669b qualification/weighted_native_state qualification/weighted_native.json
+      - name: Exact retained version authorization on composed V11
+        run: python -B -m unittest discover -s tests/successor_qualification_20261123 -p test_successor_qualification_v10.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exact-weighted-native-${{ matrix.os }}
+          path: qualification/*.json

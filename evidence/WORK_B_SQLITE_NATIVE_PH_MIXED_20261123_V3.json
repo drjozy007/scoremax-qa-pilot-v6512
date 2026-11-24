@@ -1,0 +1,63 @@
+{
+  "version": "SM-SQLITE-NAV-NATIVE-PH-20261123-3",
+  "runtime_tree": "da7922d02fafc6e4ac8beda654b2935cc330d2e4af9a101ace178634662c99a5",
+  "delta_sha256": "968d9cb4bf1852ea1289f0a6ac4a7f8590eb5329be967789584c7722fe547abc",
+  "fixture": {
+    "questions": 100800,
+    "learners": 1001,
+    "FINAL_answers": 102300,
+    "guarded_disposable_indexes": 7
+  },
+  "resource": {
+    "server_cpu_affinity_count": 1,
+    "workers": 1,
+    "threads": 1
+  },
+  "mixed_native_chapter": {
+    "requests": 400,
+    "p95_ms": 1239.202526,
+    "errors": 0,
+    "posts": 6,
+    "consistent_backup_bytes": 140095488,
+    "native_PH_delivery_ack_ledger": [
+      {
+        "delivery_state": "IMPORTED_STAGED",
+        "question_count": 1,
+        "release_conferred": 0
+      },
+      {
+        "delivery_state": "ACTIVATED_LEARNER_LIVE",
+        "question_count": 1,
+        "release_conferred": 0
+      }
+    ],
+    "native_PH_withdrawal_exports": [
+      {
+        "item_count": 1,
+        "status": "COMPLETED"
+      }
+    ],
+    "native_PH_withdrawal_ack_receipts": [
+      {
+        "release_conferred": 0,
+        "result_status": "COMPLETED"
+      }
+    ],
+    "preexisting_protected_tables": 16,
+    "new_attempts": 1,
+    "new_answers": 1,
+    "new_formal_mastery": 0
+  },
+  "native_html_parity_cases": 28,
+  "source_build_and_boundaries_self_tests": 41,
+  "real_academic_authority": "SOFTWARE_FIXTURES_ONLY",
+  "hosted_mixed_capacity_current_head": "PENDING",
+  "production_actions": false,
+  "four_thread_production_configuration_qualified": false,
+  "previous_hosted_mixed_6688db3": {
+    "status": "FAILED",
+    "p95_ms": 2024.633972,
+    "requests": 400,
+    "errors": 0
+  }
+}

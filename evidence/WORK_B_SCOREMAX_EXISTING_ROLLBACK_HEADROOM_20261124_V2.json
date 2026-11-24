@@ -1,0 +1,21 @@
+{
+  "code_pins": {
+    "scripts/scoremax_lossless_rollback_headroom_20261123_v2.py": "17c00b05b5dea1061a9e0081e62de73f89ce7b69e26667a91b371483fd042d1a",
+    "tests/navigation_current_20261123/test_lossless_headroom_recovery_v2.py": "ee527a010fa3bf0eb8e63d1bffeade38131a8ddb0494efe5c98157ff19fc8822"
+  },
+  "concurrent_SQLite_reader_and_writer_refused": true,
+  "native_capacity_lock_and_retention_candidate": "REUSED_UNCHANGED",
+  "native_runtime_unchanged": "5746e20cbf82bf01655289c6f97f82863a8ff72cb1bc011d90e2fa39cc12083d",
+  "native_startup_guard_required_after_recovery": true,
+  "parent_hash_descriptors_cannot_cancel_child_lock": true,
+  "production_recovery_pending": true,
+  "protected_snapshot_all_original_bytes_retained": true,
+  "reserve_bytes_unchanged": 536870912,
+  "runtime_changes": false,
+  "self_tests": 13,
+  "separate_binding_attacks_rejected": 8,
+  "separate_frozen_tests": 13,
+  "snapshot_lock": "Separate-process SQLite EXCLUSIVE transaction; SELECT/PRAGMA quick_check and rollback only, no data or DDL writes",
+  "status": "FROZEN_LOCAL_PASSED_PRODUCTION_PENDING",
+  "supersedes_failed_proc_visibility_operator_v1": true
+}

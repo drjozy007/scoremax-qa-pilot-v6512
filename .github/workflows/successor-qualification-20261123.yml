@@ -1,0 +1,33 @@
+name: Exact retained-version successor qualification V10
+on:
+  pull_request:
+    branches: [fix/scoremax-streamed-backup-20261022, workb/scored-saq-contract-20261122-v1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retained_version_qualification:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    env:
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse exact accepted V9 navigation reference
+        run: python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py
+      - name: Preserve code-only reference
+        run: python -c "import shutil;shutil.copytree('scoremax_runtime_v669b','qualification/reference_v9')"
+      - name: Apply single-file qualification correction
+        run: python -B scripts/materialize_scoremax_successor_qualification_20261123_v10.py
+      - name: Qualify exact builds retained authority attacks and 300/1500 bounds
+        run: python -B -m unittest discover -s tests/successor_qualification_20261123 -p 'test_*.py' -v

@@ -1,0 +1,28 @@
+{
+  "authority_identity_mutations": 13,
+  "clean_build": {
+    "after_tree_sha256": "d0fc1c5d46d793e3a86161a9f2b6fe6e5991160f1e38a54324cb95c60f3c64c8",
+    "automatic_schema_migration": false,
+    "before_tree_sha256": "7c45b375d86c85b90e60467a98121a7d3d4ab15164228f5ac3a42c1e5e1df7f9",
+    "database_tables_added": 0,
+    "official_ai_scoring_enabled": false,
+    "policy": "SM-EXACT-SUCCESSOR-QUALIFICATION-20261123-10",
+    "production_mutated": false,
+    "replayed": false,
+    "source_marks_and_weight_preserved": true
+  },
+  "controls": 10,
+  "hosted_current_candidate": "PENDING",
+  "production_actions": false,
+  "production_readiness": "PENDING",
+  "qualification_select_bound": 20,
+  "runtime_files_changed": [
+    "production_qualification_engine.py"
+  ],
+  "runtime_files_unchanged": 273,
+  "scale_cases": [
+    300,
+    1500
+  ],
+  "stage": "SELF_AUDIT_COMPLETE"
+}

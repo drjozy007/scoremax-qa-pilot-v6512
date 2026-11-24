@@ -1,0 +1,29 @@
+{
+  "accepted_runtime_tree_sha256": "5746e20cbf82bf01655289c6f97f82863a8ff72cb1bc011d90e2fa39cc12083d",
+  "accepted_v16_frozen_manifest_sha256": "3aaa7b7b37bd6626d4bb400648e460456efb7ed2fa4b5d62202e3f4baf858880",
+  "assessment_authority_conferred": false,
+  "candidate_runtime_tree_sha256": "daf1071772cca3a5f23f5df7c89707e08a1b9399b3ad1d100ac23ec7b5e2deba",
+  "database_mutated": false,
+  "files": {
+    "scripts/materialize_scoremax_practice_label_20261124_v17.py": "f5e0bfc7fcc04a9e608b3cf336531634fd212c264f54a980e5adb20f00cee03f",
+    "ux_vnext_overlay/biology_receiver_20261027/practice_label_build_20261124_v17.py": "d4d83247080950bef7d945f3ffb5edf2011023177b15faddf2e2dd3f8449a340",
+    "ux_vnext_overlay/biology_receiver_20261027/practice_label_delta_20261124_v17.json": "5ae0d9d0c8bd0368bf2c93374ac698d91c44820518ae9fef74a608ba59ca875c"
+  },
+  "internal_response_mode_SCORED_retained": true,
+  "official_ai_scoring_enabled": false,
+  "policy": "SM-NEUTRAL-PRACTICE-LABEL-20261124-17",
+  "production_acceptance": "PENDING",
+  "retained_backend_performance_evidence": "Exact unchanged V16 backend: one CPU, one worker, four threads, zero extra indexes, mixed hosted p95 1462.950119 ms; errors 0. UI label correction is not a new performance claim.",
+  "runtime_files_changed": [
+    "templates/test_setup.html"
+  ],
+  "scoring_contracts_changed": false,
+  "self_verification": {
+    "Jinja_template_syntax": "PASSED",
+    "exact_274_file_scope": "PASSED",
+    "idempotence": "PASSED",
+    "only_two_visible_labels_changed": "PASSED",
+    "unknown_runtime_rejected_before_patch": "PASSED"
+  },
+  "stage": "FROZEN_FOR_SEPARATE_PACKAGE_VERIFICATION"
+}

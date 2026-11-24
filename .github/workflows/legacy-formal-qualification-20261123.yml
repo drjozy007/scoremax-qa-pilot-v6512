@@ -1,0 +1,45 @@
+name: Fresh native legacy formal evidence V16
+on:
+  pull_request:
+  push:
+    branches: [perf/sqlite-navigation-release-20261116]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble exact V13 reference
+        run: python -B scripts/materialize_scoremax_programme_display_20261123_v13.py
+      - name: Preserve code-only V13 oracle
+        run: python -c "import shutil;shutil.copytree('scoremax_runtime_v669b','qualification/reference_v13',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))"
+      - name: Compose exact V16 runtime
+        run: python -B scripts/materialize_scoremax_legacy_formal_20261123_v16.py
+      - name: Install accepted dependencies
+        run: python -m pip install -r scoremax_runtime_v669b/requirements.txt
+      - name: Exact build and native 300 1500 key authority differential controls
+        run: python -B -m unittest discover -s tests/legacy_formal_20261123 -p 'test_*.py' -v
+      - name: Real signed submission and complete unknown-field evidence parity
+        run: python -B tests/navigation_current_20261123/qualify_native_evidence_row_fidelity_v1.py scoremax_runtime_v669b qualification/reference_v13 qualification/legacy_native_state qualification/legacy_native_fidelity.json
+      - name: Retain exact successor authorizations on composed V16
+        run: python -B -m unittest discover -s tests/successor_qualification_20261123 -p test_successor_qualification_v10.py -v
+      - name: Compose sealed neutral practice label V17
+        run: python -B scripts/materialize_scoremax_practice_label_20261124_v17.py
+      - name: Verify current template syntax and unchanged response-mode controls
+        run: python -B scripts/verify_scoremax_practice_label_v17.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh-formal-native-${{ matrix.os }}
+          path: qualification/*.json

@@ -1,0 +1,69 @@
+{
+  "status": "PASSED_NATIVE_SIGNED_IMAGE_LEARNER_HTTP_JOURNEY",
+  "browser_visual_acceptance": false,
+  "observations": [
+    {
+      "exact_signed_image_on_question_and_result": true,
+      "image_preserved_after_withdrawal": true,
+      "image_bytes_not_copied_to_session_pin": true,
+      "source_marks": 1,
+      "source_weight": 1,
+      "actual_chapter_browse": true,
+      "actual_test_setup_and_start": true,
+      "foundation_access_remains_fenced": true,
+      "native_exam_ready_access_used": true,
+      "actual_saved_answer_and_repeat_submit": true,
+      "saved_unscored_and_no_formal_mastery": true,
+      "header_has_no_false_scored_claim": true,
+      "signed_withdrawal": true
+    },
+    {
+      "exact_signed_image_on_question_and_result": true,
+      "image_preserved_after_withdrawal": true,
+      "image_bytes_not_copied_to_session_pin": true,
+      "source_marks": 2,
+      "source_weight": 1,
+      "actual_chapter_browse": true,
+      "actual_test_setup_and_start": true,
+      "foundation_access_remains_fenced": true,
+      "native_exam_ready_access_used": true,
+      "actual_saved_answer_and_repeat_submit": true,
+      "saved_unscored_and_no_formal_mastery": true,
+      "header_has_no_false_scored_claim": true,
+      "signed_withdrawal": true
+    },
+    {
+      "exact_signed_image_on_question_and_result": true,
+      "image_preserved_after_withdrawal": true,
+      "image_bytes_not_copied_to_session_pin": true,
+      "source_marks": 3,
+      "source_weight": 1,
+      "actual_chapter_browse": true,
+      "actual_test_setup_and_start": true,
+      "foundation_access_remains_fenced": true,
+      "native_exam_ready_access_used": true,
+      "actual_saved_answer_and_repeat_submit": true,
+      "saved_unscored_and_no_formal_mastery": true,
+      "header_has_no_false_scored_claim": true,
+      "signed_withdrawal": true
+    },
+    {
+      "exact_signed_image_on_question_and_result": true,
+      "image_preserved_after_withdrawal": true,
+      "image_bytes_not_copied_to_session_pin": true,
+      "source_marks": 4,
+      "source_weight": 1,
+      "actual_chapter_browse": true,
+      "actual_test_setup_and_start": true,
+      "foundation_access_remains_fenced": true,
+      "native_exam_ready_access_used": true,
+      "actual_saved_answer_and_repeat_submit": true,
+      "saved_unscored_and_no_formal_mastery": true,
+      "header_has_no_false_scored_claim": true,
+      "signed_withdrawal": true
+    }
+  ],
+  "academic_authority": "SOFTWARE_FIXTURES_ONLY",
+  "official_ai_scoring_enabled": false,
+  "production_actions": false
+}

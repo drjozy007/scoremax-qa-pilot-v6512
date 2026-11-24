@@ -1,0 +1,9 @@
+# Existing-runner mobile qualification annex V3
+
+Application runtime remains frozenV8 c32c7227b99fe38ee33ba612cb1a8b2f6154e0c0f6358fe67efa730fc1bb9c78;283 candidate pins unchanged. Final a758b652 hosted native/scored Windows/Linux and bounded HTTP passed, including mixed1298.666419ms/400successes/zeroerrors. This annex adds no application, schema/index, production setting, service or runner change.
+
+The remaining isolated mobile browser acceptance is appended to the existing bounded_http Ubuntu job, reusing its100800-question/1001-learner/102300-answer indexed synthetic seed. Existing Chrome is selected; pinned Playwright1.62.0/cryptography50.0.0 are test dependencies only. Native login wrong/correct, four learner navigation surfaces, setup/start, answer save, unscored result and original-image history after exact signed withdrawal run at390x844/touch with512kbpsdownload/128kbpsupload/400mslatency. Source software-image504960bytes exceeds actual largest497968bytes. Browser timings/size/overflow/JS errors and screenshots are retained. Actual mobile device and productionRender network acceptance remain separate.
+
+The local browser attempt could not launch because the workspace denies Chromium's required Unix socket (EPERM); no sandbox permission or machine policy was changed. Native real-form preflight then passed using standard HTMLParser and current values (written response value constructed_response, actual Submit assessment confirmation), avoiding missing parser dependencies and stale selector assumptions. Existing public CI runner capability is reused rather than changing production or adding infrastructure. Test helper explicitly refuses Render and requires the exact isolated synthetic seed. No production identities, questions, credentials or academic authority are used.
+
+Current mobile result is PENDING_HOSTED_BROWSER_EXECUTION; do not infer visual acceptance from prior HTML-only checks.

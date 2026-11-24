@@ -1,0 +1,21 @@
+{
+  "after_tree_sha256": "b9c5a6c3e718668e0c0d1a2c924b25f66cb75b4cc97a6d5f50a48f50191af5a8",
+  "before_tree_sha256": "493fa68f06d4075ffdd92be504dc269e0e26c004c857ac4b77315403458fd0b6",
+  "changed_from_v11": [
+    "app.py"
+  ],
+  "changed_from_v9": [
+    "app.py",
+    "production_qualification_engine.py",
+    "ux_student_batch.py"
+  ],
+  "extra_indexes": 0,
+  "native_predicates_and_commit_invalidation_unchanged": true,
+  "official_ai_scoring_enabled": false,
+  "policy": "SM-BATCHED-PROGRAMME-PRESENCE-PREDICATE-ORDER-20261123-13",
+  "production_mutated": false,
+  "runtime_files": 274,
+  "threads": 4,
+  "unchanged_runtime_files_from_v9": 271,
+  "workers": 1
+}

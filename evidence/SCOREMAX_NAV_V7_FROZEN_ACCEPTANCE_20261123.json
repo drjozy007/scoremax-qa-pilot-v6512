@@ -1,0 +1,27 @@
+{
+  "status": "PASSED_FROZEN_SOURCE_IMAGE_NAVIGATION_V7",
+  "manifest_sha256": "a9ca134700587eb28fad006650dd5d32b3ff7ca03ca612b8fdf0d79bcf5502bd",
+  "files_unchanged": 634,
+  "runtime_tree_sha256": "9d507e3bcf87de2b6207bc365ed436df7d6f2a053000c70e444095eee772a446",
+  "checks": [
+    {
+      "check": "signed_image_attacks",
+      "status": "PASSED"
+    },
+    {
+      "check": "pending_contract_attacks",
+      "status": "PASSED"
+    },
+    {
+      "check": "native_source_image_journey",
+      "status": "PASSED"
+    },
+    {
+      "check": "native_complete_evidence_parity",
+      "status": "PASSED"
+    }
+  ],
+  "final_exact_runtime_performance_reused": true,
+  "prior_production_or_hosted_results_relabelled": false,
+  "production_actions": false
+}
