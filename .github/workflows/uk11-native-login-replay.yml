@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: qualification/uk11-native-integration-20261123
+          ref: 5749e8370d577044c398cdf0c3bd78344ef6a26a
           path: native
           persist-credentials: false
       - uses: actions/checkout@v4
