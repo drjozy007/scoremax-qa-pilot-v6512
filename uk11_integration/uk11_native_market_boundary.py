@@ -25,7 +25,7 @@ UK_ALLOWED_ENDPOINTS = frozenset({
     "dashboard",
     "student_dashboard",
 })
-UK_BLOCKED_PREFIXES = ("/api/integration/",)
+UK_ONLY_ENDPOINTS = frozenset({"uk11_account.get_schools", "uk11_account.set_schools", "uk11_school_dashboard.uk11_my_learning"})
 
 
 def install_uk11_market_boundary(app, db_factory, route_projection):
@@ -99,7 +99,10 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
             return None
         record = find_market(uid)
         if record is None:
-            return None                 # Explicitly Pakistan/legacy account
+            # Legacy/Pakistan users must not acquire UK access by adding schools.
+            if request.endpoint in UK_ONLY_ENDPOINTS or request.path.startswith("/uk11/"):
+                return Response("UK learner account required", status=403)
+            return None
         if record["market_id"] != UK_MARKET or record["programme_id"] != UK_PROGRAMME:
             return Response("Unsupported learner market", status=403)
         if request.endpoint in ("dashboard",):
