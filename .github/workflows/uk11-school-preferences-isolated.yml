@@ -21,4 +21,4 @@ jobs:
       - name: Install narrow test dependencies
         run: python -m pip install 'Flask>=3,<4' 'pytest>=8,<10'
       - name: Isolated synthetic Flask/SQLite regression
-        run: python -m pytest -q uk11_integration/test_uk11_account_preferences.py
+        run: python -m pytest -q uk11_integration/test_uk11_account_preferences.py uk11_integration/test_uk11_native_mount.py
