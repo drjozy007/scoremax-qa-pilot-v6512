@@ -1,0 +1,70 @@
+name: UK11 native account login replay (disposable)
+on:
+  push:
+    branches:
+      - preview/uk11-static-site-20261123
+    paths:
+      - 'uk11_integration/**'
+      - '.github/workflows/uk11-native-login-replay.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-uk-login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qualification/uk11-native-integration-20261123
+          path: native
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/uk11-static-site-20261123
+          path: uk-preview
+          persist-credentials: false
+      - name: Pin native qualification baseline and copy UK-only test files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C native rev-parse HEAD)" = "5749e8370d577044c398cdf0c3bd78344ef6a26a"
+          cp uk-preview/uk11_integration/uk11_account_preferences.py native/qualification/uk11/
+          cp uk-preview/uk11_integration/uk11_preferences_migration.py native/qualification/uk11/
+          cp uk-preview/uk11_integration/uk11_native_mount.py native/qualification/uk11/
+          cp uk-preview/uk11_integration/native_login_replay.py native/qualification/uk11/
+          mkdir -p native/uk11-native-evidence
+      - name: Reassemble and verify native ScoreMax accepted base tree
+        shell: bash
+        working-directory: native
+        run: |
+          set -euo pipefail
+          python -B scripts/materialize_scoremax_sqlite_nav_candidate_20261116.py > uk11-native-evidence/materialization.json
+          python -B - <<'PY'
+          import importlib.util,pathlib
+          p=pathlib.Path('ux_vnext_overlay/biology_receiver_20261027/sqlite_navigation_build_20261123_v9.py')
+          s=importlib.util.spec_from_file_location('nav',p)
+          m=importlib.util.module_from_spec(s)
+          s.loader.exec_module(m)
+          actual=m.tree(pathlib.Path('scoremax_runtime_v669b'))
+          assert actual==m.AFTER_TREE,('ASSEMBLY_DRIFT',actual,m.AFTER_TREE)
+          print('EXACT_ASSEMBLED_BASE '+actual)
+          PY
+          touch scoremax_runtime_v669b/.uk11_disposable_qualification_runtime
+      - name: Build disposable native runtime container
+        working-directory: native
+        run: timeout 300 docker build --pull=false -f qualification/uk11/Dockerfile.native_uk11 -t scoremax-uk11-school-login .
+      - name: Run exact native authentication and UK school preference replay
+        working-directory: native
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 180 docker run --rm --network none --memory=2g --memory-swap=2g --cpus=1 --tmpfs /data:rw,size=1g -v "$PWD/uk11-native-evidence:/evidence" --entrypoint python scoremax-uk11-school-login -B /qualifier/native_login_replay.py | tee uk11-native-evidence/native_login.log
+      - name: Publish failure evidence without real student data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uk11-native-school-login-${{ github.sha }}
+          path: native/uk11-native-evidence/
+          if-no-files-found: warn
+          retention-days: 7
