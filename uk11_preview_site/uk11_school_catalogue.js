@@ -142,6 +142,7 @@ schools=function(){
    (r?'<span class="chip">'+e(r.name)+'</span>':'')+'</div>'+
    (s.routing_notes?'<p class="hint">'+e(s.routing_notes)+'</p>':'')+(s.alternate_route_ids?.length?'<p class="hint">Alternative assessment route (not an extra required exam): '+e(s.alternate_route_ids.map(id=>route(id)?.name||id).join(' OR '))+'</p>':'')+
    (s.school_website_verified&&s.school_website?'<p class="hint"><a href="'+e(s.school_website)+'" target="_blank" rel="noopener noreferrer">Official school website</a></p>':'')+
+    (s.official_urn&&s.identity_source?'<p class="hint"><a href="'+e(s.identity_source)+'" target="_blank" rel="noopener noreferrer">Official school register record</a></p>':'')+
     (link?'<p class="hint"><a href="'+e(link)+'" target="_blank" rel="noopener noreferrer">Official route reference</a></p>':'')+
    '</div><button type="button" class="mini'+(active?' selected':'')+'" data-act="toggle:'+e(s.school_id)+'" aria-pressed="'+active+'">'+b+'</button></div>';
  }).join(''):'<div class="empty">No schools match these filters. Try a different area or search.</div>')+
