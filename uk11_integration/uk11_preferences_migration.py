@@ -22,6 +22,18 @@ CREATE TABLE IF NOT EXISTS uk11_student_preferences (
 """
 
 
+# UK-only learner identity is independent of school selection. In the real
+# ScoreMax runtime this mapping must come from an approved UK onboarding path.
+UK_MARKET_DDL = """
+CREATE TABLE IF NOT EXISTS uk11_learner_markets (
+ student_user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+ market_id TEXT NOT NULL CHECK (market_id='UK'),
+ programme_id TEXT NOT NULL CHECK (programme_id='UK11'),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+
 def migrate(db_path: Path):
     if not db_path.is_file():
         raise ValueError("UK11_DB_MUST_EXIST_ON_DISPOSABLE_TEST_ENV")
@@ -31,6 +43,7 @@ def migrate(db_path: Path):
             raise ValueError("UK11_EXISTING_SCOREMAX_USERS_TABLE_REQUIRED")
         c.execute("BEGIN IMMEDIATE")
         c.execute(DDL)
+        c.execute(UK_MARKET_DDL)
         c.commit()
 
 
