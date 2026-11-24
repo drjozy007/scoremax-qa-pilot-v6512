@@ -79,51 +79,59 @@ def csrf(client):
   return s['_csrf_token']
 
 def login(client,idx):
- page=client.get('/login',base_url=BASEURL)
+ page=paced_get(client,'/login',base_url=BASEURL)
  assert page.status_code==200,('LOGIN_FORM',page.status_code)
  token=csrf(client)
- resp=client.post('/login',base_url=BASEURL,data={'identity':f'uk11-native-{idx}','password':'Synthetic-only-Strong-Password-2026!','_csrf_token':token},follow_redirects=False)
+ resp=paced_post(client,'/login',base_url=BASEURL,data={'identity':f'uk11-native-{idx}','password':'Synthetic-only-Strong-Password-2026!','_csrf_token':token},follow_redirects=False)
  assert resp.status_code==302,('NATIVE_LOGIN_REDIRECT',resp.status_code,resp.data[:300])
  with client.session_transaction(base_url=BASEURL) as s:
   assert s.get('user_id')==users[idx-1],('NATIVE_LOGIN_SESSION',dict(s))
  record('native_login',student_index=idx,status=resp.status_code)
  return csrf(client)
 
+import time
+def paced_get(client,*args,**kwargs):
+ time.sleep(1.3)  # honor existing native request-rate protection
+ return getattr(client,'get')(*args,**kwargs)
+def paced_post(client,*args,**kwargs):
+ time.sleep(1.3)
+ return getattr(client,'post')(*args,**kwargs)
+
 with app.test_client() as client:
- anon=client.get('/uk11/api/me/schools',base_url=BASEURL)
+ anon=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert anon.status_code in (302,401,403),('ANON_ACCESS',anon.status_code)
  record('unauthenticated_guard',status=anon.status_code)
  t=login(client,1)
- initial=client.get('/uk11/api/me/schools',base_url=BASEURL)
+ initial=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert initial.status_code==200,('INITIAL_GET',initial.status_code)
  assert initial.json['school_keys']==[]
- no_csrf=client.post('/uk11/api/me/schools',base_url=BASEURL,json={'entry_year':2028,'revision':0,'school_keys':['synthetic:school:a']})
+ no_csrf=paced_post(client,'/uk11/api/me/schools',base_url=BASEURL,json={'entry_year':2028,'revision':0,'school_keys':['synthetic:school:a']})
  assert no_csrf.status_code==400,('CSRF_MISSING',no_csrf.status_code)
  data={'entry_year':2028,'revision':0,'school_keys':['synthetic:school:a','synthetic:school:b']}
- saved=client.post('/uk11/api/me/schools',base_url=BASEURL,json=data,headers={'X-CSRF-Token':t})
+ saved=paced_post(client,'/uk11/api/me/schools',base_url=BASEURL,json=data,headers={'X-CSRF-Token':t})
  assert saved.status_code==200,('PREFERENCE_SAVE',saved.status_code,saved.data[:400])
  assert saved.json['subjects']==['Maths'] and len(saved.json['routes'])==1
  assert saved.json['revision']==1
  record('native_save',status=saved.status_code,selected=len(saved.json['school_keys']),route_count=len(saved.json['routes']))
- stale=client.post('/uk11/api/me/schools',base_url=BASEURL,json=data,headers={'X-CSRF-Token':t})
+ stale=paced_post(client,'/uk11/api/me/schools',base_url=BASEURL,json=data,headers={'X-CSRF-Token':t})
  assert stale.status_code==409,('STALE_REVISION',stale.status_code)
- logout=client.get('/logout',base_url=BASEURL,follow_redirects=False)
+ logout=paced_get(client,'/logout',base_url=BASEURL,follow_redirects=False)
  assert logout.status_code in (302,303),('NATIVE_LOGOUT',logout.status_code)
- after=client.get('/uk11/api/me/schools',base_url=BASEURL)
+ after=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert after.status_code in (302,401,403),('AFTER_LOGOUT',after.status_code)
  record('native_logout',status=logout.status_code)
  t=login(client,1)
- persisted=client.get('/uk11/api/me/schools',base_url=BASEURL)
+ persisted=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert persisted.status_code==200 and persisted.json['school_keys']==data['school_keys'],('LOGIN_RESTORE',persisted.status_code)
  record('login_restore',status=persisted.status_code,revision=persisted.json['revision'])
- client.get('/logout',base_url=BASEURL)
+ paced_get(client,'/logout',base_url=BASEURL)
  t2=login(client,2)
- isolated=client.get('/uk11/api/me/schools',base_url=BASEURL)
+ isolated=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert isolated.status_code==200 and isolated.json['school_keys']==[],('SECOND_STUDENT_LEAK',isolated.status_code)
  record('cross_student_isolation',status=isolated.status_code)
- client.get('/logout',base_url=BASEURL)
+ paced_get(client,'/logout',base_url=BASEURL)
  login(client,3)
- forbidden=client.get('/uk11/api/me/schools',base_url=BASEURL)
+ forbidden=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert forbidden.status_code==403,('PARENT_ROLE_DENIAL',forbidden.status_code)
  record('parent_role_denial',status=forbidden.status_code)
 print('UK11_NATIVE_LOGIN_PREFERENCES_REPLAY_PASSED')
