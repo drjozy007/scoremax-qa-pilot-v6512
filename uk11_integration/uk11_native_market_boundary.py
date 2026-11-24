@@ -1,0 +1,122 @@
+"""Explicit UK learner market boundary for disposable native ScoreMax qualification.
+
+UK account market is persisted independently of selected schools. A UK student
+must never fall through to the Pakistan native student handler or native
+practice/marking when UK route entitlements are not yet qualified.
+
+This candidate is installed AFTER ScoreMax native authentication, session
+revocation, synthetic learner fences and CSRF. For UK pages it renders a
+minimal extension of ScoreMax's existing presentation conventions without
+invoking the Pakistan learner dashboard or its Jinja context processors.
+"""
+from __future__ import annotations
+from contextlib import closing
+from html import escape
+from flask import Response, redirect, request, session
+
+UK_MARKET = "UK"
+UK_PROGRAMME = "UK11"
+UK_ALLOWED_ENDPOINTS = frozenset({
+    "uk11_account.get_schools",
+    "uk11_account.set_schools",
+    "uk11_school_dashboard.uk11_my_learning",
+    "logout",
+    "static",
+    "dashboard",
+    "student_dashboard",
+})
+UK_BLOCKED_PREFIXES = ("/api/integration/",)
+
+
+def install_uk11_market_boundary(app, db_factory, route_projection):
+    if app.extensions.get("scoremax_uk11_market_gate") is not None:
+        raise RuntimeError("UK11_MARKET_BOUNDARY_DUPLICATE")
+    if not app.before_request_funcs.get(None):
+        raise RuntimeError("UK11_NATIVE_SECURITY_GATE_REQUIRED")
+
+    def find_market(uid):
+        with closing(db_factory()) as c:
+            return c.execute(
+                "SELECT market_id,programme_id FROM uk11_learner_markets WHERE student_user_id=?",
+                (uid,),
+            ).fetchone()
+
+    def home_page():
+        # Reuse the native account projection: no duplicate school/test resolver.
+        response = route_projection()
+        if response.status_code != 200:
+            return response
+        context = response.get_json()
+        schools = context["schools"]
+        routes = context["routes"]
+        subjects = context["subjects"]
+        pending = context["pending"]
+        # Escape every school/source-provided value. Only display metadata is
+        # rendered; no internal IDs, QA statuses, answer/rubric or user data.
+        rows = lambda xs,field: "<ul>" + "".join(
+            "<li>" + escape(str(v.get(field) or "")) + "</li>"
+            for v in xs if isinstance(v,dict) and v.get(field)
+        ) + "</ul>"
+        school_html = rows(schools,"name") or "<p>No target schools selected.</p>"
+        if not schools: school_html = "<p>No target schools selected.</p>"
+        route_html = rows(routes,"name") if routes else "<p>No verified tests assigned.</p>"
+        subject_html = "<ul>" + "".join("<li>"+escape(str(s))+"</li>" for s in subjects)+"</ul>" if subjects else "<p>Subjects not yet established.</p>"
+        pending_html = "<p role='status'>Admissions mapping pending verification; no unsupported subjects added.</p>" if pending else ""
+        body = """<!doctype html><html lang='en'><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>My UK 11+ ScoreMax</title><style>
+body{margin:0;background:#f6f8fa;color:#1c303a;font:16px system-ui,sans-serif}
+header,main{max-width:1100px;padding:20px;margin:auto}
+nav a{margin-right:18px;color:#176b70}
+section{background:white;padding:22px;margin:15px 0;border-radius:15px;border:1px solid #dbe5e5}
+h1,h2{margin:0 0 14px}li{padding:5px 0}
+.levels span{display:inline-block;border:1px solid #c6d5d5;padding:8px;margin:4px;border-radius:8px}
+@media(max-width:500px){header,main{padding:12px}section{padding:15px}}
+</style></head><body>
+<header><strong>ScoreMax · UK 11+</strong><nav aria-label='Student navigation'>
+<a href='/student'>Home</a><a href='/uk11/my-learning'>My schools and subjects</a>
+<a href='/logout'>Log out</a></nav></header>
+<main><h1>My UK 11+ learning</h1>
+<p>Your preparation follows your saved schools. Selecting a school does not establish admissions eligibility.</p>
+<section id='uk11-school-context'><h2>Selected schools</h2>""" + school_html + """
+<h2>Relevant examinations</h2>""" + route_html + """
+<h2>Relevant subjects</h2>""" + subject_html + pending_html + """</section>
+<section><h2>Six mastery levels</h2><div class='levels'>
+<span>Foundation</span><span>Exam Ready</span><span>Advanced</span>
+<span>Distinction</span><span>Expert</span><span>Elite</span></div>
+<p><strong>Current status: Not Yet Established</strong></p>
+<p>Practice, exams and study plans will be available when their UK mappings and native marking are qualified.</p>
+</section></main></body></html>"""
+        return Response(body,status=200,mimetype="text/html",
+                        headers={"Cache-Control":"no-store, private","X-Content-Type-Options":"nosniff"})
+
+    @app.before_request
+    def uk11_learner_market_gate():
+        # This boundary is specific to the authenticated UK student. It cannot
+        # override /login or existing parent/admin/reviewer behaviour.
+        uid = session.get("user_id")
+        if type(uid) is not int or session.get("role") != "student":
+            return None
+        record = find_market(uid)
+        if record is None:
+            return None                 # Explicitly Pakistan/legacy account
+        if record["market_id"] != UK_MARKET or record["programme_id"] != UK_PROGRAMME:
+            return Response("Unsupported learner market", status=403)
+        if request.endpoint in ("dashboard",):
+            return redirect("/student")
+        if request.endpoint == "student_dashboard":
+            if request.method != "GET":
+                return Response("UK method not qualified", status=405)
+            return home_page()
+        if request.endpoint in UK_ALLOWED_ENDPOINTS:
+            return None
+        # Do not let a UK student traverse the native Pakistan subject, question,
+        # mock, study plan, marking or mastery routes until explicitly qualified.
+        return Response("This UK 11+ learning feature is not yet available.",
+                        status=403, mimetype="text/plain",
+                        headers={"Cache-Control":"no-store, private"})
+
+    app.extensions["scoremax_uk11_market_gate"] = {"market":UK_MARKET,"programme":UK_PROGRAMME,
+                                                       "test_only":True,"method":"explicit_account_mapping"}
+    return {"installed":True,"test_only":True,"default_market_unchanged":True,
+            "unqualified_native_routes_blocked":True}
