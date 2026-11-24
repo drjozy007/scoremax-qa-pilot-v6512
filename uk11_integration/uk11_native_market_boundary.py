@@ -127,6 +127,12 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
     # Registered at the beginning so Flask executes this LAST among the
     # global after_request hooks. Do not remove native session/security headers.
     def uk11_final_response_boundary(response):
+        registration_html = getattr(g, "uk11_registration_base_html", None)
+        if registration_html is not None and request.endpoint == "register" and request.method == "GET":
+            response.set_data(registration_html.encode("utf-8"))
+            response.mimetype = "text/html"
+            response.headers["Cache-Control"] = "no-store, private"
+            response.headers["X-Content-Type-Options"] = "nosniff"
         safe_html = getattr(g, "uk11_final_home_html", None)
         if safe_html is not None and request.endpoint in ("student_dashboard", "uk11_school_dashboard.uk11_my_learning"):
             response.set_data(safe_html.encode("utf-8"))
