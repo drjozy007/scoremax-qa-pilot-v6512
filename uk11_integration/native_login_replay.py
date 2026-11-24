@@ -42,6 +42,7 @@ os.environ.pop('DEEPSEEK_API_KEY',None)
 sys.path[:0]=['/app','/qualifier','/checks/native_guard']
 from uk11_preferences_migration import DDL
 from uk11_native_mount import mount_into_disposable_scoremax
+from uk11_native_student_home import install_disposable_student_home
 import scoremax_persistent_storage_guard as guard
 guard.main()
 import scoremax_production as runtime
@@ -81,6 +82,8 @@ def resolve(keys,year):
          'pending':pending,'evidence_revision':'synthetic-only'}
 out=mount_into_disposable_scoremax(app,'/app',sm.db,schools,resolve)
 record('mounted',**out,route_count=len(list(app.url_map.iter_rules())))
+home_overlay=install_disposable_student_home('/app',app)
+record('native_student_home_installed',**home_overlay)
 BASEURL='https://scoremax.pk'
 
 def csrf(client):
@@ -130,6 +133,16 @@ with app.test_client() as client:
  assert html.count('Shared Maths route')==1,('SHARED_TEST_NOT_DEDUPED',html)
  assert all(x in html for x in ('Foundation','Exam Ready','Advanced','Distinction','Expert','Elite','Not Yet Established'))
  record('dashboard_two_schools',status=page.status_code,shared_test_once=True,maths_only=True)
+ native_home=paced_get(client,'/student',base_url=BASEURL)
+ assert native_home.status_code==200,('UK_NATIVE_STUDENT_HOME',native_home.status_code,native_home.data[:500])
+ native_html=native_home.get_data(as_text=True)
+ assert 'uk11-school-context' in native_html and 'Alpha' in native_html and 'Beta' in native_html
+ assert 'Shared Maths route' in native_html and native_html.count('Shared Maths route')==1
+ assert 'English route' not in native_html and '<li>English</li>' not in native_html
+ assert 'Not Yet Established' in native_html and 'Elite' in native_html
+ assert 'MY SUBJECTS' not in native_html and 'COMING UP' not in native_html
+ record('native_student_home_two_schools',status=native_home.status_code,maths_only=True)
+
 
  stale=paced_post(client,'/uk11/api/me/schools',base_url=BASEURL,json=data,headers={'X-CSRF-Token':t})
  assert stale.status_code==409,('STALE_REVISION',stale.status_code)
@@ -160,12 +173,28 @@ with app.test_client() as client:
  assert 'Unmapped admissions route' in changed_html
  assert 'Not Yet Established' in changed_html
  record('dashboard_changed_schools',status=changed_page.status_code,english_only=True,pending_visible=True)
+ changed_home=paced_get(client,'/student',base_url=BASEURL)
+ assert changed_home.status_code==200,('CHANGED_NATIVE_HOME',changed_home.status_code)
+ changed_native=changed_home.get_data(as_text=True)
+ assert 'Gamma' in changed_native and 'Unmapped' in changed_native
+ assert 'English route' in changed_native and '<li>English</li>' in changed_native
+ assert 'Shared Maths route' not in changed_native and '<li>Maths</li>' not in changed_native
+ assert 'Admissions verification pending' in changed_native
+ record('native_student_home_changed',status=changed_home.status_code,english_only=True,pending_visible=True)
+
 
  paced_get(client,'/logout',base_url=BASEURL)
  t2=login(client,2)
  isolated=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert isolated.status_code==200 and isolated.json['school_keys']==[],('SECOND_STUDENT_LEAK',isolated.status_code)
  record('cross_student_isolation',status=isolated.status_code)
+ pakistan_home=paced_get(client,'/student',base_url=BASEURL)
+ assert pakistan_home.status_code==200,('PAKISTAN_REGRESSION_HOME',pakistan_home.status_code)
+ pakistan_html=pakistan_home.get_data(as_text=True)
+ assert 'uk11-school-context' not in pakistan_html
+ assert 'MY SUBJECTS' in pakistan_html and 'COMING UP' in pakistan_html
+ record('pakistan_home_unchanged',status=pakistan_home.status_code,uk_panel_absent=True)
+
  paced_get(client,'/logout',base_url=BASEURL)
  login(client,3)
  forbidden=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
