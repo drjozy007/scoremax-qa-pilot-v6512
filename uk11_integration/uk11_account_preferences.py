@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from datetime import datetime, timezone
+from contextlib import closing
 
 from flask import Blueprint, abort, jsonify, request, session
 
@@ -57,7 +58,7 @@ def create_uk11_blueprint(db_factory, school_catalogue, route_resolver):
 
     def current_user(c, uid):
         row = c.execute("SELECT id,role,account_status FROM users WHERE id=?", (uid,)).fetchone()
-        if row is None or row["role"] != "student" or row["account_status"] != "active":
+        if row is None or row["role"] != "student" or row["account_status"] not in (None, "", "active"):
             abort(403)
 
     def selection(c, uid):
@@ -93,7 +94,7 @@ def create_uk11_blueprint(db_factory, school_catalogue, route_resolver):
     @bp.get("/me/schools")
     def get_schools():
         uid = student_id()
-        with db_factory() as c:
+        with closing(db_factory()) as c:
             ensure_storage(c)
             current_user(c, uid)
             return jsonify(projection(selection(c, uid)))
@@ -111,7 +112,7 @@ def create_uk11_blueprint(db_factory, school_catalogue, route_resolver):
         expected_revision = body.get("revision")
         if type(expected_revision) is not int or expected_revision < 0:
             abort(400, description="Missing preference revision")
-        with db_factory() as c:
+        with closing(db_factory()) as c:
             ensure_storage(c)
             current_user(c, uid)
             existing = selection(c, uid)
