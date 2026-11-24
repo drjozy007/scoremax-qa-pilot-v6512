@@ -61,7 +61,8 @@ def install_uk11_market_boundary(app, db_factory, route_projection):
         if not schools: school_html = "<p>No target schools selected.</p>"
         route_html = rows(routes,"name") if routes else "<p>No verified tests assigned.</p>"
         subject_html = "<ul>" + "".join("<li>"+escape(str(s))+"</li>" for s in subjects)+"</ul>" if subjects else "<p>Subjects not yet established.</p>"
-        pending_html = "<p role='status'>Admissions mapping pending verification; no unsupported subjects added.</p>" if pending else ""
+        pending_html = ("<p role='status'>Admissions verification pending; no unsupported subjects added.</p>" +
+            rows(pending,"message")) if pending else ""
         body = """<!doctype html><html lang='en'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>My UK 11+ ScoreMax</title><style>
@@ -111,7 +112,7 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
             return Response("Unsupported learner market", status=403)
         if request.endpoint in ("dashboard",):
             return redirect("/student")
-        if request.endpoint == "student_dashboard":
+        if request.endpoint in ("student_dashboard", "uk11_school_dashboard.uk11_my_learning"):
             if request.method != "GET":
                 return Response("UK method not qualified", status=405)
             return home_page()
@@ -127,7 +128,7 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
     # global after_request hooks. Do not remove native session/security headers.
     def uk11_final_response_boundary(response):
         safe_html = getattr(g, "uk11_final_home_html", None)
-        if safe_html is not None and request.endpoint == "student_dashboard":
+        if safe_html is not None and request.endpoint in ("student_dashboard", "uk11_school_dashboard.uk11_my_learning"):
             response.set_data(safe_html.encode("utf-8"))
             response.mimetype = "text/html"
             response.headers["Cache-Control"] = "no-store, private"
