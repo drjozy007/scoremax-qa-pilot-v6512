@@ -64,12 +64,21 @@ for suffix,role in [(1,'student'),(2,'student'),(3,'parent')]:
  VALUES(?,?,?,?,?,?,?)""",(f'UKSYN-{suffix}',role,f'Synthetic UK {suffix}',username,f'uk11native{suffix}@example.test',generate_password_hash(password),'active'))
  users.append(c.execute('SELECT id FROM users WHERE username=?',(username,)).fetchone()['id'])
 c.commit();c.close()
-schools={'synthetic:school:a':{'name':'Alpha'},'synthetic:school:b':{'name':'Beta'}}
+schools={'synthetic:school:a':{'name':'Alpha'},'synthetic:school:b':{'name':'Beta'},
+         'synthetic:school:c':{'name':'Gamma'},'synthetic:school:pending':{'name':'Unmapped'}}
 def resolve(keys,year):
- routes=[{'route_id':'synthetic:shared','evidence_status':'SYNTHETIC_ONLY'}] if keys else []
+ routes=[]
+ if any(k in keys for k in ('synthetic:school:a','synthetic:school:b')):
+  routes.append({'route_id':'synthetic:shared','name':'Shared Maths route','evidence_status':'SYNTHETIC_ONLY'})
+ if 'synthetic:school:c' in keys:
+  routes.append({'route_id':'synthetic:english','name':'English route','evidence_status':'SYNTHETIC_ONLY'})
+ subjects=[]
+ if any(k in keys for k in ('synthetic:school:a','synthetic:school:b')):subjects.append('Maths')
+ if 'synthetic:school:c' in keys:subjects.append('English')
+ pending=[{'message':'Unmapped admissions route'}] if 'synthetic:school:pending' in keys else []
  return {'schools':[schools[k] for k in keys],
-         'routes':routes,'subjects':['Maths'] if keys else [],
-         'pending':[],'evidence_revision':'synthetic-only'}
+         'routes':routes,'subjects':subjects,
+         'pending':pending,'evidence_revision':'synthetic-only'}
 out=mount_into_disposable_scoremax(app,'/app',sm.db,schools,resolve)
 record('mounted',**out,route_count=len(list(app.url_map.iter_rules())))
 BASEURL='https://scoremax.pk'
@@ -113,6 +122,15 @@ with app.test_client() as client:
  assert saved.json['subjects']==['Maths'] and len(saved.json['routes'])==1
  assert saved.json['revision']==1
  record('native_save',status=saved.status_code,selected=len(saved.json['school_keys']),route_count=len(saved.json['routes']))
+ page=paced_get(client,'/uk11/my-learning',base_url=BASEURL)
+ assert page.status_code==200,('NATIVE_DASHBOARD_INITIAL',page.status_code,page.data[:500])
+ html=page.get_data(as_text=True)
+ assert 'Alpha' in html and 'Beta' in html and 'Maths' in html
+ assert 'English route' not in html and '<li>English</li>' not in html
+ assert html.count('Shared Maths route')==1,('SHARED_TEST_NOT_DEDUPED',html)
+ assert all(x in html for x in ('Foundation','Exam Ready','Advanced','Distinction','Expert','Elite','Not Yet Established'))
+ record('dashboard_two_schools',status=page.status_code,shared_test_once=True,maths_only=True)
+
  stale=paced_post(client,'/uk11/api/me/schools',base_url=BASEURL,json=data,headers={'X-CSRF-Token':t})
  assert stale.status_code==409,('STALE_REVISION',stale.status_code)
  logout=paced_get(client,'/logout',base_url=BASEURL,follow_redirects=False)
@@ -124,6 +142,25 @@ with app.test_client() as client:
  persisted=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert persisted.status_code==200 and persisted.json['school_keys']==data['school_keys'],('LOGIN_RESTORE',persisted.status_code)
  record('login_restore',status=persisted.status_code,revision=persisted.json['revision'])
+ restored_page=paced_get(client,'/uk11/my-learning',base_url=BASEURL)
+ assert restored_page.status_code==200 and 'Alpha' in restored_page.get_data(as_text=True)
+ assert 'Beta' in restored_page.get_data(as_text=True)
+ record('dashboard_after_login',status=restored_page.status_code)
+ changed=paced_post(client,'/uk11/api/me/schools',base_url=BASEURL,
+    json={'entry_year':2028,'revision':1,'school_keys':['synthetic:school:c','synthetic:school:pending']},
+    headers={'X-CSRF-Token':t})
+ assert changed.status_code==200,('CHANGE_SCHOOL',changed.status_code,changed.data[:300])
+ assert changed.json['subjects']==['English'] and len(changed.json['routes'])==1 and len(changed.json['pending'])==1
+ changed_page=paced_get(client,'/uk11/my-learning',base_url=BASEURL)
+ changed_html=changed_page.get_data(as_text=True)
+ assert changed_page.status_code==200
+ assert 'Gamma' in changed_html and 'Unmapped' in changed_html
+ assert 'English route' in changed_html and '<li>English</li>' in changed_html
+ assert '<li>Maths</li>' not in changed_html and 'Shared Maths route' not in changed_html
+ assert 'Unmapped admissions route' in changed_html
+ assert 'Not Yet Established' in changed_html
+ record('dashboard_changed_schools',status=changed_page.status_code,english_only=True,pending_visible=True)
+
  paced_get(client,'/logout',base_url=BASEURL)
  t2=login(client,2)
  isolated=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
