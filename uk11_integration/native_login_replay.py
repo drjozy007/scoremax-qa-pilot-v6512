@@ -36,7 +36,8 @@ os.environ.update({
  'SCOREMAX_INTERNAL_FULL_ACCESS':'0',
  'SCOREMAX_PAID_AI_FEEDBACK':'0',
  'SCOREMAX_AI_PLATFORM_BUDGET_MICRO_USD':'0',
- 'SCOREMAX_UK11_DISPOSABLE_TEST_MODE':'1'
+ 'SCOREMAX_UK11_DISPOSABLE_TEST_MODE':'1',
+ 'SCOREMAX_UK11_TEST_REGISTRATION':'1'
 })
 os.environ.pop('DEEPSEEK_API_KEY',None)
 sys.path[:0]=['/app','/qualifier','/checks/native_guard']
@@ -223,4 +224,42 @@ with app.test_client() as client:
  forbidden=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert forbidden.status_code==403,('PARENT_ROLE_DENIAL',forbidden.status_code)
  record('parent_role_denial',status=forbidden.status_code)
+
+# Test native UK student registration without adding a second authentication flow.
+# Account and market mapping must commit atomically through the native handler.
+ paced_get(client,'/logout',base_url=BASEURL)
+ signup=paced_get(client,'/register/student',base_url=BASEURL)
+ assert signup.status_code==200,('UK_SIGNUP_FORM',signup.status_code)
+ signup_html=signup.get_data(as_text=True)
+ assert 'Join ScoreMax UK 11+' in signup_html and 'UK11' in signup_html
+ assert all(t not in signup_html for t in ('FSc','MDCAT','Biology','Chemistry'))
+ registration=paced_post(client,'/register/student',base_url=BASEURL,data={
+   '_csrf_token':csrf(client),
+   'full_name':'Synthetic UK Learner',
+   'email':'uk11-new-registration@example.test',
+   'password':'Synthetic-only-Strong-Password-2026!',
+   'academic_level':'UK11'
+ },follow_redirects=False)
+ assert registration.status_code in (302,303),('NATIVE_UK_REGISTRATION',registration.status_code,registration.data[:250])
+ with sm.db() as c:
+  person=c.execute("SELECT id,role,active_programme,academic_level FROM users WHERE email=?",('uk11-new-registration@example.test',)).fetchone()
+  assert person is not None and person['role']=='student'
+  assert person['active_programme']=='UK11'
+  market=c.execute("SELECT market_id,programme_id FROM uk11_learner_markets WHERE student_user_id=?",(person['id'],)).fetchone()
+  assert market is not None and market['market_id']=='UK' and market['programme_id']=='UK11'
+ record('native_registration_provisioned_uk_market',status=registration.status_code,market='UK',programme='UK11')
+ # Existing authentication path must recognise the same new account.
+ login_page=paced_get(client,'/login',base_url=BASEURL)
+ assert login_page.status_code==200
+ signin=paced_post(client,'/login',base_url=BASEURL,data={
+   'identity':'uk11-new-registration@example.test',
+   'password':'Synthetic-only-Strong-Password-2026!',
+   '_csrf_token':csrf(client)
+ },follow_redirects=False)
+ assert signin.status_code==302,('NEW_UK_LOGIN',signin.status_code)
+ registered_home=paced_get(client,'/student',base_url=BASEURL)
+ assert registered_home.status_code==200
+ assert 'UK 11+' in registered_home.get_data(as_text=True)
+ assert 'No target schools selected' in registered_home.get_data(as_text=True)
+ record('registered_uk_first_login',status=registered_home.status_code)
 print('UK11_NATIVE_LOGIN_PREFERENCES_REPLAY_PASSED')
