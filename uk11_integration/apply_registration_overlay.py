@@ -54,13 +54,15 @@ def apply(root: Path):
     revised = original.replace(DATABASE_ANCHOR, DATABASE_REPLACEMENT, 1)
     # Display-only template is specific to student registration. The source
     # patch redirects rendering to this separate student template in test mode.
-    template_anchor = "    return render_template('register.html',role=role,institutions=institutions,referral_source=request.args.get('source',''),referral_code=request.args.get('ref',''),selected_programme=request.args.get('programme',''))"
-    if revised.count(template_anchor)!=1:
-        raise RuntimeError("UK11_NATIVE_REGISTRATION_TEMPLATE_ANCHOR_DRIFT")
-    revised = revised.replace(template_anchor,
-        "    if role=='student' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\n"
-        "        return render_template('uk11_register_student.html')\n"
-        + template_anchor,1)
+    # Intercept only UK test student registration GET; POST remains the native
+    # registration handler with its complete security and account lifecycle.
+    register_anchor = "def register(role):\n"
+    if revised.count(register_anchor)!=1:
+        raise RuntimeError("UK11_NATIVE_REGISTER_FUNCTION_ANCHOR_DRIFT")
+    revised = revised.replace(register_anchor,
+        register_anchor +
+        "    if role=='student' and request.method=='GET' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\n" +
+        "        return render_template('uk11_register_student.html')\n", 1)
     dest = root / "templates" / "uk11_register_student.html"
     if dest.exists():
         raise RuntimeError("UK11_REGISTRATION_TEMPLATE_ALREADY_EXISTS")
