@@ -26,8 +26,12 @@ def client(tmp_path):
         return conn
     app = Flask(__name__)
     app.secret_key="synthetic-uk-test-secret"
+    app.config["UK11_TEST_DB_PATH"] = str(dbpath)
+    app.config["UK11_BAD_PROJECTION"] = None
     schools={"school:a": {"name":"A"}, "school:b":{"name":"B"}}
     def resolver(keys,year):
+        if app.config["UK11_BAD_PROJECTION"] is not None:
+            return app.config["UK11_BAD_PROJECTION"]
         return {"schools":[schools[k] for k in keys], "routes":[{"key":"shared"}] if keys else [],
                 "subjects":["Maths"] if keys else [],"pending":[],"evidence_revision":"synthetic-only"}
     app.register_blueprint(create_uk11_blueprint(db_factory,schools,resolver))
@@ -85,3 +89,27 @@ def test_legacy_session_with_missing_identity_cannot_write(client):
     sign_in(client,999)
     assert client.post("/uk11/api/me/schools",json={
         "entry_year":2028,"school_keys":[],"revision":0}).status_code==403
+
+
+def test_disabled_student_is_denied(client):
+    sign_in(client,1)
+    with sqlite3.connect(client.application.config["UK11_TEST_DB_PATH"]) as c:
+        c.execute("UPDATE users SET account_status='disabled' WHERE id=1")
+    assert client.get("/uk11/api/me/schools").status_code == 403
+    assert client.post("/uk11/api/me/schools",json={
+        "entry_year":2028, "school_keys":["school:a"], "revision":0}).status_code == 403
+
+
+@pytest.mark.parametrize("invalid_projection", [
+    {"schools": [], "routes": [], "subjects": "Maths", "pending": []},
+    {"schools": [], "routes": [], "subjects": ["Physics"], "pending": []},
+    {"schools": [], "routes": [], "subjects": ["Maths", "Maths"], "pending": []},
+])
+def test_resolver_failure_does_not_write_preferences(client, invalid_projection):
+    sign_in(client,1)
+    client.application.config["UK11_BAD_PROJECTION"] = invalid_projection
+    with pytest.raises(RuntimeError):
+        client.post("/uk11/api/me/schools",json={
+            "entry_year":2028, "school_keys":["school:a"], "revision":0})
+    with sqlite3.connect(client.application.config["UK11_TEST_DB_PATH"]) as c:
+        assert c.execute("SELECT COUNT(*) FROM uk11_student_preferences").fetchone()[0] == 0
