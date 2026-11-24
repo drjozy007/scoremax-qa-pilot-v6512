@@ -37,3 +37,11 @@ Extend the native ScoreMax Flask login session and SQLite-backed user profile, *
 
 ## Potential improvements after gate
 Keep a revision history/audit trail of changed school selections in authenticated storage. Cache bounded evidence-qualified school/route responses; invalidate on authority revision or school-policy withdrawal. Enforce routing authorisation server-side for all question allocation, marking and mastery, not only front-end display.
+
+## 24 November isolated test progression
+- GitHub Actions run 45360056425 passed the original synthetic account test suite.
+- Run 45362485088 passed expanded synthetic checks for disabled accounts and route-projection atomicity.
+- Separate default-off adapter `uk11_native_mount.py` is now available for a disposable assembled runtime only: requires explicit environment flag, physical marker, and existing Flask before-request hook.
+- The mount helper is **NOT** a substitute for native authentication/CSRF/session-version verification. A before-request hook's presence does not prove its policy correctness.
+- New mount-boundary tests are included in CI workflow `uk11-school-preferences-isolated.yml`; latest combined run must be checked before reporting pass.
+- No question bank, admissions approval, login policy, live deployment or production DB was changed.
