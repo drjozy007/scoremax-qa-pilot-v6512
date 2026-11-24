@@ -240,9 +240,14 @@ with app.test_client() as client:
    'password':'Synthetic-only-Strong-Password-2026!',
    'academic_level':'UK11'
  },follow_redirects=False)
+ record('native_signup_http_result',status=registration.status_code,redirect=registration.headers.get('Location',''))
  assert registration.status_code in (302,303),('NATIVE_UK_REGISTRATION',registration.status_code,registration.data[:250])
  with sm.db() as c:
   person=c.execute("SELECT id,role,active_programme,academic_level FROM users WHERE email=?",('uk11-new-registration@example.test',)).fetchone()
+  if person is None:
+   with client.session_transaction(base_url=BASEURL) as state:
+    messages=state.get('_flashes',[])
+   record('native_signup_rejected',flash_categories=[m[0] for m in messages],flash_message_hints=[str(m[1])[:160] for m in messages])
   assert person is not None and person['role']=='student'
   assert person['active_programme']=='UK11'
   market=c.execute("SELECT market_id,programme_id FROM uk11_learner_markets WHERE student_user_id=?",(person['id'],)).fetchone()
