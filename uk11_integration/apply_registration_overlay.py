@@ -67,7 +67,14 @@ def apply(root: Path):
     if dest.exists():
         raise RuntimeError("UK11_REGISTRATION_TEMPLATE_ALREADY_EXISTS")
     # No partial write until all source anchors have been qualified.
-    compile(revised, str(appfile), "exec")
+    try:
+        compile(revised, str(appfile), "exec")
+    except SyntaxError as exc:
+        lines=revised.splitlines()
+        lo=max(0,(exc.lineno or 1)-5)
+        hi=min(len(lines),(exc.lineno or 1)+3)
+        raise RuntimeError("UK11_NATIVE_REGISTRATION_COMPILE_ERROR line=%s context=%r" %
+                           (exc.lineno,list(enumerate(lines[lo:hi],start=lo+1)))) from exc
     appfile.write_text(revised,encoding="utf-8")
     dest.write_text(TEMPLATE,encoding="utf-8")
     print("UK11_ISOLATED_NATIVE_REGISTRATION_OVERLAY_APPLIED")
