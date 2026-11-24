@@ -40,9 +40,10 @@ os.environ.update({
 })
 os.environ.pop('DEEPSEEK_API_KEY',None)
 sys.path[:0]=['/app','/qualifier','/checks/native_guard']
-from uk11_preferences_migration import DDL
+from uk11_preferences_migration import DDL, UK_MARKET_DDL
 from uk11_native_mount import mount_into_disposable_scoremax
 from uk11_native_student_home import install_disposable_student_home
+from uk11_native_market_boundary import install_uk11_market_boundary
 import scoremax_persistent_storage_guard as guard
 guard.main()
 import scoremax_production as runtime
@@ -57,6 +58,7 @@ dbpath=Path(os.environ['SCOREMAX_DB'])
 assert dbpath.is_file(), 'EXACT_NATIVE_DB_NOT_INITIALISED'
 c=sm.db()
 c.execute(DDL)
+c.execute(UK_MARKET_DDL)
 users=[]
 for suffix,role in [(1,'student'),(2,'student'),(3,'parent')]:
  username=f'uk11-native-{suffix}'
@@ -64,6 +66,9 @@ for suffix,role in [(1,'student'),(2,'student'),(3,'parent')]:
  c.execute("""INSERT INTO users(system_user_id,role,full_name,username,email,password_hash,account_status)
  VALUES(?,?,?,?,?,?,?)""",(f'UKSYN-{suffix}',role,f'Synthetic UK {suffix}',username,f'uk11native{suffix}@example.test',generate_password_hash(password),'active'))
  users.append(c.execute('SELECT id FROM users WHERE username=?',(username,)).fetchone()['id'])
+# Student 1 belongs to UK regardless of selected school count; student 2
+# remains Pakistan/legacy and must never access UK school routes.
+c.execute("INSERT INTO uk11_learner_markets(student_user_id,market_id,programme_id) VALUES(?,?,?)",(users[0],"UK","UK11"))
 c.commit();c.close()
 schools={'synthetic:school:a':{'name':'Alpha'},'synthetic:school:b':{'name':'Beta'},
          'synthetic:school:c':{'name':'Gamma'},'synthetic:school:pending':{'name':'Unmapped'}}
@@ -82,8 +87,10 @@ def resolve(keys,year):
          'pending':pending,'evidence_revision':'synthetic-only'}
 out=mount_into_disposable_scoremax(app,'/app',sm.db,schools,resolve)
 record('mounted',**out,route_count=len(list(app.url_map.iter_rules())))
-home_overlay=install_disposable_student_home('/app',app)
-record('native_student_home_installed',**home_overlay)
+# Do not overlay Pakistan's old /student presentation in the market-gated
+# UK test. Explicit UK market is resolved before Pakistan student analytics.
+market_gate=install_uk11_market_boundary(app,sm.db,app.view_functions["uk11_account.get_schools"])
+record('native_uk_market_guard_installed',**market_gate)
 BASEURL='https://scoremax.pk'
 
 def csrf(client):
@@ -114,6 +121,12 @@ with app.test_client() as client:
  assert anon.status_code in (302,401,403),('ANON_ACCESS',anon.status_code)
  record('unauthenticated_guard',status=anon.status_code)
  t=login(client,1)
+ empty_market_home=paced_get(client,'/student',base_url=BASEURL)
+ assert empty_market_home.status_code==200
+ empty_html=empty_market_home.get_data(as_text=True)
+ assert 'UK 11+' in empty_html and 'Not Yet Established' in empty_html and 'No target schools selected' in empty_html
+ assert all(token not in empty_html for token in ('FSc','MDCAT','Pakistan','Biology','Chemistry'))
+ record('explicit_uk_market_no_selection',status=200,no_pakistan_content=True)
  initial=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert initial.status_code==200,('INITIAL_GET',initial.status_code)
  assert initial.json['school_keys']==[]
@@ -137,11 +150,17 @@ with app.test_client() as client:
  assert native_home.status_code==200,('UK_NATIVE_STUDENT_HOME',native_home.status_code,native_home.data[:500])
  native_html=native_home.get_data(as_text=True)
  assert 'uk11-school-context' in native_html and 'Alpha' in native_html and 'Beta' in native_html
+ assert all(token not in native_html for token in ('FSc','MDCAT','Pakistan','Biology','Chemistry'))
  assert 'Shared Maths route' in native_html and native_html.count('Shared Maths route')==1
  assert 'English route' not in native_html and '<li>English</li>' not in native_html
  assert 'Not Yet Established' in native_html and 'Elite' in native_html
  assert 'MY SUBJECTS' not in native_html and 'COMING UP' not in native_html
  record('native_student_home_two_schools',status=native_home.status_code,maths_only=True)
+ # UK account must not use Pakistan's unqualified native learning engines.
+ for path in ('/test/setup','/subjects','/exam-centre','/study-plan'):
+  blocked=paced_get(client,path,base_url=BASEURL)
+  assert blocked.status_code==403,('UK_NATIVE_UNQUALIFIED_ROUTE_NOT_BLOCKED',path,blocked.status_code)
+ record('uk_native_learning_fail_closed',count=4,status=403)
 
 
  stale=paced_post(client,'/uk11/api/me/schools',base_url=BASEURL,json=data,headers={'X-CSRF-Token':t})
@@ -186,8 +205,8 @@ with app.test_client() as client:
  paced_get(client,'/logout',base_url=BASEURL)
  t2=login(client,2)
  isolated=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
- assert isolated.status_code==200 and isolated.json['school_keys']==[],('SECOND_STUDENT_LEAK',isolated.status_code)
- record('cross_student_isolation',status=isolated.status_code)
+ assert isolated.status_code==403,('PAKISTAN_LEGACY_UK_API_DENIED',isolated.status_code)
+ record('pakistan_uk_api_denied',status=isolated.status_code)
  pakistan_home=paced_get(client,'/student',base_url=BASEURL)
  assert pakistan_home.status_code==200,('PAKISTAN_REGRESSION_HOME',pakistan_home.status_code)
  pakistan_html=pakistan_home.get_data(as_text=True)
