@@ -85,6 +85,14 @@ def create_uk11_blueprint(db_factory, school_catalogue, route_resolver):
         permitted = {"schools", "routes", "subjects", "pending", "evidence_revision"}
         if not {"schools", "routes", "subjects", "pending"}.issubset(resolved):
             raise RuntimeError("UK11_ROUTE_RESOLVER_INCOMPLETE")
+        if any(not isinstance(resolved[k], list) for k in ("schools", "routes", "subjects", "pending")):
+            raise RuntimeError("UK11_ROUTE_RESOLVER_INVALID_SHAPE")
+        if any(not isinstance(k, str) or k not in ("Maths", "English", "Verbal Reasoning", "Non-Verbal Reasoning") for k in resolved["subjects"]):
+            raise RuntimeError("UK11_ROUTE_RESOLVER_INVALID_SUBJECTS")
+        if len(set(resolved["subjects"])) != len(resolved["subjects"]):
+            raise RuntimeError("UK11_ROUTE_RESOLVER_DUPLICATE_SUBJECT")
+        if len(resolved["schools"]) > MAX_SCHOOLS or len(resolved["routes"]) > 50:
+            raise RuntimeError("UK11_ROUTE_RESOLVER_UNBOUNDED")
         result = {k: resolved[k] for k in permitted if k in resolved}
         result["entry_year"] = preferences["entry_year"]
         result["school_keys"] = preferences["school_keys"]
@@ -121,6 +129,7 @@ def create_uk11_blueprint(db_factory, school_catalogue, route_resolver):
             # One account-scoped update; no arbitrary student ID from client.
             # SQLite IMMEDIATE lock prevents competing read-modify-write requests.
             c.execute("BEGIN IMMEDIATE")
+            current_user(c, uid)
             latest = selection(c, uid)
             if latest["revision"] != expected_revision:
                 c.rollback()
