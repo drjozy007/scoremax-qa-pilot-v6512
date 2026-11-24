@@ -12,7 +12,7 @@ invoking the Pakistan learner dashboard or its Jinja context processors.
 from __future__ import annotations
 from contextlib import closing
 from html import escape
-from flask import Response, redirect, request, session
+from flask import Response, redirect, request, session, g
 
 UK_MARKET = "UK"
 UK_PROGRAMME = "UK11"
@@ -87,6 +87,10 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
 <p><strong>Current status: Not Yet Established</strong></p>
 <p>Practice, exams and study plans will be available when their UK mappings and native marking are qualified.</p>
 </section></main></body></html>"""
+        # Other native/UX after_response hooks may append Pakistan navigation
+        # and subject scripts. Preserve this exact child-safe response in g,
+        # then restore it after those hooks while retaining their headers.
+        g.uk11_final_home_html = body
         return Response(body,status=200,mimetype="text/html",
                         headers={"Cache-Control":"no-store, private","X-Content-Type-Options":"nosniff"})
 
@@ -118,6 +122,19 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
         return Response("This UK 11+ learning feature is not yet available.",
                         status=403, mimetype="text/plain",
                         headers={"Cache-Control":"no-store, private"})
+
+    # Registered at the beginning so Flask executes this LAST among the
+    # global after_request hooks. Do not remove native session/security headers.
+    def uk11_final_response_boundary(response):
+        safe_html = getattr(g, "uk11_final_home_html", None)
+        if safe_html is not None and request.endpoint == "student_dashboard":
+            response.set_data(safe_html.encode("utf-8"))
+            response.mimetype = "text/html"
+            response.headers["Cache-Control"] = "no-store, private"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    app.after_request_funcs.setdefault(None, []).insert(0, uk11_final_response_boundary)
 
     app.extensions["scoremax_uk11_market_gate"] = {"market":UK_MARKET,"programme":UK_PROGRAMME,
                                                        "test_only":True,"method":"explicit_account_mapping"}
