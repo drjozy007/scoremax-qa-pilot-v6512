@@ -83,12 +83,10 @@ def install_disposable_student_home(root, app):
     # Keep Pakistan test history out of UK discovery until an actual UK-market
     # result ownership projection has been qualified.
     history_start = revised.index('{% if attempts %}')
-    root_close = revised.find('</section>\n<script', history_start)
-    if root_close < 0:
-        raise RuntimeError("UK11_STUDENT_HOME_HISTORY_BOUNDARY_DRIFT")
+    history_end = revised.index('{% endif %}', history_start) + len('{% endif %}')
     revised = (revised[:history_start] + '{% if not uk11_context %}\n' +
-               revised[history_start:root_close] + '{% endif %}\n' +
-               revised[root_close:])
+               revised[history_start:history_end] + '\n{% endif %}' +
+               revised[history_end:])
     try:
         app.jinja_env.from_string(revised)
     except Exception as exc:
