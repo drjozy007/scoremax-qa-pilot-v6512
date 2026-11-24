@@ -125,7 +125,11 @@ with app.test_client() as client:
  assert empty_market_home.status_code==200
  empty_html=empty_market_home.get_data(as_text=True)
  assert 'UK 11+' in empty_html and 'Not Yet Established' in empty_html and 'No target schools selected' in empty_html
- assert all(token not in empty_html for token in ('FSc','MDCAT','Pakistan','Biology','Chemistry'))
+ forbidden_tokens=('FSc','MDCAT','Pakistan','Biology','Chemistry')
+ found_tokens=[token for token in forbidden_tokens if token in empty_html]
+ record('uk_market_html_diagnostic',forbidden_tokens_found=found_tokens,
+        snippet=empty_html[:350],length=len(empty_html))
+ assert not found_tokens, ('CROSS_MARKET_UI_LEAK',found_tokens)
  record('explicit_uk_market_no_selection',status=200,no_pakistan_content=True)
  initial=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert initial.status_code==200,('INITIAL_GET',initial.status_code)
