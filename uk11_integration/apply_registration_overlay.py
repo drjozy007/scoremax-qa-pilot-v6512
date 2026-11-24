@@ -11,12 +11,7 @@ import os
 import sys
 from pathlib import Path
 
-DATABASE_ANCHOR = "        if role=='teacher': ensure_referral_code(c,uid)"
-DATABASE_REPLACEMENT = """        if role=='student' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':
-            c.execute("UPDATE users SET active_programme='UK11',academic_level='UK11' WHERE id=?",(uid,))
-            c.execute("INSERT INTO uk11_learner_markets(student_user_id,market_id,programme_id) VALUES(?,?,?)",
-                      (uid,'UK','UK11'))
-""" + DATABASE_ANCHOR
+DATABASE_ANCHOR = "if role=='teacher': ensure_referral_code(c,uid)"
 
 TEMPLATE = """<!doctype html><html lang="en-GB"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -49,9 +44,18 @@ def apply(root: Path):
     if not appfile.is_file():
         raise RuntimeError("UK11_NATIVE_APP_NOT_FOUND")
     original = appfile.read_text(encoding="utf-8")
-    if original.count(DATABASE_ANCHOR)!=1 or original.count("def register(")!=1:
-        raise RuntimeError("UK11_NATIVE_REGISTRATION_ANCHOR_DRIFT database=%d register_sections=%d" % (original.count(DATABASE_ANCHOR), original.count("def register(")))
-    revised = original.replace(DATABASE_ANCHOR, DATABASE_REPLACEMENT, 1)
+    candidates = [line for line in original.splitlines()
+                  if line.strip() == DATABASE_ANCHOR]
+    if len(candidates)!=1 or original.count("def register(")!=1:
+        raise RuntimeError("UK11_NATIVE_REGISTRATION_ANCHOR_DRIFT database=%d register_sections=%d" % (len(candidates), original.count("def register(")))
+    anchor_line = candidates[0]
+    indent = anchor_line[:len(anchor_line)-len(anchor_line.lstrip())]
+    replacement = ("{i}if role=='student' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\n"
+       "{i}    c.execute(\"UPDATE users SET active_programme='UK11',academic_level='UK11' WHERE id=?\",(uid,))\n"
+       "{i}    c.execute(\"INSERT INTO uk11_learner_markets(student_user_id,market_id,programme_id) VALUES(?,?,?)\",\n"
+       "{i}              (uid,'UK','UK11'))\n"
+       "{i}if role=='teacher': ensure_referral_code(c,uid)").format(i=indent)
+    revised = original.replace(anchor_line, replacement, 1)
     # Display-only template is specific to student registration. The source
     # patch redirects rendering to this separate student template in test mode.
     # Intercept only UK test student registration GET; POST remains the native
