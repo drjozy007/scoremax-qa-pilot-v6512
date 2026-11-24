@@ -44,6 +44,10 @@ def apply(root: Path):
     if not appfile.is_file():
         raise RuntimeError("UK11_NATIVE_APP_NOT_FOUND")
     original = appfile.read_text(encoding="utf-8")
+    for phrase in ("Choose a supported programme", "STUDENT_PROGRAMME_CHOICES"):
+        idx=original.find(phrase)
+        if idx>=0:
+            print("UK11_ASSEMBLED_REGISTRATION_VALIDATION",phrase,repr(original[max(0,idx-700):idx+450]),flush=True)
     candidates = [line for line in original.splitlines()
                   if line.strip() == DATABASE_ANCHOR]
     if len(candidates)!=1 or original.count("def register(")!=1:
