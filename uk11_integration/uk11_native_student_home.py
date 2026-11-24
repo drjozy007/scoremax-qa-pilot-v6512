@@ -54,7 +54,7 @@ def install_disposable_student_home(root, app):
     root_anchor = '<section class="student-home-v2">'
     mastery_anchor = '<article class="mastery-hero-card '
     sections = (
-        ('<section class="home-priority-grid">', '<section class="home-section">'),
+        ('<section class="home-priority-grid', '<section class="home-section">'),
         ('<section class="home-section">', '<section class="home-two-column">'),
         ('<section class="home-two-column">', '{% if daily_spark and daily_spark.available %}')
     )
