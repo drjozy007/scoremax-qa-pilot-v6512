@@ -118,18 +118,36 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
         uid = session.get("user_id")
         if type(uid) is not int or session.get("role") != "parent":
             return None
+        with closing(db_factory()) as c:
+            market = c.execute(
+                "SELECT market_id,programme_id FROM uk11_parent_markets WHERE parent_user_id=?",
+                (uid,),
+            ).fetchone()
+        if market is None:
+            # A Pakistan or legacy parent cannot enter the UK onboarding UI,
+            # regardless of guessing routes or a learner's numeric user ID.
+            if request.path.startswith("/uk11/"):
+                return Response("UK 11+ parent account required", status=403)
+            return None
+        if market["market_id"] != UK_MARKET or market["programme_id"] != UK_PROGRAMME:
+            return Response("Unsupported parent market", status=403)
         if request.endpoint == "parent_dashboard":
-            with closing(db_factory()) as c:
-                linked = c.execute(
-                    """SELECT 1 FROM parent_student_links l
-                       JOIN uk11_learner_markets m ON m.student_user_id=l.student_user_id
-                       WHERE l.parent_user_id=? AND l.status='active'
-                         AND m.market_id='UK' AND m.programme_id='UK11'
-                       LIMIT 1""", (uid,),
-                ).fetchone()
-            if linked:
-                return redirect("/uk11/api/guardian/home")
-        return None
+            return redirect("/uk11/api/guardian/home")
+        if request.endpoint in ("uk11_guardian.guardian_home",
+                                "uk11_guardian.guardian_students",
+                                "uk11_guardian.guardian_decision",
+                                "uk11_guardian.guardian_form_decision",
+                                "logout", "static"):
+            return None
+        if request.path.startswith("/uk11/"):
+            return Response("Unqualified UK parent action", status=403)
+        # UK parents may use the original ScoreMax link-code endpoint,
+        # but never enter legacy parent analytics or student learning routes.
+        if request.endpoint in ("parent_link_student",):
+            return None
+        return Response("This UK 11+ parent feature is not yet available.",
+                        status=403, mimetype="text/plain",
+                        headers={"Cache-Control":"no-store, private"})
 
     @app.before_request
     def uk11_learner_market_gate():
