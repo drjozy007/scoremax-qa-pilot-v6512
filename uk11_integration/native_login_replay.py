@@ -276,6 +276,15 @@ with app.test_client() as client:
  assert accepted.status_code==200 and accepted.json['status']=='ACKNOWLEDGED'
  assert accepted.json['learning_unlocked'] is False and accepted.json['legal_guardianship_verified'] is False
  record('linked_parent_acknowledged_no_learning_unlock',status=accepted.status_code)
+ guardian_withdrawn=paced_post(client,f'/uk11/api/guardian/students/{users[0]}/decision',base_url=BASEURL,
+   json={'decision':'REVOKED','text_version':'UK11-ONBOARDING-CANDIDATE-20261125'},
+   headers={'X-CSRF-Token':csrf(client)})
+ assert guardian_withdrawn.status_code==200 and guardian_withdrawn.json['status']=='PENDING_GUARDIAN'
+ acknowledged_again=paced_post(client,f'/uk11/api/guardian/students/{users[0]}/decision',base_url=BASEURL,
+   json={'decision':'APPROVED','text_version':'UK11-ONBOARDING-CANDIDATE-20261125'},
+   headers={'X-CSRF-Token':csrf(client)})
+ assert acknowledged_again.status_code==200 and acknowledged_again.json['status']=='ACKNOWLEDGED'
+ record('guardian_explicit_withdrawal_and_reapproval',status=acknowledged_again.status_code,withdrawal_effective=True)
  paced_get(client,'/logout',base_url=BASEURL)
  # Separate parent cannot read the first parent's children or approve them.
  login(client,4)
