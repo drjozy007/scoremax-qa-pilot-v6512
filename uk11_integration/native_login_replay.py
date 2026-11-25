@@ -45,7 +45,7 @@ os.environ.update({
 })
 os.environ.pop('DEEPSEEK_API_KEY',None)
 sys.path[:0]=['/app','/qualifier','/checks/native_guard']
-from uk11_preferences_migration import DDL, UK_MARKET_DDL
+from uk11_preferences_migration import DDL, UK_MARKET_DDL, GUARDIAN_DDL
 from uk11_native_mount import mount_into_disposable_scoremax
 from uk11_native_student_home import install_disposable_student_home
 from uk11_native_market_boundary import install_uk11_market_boundary
@@ -81,8 +81,9 @@ assert dbpath.is_file(), 'EXACT_NATIVE_DB_NOT_INITIALISED'
 c=sm.db()
 c.execute(DDL)
 c.execute(UK_MARKET_DDL)
+c.executescript(GUARDIAN_DDL)
 users=[]
-for suffix,role in [(1,'student'),(2,'student'),(3,'parent')]:
+for suffix,role in [(1,'student'),(2,'student'),(3,'parent'),(4,'parent')]:
  username=f'uk11-native-{suffix}'
  password='Synthetic-only-Strong-Password-2026!'
  c.execute("""INSERT INTO users(system_user_id,role,full_name,username,email,password_hash,account_status)
@@ -91,6 +92,7 @@ for suffix,role in [(1,'student'),(2,'student'),(3,'parent')]:
 # Student 1 belongs to UK regardless of selected school count; student 2
 # remains Pakistan/legacy and must never access UK school routes.
 c.execute("INSERT INTO uk11_learner_markets(student_user_id,market_id,programme_id) VALUES(?,?,?)",(users[0],"UK","UK11"))
+c.execute("UPDATE users SET parent_link_code=? WHERE id=?",("P-SYNTHETIC-UK11-ONLY", users[0]))
 c.commit();c.close()
 schools={'synthetic:school:a':{'name':'Alpha'},'synthetic:school:b':{'name':'Beta'},
          'synthetic:school:c':{'name':'Gamma'},'synthetic:school:pending':{'name':'Unmapped'}}
@@ -153,6 +155,10 @@ with app.test_client() as client:
         snippet=empty_html[:350],length=len(empty_html))
  assert not found_tokens, ('CROSS_MARKET_UI_LEAK',found_tokens)
  record('explicit_uk_market_no_selection',status=200,no_pakistan_content=True)
+ initial_guardian=paced_get(client,'/uk11/api/me/guardian-status',base_url=BASEURL)
+ assert initial_guardian.status_code==200 and initial_guardian.json['status']=='PENDING_GUARDIAN'
+ assert initial_guardian.json['learning_unlocked'] is False
+ record('guardian_pending_on_first_login',status=initial_guardian.status_code)
  initial=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert initial.status_code==200,('INITIAL_GET',initial.status_code)
  assert initial.json['school_keys']==[]
@@ -245,6 +251,60 @@ with app.test_client() as client:
  forbidden=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert forbidden.status_code==403,('PARENT_ROLE_DENIAL',forbidden.status_code)
  record('parent_role_denial',status=forbidden.status_code)
+ # Native parent link must require BOTH existing child address and access code.
+ # A parent account alone confers no UK guardian acknowledgement.
+ uk_links=paced_get(client,'/uk11/api/guardian/students',base_url=BASEURL)
+ assert uk_links.status_code==200 and uk_links.json['students']==[]
+ missing_link=paced_post(client,f'/uk11/api/guardian/students/{users[0]}/decision',
+   base_url=BASEURL,json={'decision':'APPROVED','text_version':'UK11-ONBOARDING-CANDIDATE-20261125'},
+   headers={'X-CSRF-Token':csrf(client)})
+ assert missing_link.status_code==403,('UNLINKED_PARENT_APPROVED',missing_link.status_code)
+ native_link=paced_post(client,'/parent/link-student',base_url=BASEURL,data={
+   '_csrf_token':csrf(client),'student_email':'uk11native1@example.test',
+   'link_code':'P-SYNTHETIC-UK11-ONLY','relationship':'Guardian'},follow_redirects=False)
+ assert native_link.status_code==302,('NATIVE_PARENT_LINK',native_link.status_code)
+ linked=paced_get(client,'/uk11/api/guardian/students',base_url=BASEURL)
+ assert linked.status_code==200 and len(linked.json['students'])==1
+ assert linked.json['students'][0]['student_id']==users[0]
+ assert linked.json['students'][0]['status']=='PENDING_GUARDIAN'
+ wrong_version=paced_post(client,f'/uk11/api/guardian/students/{users[0]}/decision',base_url=BASEURL,
+   json={'decision':'APPROVED','text_version':'UNKNOWN'},headers={'X-CSRF-Token':csrf(client)})
+ assert wrong_version.status_code==400
+ accepted=paced_post(client,f'/uk11/api/guardian/students/{users[0]}/decision',base_url=BASEURL,
+   json={'decision':'APPROVED','text_version':'UK11-ONBOARDING-CANDIDATE-20261125'},
+   headers={'X-CSRF-Token':csrf(client)})
+ assert accepted.status_code==200 and accepted.json['status']=='ACKNOWLEDGED'
+ assert accepted.json['learning_unlocked'] is False and accepted.json['legal_guardianship_verified'] is False
+ record('linked_parent_acknowledged_no_learning_unlock',status=accepted.status_code)
+ paced_get(client,'/logout',base_url=BASEURL)
+ # Separate parent cannot read the first parent's children or approve them.
+ login(client,4)
+ other=paced_get(client,'/uk11/api/guardian/students',base_url=BASEURL)
+ assert other.status_code==200 and other.json['students']==[]
+ other_decision=paced_post(client,f'/uk11/api/guardian/students/{users[0]}/decision',
+   base_url=BASEURL,json={'decision':'APPROVED','text_version':'UK11-ONBOARDING-CANDIDATE-20261125'},
+   headers={'X-CSRF-Token':csrf(client)})
+ assert other_decision.status_code==403,('OTHER_PARENT_APPROVAL',other_decision.status_code)
+ record('cross_family_guardian_access_denied',status=other_decision.status_code)
+ paced_get(client,'/logout',base_url=BASEURL)
+ login(client,1)
+ approved_status=paced_get(client,'/uk11/api/me/guardian-status',base_url=BASEURL)
+ assert approved_status.status_code==200 and approved_status.json['status']=='ACKNOWLEDGED'
+ with sm.db() as c:
+  link_id=c.execute("SELECT id FROM parent_student_links WHERE student_user_id=? AND parent_user_id=?",
+    (users[0],users[2])).fetchone()['id']
+ revoked_link=paced_post(client,f'/student/parent-link/{link_id}/revoke',
+   base_url=BASEURL,data={'_csrf_token':csrf(client)},follow_redirects=False)
+ assert revoked_link.status_code==302,('NATIVE_PARENT_LINK_REVOKE',revoked_link.status_code)
+ pending_again=paced_get(client,'/uk11/api/me/guardian-status',base_url=BASEURL)
+ assert pending_again.status_code==200 and pending_again.json['status']=='PENDING_GUARDIAN'
+ record('native_link_revocation_removes_guardian_acknowledgement',status=pending_again.status_code)
+ paced_get(client,'/logout',base_url=BASEURL)
+ login(client,3)
+ linked_again=paced_get(client,'/uk11/api/guardian/students',base_url=BASEURL)
+ assert linked_again.status_code==200 and linked_again.json['students']==[]
+ record('guardian_revoke_removes_parent_access',status=linked_again.status_code)
+
 
 # Test native UK student registration without adding a second authentication flow.
 # Account and market mapping must commit atomically through the native handler.
