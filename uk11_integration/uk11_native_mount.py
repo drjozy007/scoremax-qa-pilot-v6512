@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 from uk11_account_preferences import create_uk11_blueprint
 from uk11_school_dashboard import create_uk11_dashboard_blueprint
+from uk11_guardian_onboarding import create_uk11_guardian_blueprint
 
 MARKER = ".uk11_disposable_qualification_runtime"
 
@@ -30,4 +31,5 @@ def mount_into_disposable_scoremax(app, root, db_factory, school_catalogue, rout
         raise RuntimeError("UK11_INVALID_CATALOGUE_KEYS")
     app.register_blueprint(create_uk11_blueprint(db_factory, school_catalogue, route_resolver))
     app.register_blueprint(create_uk11_dashboard_blueprint())
+    app.register_blueprint(create_uk11_guardian_blueprint(db_factory))
     return {"mounted": True, "test_only": True, "security_gate_reused": True, "dashboard_read_only": True}
