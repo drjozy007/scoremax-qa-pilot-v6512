@@ -36,6 +36,22 @@ a{color:#196c78}@media(max-width:640px){main{margin:1rem;padding:15px}}
 </main></body></html>"""
 
 
+PARENT_TEMPLATE = TEMPLATE.replace(
+    "<title>Create a UK 11+ account · ScoreMax</title>",
+    "<title>Parent account · ScoreMax UK 11+</title>"
+).replace(
+    "<h1>Join ScoreMax UK 11+</h1>",
+    "<h1>Join ScoreMax UK 11+ as a parent or guardian</h1>"
+).replace(
+    'action="/register/student"', 'action="/register/parent"'
+).replace(
+    '<input type="hidden" name="academic_level" value="UK11">', ''
+).replace(
+    "Create UK 11+ account", "Create UK 11+ parent account"
+)
+
+
+
 def apply(root: Path):
     root = root.resolve()
     if not (root / ".uk11_disposable_qualification_runtime").is_file():
@@ -65,6 +81,9 @@ def apply(root: Path):
        "{i}    c.execute(\"UPDATE users SET active_programme='UK11',academic_level='UK11' WHERE id=?\",(uid,))\n"
        "{i}    c.execute(\"INSERT INTO uk11_learner_markets(student_user_id,market_id,programme_id) VALUES(?,?,?)\",\n"
        "{i}              (uid,'UK','UK11'))\n"
+       "{i}if role=='parent' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\n"
+       "{i}    c.execute(\"INSERT INTO uk11_parent_markets(parent_user_id,market_id,programme_id) VALUES(?,?,?)\",\n"
+       "{i}              (uid,'UK','UK11'))\n"
        "{i}if role=='teacher': ensure_referral_code(c,uid)").format(i=indent)
     revised = original.replace(anchor_line, replacement, 1)
     choice_anchor = "    {'code':'grade10','label':'Grade 10','value':'Grade 10'},\n]"
@@ -86,6 +105,22 @@ def apply(root: Path):
         "        from flask import g as uk11_g\n" +
         "        uk11_g.uk11_registration_base_html = render_template('uk11_register_student.html')\n" +
         "        return uk11_g.uk11_registration_base_html\n", 1)
+    # Parent has no subject/programme selection. Use the same native account
+    # validation and email verification, with a UK-specific GET-only view.
+    register_get_anchor = "        return uk11_g.uk11_registration_base_html\\n"
+    # Patch after student GET clause so both forms share the same handler.
+    parent_get = (
+        "    if role=='parent' and request.method=='GET' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\\n"
+        "        from flask import g as uk11_g\\n"
+        "        uk11_g.uk11_registration_base_html = render_template('uk11_register_parent.html')\\n"
+        "        return uk11_g.uk11_registration_base_html\\n"
+    )
+    if revised.count(register_get_anchor)!=1:
+        raise RuntimeError("UK11_PARENT_REGISTER_GET_ANCHOR_DRIFT")
+    revised=revised.replace(register_get_anchor,register_get_anchor+parent_get,1)
+    parent_dest=root / "templates" / "uk11_register_parent.html"
+    if parent_dest.exists():
+        raise RuntimeError("UK11_PARENT_TEMPLATE_ALREADY_EXISTS")
     dest = root / "templates" / "uk11_register_student.html"
     if dest.exists():
         raise RuntimeError("UK11_REGISTRATION_TEMPLATE_ALREADY_EXISTS")
@@ -100,6 +135,7 @@ def apply(root: Path):
                            (exc.lineno,list(enumerate(lines[lo:hi],start=lo+1)))) from exc
     appfile.write_text(revised,encoding="utf-8")
     dest.write_text(TEMPLATE,encoding="utf-8")
+    parent_dest.write_text(PARENT_TEMPLATE,encoding="utf-8")
     print("UK11_ISOLATED_NATIVE_REGISTRATION_OVERLAY_APPLIED")
     return root
 
