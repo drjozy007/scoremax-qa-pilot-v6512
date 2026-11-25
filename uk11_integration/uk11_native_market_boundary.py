@@ -131,7 +131,7 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
             return None
         if market["market_id"] != UK_MARKET or market["programme_id"] != UK_PROGRAMME:
             return Response("Unsupported parent market", status=403)
-        if request.endpoint == "parent_dashboard":
+        if request.endpoint in ("dashboard", "parent_dashboard"):
             return redirect("/uk11/api/guardian/home")
         if request.endpoint in ("uk11_guardian.guardian_home",
                                 "uk11_guardian.guardian_students",
