@@ -48,6 +48,17 @@ CREATE INDEX IF NOT EXISTS idx_uk11_guardian_student
  ON uk11_guardian_onboarding(student_user_id,consent_scope,status);
 """
 
+UK_PARENT_MARKET_DDL = """
+CREATE TABLE IF NOT EXISTS uk11_parent_markets (
+ parent_user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+ market_id TEXT NOT NULL CHECK (market_id='UK'),
+ programme_id TEXT NOT NULL CHECK (programme_id='UK11'),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+
+
 def migrate(db_path: Path):
     if not db_path.is_file():
         raise ValueError("UK11_DB_MUST_EXIST_ON_DISPOSABLE_TEST_ENV")
@@ -59,6 +70,7 @@ def migrate(db_path: Path):
         c.execute(DDL)
         c.execute(UK_MARKET_DDL)
         c.executescript(GUARDIAN_DDL)
+        c.execute(UK_PARENT_MARKET_DDL)
         c.commit()
 
 
