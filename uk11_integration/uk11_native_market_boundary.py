@@ -20,6 +20,7 @@ UK_ALLOWED_ENDPOINTS = frozenset({
     "uk11_account.get_schools",
     "uk11_account.set_schools",
     "uk11_guardian.student_guardian_status",
+    "uk11_guardian.guardian_student_page",
     "student_revoke_parent_link",
     "uk11_school_dashboard.uk11_my_learning",
     "logout",
@@ -27,7 +28,7 @@ UK_ALLOWED_ENDPOINTS = frozenset({
     "dashboard",
     "student_dashboard",
 })
-UK_ONLY_ENDPOINTS = frozenset({"uk11_account.get_schools", "uk11_account.set_schools", "uk11_school_dashboard.uk11_my_learning", "uk11_guardian.student_guardian_status"})
+UK_ONLY_ENDPOINTS = frozenset({"uk11_account.get_schools", "uk11_account.set_schools", "uk11_school_dashboard.uk11_my_learning", "uk11_guardian.student_guardian_status", "uk11_guardian.guardian_student_page"})
 
 
 def install_uk11_market_boundary(app, db_factory, route_projection):
@@ -87,7 +88,7 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
 @media(max-width:500px){header,main{padding:12px}section{padding:15px}}
 </style></head><body>
 <header><strong>ScoreMax · UK 11+</strong><nav aria-label='Student navigation'>
-<a href='/student'>Home</a><a href='/uk11/my-learning'>My schools and subjects</a>
+<a href='/student'>Home</a><a href='/uk11/my-learning'>My schools and subjects</a><a href='/uk11/api/me/guardian-onboarding'>Parent access</a>
 <a href='/logout'>Log out</a></nav></header>
 <main><h1>My UK 11+ learning</h1>
 <p>Your preparation follows your saved schools. Selecting a school does not establish admissions eligibility.</p>
@@ -108,6 +109,27 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
         g.uk11_final_home_html = body
         return Response(body,status=200,mimetype="text/html",
                         headers={"Cache-Control":"no-store, private","X-Content-Type-Options":"nosniff"})
+
+    @app.before_request
+    def uk11_parent_market_route():
+        # Parent home for accounts linked to UK learners uses the existing
+        # parent session, but skips the Pakistan-only analytics view entirely.
+        # Unlinked/legacy parents retain the existing native home and linking.
+        uid = session.get("user_id")
+        if type(uid) is not int or session.get("role") != "parent":
+            return None
+        if request.endpoint == "parent_dashboard":
+            with closing(db_factory()) as c:
+                linked = c.execute(
+                    """SELECT 1 FROM parent_student_links l
+                       JOIN uk11_learner_markets m ON m.student_user_id=l.student_user_id
+                       WHERE l.parent_user_id=? AND l.status='active'
+                         AND m.market_id='UK' AND m.programme_id='UK11'
+                       LIMIT 1""", (uid,),
+                ).fetchone()
+            if linked:
+                return redirect("/uk11/api/guardian/home")
+        return None
 
     @app.before_request
     def uk11_learner_market_gate():
@@ -141,6 +163,15 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
     # Registered at the beginning so Flask executes this LAST among the
     # global after_request hooks. Do not remove native session/security headers.
     def uk11_final_response_boundary(response):
+        family_html = getattr(g, "uk11_family_html", None)
+        if family_html is not None and request.endpoint in (
+            "uk11_guardian.guardian_student_page", "uk11_guardian.guardian_home"
+        ):
+            response.set_data(family_html.encode("utf-8"))
+            response.mimetype = "text/html"
+            response.headers["Cache-Control"] = "no-store, private"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Referrer-Policy"] = "no-referrer"
         registration_html = getattr(g, "uk11_registration_base_html", None)
         if registration_html is not None and request.endpoint == "register" and request.method == "GET":
             response.set_data(registration_html.encode("utf-8"))
