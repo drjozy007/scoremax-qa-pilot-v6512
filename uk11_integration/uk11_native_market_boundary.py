@@ -19,13 +19,15 @@ UK_PROGRAMME = "UK11"
 UK_ALLOWED_ENDPOINTS = frozenset({
     "uk11_account.get_schools",
     "uk11_account.set_schools",
+    "uk11_guardian.student_guardian_status",
+    "student_revoke_parent_link",
     "uk11_school_dashboard.uk11_my_learning",
     "logout",
     "static",
     "dashboard",
     "student_dashboard",
 })
-UK_ONLY_ENDPOINTS = frozenset({"uk11_account.get_schools", "uk11_account.set_schools", "uk11_school_dashboard.uk11_my_learning"})
+UK_ONLY_ENDPOINTS = frozenset({"uk11_account.get_schools", "uk11_account.set_schools", "uk11_school_dashboard.uk11_my_learning", "uk11_guardian.student_guardian_status"})
 
 
 def install_uk11_market_boundary(app, db_factory, route_projection):
