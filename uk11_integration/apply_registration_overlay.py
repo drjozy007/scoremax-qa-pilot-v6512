@@ -44,6 +44,13 @@ def apply(root: Path):
     if not appfile.is_file():
         raise RuntimeError("UK11_NATIVE_APP_NOT_FOUND")
     original = appfile.read_text(encoding="utf-8")
+    # Audit only code shape, never actual tokens. Assembled verification may
+    # differ from the older hosted_runtime_base_v6512 app source.
+    for phrase in ("def verify_email(", "def resend_verification(", "email_verification_tokens", "verify-email"):
+        idx = original.find(phrase)
+        if idx >= 0:
+            print("UK11_VERIFICATION_SOURCE_SHAPE", phrase,
+                  repr(original[max(0,idx-180):idx+1900]), flush=True)
     for phrase in ("Choose a supported programme", "STUDENT_PROGRAMME_CHOICES"):
         idx=original.find(phrase)
         if idx>=0:
