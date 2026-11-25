@@ -53,6 +53,16 @@ def install_uk11_market_boundary(app, db_factory, route_projection):
         routes = context["routes"]
         subjects = context["subjects"]
         pending = context["pending"]
+        guardian_endpoint = app.view_functions.get("uk11_guardian.student_guardian_status")
+        if guardian_endpoint is None:
+            raise RuntimeError("UK11_GUARDIAN_STATUS_NOT_MOUNTED")
+        guardian_response = guardian_endpoint()
+        if guardian_response.status_code != 200:
+            return guardian_response
+        guardian = guardian_response.get_json()
+        guardian_text = ("Guardian acknowledgement recorded; formal guardian verification and learning access are still pending."
+                         if guardian.get("status") == "ACKNOWLEDGED"
+                         else "Guardian onboarding pending. Ask your parent or guardian to link their existing ScoreMax account.")
         # Escape every school/source-provided value. Only display metadata is
         # rendered; no internal IDs, QA statuses, answer/rubric or user data.
         rows = lambda xs,field: "<ul>" + "".join(
@@ -84,6 +94,8 @@ h1,h2{margin:0 0 14px}li{padding:5px 0}
 <section id='uk11-school-context'><h2>Selected schools</h2>""" + school_html + """
 <h2>Relevant examinations</h2>""" + route_html + """
 <h2>Relevant subjects</h2>""" + subject_html + pending_html + """</section>
+<section aria-label='Guardian onboarding'><h2>Parent or guardian onboarding</h2>
+<p>""" + escape(guardian_text) + """</p></section>
 <section><h2>Six mastery levels</h2><div class='levels'>
 <span>Foundation</span><span>Exam Ready</span><span>Advanced</span>
 <span>Distinction</span><span>Expert</span><span>Elite</span></div>
