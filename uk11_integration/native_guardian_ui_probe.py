@@ -61,3 +61,40 @@ with app.test_client() as family_client:
     record('native_family_ui_cross_parent_denied',status=unauthorized.status_code)
 
 print('UK11_NATIVE_GUARDIAN_BROWSER_VIEWS_PASSED')
+
+# Explicit UK parent identity is assigned on native registration, without
+# assuming parenthood from school keys, child account IDs or earlier links.
+with app.test_client() as registered_parent:
+    form=paced_get(registered_parent,'/register/parent',base_url=BASEURL)
+    assert form.status_code==200,('UK_PARENT_REGISTRATION_VIEW',form.status_code)
+    parent_html=form.get_data(as_text=True)
+    assert 'Join ScoreMax UK 11+ as a parent or guardian' in parent_html
+    assert 'FSc' not in parent_html and 'MDCAT' not in parent_html
+    signup=paced_post(registered_parent,'/register/parent',base_url=BASEURL,data={
+        '_csrf_token':csrf(registered_parent),
+        'full_name':'Synthetic New UK Parent',
+        'email':'uk11-parent-created@example.test',
+        'password':'Synthetic-only-Strong-Password-2026!'
+    },follow_redirects=False)
+    assert signup.status_code==302,('UK_PARENT_NATIVE_REGISTRATION',signup.status_code)
+    with sm.db() as c:
+        p=c.execute("SELECT id,role FROM users WHERE email=?",('uk11-parent-created@example.test',)).fetchone()
+        assert p is not None and p['role']=='parent',('PARENT_NOT_REGISTERED',)
+        market=c.execute("SELECT market_id,programme_id FROM uk11_parent_markets WHERE parent_user_id=?",
+                         (p['id'],)).fetchone()
+        assert market is not None and tuple(market)==('UK','UK11'),('UK_PARENT_MARKET_NOT_ATOMIC',)
+    login_page=paced_get(registered_parent,'/login',base_url=BASEURL)
+    assert login_page.status_code==200
+    signed=paced_post(registered_parent,'/login',base_url=BASEURL,data={
+        '_csrf_token':csrf(registered_parent),
+        'identity':'uk11-parent-created@example.test',
+        'password':'Synthetic-only-Strong-Password-2026!'
+    },follow_redirects=False)
+    assert signed.status_code==302,('NEW_UK_PARENT_LOGIN',signed.status_code)
+    first_home=paced_get(registered_parent,'/parent',base_url=BASEURL,follow_redirects=False)
+    assert first_home.status_code==302 and first_home.headers.get('Location')=='/uk11/api/guardian/home'
+    family=paced_get(registered_parent,'/uk11/api/guardian/home',base_url=BASEURL)
+    assert family.status_code==200 and 'No linked UK 11+ learners yet' in family.get_data(as_text=True)
+    assert 'FSc' not in family.get_data(as_text=True) and 'MDCAT' not in family.get_data(as_text=True)
+    record('new_unlinked_uk_parent_first_login',status=family.status_code,uk_market_verified=True)
+print('UK11_NATIVE_PARENT_MARKET_REGISTRATION_PASSED')
