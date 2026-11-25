@@ -107,7 +107,7 @@ def apply(root: Path):
         "        return uk11_g.uk11_registration_base_html\n", 1)
     # Parent has no subject/programme selection. Use the same native account
     # validation and email verification, with a UK-specific GET-only view.
-    register_get_anchor = "        return uk11_g.uk11_registration_base_html\\n"
+    register_get_anchor = "        return uk11_g.uk11_registration_base_html"
     # Patch after student GET clause so both forms share the same handler.
     parent_get = (
         "    if role=='parent' and request.method=='GET' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\\n"
