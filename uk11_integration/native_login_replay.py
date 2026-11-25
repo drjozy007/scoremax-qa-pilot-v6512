@@ -45,7 +45,7 @@ os.environ.update({
 })
 os.environ.pop('DEEPSEEK_API_KEY',None)
 sys.path[:0]=['/app','/qualifier','/checks/native_guard']
-from uk11_preferences_migration import DDL, UK_MARKET_DDL, GUARDIAN_DDL
+from uk11_preferences_migration import DDL, UK_MARKET_DDL, GUARDIAN_DDL, UK_PARENT_MARKET_DDL
 from uk11_native_mount import mount_into_disposable_scoremax
 from uk11_native_student_home import install_disposable_student_home
 from uk11_native_market_boundary import install_uk11_market_boundary
@@ -82,6 +82,7 @@ c=sm.db()
 c.execute(DDL)
 c.execute(UK_MARKET_DDL)
 c.executescript(GUARDIAN_DDL)
+c.execute(UK_PARENT_MARKET_DDL)
 users=[]
 for suffix,role in [(1,'student'),(2,'student'),(3,'parent'),(4,'parent')]:
  username=f'uk11-native-{suffix}'
@@ -92,6 +93,7 @@ for suffix,role in [(1,'student'),(2,'student'),(3,'parent'),(4,'parent')]:
 # Student 1 belongs to UK regardless of selected school count; student 2
 # remains Pakistan/legacy and must never access UK school routes.
 c.execute("INSERT INTO uk11_learner_markets(student_user_id,market_id,programme_id) VALUES(?,?,?)",(users[0],"UK","UK11"))
+c.execute("INSERT INTO uk11_parent_markets(parent_user_id,market_id,programme_id) VALUES(?,?,?)",(users[2],"UK","UK11"))
 c.execute("UPDATE users SET parent_link_code=? WHERE id=?",("P-SYNTHETIC-UK11-ONLY", users[0]))
 c.commit();c.close()
 schools={'synthetic:school:a':{'name':'Alpha'},'synthetic:school:b':{'name':'Beta'},
@@ -249,6 +251,11 @@ with app.test_client() as client:
 
  paced_get(client,'/logout',base_url=BASEURL)
  login(client,3)
+ # UK parent identity must route directly to family onboarding, even without
+ # any linked child. It must not enter Pakistan-only native parent analytics.
+ original_parent=paced_get(client,'/parent',base_url=BASEURL,follow_redirects=False)
+ assert original_parent.status_code==302 and original_parent.headers.get('Location')=='/uk11/api/guardian/home'
+ record('unlinked_uk_parent_home',status=original_parent.status_code,without_child_link=True)
  forbidden=paced_get(client,'/uk11/api/me/schools',base_url=BASEURL)
  assert forbidden.status_code==403,('PARENT_ROLE_DENIAL',forbidden.status_code)
  record('parent_role_denial',status=forbidden.status_code)
@@ -289,8 +296,11 @@ with app.test_client() as client:
  paced_get(client,'/logout',base_url=BASEURL)
  # Separate parent cannot read the first parent's children or approve them.
  login(client,4)
+ pakistan_parent_home=paced_get(client,'/parent',base_url=BASEURL,follow_redirects=False)
+ assert pakistan_parent_home.status_code==200,('PAKISTAN_PARENT_HOME_REGRESSION',pakistan_parent_home.status_code)
+ record('pakistan_parent_home_untouched',status=pakistan_parent_home.status_code)
  other=paced_get(client,'/uk11/api/guardian/students',base_url=BASEURL)
- assert other.status_code==200 and other.json['students']==[]
+ assert other.status_code==403,('PAKISTAN_PARENT_UK_API_NOT_DENIED',other.status_code)
  other_decision=paced_post(client,f'/uk11/api/guardian/students/{users[0]}/decision',
    base_url=BASEURL,json={'decision':'APPROVED','text_version':'UK11-ONBOARDING-CANDIDATE-20261125'},
    headers={'X-CSRF-Token':csrf(client)})
