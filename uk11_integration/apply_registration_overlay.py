@@ -110,14 +110,14 @@ def apply(root: Path):
     register_get_anchor = "        return uk11_g.uk11_registration_base_html"
     # Patch after student GET clause so both forms share the same handler.
     parent_get = (
-        "    if role=='parent' and request.method=='GET' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\\n"
-        "        from flask import g as uk11_g\\n"
-        "        uk11_g.uk11_registration_base_html = render_template('uk11_register_parent.html')\\n"
-        "        return uk11_g.uk11_registration_base_html\\n"
+        "    if role=='parent' and request.method=='GET' and os.environ.get('SCOREMAX_UK11_TEST_REGISTRATION')=='1':\n"
+        "        from flask import g as uk11_g\n"
+        "        uk11_g.uk11_registration_base_html = render_template('uk11_register_parent.html')\n"
+        "        return uk11_g.uk11_registration_base_html\n"
     )
     if revised.count(register_get_anchor)!=1:
         raise RuntimeError("UK11_PARENT_REGISTER_GET_ANCHOR_DRIFT")
-    revised=revised.replace(register_get_anchor,register_get_anchor+parent_get,1)
+    revised=revised.replace(register_get_anchor,register_get_anchor+"\n"+parent_get,1)
     parent_dest=root / "templates" / "uk11_register_parent.html"
     if parent_dest.exists():
         raise RuntimeError("UK11_PARENT_TEMPLATE_ALREADY_EXISTS")
