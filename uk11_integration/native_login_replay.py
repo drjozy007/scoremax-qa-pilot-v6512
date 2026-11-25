@@ -283,7 +283,7 @@ with app.test_client() as client:
  message=CapturedSMTP.messages[0]
  assert message['To']=='uk11-new-registration@example.test'
  assert 'Verify your ScoreMax email' in message['Subject']
- links=re.findall(r'https://[^\\s]+',message.get_content())
+ links=re.findall(r'https://[^\s]+',message.get_content())
  verify_url=next(x for x in links if '/verify-email/' in x)
  parsed=urlsplit(verify_url)
  assert parsed.scheme=='https' and parsed.netloc=='scoremax.pk'
@@ -319,7 +319,7 @@ with app.test_client() as client:
   c.commit()
  valid_resend=paced_post(client,'/verify-email/resend',base_url=BASEURL,data=resend_data,follow_redirects=False)
  assert valid_resend.status_code==302 and len(CapturedSMTP.messages)==2,('RESEND_DID_NOT_ROTATE',len(CapturedSMTP.messages))
- new_links=re.findall(r'https://[^\\s]+',CapturedSMTP.messages[-1].get_content())
+ new_links=re.findall(r'https://[^\s]+',CapturedSMTP.messages[-1].get_content())
  fresh_path=urlsplit(next(x for x in new_links if '/verify-email/' in x)).path
  assert fresh_path!=verification_path,('VERIFICATION_TOKEN_REUSED',)
  old_response=paced_get(client,verification_path,base_url=BASEURL,follow_redirects=False)
