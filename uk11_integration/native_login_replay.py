@@ -149,6 +149,7 @@ with app.test_client() as client:
  assert empty_market_home.status_code==200
  empty_html=empty_market_home.get_data(as_text=True)
  assert 'UK 11+' in empty_html and 'Not Yet Established' in empty_html and 'No target schools selected' in empty_html
+ assert 'Guardian onboarding pending' in empty_html
  forbidden_tokens=('FSc','MDCAT','Pakistan','Biology','Chemistry')
  found_tokens=[token for token in forbidden_tokens if token in empty_html]
  record('uk_market_html_diagnostic',forbidden_tokens_found=found_tokens,
@@ -299,6 +300,9 @@ with app.test_client() as client:
  login(client,1)
  approved_status=paced_get(client,'/uk11/api/me/guardian-status',base_url=BASEURL)
  assert approved_status.status_code==200 and approved_status.json['status']=='ACKNOWLEDGED'
+ guardian_home=paced_get(client,'/student',base_url=BASEURL)
+ assert guardian_home.status_code==200 and 'Guardian acknowledgement recorded' in guardian_home.get_data(as_text=True)
+ assert 'learning access' in guardian_home.get_data(as_text=True)
  with sm.db() as c:
   link_id=c.execute("SELECT id FROM parent_student_links WHERE student_user_id=? AND parent_user_id=?",
     (users[0],users[2])).fetchone()['id']
@@ -307,6 +311,8 @@ with app.test_client() as client:
  assert revoked_link.status_code==302,('NATIVE_PARENT_LINK_REVOKE',revoked_link.status_code)
  pending_again=paced_get(client,'/uk11/api/me/guardian-status',base_url=BASEURL)
  assert pending_again.status_code==200 and pending_again.json['status']=='PENDING_GUARDIAN'
+ pending_home=paced_get(client,'/student',base_url=BASEURL)
+ assert pending_home.status_code==200 and 'Guardian onboarding pending' in pending_home.get_data(as_text=True)
  record('native_link_revocation_removes_guardian_acknowledgement',status=pending_again.status_code)
  paced_get(client,'/logout',base_url=BASEURL)
  login(client,3)
