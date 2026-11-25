@@ -4,7 +4,9 @@ Uses the real assembled native app login, CSRF, session-version and logout.
 Never uses real learner records or production DB. Native question/subject
 allocation is not part of this test and remains a separate qualification.
 """
-import os,sys,json,sqlite3
+import os,sys,json,sqlite3,re,hashlib
+from urllib.parse import urlsplit
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from werkzeug.security import generate_password_hash
 
@@ -17,6 +19,8 @@ os.environ.update({
  'SCOREMAX_BOOTSTRAP_ADMIN_PASSWORD':'Synthetic-UK11-Temporary-Only-2026',
  'SCOREMAX_BOOTSTRAP_ADMIN_EMAIL':'synthetic-admin@example.test',
  'SCOREMAX_SMTP_HOST':'smtp.example.test',
+ 'SCOREMAX_SMTP_PORT':'587',
+ 'SCOREMAX_SMTP_SSL':'0',
  'SCOREMAX_SMTP_FROM':'noreply@example.test',
  'SCOREMAX_PUBLIC_BASE_URL':'https://scoremax.pk',
  'SCOREMAX_SEND_EMAIL_VERIFICATION':'0',
@@ -50,6 +54,23 @@ guard.main()
 import scoremax_production as runtime
 sm=runtime.scoremax
 app=runtime.application
+
+class CapturedSMTP:
+ """Network-free SMTP stand-in that captures actual native EmailMessage objects."""
+ messages=[]
+ def __init__(self,*args,**kwargs):pass
+ def __enter__(self):return self
+ def __exit__(self,*args):return False
+ def ehlo(self,*args):return (250,b'local test')
+ def starttls(self,*args,**kwargs):return (220,b'local test tls')
+ def login(self,*args,**kwargs):return (235,b'local test')
+ def send_message(self,message):
+  type(self).messages.append(message)
+
+# Native ScoreMax still builds its real verification token and sends an actual
+# EmailMessage through its own mailer. Only the transport is replaced in this
+# disposable no-network runner.
+sm.smtplib.SMTP=CapturedSMTP
 
 def record(key,**data):
  print('UK11_LOGIN_NATIVE '+key+' '+json.dumps(data,sort_keys=True),flush=True)
@@ -254,11 +275,87 @@ with app.test_client() as client:
   assert market is not None and market['market_id']=='UK' and market['programme_id']=='UK11'
   assert not person['email_verified'],('NEW_STUDENT_MUST_START_EMAIL_UNVERIFIED',person['email_verified'])
   record('native_email_verification_gate_required',account_status=person['account_status'],verified=bool(person['email_verified']))
-  # Disposable synthetic verification event. No password, child data or
-  # production user is modified. SMTP/email-token delivery remains PENDING.
-  c.execute("UPDATE users SET email_verified=1,account_status='active' WHERE id=?",(person['id'],))
-  c.commit()
+  issued_hash=person['email_verification_token_hash'] if 'email_verification_token_hash' in person.keys() else c.execute(
+   "SELECT email_verification_token_hash FROM users WHERE id=?",(person['id'],)).fetchone()[0]
+  assert issued_hash and len(issued_hash)==64,('NATIVE_VERIFICATION_HASH_NOT_ISSUED',)
  record('native_registration_provisioned_uk_market',status=registration.status_code,market='UK',programme='UK11')
+ assert len(CapturedSMTP.messages)==1,('NATIVE_SMTP_NOT_CAPTURED',len(CapturedSMTP.messages))
+ message=CapturedSMTP.messages[0]
+ assert message['To']=='uk11-new-registration@example.test'
+ assert 'Verify your ScoreMax email' in message['Subject']
+ links=re.findall(r'https://[^\\s]+',message.get_content())
+ verify_url=next(x for x in links if '/verify-email/' in x)
+ parsed=urlsplit(verify_url)
+ assert parsed.scheme=='https' and parsed.netloc=='scoremax.pk'
+ verification_path=parsed.path
+ token=verification_path.rsplit('/',1)[-1]
+ assert hashlib.sha256(token.encode()).hexdigest()==issued_hash
+ with sm.db() as c:
+  user_row=c.execute("SELECT * FROM users WHERE email=?",('uk11-new-registration@example.test',)).fetchone()
+  first_expires=user_row['email_verification_expires_at']
+  assert token not in str(dict(user_row)),('PLAINTEXT_TOKEN_LEAKED_TO_DB',)
+ record('native_verification_token_issued',smtp_captured=1,hashed_at_rest=True,expires_configured=bool(first_expires))
+ # Existing ScoreMax login must deny a registered but unverified UK student.
+ login_page=paced_get(client,'/login',base_url=BASEURL)
+ assert login_page.status_code==200
+ unverified_login=paced_post(client,'/login',base_url=BASEURL,data={
+  'identity':'uk11-new-registration@example.test',
+  'password':'Synthetic-only-Strong-Password-2026!',
+  '_csrf_token':csrf(client)
+ },follow_redirects=False)
+ assert unverified_login.status_code==302 and '/verify-email?' in unverified_login.headers['Location'],(
+  'UNVERIFIED_LOGIN_NOT_BLOCKED',unverified_login.status_code,unverified_login.headers.get('Location'))
+ with client.session_transaction(base_url=BASEURL) as sess:
+  assert 'user_id' not in sess,('UNVERIFIED_LOGIN_CREATED_SESSION',)
+ record('native_unverified_login_blocked',status=unverified_login.status_code)
+ # A resend within the 60-second cooldown must not generate another token.
+ resend_data={'identity':'uk11-new-registration@example.test','_csrf_token':csrf(client)}
+ rapid_resend=paced_post(client,'/verify-email/resend',base_url=BASEURL,data=resend_data,follow_redirects=False)
+ assert rapid_resend.status_code==302 and len(CapturedSMTP.messages)==1,('RESEND_COOLDOWN_BYPASS',len(CapturedSMTP.messages))
+ with sm.db() as c:
+  c.execute("UPDATE users SET email_verification_sent_at=? WHERE email=?",
+    ((datetime.now(timezone.utc)-timedelta(seconds=65)).isoformat(),
+     'uk11-new-registration@example.test'))
+  c.commit()
+ valid_resend=paced_post(client,'/verify-email/resend',base_url=BASEURL,data=resend_data,follow_redirects=False)
+ assert valid_resend.status_code==302 and len(CapturedSMTP.messages)==2,('RESEND_DID_NOT_ROTATE',len(CapturedSMTP.messages))
+ new_links=re.findall(r'https://[^\\s]+',CapturedSMTP.messages[-1].get_content())
+ fresh_path=urlsplit(next(x for x in new_links if '/verify-email/' in x)).path
+ assert fresh_path!=verification_path,('VERIFICATION_TOKEN_REUSED',)
+ old_response=paced_get(client,verification_path,base_url=BASEURL,follow_redirects=False)
+ assert old_response.status_code==302
+ with sm.db() as c:
+  current=c.execute("SELECT email_verified,email_verification_expires_at FROM users WHERE email=?",
+   ('uk11-new-registration@example.test',)).fetchone()
+  assert not current['email_verified'],('OLD_TOKEN_CLAIMED_AFTER_ROTATION',)
+  fresh_expiry=current['email_verification_expires_at']
+  c.execute("UPDATE users SET email_verification_expires_at=? WHERE email=?",
+   ((datetime.now(timezone.utc)-timedelta(seconds=10)).isoformat(),
+    'uk11-new-registration@example.test'))
+  c.commit()
+ expired_response=paced_get(client,fresh_path,base_url=BASEURL,follow_redirects=False)
+ assert expired_response.status_code==302
+ with sm.db() as c:
+  current=c.execute("SELECT email_verified FROM users WHERE email=?",
+   ('uk11-new-registration@example.test',)).fetchone()
+  assert not current['email_verified'],('EXPIRED_TOKEN_CLAIMED',)
+  # Restore only the original expiry in this disposable fixture to test valid
+  # native redemption without sleeping or generating a parallel token.
+  c.execute("UPDATE users SET email_verification_expires_at=? WHERE email=?",
+   (fresh_expiry,'uk11-new-registration@example.test'))
+  c.commit()
+ verified=paced_get(client,fresh_path,base_url=BASEURL,follow_redirects=False)
+ assert verified.status_code==302 and verified.headers.get('Location')=='/login'
+ with sm.db() as c:
+  approved=c.execute("SELECT email_verified,account_status,email_verification_token_hash FROM users WHERE email=?",
+   ('uk11-new-registration@example.test',)).fetchone()
+  assert approved['email_verified']==1 and approved['account_status']=='active'
+  assert not approved['email_verification_token_hash'],('USED_TOKEN_NOT_CLEARED',)
+ replay=paced_get(client,fresh_path,base_url=BASEURL,follow_redirects=False)
+ assert replay.status_code==302
+ record('native_email_verification_pass',smtp_captured=2,unverified_blocked=True,cooldown=True,
+        rotation=True,expired_rejected=True,one_time=True,token_hash_cleared=True)
+
  # Existing authentication path must recognise the same new account.
  login_page=paced_get(client,'/login',base_url=BASEURL)
  assert login_page.status_code==200
