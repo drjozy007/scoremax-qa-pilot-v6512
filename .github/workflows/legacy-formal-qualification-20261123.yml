@@ -35,9 +35,13 @@ jobs:
       - name: Retain exact successor authorizations on composed V16
         run: python -B -m unittest discover -s tests/successor_qualification_20261123 -p test_successor_qualification_v10.py -v
       - name: Compose sealed neutral practice label V17
-        run: python -B scripts/materialize_scoremax_practice_label_20261124_v17.py
+        run: python -B scripts/materialize_scoremax_practice_label_20261124_v17_accepted.py
       - name: Verify current template syntax and unchanged response-mode controls
         run: python -B scripts/verify_scoremax_practice_label_v17.py
+      - name: Compose and verify exact native receiver successor
+        run: |
+          python -B scripts/materialize_scoremax_practice_label_20261124_v17.py
+          python -B -m unittest discover -s tests/native_receiver_recovery_20261126_v1 -v
       - uses: actions/upload-artifact@v4
         if: always()
         with:
