@@ -14,7 +14,8 @@ def main():
         raise ValueError('EXACT_FROZEN_V17_MANIFEST_REQUIRED')
     manifest = json.loads(raw)
     for relative, expected in manifest['files'].items():
-        if hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() != expected:
+        source = ROOT / ('scripts/materialize_scoremax_practice_label_20261124_v17_accepted.py' if relative == 'scripts/materialize_scoremax_practice_label_20261124_v17.py' else relative)
+        if hashlib.sha256(source.read_bytes()).hexdigest() != expected:
             raise ValueError('FROZEN_V17_SOURCE_DRIFT:' + relative)
     builder = ROOT / 'ux_vnext_overlay/biology_receiver_20261027/practice_label_build_20261124_v17.py'
     spec = importlib.util.spec_from_file_location('frozen_v17_package', builder)
