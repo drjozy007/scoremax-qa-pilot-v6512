@@ -1,13 +1,16 @@
-"""Compose accepted V16 and a byte-pinned neutral practice label correction."""
+"""Exact accepted V17 followed by the bounded typed receiver continuation."""
 import importlib.util,json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def load(name,path):
- s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+ spec=importlib.util.spec_from_file_location(name,path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 def main():
- build=load('practice_label_build_v17',ROOT/'ux_vnext_overlay/biology_receiver_20261027/practice_label_build_20261124_v17.py')
+ patch=load('native_receiver_recovery',ROOT/'native_receiver_recovery_20261126_v1/apply.py')
  runtime=ROOT/'scoremax_runtime_v669b'
- if runtime.exists() and build.tree(runtime)==build.AFTER_TREE:return build.apply(runtime)
- prior=load('accepted_legacy_v16',ROOT/'scripts/materialize_scoremax_legacy_formal_20261123_v16.py');prior.main()
- return build.apply(runtime)
+ if runtime.exists():
+  observed=patch.tree(runtime)
+  if observed==patch.AFTER:return patch.apply(runtime,build_mode=True)
+  if observed!=patch.BASE:raise ValueError('RECEIVER_BUILD_UNEXPECTED_RUNTIME_REJECTED')
+ prior=load('accepted_practice_label_v17',ROOT/'scripts/materialize_scoremax_practice_label_20261124_v17_accepted.py');prior.main()
+ return patch.apply(runtime,build_mode=True)
 if __name__=='__main__':print(json.dumps(main(),sort_keys=True))

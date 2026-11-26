@@ -1,0 +1,17 @@
+{
+  "schema": "SM-NATIVE-RECEIVER-RECOVERY-MANIFEST-1",
+  "delta_sha256": "10afab08b169aa81f7b8a63bd87121d29a308ac611653e7caf614a4078de941f",
+  "before_tree_sha256": "daf1071772cca3a5f23f5df7c89707e08a1b9399b3ad1d100ac23ec7b5e2deba",
+  "after_tree_sha256": "98c60c20e6b1aa9b848f5b01d220cc20f7a8e8a7e16c734b823856fd6ab9694f",
+  "source_marks_weights_preserved": true,
+  "database_schema_changes": false,
+  "production_deployed": false,
+  "files": {
+    "native_activation_policy_20261126_v1.json": "a3310304fb13b20effb3df0e9f92480a422c469f4d40e95f815b4b0d4db59a3e",
+    "ph_typed_cloze_contracts_v2.py": "7e11c8a4cfdbe47bb7e63227656cd00f6367eeb8fb7c07549f537f477b9ece6d",
+    "receiver_scoped_activation_v1.py": "f49dd20649e055f92af871fa91bd1253adb0b60f9b90b3fd79e5afe84b0a4dae",
+    "scoremax_integration_v1.py": "c850a320183535ca8219c692f8a926bd8e0298380f54335699d10c025f3bb4a6",
+    "app.py": "e5e7931be53065247983e9b785f6fdbdb53d2eae5afddef6a87d5edd7e7dab6b",
+    "ph_practice_contracts.py": "67f47f4966ef522d82707c0af951f11a89da2fdf3cce7ab0db58edbe05de54fc"
+  }
+}
