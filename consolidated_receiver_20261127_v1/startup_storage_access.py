@@ -16,7 +16,6 @@ class Unavailable(http.server.BaseHTTPRequestHandler):
 def wait_for_native_capacity():
  if os.environ.get('RENDER_SERVICE_ID')!=EXPECTED_SERVICE:raise RuntimeError('EXACT_EXISTING_SERVICE_REQUIRED')
  database=Path('/data/scoremax/state/scoremax.db');required=required_capacity(database)
- if shutil.disk_usage('/data').free>=required:return
  # Keep operational shell access available; no learner content or DB writer starts.
  server=http.server.ThreadingHTTPServer(('0.0.0.0',int(os.environ.get('PORT','10000'))),Unavailable)
  thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
@@ -24,7 +23,6 @@ def wait_for_native_capacity():
  for root in ('/data/scoremax/backup','/data/scoremax/intake','/data/scoremax/state'):
   p=Path(root)
   print('SCOREMAX_CUTOVER_INVENTORY '+json.dumps({'root':root,'files':[{'path':str(x),'bytes':x.stat().st_size}for x in p.iterdir()if x.is_file()and not x.is_symlink()]}),flush=True)
- try:
-  while shutil.disk_usage('/data').free<required_capacity(database):threading.Event().wait(5)
- finally:server.shutdown();server.server_close();thread.join(timeout=5)
+ while shutil.disk_usage('/data').free<required_capacity(database):threading.Event().wait(5)
  print('SCOREMAX_CUTOVER_CAPACITY_AVAILABLE_NATIVE_GUARD_REQUIRED',flush=True)
+ return server,thread
