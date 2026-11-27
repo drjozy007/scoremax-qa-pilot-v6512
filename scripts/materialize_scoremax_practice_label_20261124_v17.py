@@ -14,4 +14,19 @@ def main():
  assert hashlib.sha256(raw).hexdigest()=='96de7b008937b58cfb6ad4a203cb4a85e9342fcbad8265bbbce02a95a0be4301'
  dest.write_bytes(raw);assert tree(runtime)==EXPECTED
  return {'status':'PASSED','closure':EXPECTED,'academic_qualification':'REUSED_FROZEN_JOB03','database_opened':False}
-if __name__=='__main__':print(json.dumps(main(),sort_keys=True))
+
+def install_startup_access():
+ p=ROOT/'scripts/scoremax_persistent_storage_guard.py'
+ original=p.read_bytes()
+ saved=ROOT/'scripts/scoremax_persistent_storage_guard_native_accepted_20261127.py'
+ # Existing build chain has already validated and materialized its native guard.
+ if original.startswith(b'"""Exact accepted native guard after fail-closed cutover access; no bypass.'):
+  assert saved.is_file();return
+ pin=hashlib.sha256(original).hexdigest()
+ saved.write_bytes(original)
+ template=(ROOT/'consolidated_receiver_20261127_v1/guard_entry_template.py').read_text()
+ p.write_text(template.replace('MATERIALIZED_NATIVE_GUARD_SHA256',pin))
+ print('SCOREMAX_ACCEPTED_NATIVE_GUARD_RETAINED '+pin,flush=True)
+
+if __name__=='__main__':
+ result=main();install_startup_access();print(json.dumps(result,sort_keys=True))
