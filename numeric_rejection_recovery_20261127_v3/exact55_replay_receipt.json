@@ -1,0 +1,22 @@
+{
+  "schema": "PH-EXACT55-NUMERIC-CAPABILITY-REPLAY-1",
+  "status": "PASSED",
+  "source_count": 55,
+  "exact_production_source_set_sha256": "16eb84eeb060d3a8953719e0c170e6282003f17767b0a0cf4abc2a9ab37440fd",
+  "source_fidelity_verified": 55,
+  "source_marks_population": {
+    "2": 42,
+    "3": 12,
+    "4": 1
+  },
+  "operational_capability_exceptions": {
+    "NUMERICAL_METHOD_MARKING_CAPABILITY_REQUIRED": 28,
+    "NUMERICAL_MULTI_MARK_ALLOCATION_CAPABILITY_REQUIRED": 27
+  },
+  "source_rows_changed": 0,
+  "qa_assessments_added": 0,
+  "firewall_assessments_added": 0,
+  "certificates_added": 0,
+  "approvals_added": 0,
+  "production_writes": 0
+}

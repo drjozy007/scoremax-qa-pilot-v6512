@@ -1,0 +1,23 @@
+{
+  "schema": "PH-SM-EXACT-NUMERICAL-BUILD-ACCEPTANCE-3",
+  "status": "PASSED",
+  "lanes": {
+    "ph": {
+      "status": "PASSED",
+      "replayed": false,
+      "source_closure": "f59d4026f87ba307f427d707bd4f0b02f8c9ddb8fdf0a41c2188b60feb9c133b",
+      "database_opened": false,
+      "schema_changed": false
+    },
+    "sm": {
+      "status": "PASSED",
+      "replayed": false,
+      "source_closure": "652795d2bfce9beaaa2ba5588d337e88488b8febdeb738841109d960daeaebc9",
+      "database_opened": false,
+      "schema_changed": false
+    }
+  },
+  "database_opened": false,
+  "production_writes": 0,
+  "broad_question_qualification_repeated": false
+}

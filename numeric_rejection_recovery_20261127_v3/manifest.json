@@ -1,0 +1,19 @@
+{
+  "schema": "NATIVE-EXACT-NUMERICAL-RECOVERY-BUILD-3",
+  "lane": "scoremax_runtime",
+  "parent_source_closure": "98c60c20e6b1aa9b848f5b01d220cc20f7a8e8a7e16c734b823856fd6ab9694f",
+  "candidate_source_closure": "652795d2bfce9beaaa2ba5588d337e88488b8febdeb738841109d960daeaebc9",
+  "files": {
+    "scoremax_integration_v1.py": {
+      "before_sha256": "c850a320183535ca8219c692f8a926bd8e0298380f54335699d10c025f3bb4a6",
+      "after_sha256": "0eeac614a8c6793c8881bfc83ff61a63b8d69402a7e9664bc99d9f25a039c7c5"
+    },
+    "numeric_rejection_evidence_v1.py": {
+      "before_sha256": null,
+      "after_sha256": "0e51fe0d4ae485bae1e7b2fa372f69abc0b2b7f55047b2de47dcb84ced1d9fd4"
+    }
+  },
+  "schema_migrations_changed": false,
+  "canonical_question_mutations": false,
+  "qa_or_firewall_repeated": false
+}
